@@ -137,17 +137,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Parses block scalar values (literal `|` and folded `&gt;` styles).
 &nbsp; *
-&nbsp; * @param indent The enclosing context&#39;s indentation, as passed to [GhostYamlFlatReader.readValue]
-&nbsp; *   — `GhostYamlConstants.INDENT_UNSET` specifically means &quot;this
-&nbsp; *   scalar is the document root, no enclosing key/dash&quot;, which is the one case content is allowed
-&nbsp; *   to sit at column 0 with no explicit indicator. See [detectBlockScalarIndent].
+&nbsp; * @param indent The enclosing context&#39;s indentation; `GhostYamlConstants.INDENT_UNSET` means
+&nbsp; *   &quot;document root, no enclosing key/dash&quot; — the one case content may sit at column 0 with no
+&nbsp; *   explicit indicator. See [detectBlockScalarIndent].
 &nbsp; */
 &nbsp;internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): String {
-&nbsp;    // Skip the indicator and any chomp/indent modifiers on the same line
 <b class="fc">&nbsp;    position++ // consume &#39;|&#39; or &#39;&gt;&#39;</b>
 <b class="fc">&nbsp;    val isFolded = indicator == C.GT_BYTE</b>
 &nbsp;
-&nbsp;    // Read optional chomp indicator and indentation indicator
 <b class="fc">&nbsp;    var chomp = GhostYamlFlatReader.ChompStyle.CLIP</b>
 <b class="fc">&nbsp;    var explicitIndent = -1</b>
 &nbsp;
@@ -193,7 +190,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            else -&gt; yamlError(C.ERR_INVALID_TEXT_AFTER_BLOCK_INDICATOR)</b>
 &nbsp;        }
 &nbsp;    }
-&nbsp;    // Skip to next line
 <b class="fc">&nbsp;    skipToEndOfLine()</b>
 <b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
 <b class="pc">&nbsp;    else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.CR_BYTE) {</b>
@@ -201,9 +197,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    // Determine block indentation from first non-empty line. An explicit indicator (e.g. the &quot;1&quot;
-&nbsp;    // in &quot;|1&quot;) is relative to the parent node&#39;s indentation level, not an absolute column — using
-&nbsp;    // it standalone only happened to work when the parent sat at column 0.
+&nbsp;    // An explicit indicator (e.g. the &quot;1&quot; in &quot;|1&quot;) is relative to the parent node&#39;s indentation
+&nbsp;    // level, not an absolute column.
 <b class="fc">&nbsp;    val blockIndent = if (explicitIndent &gt;= 0) {</b>
 <b class="fc">&nbsp;        currentIndent + explicitIndent</b>
 &nbsp;    } else {
@@ -226,30 +221,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            scannerPos++</b>
 &nbsp;            continue
 &nbsp;        }
-&nbsp;        // Count leading spaces
 <b class="fc">&nbsp;        var spaces = 0</b>
 <b class="fc">&nbsp;        var peekPos = scannerPos</b>
 <b class="fc">&nbsp;        while (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] == C.SPACE_BYTE) {</b>
 <b class="fc">&nbsp;            spaces++; peekPos++</b>
 &nbsp;        }
 <b class="pc">&nbsp;        if (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] != C.NEWLINE_BYTE &amp;&amp; localRawData[peekPos] != C.CR_BYTE) {</b>
-&nbsp;            // Only a genuine document-root scalar (no enclosing key/dash at all, e.g.
-&nbsp;            // &quot;--- &gt;\nline1\n...&quot;) may have content at or below the parent&#39;s own indentation —
-&nbsp;            // there&#39;s no sibling/key structure it could be mistaken for. Everywhere else (in
-&nbsp;            // particular: an empty block scalar immediately followed by the next key/comment at
-&nbsp;            // the same or shallower indentation) must fall back to parentIndent + 2 and let
-&nbsp;            // readBlockScalarContent&#39;s own de-indent check immediately end the scalar as empty.
+&nbsp;            // Only a genuine document-root scalar may have content at/below the parent&#39;s own
+&nbsp;            // indentation; everywhere else, fall back to parentIndent + 2 and let
+&nbsp;            // readBlockScalarContent&#39;s de-indent check treat it as empty.
 <b class="fc">&nbsp;            if (spaces &lt;= parentIndent &amp;&amp; !isDocumentRoot) {</b>
-&nbsp;                // maxOf with maxLeadingEmptyLineIndent: any blank line already scanned past must
-&nbsp;                // stay &lt;= this blockIndent, or readBlockScalarContent would (correctly, per its
-&nbsp;                // own leftover-space-is-content rule) treat it as having real content of its own
-&nbsp;                // — but there was never a genuine content line for this scalar at all, so none of
-&nbsp;                // its blank lines should either (see JEF9_01/JEF9_02).
+&nbsp;                // Blank lines already scanned past must stay &lt;= this blockIndent too, or
+&nbsp;                // they&#39;d be treated as real content when none exists (see JEF9_01/JEF9_02).
 <b class="fc">&nbsp;                return maxOf(parentIndent + 2, maxLeadingEmptyLineIndent)</b>
 &nbsp;            }
-&nbsp;            // A leading empty line more indented than the first real content line is ambiguous —
-&nbsp;            // there&#39;s no way to tell how much of its indentation was meant as content — and the
-&nbsp;            // spec rejects it outright rather than guessing.
+&nbsp;            // A leading empty line more indented than the first content line is ambiguous;
+&nbsp;            // the spec rejects it rather than guessing.
 <b class="fc">&nbsp;            if (maxLeadingEmptyLineIndent &gt; spaces) {</b>
 <b class="fc">&nbsp;                yamlError(C.ERR_LEADING_EMPTY_LINE_OVERINDENTED)</b>
 &nbsp;            }
@@ -258,8 +245,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        if (spaces &gt; maxLeadingEmptyLineIndent) maxLeadingEmptyLineIndent = spaces</b>
 <b class="fc">&nbsp;        scannerPos = peekPos</b>
 &nbsp;    }
-&nbsp;    // Reached EOF without ever finding a real content line — see the maxOf comment above, same
-&nbsp;    // reasoning applies here.
+&nbsp;    // Reached EOF without finding a real content line — same fallback as above.
 <b class="fc">&nbsp;    return maxOf(parentIndent + 2, maxLeadingEmptyLineIndent)</b>
 &nbsp;}
 &nbsp;
@@ -277,7 +263,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val localLimit = limit</b>
 &nbsp;
 <b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
-&nbsp;        // Count indentation
 <b class="fc">&nbsp;        var spaces = 0</b>
 <b class="fc">&nbsp;        val lineStart = position</b>
 <b class="fc">&nbsp;        while (position &lt; localLimit &amp;&amp; localRawData[position] == C.SPACE_BYTE) {</b>
@@ -287,10 +272,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        if ((position &gt;= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) &amp;&amp;</b>
 <b class="fc">&nbsp;            spaces &lt;= blockIndent</b>
 &nbsp;        ) {
-&nbsp;            // Empty line — but only when it has no spaces *beyond* blockIndent. A line with more
-&nbsp;            // spaces than blockIndent (but nothing else) isn&#39;t blank: the leftover spaces are
-&nbsp;            // real content, and falling through to the normal content-line handling below
-&nbsp;            // preserves them (see DWX9/6FWR&#39;s expected &quot; &quot; line between two &quot;empty&quot; ones).
+&nbsp;            // A line with spaces beyond blockIndent isn&#39;t blank — falling through to normal
+&nbsp;            // content handling preserves them (see DWX9/6FWR&#39;s expected &quot; &quot; line).
 <b class="fc">&nbsp;            trailingNewlines++</b>
 <b class="fc">&nbsp;            skipToEndOfLine()</b>
 <b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) position++</b>
@@ -302,21 +285,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;
 <b class="pc">&nbsp;        if (spaces &lt; blockIndent || isDocumentMarker() || isDocumentEndMarker()) {</b>
-&nbsp;            // De-indented content, or a &quot;---&quot;/&quot;...&quot; marker, ends the block scalar — markers are
-&nbsp;            // structural and terminate it unconditionally, even a root-level scalar with
-&nbsp;            // blockIndent 0 that would otherwise treat every line as still &quot;indented enough&quot;.
+&nbsp;            // Markers are structural and terminate the scalar unconditionally, even a
+&nbsp;            // root-level scalar with blockIndent 0 (every line looks &quot;indented enough&quot;).
 <b class="fc">&nbsp;            position = lineStart</b>
 &nbsp;            break
 &nbsp;        }
 &nbsp;
-&nbsp;        // We have skipped spaces when counting them. Position is currently at lineStart + spaces.
 <b class="fc">&nbsp;        val effectiveSpaces = spaces - blockIndent</b>
 <b class="fc">&nbsp;        val isIndented = effectiveSpaces &gt; 0</b>
 &nbsp;
-&nbsp;        // If we have accumulated trailing newlines, append them — including any that precede the
-&nbsp;        // very first real content line: leading blank lines inside a block scalar are real
-&nbsp;        // content (part of what detectBlockScalarIndent scanned past to find blockIndent), not
-&nbsp;        // just structural padding to discard (see DWX9/T26H/4QFQ/R4YG&#39;s expected &quot;\n\n...&quot; prefix).
+&nbsp;        // Leading blank lines inside a block scalar are real content, not structural padding
+&nbsp;        // to discard (see DWX9/T26H/4QFQ/R4YG&#39;s expected &quot;\n\n...&quot; prefix).
 <b class="fc">&nbsp;        if (trailingNewlines &gt; 0) {</b>
 <b class="fc">&nbsp;            if (isFirstLine) {</b>
 <b class="fc">&nbsp;                repeat(trailingNewlines) { contentBuilder.append(&#39;\n&#39;) }</b>
@@ -335,17 +314,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        isFirstLine = false</b>
 <b class="fc">&nbsp;        lastLineWasIndented = isIndented</b>
 &nbsp;
-&nbsp;        // Append remaining spaces (effectiveSpaces)
 <b class="fc">&nbsp;        repeat(effectiveSpaces) { contentBuilder.append(&#39; &#39;) }</b>
 &nbsp;
-&nbsp;        // Append line content
 <b class="fc">&nbsp;        val contentStart = position</b>
 <b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE) {</b>
 <b class="fc">&nbsp;            position++</b>
 &nbsp;        }
 <b class="fc">&nbsp;        contentBuilder.append(localRawData.decodeToString(contentStart, position))</b>
 &nbsp;
-&nbsp;        // Consume the newline
 <b class="fc">&nbsp;        skipToEndOfLine()</b>
 <b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.NEWLINE_BYTE) {</b>
 <b class="fc">&nbsp;            position++</b>
@@ -356,18 +332,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        trailingNewlines = 1 // Count the newline ending this content line</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    // Apply chomping style on the final string
 <b class="fc">&nbsp;    val content = contentBuilder.toString()</b>
 <b class="fc">&nbsp;    return when (chomp) {</b>
 &nbsp;        GhostYamlFlatReader.ChompStyle.STRIP -&gt; {
-&nbsp;            // Strip all trailing newlines
 <b class="fc">&nbsp;            var end = content.length</b>
 <b class="pc">&nbsp;            while (end &gt; 0 &amp;&amp; content[end - 1] == &#39;\n&#39;) end--</b>
 <b class="fc">&nbsp;            content.substring(0, end)</b>
 &nbsp;        }
 &nbsp;
 &nbsp;        GhostYamlFlatReader.ChompStyle.CLIP -&gt; {
-&nbsp;            // Keep exactly one newline if content is not empty
 <b class="fc">&nbsp;            var end = content.length</b>
 <b class="pc">&nbsp;            while (end &gt; 0 &amp;&amp; content[end - 1] == &#39;\n&#39;) end--</b>
 <b class="fc">&nbsp;            if (end &gt; 0) content.substring(0, end) + &quot;\n&quot; else &quot;&quot;</b>
@@ -402,7 +375,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    72.7%
   </span>
   <span class="absValue">
-    (10/12)
+    (8/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    43.5%
+    37.7%
   </span>
   <span class="absValue">
-    (30/69)
+    (23/61)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75.6%
+    65.4%
   </span>
   <span class="absValue">
-    (136/180)
+    (106/162)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.4%
+    62.2%
   </span>
   <span class="absValue">
-    (518/736)
+    (404/649)
   </span>
 </td>
 </tr>
@@ -121,7 +121,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.ByteArray
@@ -246,9 +245,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
-<b class="pc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="nc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_EXTRAS) == 0L) {</b>
 <b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;extras&quot;)</b>
 &nbsp;      }
@@ -259,17 +258,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [WrappedKeysFixture].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): WrappedKeysFixture {
-<b class="fc">&nbsp;    var idValue: String? = null</b>
-<b class="fc">&nbsp;    var extrasValue: WireExtras? = null</b>
-<b class="fc">&nbsp;    val wrappedCaptureExtras = GhostWrappedKeysCapture(4)</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var idValue: String? = null</b>
+<b class="nc">&nbsp;    var extrasValue: WireExtras? = null</b>
+<b class="nc">&nbsp;    val wrappedCaptureExtras = GhostWrappedKeysCapture(4)</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          idValue = reader.nextString()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_ID</b>
+<b class="nc">&nbsp;          idValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_ID</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
 <b class="nc">&nbsp;          reader.captureWrappedKey(wrappedCaptureExtras, 0)</b>
@@ -285,25 +284,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;        -1 -&gt; break
 &nbsp;        -2 -&gt; {
-<b class="fc">&nbsp;          reader.skipValue()</b>
+<b class="nc">&nbsp;          reader.skipValue()</b>
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    val wrappedJsonExtras = wrappedCaptureExtras.materializeWrappedObject(</b>
-<b class="fc">&nbsp;          WRAPPED_KEY_LITERALS_EXTRAS,</b>
-<b class="fc">&nbsp;          false,</b>
-<b class="fc">&nbsp;          WRAPPED_OMIT_ABSENT_EXTRAS,</b>
+<b class="nc">&nbsp;    val wrappedJsonExtras = wrappedCaptureExtras.materializeWrappedObject(</b>
+<b class="nc">&nbsp;          WRAPPED_KEY_LITERALS_EXTRAS,</b>
+<b class="nc">&nbsp;          false,</b>
+<b class="nc">&nbsp;          WRAPPED_OMIT_ABSENT_EXTRAS,</b>
 &nbsp;        )
-<b class="pc">&nbsp;    if (wrappedJsonExtras != null) {</b>
-<b class="fc">&nbsp;      val wrappedReader = GhostJsonFlatReader(wrappedJsonExtras)</b>
-<b class="fc">&nbsp;      extrasValue = WireExtrasSerializer.deserialize(wrappedReader)</b>
-<b class="fc">&nbsp;      mask0 = mask0 or MASK_EXTRAS</b>
+<b class="nc">&nbsp;    if (wrappedJsonExtras != null) {</b>
+<b class="nc">&nbsp;      val wrappedReader = GhostJsonFlatReader(wrappedJsonExtras)</b>
+<b class="nc">&nbsp;      extrasValue = WireExtrasSerializer.deserialize(wrappedReader)</b>
+<b class="nc">&nbsp;      mask0 = mask0 or MASK_EXTRAS</b>
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
-<b class="fc">&nbsp;    reader.endObject()</b>
-<b class="fc">&nbsp;    return WrappedKeysFixture(</b>
-<b class="fc">&nbsp;      id = idValue!!,</b>
-<b class="fc">&nbsp;      extras = extrasValue!!,</b>
+<b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
+<b class="nc">&nbsp;    return WrappedKeysFixture(</b>
+<b class="nc">&nbsp;      id = idValue!!,</b>
+<b class="nc">&nbsp;      extras = extrasValue!!,</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
@@ -391,28 +390,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: WrappedKeysFixture) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID, value.id)</b>
-<b class="nc">&nbsp;    if (value.extras.extra1 != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_EXTRA1)</b>
-<b class="nc">&nbsp;      writer.value(value.extras.extra1)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.extras.extra2 != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_EXTRA2)</b>
-<b class="nc">&nbsp;      writer.value(value.extras.extra2)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.extras.extra3 != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_EXTRA3)</b>
-<b class="nc">&nbsp;      writer.value(value.extras.extra3)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.extras.extra4 != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_EXTRA4)</b>
-<b class="nc">&nbsp;      writer.value(value.extras.extra4)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: WrappedKeysFixture) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeField(HS_ID, value.id)</b>
@@ -441,13 +418,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:\&quot;\&quot;,\&quot;extras\&quot;:{}}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:\&quot;\&quot;,\&quot;extras\&quot;:{}}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -482,7 +452,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

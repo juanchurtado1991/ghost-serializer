@@ -112,11 +112,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * High-performance [GhostSource] backed by an in-memory [ByteArray].
-&nbsp; *
-&nbsp; * Contains all loop-unrolled hot-path scanning logic shared across every platform.
-&nbsp; * JVM and Android subclass this to override [decodeJsonStringRange] with a faster
-&nbsp; * ASCII decoder; all other platforms use this class directly.
+&nbsp; * [GhostSource] backed by an in-memory [ByteArray]; holds the loop-unrolled scanning
+&nbsp; * logic shared across platforms. JVM/Android subclass this to override
+&nbsp; * [decodeJsonStringRange] with a faster ASCII decoder; other platforms use it directly.
 &nbsp; */
 <b class="fc">&nbsp;@InternalGhostApi</b>
 <b class="fc">&nbsp;open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {</b>
@@ -178,7 +176,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

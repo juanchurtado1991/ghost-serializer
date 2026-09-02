@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ShortSerializer</title>
+  <title>GhostSerialization Coverage Report > MapSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.serializers</a>
 </div>
 
-<h1>Coverage Summary for Class: ShortSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: MapSerializer (com.ghost.serialization.serializers)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ShortSerializer</td>
+  <td class="name">MapSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    42.9%
+    71.4%
   </span>
   <span class="absValue">
-    (3/7)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    42.9%
-  </span>
-  <span class="absValue">
-    (3/7)
+    (5/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    48%
+    68.8%
   </span>
   <span class="absValue">
-    (12/25)
+    (11/16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.9%
+  </span>
+  <span class="absValue">
+    (40/52)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.9%
+  </span>
+  <span class="absValue">
+    (143/186)
   </span>
 </td>
 </tr>
@@ -96,41 +103,123 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;package com.ghost.serialization.serializers
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.contract.GhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextInt
+&nbsp;import com.ghost.serialization.parser.streaming.beginObject
+&nbsp;import com.ghost.serialization.parser.streaming.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.streaming.endObject
+&nbsp;import com.ghost.serialization.parser.streaming.nextKey
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextInt
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
+&nbsp;import com.ghost.serialization.parser.strings.beginObject
+&nbsp;import com.ghost.serialization.parser.strings.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.strings.endObject
+&nbsp;import com.ghost.serialization.parser.strings.nextKey
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Built-in serializer for Kotlin [Short] type (JSON number).
+&nbsp; * Serializer implementation for standard Kotlin [Map] collections with String keys.
 &nbsp; */
-&nbsp;object ShortSerializer : GhostSerializer&lt;Short&gt; {
-<b class="nc">&nbsp;    override val typeName: String get() = C.TYPE_NAME_SHORT</b>
+<b class="fc">&nbsp;class MapSerializer&lt;V&gt;(</b>
+<b class="fc">&nbsp;    private val valueSerializer: GhostSerializer&lt;V&gt;</b>
+&nbsp;) : GhostSerializer&lt;Map&lt;String, V&gt;&gt; {
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: Short) {
-<b class="nc">&nbsp;        writer.value(value.toInt())</b>
+&nbsp;    override val typeName: String
+&nbsp;        get() =
+<b class="nc">&nbsp;            &quot;${C.TYPE_NAME_MAP_STRING_PREFIX}${valueSerializer.typeName}${C.TYPE_NAME_GENERIC_SUFFIX}&quot;</b>
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) {
+<b class="fc">&nbsp;        writer.beginObject()</b>
+<b class="fc">&nbsp;        for (entry in value.entries) {</b>
+<b class="fc">&nbsp;            writer.name(entry.key)</b>
+<b class="fc">&nbsp;            valueSerializer.serialize(writer, entry.value)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endObject()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: Short) {
-<b class="nc">&nbsp;        writer.value(value.toInt())</b>
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: Map&lt;String, V&gt;
+&nbsp;    ) {
+<b class="nc">&nbsp;        writer.beginObject()</b>
+<b class="nc">&nbsp;        for (entry in value.entries) {</b>
+<b class="nc">&nbsp;            writer.name(entry.key)</b>
+<b class="nc">&nbsp;            valueSerializer.serialize(writer, entry.value)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        writer.endObject()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Short) {
-<b class="nc">&nbsp;        writer.value(value.toInt())</b>
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonReader
+&nbsp;    ): Map&lt;String, V&gt; {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_OBJ) {</b>
+<b class="nc">&nbsp;            reader.endObject()</b>
+<b class="nc">&nbsp;            return emptyMap()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return buildMap {</b>
+<b class="fc">&nbsp;            while (true) {</b>
+<b class="fc">&nbsp;                val key = reader.nextKey() ?: break</b>
+<b class="fc">&nbsp;                reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;                put(</b>
+<b class="fc">&nbsp;                    key,</b>
+<b class="fc">&nbsp;                    valueSerializer.deserialize(reader)</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            reader.endObject()</b>
+<b class="fc">&nbsp;        }</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonReader): Short = reader.nextInt().toShort()</b>
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonFlatReader
+&nbsp;    ): Map&lt;String, V&gt; {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_OBJ) {</b>
+<b class="nc">&nbsp;            reader.endObject()</b>
+<b class="nc">&nbsp;            return emptyMap()</b>
+&nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Short = reader.nextInt().toShort()</b>
+<b class="fc">&nbsp;        return buildMap {</b>
+<b class="fc">&nbsp;            while (true) {</b>
+<b class="fc">&nbsp;                val key = reader.nextKey() ?: break</b>
+<b class="fc">&nbsp;                reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;                put(</b>
+<b class="fc">&nbsp;                    key,</b>
+<b class="fc">&nbsp;                    valueSerializer.deserialize(reader)</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            reader.endObject()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Short = reader.nextInt().toShort()</b>
+&nbsp;    override fun deserialize(
+&nbsp;        reader: GhostJsonStringReader
+&nbsp;    ): Map&lt;String, V&gt; {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_OBJ) {</b>
+<b class="nc">&nbsp;            reader.endObject()</b>
+<b class="nc">&nbsp;            return emptyMap()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return buildMap {</b>
+<b class="fc">&nbsp;            while (true) {</b>
+<b class="fc">&nbsp;                val key = reader.nextKey() ?: break</b>
+<b class="fc">&nbsp;                reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;                put(</b>
+<b class="fc">&nbsp;                    key,</b>
+<b class="fc">&nbsp;                    valueSerializer.deserialize(reader)</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;            reader.endObject()</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -155,7 +244,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

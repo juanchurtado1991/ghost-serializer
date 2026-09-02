@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostLongList</title>
+  <title>GhostSerialization Coverage Report > GhostFastPrimitiveArrayHelpersKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.serializers</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostLongList (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostFastPrimitiveArrayHelpersKt (com.ghost.serialization.serializers)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostLongList</td>
+  <td class="name">GhostFastPrimitiveArrayHelpersKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,23 +63,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (6/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    77.4%
   </span>
   <span class="absValue">
-    (4/6)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    84.6%
-  </span>
-  <span class="absValue">
-    (11/13)
+    (65/84)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     90.7%
   </span>
   <span class="absValue">
-    (68/75)
+    (97/107)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.4%
+  </span>
+  <span class="absValue">
+    (442/473)
   </span>
 </td>
 </tr>
@@ -101,47 +101,244 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.serializers
 &nbsp;
+&nbsp;import okio.ByteString
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
+&nbsp;/** True when the [limit]-bounded bytes at [pos] match [literal] byte-for-byte. */
+&nbsp;@PublishedApi
+&nbsp;internal inline fun matchesLiteral(getByte: (Int) -&gt; Int, pos: Int, limit: Int, literal: ByteString): Boolean {
+<b class="fc">&nbsp;    val size = literal.size</b>
+<b class="pc">&nbsp;    if (pos + size &gt; limit) return false</b>
+<b class="fc">&nbsp;    for (i in 0 until size) {</b>
+<b class="fc">&nbsp;        if (getByte(pos + i) != (literal[i].toInt() and C.BYTE_MASK)) return false</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return true</b>
+&nbsp;}
+&nbsp;
 &nbsp;/**
-&nbsp; * Highly optimized, zero-allocation internal list implementation for [Long] primitives.
-&nbsp; * Avoids boxing overhead and memory allocation pressure.
+&nbsp; * Writes [size] array elements via [writeAt] (comma/separator bookkeeping is already handled
+&nbsp; * by each `writer.value(...)` overload internally, so this is pure iteration) — shared by every
+&nbsp; * primitive array serializer&#39;s write path instead of each hand-rolling the same `for` loop.
 &nbsp; */
-<b class="fc">&nbsp;internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {</b>
-<b class="fc">&nbsp;    private var buffer = LongArray(initialCapacity)</b>
-&nbsp;    private var currentSize = 0
+&nbsp;internal inline fun writeArrayElements(size: Int, writeAt: (Int) -&gt; Unit) {
+<b class="fc">&nbsp;    for (i in 0 until size) writeAt(i)</b>
+&nbsp;}
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Adds a long item to the list, expanding the backing buffer if necessary.
-&nbsp;     */
-&nbsp;    fun add(value: Long) {
-<b class="fc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="fc">&nbsp;            val newCapacity =</b>
-<b class="pc">&nbsp;                if (buffer.isEmpty()) {</b>
-<b class="fc">&nbsp;                    C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY</b>
-&nbsp;                } else {
-<b class="nc">&nbsp;                    (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
-&nbsp;                }
-<b class="fc">&nbsp;            buffer = buffer.copyOf(newCapacity)</b>
+&nbsp;/**
+&nbsp; * Fast path for a compact (no embedded whitespace), comma-separated run of bare integers
+&nbsp; * inside `[...]` — the common shape for encoder-produced JSON, and the dominant cost in
+&nbsp; * large numeric arrays (e.g. a 1000-element history/metrics array). Falls back to `null`
+&nbsp; * (reader position reset to [startPosition]) on the first byte that doesn&#39;t fit that exact
+&nbsp; * shape — embedded whitespace, a decimal point/exponent, or digit overflow — so the caller
+&nbsp; * retries with the fully general element-by-element loop, which remains the single source of
+&nbsp; * truth for overflow, decimal-coercion, and error-message correctness. Matches the general
+&nbsp; * loop&#39;s own (lack of) `maxCollectionSize` enforcement for primitive arrays — neither path
+&nbsp; * bounds element count here, unlike the `List&lt;T&gt;`/`readList` path.
+&nbsp; *
+&nbsp; * Precondition: called right after `beginArray()` confirms the array is non-empty (the next
+&nbsp; * byte is not `]`), with [startPosition] pointing at that first byte. On success, the reader
+&nbsp; * position is left pointing AT the closing `]` (not past it) — callers must still call
+&nbsp; * `endArray()` themselves so depth-tracking and path-tracking bookkeeping stay correct.
+&nbsp; */
+&nbsp;internal inline fun tryFastIntArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;): IntArray? {
+<b class="fc">&nbsp;    var pos = startPosition</b>
+<b class="fc">&nbsp;    val list = GhostIntList()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        var negative = false</b>
+<b class="pc">&nbsp;        if (pos &lt; limit &amp;&amp; getByte(pos) == C.MINUS_INT) {</b>
+<b class="fc">&nbsp;            negative = true</b>
+<b class="fc">&nbsp;            pos++</b>
 &nbsp;        }
-<b class="fc">&nbsp;        buffer[currentSize++] = value</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Returns the accumulated list elements as a raw [LongArray].
-&nbsp;     */
-&nbsp;    fun toArray(): LongArray {
-<b class="pc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="nc">&nbsp;            return buffer</b>
+<b class="fc">&nbsp;        val digitsStart = pos</b>
+<b class="fc">&nbsp;        var value = 0</b>
+<b class="fc">&nbsp;        var digitCount = 0</b>
+<b class="pc">&nbsp;        while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;            val b = getByte(pos)</b>
+<b class="fc">&nbsp;            if (b &lt; C.ZERO_INT || b &gt; C.NINE_INT) break</b>
+<b class="fc">&nbsp;            if (digitCount &gt;= C.INT_SAFE_DIGITS) {</b>
+<b class="fc">&nbsp;                setPosition(startPosition)</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            value = value * C.BASE_TEN + (b - C.ZERO_INT)</b>
+<b class="fc">&nbsp;            digitCount++</b>
+<b class="fc">&nbsp;            pos++</b>
 &nbsp;        }
-<b class="fc">&nbsp;        return buffer.copyOf(currentSize)</b>
-&nbsp;    }
+<b class="fc">&nbsp;        if (pos == digitsStart) {</b>
+<b class="fc">&nbsp;            setPosition(startPosition)</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        list.add(if (negative) -value else value)</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == C.COMMA_INT -&gt; {</b>
+<b class="fc">&nbsp;                pos++</b>
+&nbsp;            }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Returns true if the collection has no elements.
-&nbsp;     */
-&nbsp;    fun isEmpty(): Boolean {
-<b class="fc">&nbsp;        return currentSize == 0</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == C.CLOSE_ARR_INT -&gt; {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                return list.toArray()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="fc">&nbsp;                setPosition(startPosition)</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Same fast path as [tryFastIntArrayCore], for a run of bare `Long`s.
+&nbsp; *
+&nbsp; * @see tryFastIntArrayCore
+&nbsp; */
+&nbsp;internal inline fun tryFastLongArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;): LongArray? {
+<b class="fc">&nbsp;    var pos = startPosition</b>
+<b class="fc">&nbsp;    val list = GhostLongList()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        var negative = false</b>
+<b class="pc">&nbsp;        if (pos &lt; limit &amp;&amp; getByte(pos) == C.MINUS_INT) {</b>
+<b class="fc">&nbsp;            negative = true</b>
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val digitsStart = pos</b>
+<b class="fc">&nbsp;        var value = 0L</b>
+<b class="fc">&nbsp;        var digitCount = 0</b>
+<b class="pc">&nbsp;        while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;            val b = getByte(pos)</b>
+<b class="fc">&nbsp;            if (b &lt; C.ZERO_INT || b &gt; C.NINE_INT) break</b>
+<b class="fc">&nbsp;            if (digitCount &gt;= C.LONG_SAFE_DIGITS) {</b>
+<b class="fc">&nbsp;                setPosition(startPosition)</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            value = value * C.BASE_TEN + (b - C.ZERO_INT)</b>
+<b class="fc">&nbsp;            digitCount++</b>
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (pos == digitsStart) {</b>
+<b class="nc">&nbsp;            setPosition(startPosition)</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        list.add(if (negative) -value else value)</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == C.COMMA_INT -&gt; {</b>
+<b class="fc">&nbsp;                pos++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == C.CLOSE_ARR_INT -&gt; {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                return list.toArray()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                setPosition(startPosition)</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fast path for a compact, comma-separated run of bare `Double`/`Float` numbers inside
+&nbsp; * `[...]`. Unlike [tryFastIntArrayCore], this does not reimplement number parsing (decimal
+&nbsp; * points and exponents make that considerably more error-prone) — it only bypasses the
+&nbsp; * per-element `hasNext()`/comma-bookkeeping dispatch by peeking that the next byte is a
+&nbsp; * plausible number start (digit or `-`) and delegating the actual scan to [parseNext] (the
+&nbsp; * reader&#39;s own `nextDouble()`/`nextFloat()`), which remains the single source of truth for
+&nbsp; * the numeric grammar. Falls back to `false` (reader position reset to [startPosition]) the
+&nbsp; * moment anything doesn&#39;t fit the compact comma-separated shape.
+&nbsp; *
+&nbsp; * Precondition: same as [tryFastIntArrayCore]. [parseNext] must read from — and leave the
+&nbsp; * reader positioned immediately after — whatever [getPosition] currently reports.
+&nbsp; */
+&nbsp;internal inline fun &lt;T&gt; tryFastDecimalArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    getPosition: () -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;    addTo: MutableList&lt;T&gt;,
+&nbsp;    parseNext: () -&gt; T,
+&nbsp;): Boolean {
+<b class="fc">&nbsp;    var checkPosition = startPosition</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="pc">&nbsp;        if (checkPosition &gt;= limit) {</b>
+<b class="nc">&nbsp;            setPosition(startPosition)</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val first = getByte(checkPosition)</b>
+<b class="pc">&nbsp;        if (first != C.MINUS_INT &amp;&amp; (first &lt; C.ZERO_INT || first &gt; C.NINE_INT)) {</b>
+<b class="fc">&nbsp;            setPosition(startPosition)</b>
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        addTo.add(parseNext())</b>
+<b class="fc">&nbsp;        val afterPosition = getPosition()</b>
+<b class="pc">&nbsp;        if (afterPosition &lt; limit &amp;&amp; getByte(afterPosition) == C.COMMA_INT) {</b>
+<b class="fc">&nbsp;            checkPosition = afterPosition + 1</b>
+<b class="fc">&nbsp;            setPosition(checkPosition)</b>
+&nbsp;            continue
+&nbsp;        }
+<b class="pc">&nbsp;        if (afterPosition &lt; limit &amp;&amp; getByte(afterPosition) == C.CLOSE_ARR_INT) {</b>
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="nc">&nbsp;        setPosition(startPosition)</b>
+<b class="nc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fast path for a compact, comma-separated run of bare `true`/`false` literals inside
+&nbsp; * `[...]` — bypasses the per-element `hasNext()`/comma-bookkeeping dispatch. Does not
+&nbsp; * activate for coerced boolean values (`1`/`0`, quoted strings) — those fall back to the
+&nbsp; * general loop, which already handles `coerceBooleans` correctly.
+&nbsp; *
+&nbsp; * Precondition: same as [tryFastIntArrayCore].
+&nbsp; */
+&nbsp;internal inline fun tryFastBooleanArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;): BooleanArray? {
+<b class="fc">&nbsp;    var pos = startPosition</b>
+<b class="fc">&nbsp;    val list = GhostBooleanList()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        val value: Boolean</b>
+<b class="fc">&nbsp;        if (matchesLiteral(getByte, pos, limit, C.TRUE_BS)) {</b>
+<b class="fc">&nbsp;            value = true</b>
+<b class="fc">&nbsp;            pos += C.TRUE_BS.size</b>
+<b class="fc">&nbsp;        } else if (matchesLiteral(getByte, pos, limit, C.FALSE_BS)) {</b>
+<b class="fc">&nbsp;            value = false</b>
+<b class="fc">&nbsp;            pos += C.FALSE_BS.size</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            setPosition(startPosition)</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        list.add(value)</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == C.COMMA_INT -&gt; {</b>
+<b class="fc">&nbsp;                pos++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == C.CLOSE_ARR_INT -&gt; {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                return list.toArray()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                setPosition(startPosition)</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;        }
 &nbsp;    }
 &nbsp;}
 </code>
@@ -167,7 +364,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -106,8 +106,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Whitespace, comment, indentation, and document-marker handling shared by the core block/flow
 &nbsp; * parser and the anchor/tag/flow-style subsystems. Called extremely frequently (every line
-&nbsp; * transition goes through [GhostYamlFlatReader.skipWhitespaceAndComments]), but moving it to its
-&nbsp; * own file has no runtime cost — see the split&#39;s commit message for why.
+&nbsp; * transition goes through [GhostYamlFlatReader.skipWhitespaceAndComments]).
 &nbsp; */
 &nbsp;
 &nbsp;/** Skips spaces and tabs (inline whitespace — NOT newlines). */
@@ -145,9 +144,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            currentByte == C.HASH_BYTE -&gt; {</b>
-&nbsp;                // A comment must be preceded by whitespace or be the first thing on its line —
-&nbsp;                // &quot;c,#invalid&quot; and &quot;\&quot;value\&quot;#comment&quot; aren&#39;t comments, they&#39;re invalid trailing
-&nbsp;                // text directly touching real content.
+&nbsp;                // A comment must be preceded by whitespace or be first on its line —
+&nbsp;                // &quot;c,#invalid&quot; isn&#39;t a comment, it&#39;s invalid trailing text touching real content.
 <b class="fc">&nbsp;                if (position &gt; 0) {</b>
 <b class="fc">&nbsp;                    val previousByte = localRawData[position - 1]</b>
 <b class="fc">&nbsp;                    if (previousByte != C.SPACE_BYTE &amp;&amp; previousByte != C.TAB_BYTE &amp;&amp;</b>
@@ -209,11 +207,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Skips `%YAML`/`%TAG` directives and an optional `---` document-start marker.
-&nbsp; *
-&nbsp; * Returns true if an explicit `---` marker was consumed. Callers need this to tell an
-&nbsp; * explicit-but-empty document (`---` followed immediately by end of input, which is a valid
-&nbsp; * document whose value is null) apart from genuinely having no more input to read.
+&nbsp; * Skips `%YAML`/`%TAG` directives and an optional `---` document-start marker. Returns true if
+&nbsp; * an explicit `---` was consumed, so callers can tell an explicit-but-empty document (`---`
+&nbsp; * immediately followed by EOF, valid with a null value) apart from having no more input.
 &nbsp; */
 &nbsp;internal fun GhostYamlFlatReader.skipDirectivesAndDocumentStart(): Boolean {
 <b class="fc">&nbsp;    val localLimit = limit</b>
@@ -311,10 +307,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Skips a `...` document end marker if present, requiring only whitespace or a comment to
-&nbsp; * follow on the same line. Returns true if a marker was consumed — after an explicit `...`,
-&nbsp; * the *next* document is allowed to start without a `---` at all (per the YAML stream grammar),
-&nbsp; * so callers should not apply trailing-content-after-a-document restrictions when this returns
-&nbsp; * true.
+&nbsp; * follow on the same line. Returns true if a marker was consumed — after an explicit `...`, the
+&nbsp; * *next* document may start without a `---` at all, so callers should skip trailing-content
+&nbsp; * restrictions when this returns true.
 &nbsp; */
 &nbsp;internal fun GhostYamlFlatReader.skipDocumentEnd(): Boolean {
 <b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
@@ -415,7 +410,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

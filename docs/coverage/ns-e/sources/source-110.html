@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.9%
+    83.3%
   </span>
   <span class="absValue">
-    (10/13)
+    (10/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    29.5%
+    32.6%
   </span>
   <span class="absValue">
-    (70/237)
+    (70/215)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    60.3%
+    64.2%
   </span>
   <span class="absValue">
-    (400/663)
+    (397/618)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    48.6%
+    52.6%
   </span>
   <span class="absValue">
-    (1204/2476)
+    (1185/2254)
   </span>
 </td>
 </tr>
@@ -133,7 +133,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.nextStringOrNull
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -1017,62 +1016,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: Tweet) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_METADATA)</b>
-<b class="nc">&nbsp;    TweetMetadataSerializer.serialize(writer, value.metadata)</b>
-<b class="nc">&nbsp;    writer.writeField(H_CREATED_AT, value.createdAt)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID, value.id)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID_STR, value.idStr)</b>
-<b class="nc">&nbsp;    writer.writeField(H_TEXT, value.text)</b>
-<b class="nc">&nbsp;    writer.writeField(H_SOURCE, value.source)</b>
-<b class="nc">&nbsp;    writer.writeField(H_TRUNCATED, value.truncated)</b>
-<b class="nc">&nbsp;    if (value.inReplyToStatusId != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_IN_REPLY_TO_STATUS_ID, value.inReplyToStatusId)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.inReplyToStatusIdStr != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_IN_REPLY_TO_STATUS_ID_STR, value.inReplyToStatusIdStr)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.inReplyToUserId != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_IN_REPLY_TO_USER_ID, value.inReplyToUserId)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.inReplyToUserIdStr != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_IN_REPLY_TO_USER_ID_STR, value.inReplyToUserIdStr)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.inReplyToScreenName != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_IN_REPLY_TO_SCREEN_NAME, value.inReplyToScreenName)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.writeNameRaw(H_USER)</b>
-<b class="nc">&nbsp;    UserSerializer.serialize(writer, value.user)</b>
-<b class="nc">&nbsp;    if (value.geo != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_GEO, value.geo)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.coordinates != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_COORDINATES, value.coordinates)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.place != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_PLACE, value.place)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.contributors != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_CONTRIBUTORS, value.contributors)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.writeField(H_RETWEET_COUNT, value.retweetCount)</b>
-<b class="nc">&nbsp;    writer.writeField(H_FAVORITE_COUNT, value.favoriteCount)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_ENTITIES)</b>
-<b class="nc">&nbsp;    TweetEntitiesSerializer.serialize(writer, value.entities)</b>
-<b class="nc">&nbsp;    writer.writeField(H_FAVORITED, value.favorited)</b>
-<b class="nc">&nbsp;    writer.writeField(H_RETWEETED, value.retweeted)</b>
-<b class="nc">&nbsp;    writer.writeField(H_POSSIBLY_SENSITIVE, value.possiblySensitive)</b>
-<b class="nc">&nbsp;    if (value.lang != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_LANG, value.lang)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.retweetedStatus != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_RETWEETED_STATUS)</b>
-<b class="nc">&nbsp;      TweetSerializer.serialize(writer, value.retweetedStatus)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: Tweet) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(H_METADATA)</b>
 <b class="fc">&nbsp;    TweetMetadataSerializer.serialize(writer, value.metadata)</b>
@@ -1193,13 +1136,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;metadata\&quot;:{},\&quot;created_at\&quot;:\&quot;\&quot;,\&quot;id\&quot;:0,\&quot;id_str\&quot;:\&quot;\&quot;,\&quot;text\&quot;:\&quot;\&quot;,\&quot;source\&quot;:\&quot;\&quot;,\&quot;truncated\&quot;:false,\&quot;user\&quot;:{},\&quot;retweet_count\&quot;:0,\&quot;favorite_count\&quot;:0,\&quot;entities\&quot;:{},\&quot;favorited\&quot;:false,\&quot;retweeted\&quot;:false}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{\&quot;metadata\&quot;:{},\&quot;created_at\&quot;:\&quot;\&quot;,\&quot;id\&quot;:0,\&quot;id_str\&quot;:\&quot;\&quot;,\&quot;text\&quot;:\&quot;\&quot;,\&quot;source\&quot;:\&quot;\&quot;,\&quot;truncated\&quot;:false,\&quot;user\&quot;:{},\&quot;retweet_count\&quot;:0,\&quot;favorite_count\&quot;:0,\&quot;entities\&quot;:{},\&quot;favorited\&quot;:false,\&quot;retweeted\&quot;:false}&quot;</b>
 &nbsp;          )
@@ -1231,7 +1167,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

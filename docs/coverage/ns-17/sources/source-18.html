@@ -110,7 +110,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextLong
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextLong
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -127,10 +126,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;object ProtoInt64ValueSerializer : GhostSerializer&lt;ProtoInt64Value&gt; {
 &nbsp;    override val typeName: String get() = C.WKT_INT64_VALUE_TYPE
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
-&nbsp;        writer.value(formatLong(value.value))
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
 &nbsp;        writer.value(formatLong(value.value))
 &nbsp;    }
 &nbsp;
@@ -203,7 +198,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

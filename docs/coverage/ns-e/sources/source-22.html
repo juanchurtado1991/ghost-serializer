@@ -49,10 +49,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">CollisionModelSerializer</td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    39.1%
   </span>
   <span class="absValue">
-    (9/27)
+    (9/23)
   </span>
 </td>
 <td class="coverageStat">
@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    54%
+    57.8%
   </span>
   <span class="absValue">
-    (854/1581)
+    (851/1473)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    41.3%
+    45.1%
   </span>
   <span class="absValue">
-    (2922/7080)
+    (2903/6443)
   </span>
 </td>
 </tr>
@@ -112,10 +112,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    86.2%
+    88.9%
   </span>
   <span class="absValue">
-    (112/130)
+    (112/126)
   </span>
 </td>
 <td class="coverageStat">
@@ -128,18 +128,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    56.8%
+    60.5%
   </span>
   <span class="absValue">
-    (957/1684)
+    (954/1576)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45.2%
+    49.1%
   </span>
   <span class="absValue">
-    (3434/7592)
+    (3415/6955)
   </span>
 </td>
 </tr>
@@ -170,7 +170,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.nextInt
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -2660,123 +2659,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  private fun serializeChunk0_GhostJsonFlatWriter(writer: GhostJsonFlatWriter, `value`: CollisionModel) {
-<b class="nc">&nbsp;    writer.writeField(H_A1, value.a1)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A2, value.a2)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A3, value.a3)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A4, value.a4)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A5, value.a5)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A6, value.a6)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A7, value.a7)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A8, value.a8)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A9, value.a9)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A10, value.a10)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A11, value.a11)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A12, value.a12)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A13, value.a13)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A14, value.a14)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A15, value.a15)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A16, value.a16)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A17, value.a17)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A18, value.a18)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A19, value.a19)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A20, value.a20)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A21, value.a21)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A22, value.a22)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A23, value.a23)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A24, value.a24)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A25, value.a25)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A26, value.a26)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A27, value.a27)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A28, value.a28)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A29, value.a29)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A30, value.a30)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A31, value.a31)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A32, value.a32)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A33, value.a33)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A34, value.a34)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A35, value.a35)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A36, value.a36)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A37, value.a37)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A38, value.a38)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A39, value.a39)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A40, value.a40)</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  private fun serializeChunk1_GhostJsonFlatWriter(writer: GhostJsonFlatWriter, `value`: CollisionModel) {
-<b class="nc">&nbsp;    writer.writeField(H_A41, value.a41)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A42, value.a42)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A43, value.a43)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A44, value.a44)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A45, value.a45)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A46, value.a46)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A47, value.a47)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A48, value.a48)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A49, value.a49)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A50, value.a50)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A51, value.a51)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A52, value.a52)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A53, value.a53)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A54, value.a54)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A55, value.a55)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A56, value.a56)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A57, value.a57)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A58, value.a58)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A59, value.a59)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A60, value.a60)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A61, value.a61)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A62, value.a62)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A63, value.a63)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A64, value.a64)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A65, value.a65)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A66, value.a66)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A67, value.a67)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A68, value.a68)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A69, value.a69)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A70, value.a70)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A71, value.a71)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A72, value.a72)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A73, value.a73)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A74, value.a74)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A75, value.a75)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A76, value.a76)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A77, value.a77)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A78, value.a78)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A79, value.a79)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A80, value.a80)</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  private fun serializeChunk2_GhostJsonFlatWriter(writer: GhostJsonFlatWriter, `value`: CollisionModel) {
-<b class="nc">&nbsp;    writer.writeField(H_A81, value.a81)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A82, value.a82)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A83, value.a83)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A84, value.a84)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A85, value.a85)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A86, value.a86)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A87, value.a87)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A88, value.a88)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A89, value.a89)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A90, value.a90)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A91, value.a91)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A92, value.a92)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A93, value.a93)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A94, value.a94)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A95, value.a95)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A96, value.a96)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A97, value.a97)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A98, value.a98)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A99, value.a99)</b>
-<b class="nc">&nbsp;    writer.writeField(H_A100, value.a100)</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: CollisionModel) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    serializeChunk0_GhostJsonFlatWriter(writer, value)</b>
-<b class="nc">&nbsp;    serializeChunk1_GhostJsonFlatWriter(writer, value)</b>
-<b class="nc">&nbsp;    serializeChunk2_GhostJsonFlatWriter(writer, value)</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  private fun serializeChunk0_GhostJsonStringWriter(writer: GhostJsonStringWriter, `value`: CollisionModel) {
 <b class="nc">&nbsp;    writer.writeField(HS_A1, value.a1)</b>
 <b class="nc">&nbsp;    writer.writeField(HS_A2, value.a2)</b>
@@ -2900,13 +2782,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -3147,7 +3022,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

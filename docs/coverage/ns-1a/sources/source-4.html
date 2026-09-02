@@ -116,10 +116,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;private const val NDJSON_NEWLINE: Byte = &#39;\n&#39;.code.toByte()
 &nbsp;
 &nbsp;/**
-&nbsp; * Reactive Encoder for Ghost Serialization.
-&nbsp; *
-&nbsp; * [canEncode] / encode resolve serializers from the full [ResolvableType] so
-&nbsp; * collection bodies use the declared generic serializer, not `value::class`.
+&nbsp; * Reactive Encoder for Ghost Serialization. Resolves serializers from the full
+&nbsp; * [ResolvableType] so collection bodies use the declared generic serializer, not
+&nbsp; * `value::class`.
 &nbsp; */
 <b class="fc">&nbsp;class GhostReactiveEncoder : AbstractEncoder&lt;Any&gt;(</b>
 <b class="fc">&nbsp;    MimeTypeUtils.APPLICATION_JSON,</b>
@@ -197,7 +196,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.4%
+    66.7%
   </span>
   <span class="absValue">
-    (5/7)
+    (4/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63.3%
+    60.7%
   </span>
   <span class="absValue">
-    (19/30)
+    (17/28)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    65.6%
+    61.8%
   </span>
   <span class="absValue">
-    (40/61)
+    (34/55)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66%
+    61.4%
   </span>
   <span class="absValue">
-    (155/235)
+    (127/207)
   </span>
 </td>
 </tr>
@@ -123,7 +123,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.endObject
 &nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -136,16 +135,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    override val typeName: String get() = C.WKT_ANY_TYPE</b>
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoAny) {
-<b class="fc">&nbsp;        writer.beginObject()</b>
-<b class="fc">&nbsp;        writer.name(C.PROTO_TYPE_URL_KEY).value(value.typeUrl)</b>
-<b class="fc">&nbsp;        if (value.value.isNotEmpty()) {</b>
-<b class="fc">&nbsp;            writer.name(C.PROTO_VALUE_KEY)</b>
-<b class="fc">&nbsp;            writer.rawValue(value.value)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        writer.endObject()</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoAny) {
 <b class="fc">&nbsp;        writer.beginObject()</b>
 <b class="fc">&nbsp;        writer.name(C.PROTO_TYPE_URL_KEY).value(value.typeUrl)</b>
 <b class="fc">&nbsp;        if (value.value.isNotEmpty()) {</b>
@@ -174,8 +163,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
 <b class="fc">&nbsp;            when (key) {</b>
 <b class="fc">&nbsp;                C.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
-<b class="pc">&nbsp;                C.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
-<b class="nc">&nbsp;                else -&gt; reader.skipValue()</b>
+<b class="fc">&nbsp;                C.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="fc">&nbsp;                else -&gt; reader.skipValue()</b>
 &nbsp;            }
 <b class="fc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
 <b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
@@ -194,8 +183,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
 <b class="fc">&nbsp;            when (key) {</b>
 <b class="fc">&nbsp;                C.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
-<b class="fc">&nbsp;                C.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
-<b class="fc">&nbsp;                else -&gt; reader.skipValue()</b>
+<b class="pc">&nbsp;                C.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="nc">&nbsp;                else -&gt; reader.skipValue()</b>
 &nbsp;            }
 <b class="fc">&nbsp;            if (reader.peekNextToken() == C.COMMA_INT) {</b>
 <b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
@@ -248,7 +237,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

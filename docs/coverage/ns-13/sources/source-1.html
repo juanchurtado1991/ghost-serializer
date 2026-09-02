@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74.6%
+    79.7%
   </span>
   <span class="absValue">
-    (88/118)
+    (94/118)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.4%
+    93.6%
   </span>
   <span class="absValue">
-    (232/251)
+    (235/251)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.4%
+    90.9%
   </span>
   <span class="absValue">
-    (1183/1324)
+    (1204/1324)
   </span>
 </td>
 </tr>
@@ -166,11 +166,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    internal var nextTokenByte: Int = -1</b>
 &nbsp;
 &nbsp;    @InternalGhostApi
-<b class="fc">&nbsp;    fun _getPosition(): Int = position</b>
+<b class="nc">&nbsp;    fun _getPosition(): Int = position</b>
 &nbsp;
 &nbsp;    @InternalGhostApi
 &nbsp;    fun _setPosition(position: Int) {
-<b class="fc">&nbsp;        this.position = position</b>
+<b class="nc">&nbsp;        this.position = position</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    @InternalGhostApi
@@ -605,11 +605,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Resets the reader&#39;s state to process a new flat byte array payload.
 &nbsp;     */
-<b class="nc">&nbsp;    fun reset(newData: ByteArray, newLimit: Int = newData.size) {</b>
-<b class="nc">&nbsp;        val currentSource = this.source</b>
-<b class="nc">&nbsp;        if (currentSource is ByteArrayGhostSource) {</b>
-<b class="nc">&nbsp;            currentSource.data = newData</b>
-<b class="nc">&nbsp;            reset(currentSource, newLimit)</b>
+<b class="fc">&nbsp;    fun reset(newData: ByteArray, newLimit: Int = newData.size) {</b>
+<b class="fc">&nbsp;        val currentSource = this.source</b>
+<b class="pc">&nbsp;        if (currentSource is ByteArrayGhostSource) {</b>
+<b class="fc">&nbsp;            currentSource.data = newData</b>
+<b class="fc">&nbsp;            reset(currentSource, newLimit)</b>
 &nbsp;        } else {
 <b class="nc">&nbsp;            reset(createByteArraySource(newData), newLimit)</b>
 &nbsp;        }
@@ -668,7 +668,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

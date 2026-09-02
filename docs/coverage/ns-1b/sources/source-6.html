@@ -358,9 +358,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                else -&gt; return null</b>
 &nbsp;            }
 &nbsp;        }
-&nbsp;        // A positive token whose magnitude is exactly -Long.MIN_VALUE accumulates to
-&nbsp;        // Long.MIN_VALUE here; negating it would silently wrap back to Long.MIN_VALUE
-&nbsp;        // instead of overflowing, so treat it as out of range.
+&nbsp;        // A positive token with magnitude exactly -Long.MIN_VALUE accumulates to Long.MIN_VALUE;
+&nbsp;        // negating it would wrap back instead of overflowing, so treat it as out of range.
 <b class="fc">&nbsp;        if (!negative &amp;&amp; value == Long.MIN_VALUE) return null</b>
 <b class="fc">&nbsp;        return if (negative) value else -value</b>
 &nbsp;    }
@@ -461,7 +460,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

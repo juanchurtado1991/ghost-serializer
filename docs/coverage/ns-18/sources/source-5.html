@@ -76,7 +76,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     91.9%
   </span>
   <span class="absValue">
-    (284/309)
+    (283/308)
   </span>
 </td>
 </tr>
@@ -139,7 +139,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     92%
   </span>
   <span class="absValue">
-    (288/313)
+    (287/312)
   </span>
 </td>
 </tr>
@@ -224,9 +224,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val yamlSerializer = serializer as GhostYamlSerializer&lt;Any&gt;</b>
 &nbsp;
 <b class="fc">&nbsp;        return Converter&lt;Any, RequestBody&gt; { value -&gt;</b>
-<b class="fc">&nbsp;            val bytes = ghostYamlInternalUseFlatWriter { writer -&gt;</b>
+<b class="fc">&nbsp;            val bytes = ghostYamlInternalUseFlatWriter { writer, buffer -&gt;</b>
 <b class="fc">&nbsp;                yamlSerializer.serialize(writer, value)</b>
-<b class="fc">&nbsp;                writer.buffer.toByteArray()</b>
+<b class="fc">&nbsp;                buffer.toByteArray()</b>
 &nbsp;            }
 <b class="fc">&nbsp;            bytes.toRequestBody(MEDIA_TYPE)</b>
 &nbsp;        }
@@ -303,7 +303,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

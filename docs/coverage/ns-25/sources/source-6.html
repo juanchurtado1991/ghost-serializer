@@ -55,20 +55,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; *
 &nbsp; * @param name Optional custom name for the model to avoid registry collisions.
 &nbsp; * @param discriminator The JSON field name used to identify the concrete type of `sealed class`.
-&nbsp; *   Defaults to `&quot;type&quot;`. Override this when consuming third-party APIs that use a different
-&nbsp; *   convention (e.g. `&quot;kind&quot;`, `&quot;object&quot;`, `&quot;@type&quot;`).
-&nbsp; *   Has no effect on non-sealed classes.
+&nbsp; *   Defaults to `&quot;type&quot;`; override for third-party APIs using a different convention (e.g.
+&nbsp; *   `&quot;kind&quot;`, `&quot;@type&quot;`). Has no effect on non-sealed classes.
 &nbsp; * @param inferred Whether the type should be inferred automatically.
-&nbsp; * @param textChannel When `true` (the default), generates native
-&nbsp; *   `GhostJsonStringReader` deserialize/serialize overloads for
-&nbsp; *   this model and any nested `@GhostSerialization` types reachable from its property graph.
-&nbsp; *   Without a native string-channel overload, decoding from a `String` (e.g.
-&nbsp; *   `Ghost.deserialize&lt;T&gt;(json: String)`) falls back to re-encoding the whole document to UTF-8
-&nbsp; *   and delegating to the byte-mode reader — correct, but not zero-allocation. Set to `false`
-&nbsp; *   only to trade that String-mode performance for smaller generated code (roughly a third less
-&nbsp; *   per model) on types that are only ever decoded from bytes/streams. Module-wide
-&nbsp; *   `ghost.textChannel=false` forces the bridging behavior for every model in the module
-&nbsp; *   regardless of this per-class value, for projects that want to opt out everywhere at once.
+&nbsp; * @param textChannel When `true` (the default), generates native `GhostJsonStringReader`
+&nbsp; *   overloads so decoding a `String` avoids re-encoding to UTF-8 and delegating to the byte
+&nbsp; *   reader. Set `false` to trade that for smaller generated code on types only ever decoded
+&nbsp; *   from bytes/streams; module-wide `ghost.textChannel=false` forces this for every model.
 &nbsp; *
 &nbsp; * YAML serialization is **not** enabled by this annotation alone — add [GhostYamlSerialization]
 &nbsp; * on the same class when you need `Ghost.decodeFromYaml` / framework YAML adapters.
@@ -104,7 +97,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

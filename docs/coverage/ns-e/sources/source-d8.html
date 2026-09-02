@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80%
+    88.9%
   </span>
   <span class="absValue">
-    (8/10)
+    (8/9)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    42.9%
+    50%
   </span>
   <span class="absValue">
-    (6/14)
+    (6/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.8%
+    78.9%
   </span>
   <span class="absValue">
-    (48/65)
+    (45/57)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.8%
+    75.5%
   </span>
   <span class="absValue">
-    (167/236)
+    (148/196)
   </span>
 </td>
 </tr>
@@ -114,7 +114,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextProtoUInt64
 &nbsp;import com.ghost.serialization.parser.streaming.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.streaming.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import kotlin.ULong
 &nbsp;import okio.ByteString
@@ -220,15 +219,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: ProtoUInt64FieldMessage) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    if (value.shard_id != 0uL) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_SHARDID)</b>
-<b class="nc">&nbsp;      writer.value(value.shard_id.toString())</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: ProtoUInt64FieldMessage) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    if (value.shard_id != 0uL) {</b>
 <b class="fc">&nbsp;      writer.writeNameRaw(H_SHARDID)</b>
@@ -243,13 +233,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;shardId\&quot;:null}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;shardId\&quot;:null}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;  }
@@ -277,7 +260,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

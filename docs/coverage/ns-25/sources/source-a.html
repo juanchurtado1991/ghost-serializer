@@ -51,9 +51,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * Maps a wire discriminator value to a nullable payload field on a [GhostJsonEnvelope] class.
 &nbsp; *
-&nbsp; * The generated router selects this property when the envelope discriminator matches [value].
-&nbsp; * When [target] is set to a [GhostSerialization] model, `routeTyped` / `parseTyped` decode via
-&nbsp; * zero-copy `RawJson` slice parsing.
+&nbsp; * The router selects this property when the discriminator matches [value]. If [target] is a
+&nbsp; * [GhostSerialization] model, `routeTyped`/`parseTyped` decode via zero-copy `RawJson` slicing.
 &nbsp; *
 &nbsp; * @param value Wire discriminator string (e.g. `&quot;DEVICE_EVENT&quot;`, `&quot;invoice.paid&quot;`).
 &nbsp; * @param target Typed model to decode into; default means return `RawJson` only.
@@ -87,7 +86,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

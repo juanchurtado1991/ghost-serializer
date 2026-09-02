@@ -301,11 +301,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Encodes [value] using its registered [GhostSerializer]. proto3 JSON mapping (int64
-&nbsp;     * quoting, Base64 `bytes`, default-value omission) is already applied by the KSP-generated
-&nbsp;     * serializer for `@GhostProtoSerialization` classes, so this simply delegates to
-&nbsp;     * [Ghost.encodeToBytes] — kept here so callers have one consistent `GhostProto.*`
-&nbsp;     * surface for both directions instead of mixing it with `Ghost.*`.
+&nbsp;     * Encodes [value] using its registered [GhostSerializer]. proto3 JSON mapping is already
+&nbsp;     * applied by the KSP-generated serializer, so this delegates to [Ghost.encodeToBytes] —
+&nbsp;     * kept here for a consistent `GhostProto.*` surface on both directions.
 &nbsp;     */
 <b class="fc">&nbsp;    inline fun &lt;reified T : Any&gt; encodeToBytes(value: T): ByteArray = Ghost.encodeToBytes(value)</b>
 &nbsp;
@@ -368,7 +366,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

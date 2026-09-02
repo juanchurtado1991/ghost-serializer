@@ -109,22 +109,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Implementation behind [GhostYamlFlatReader]&#39;s `JsonReader`-compatible cursor traversal API
-&nbsp; * (`beginObject`/`endObject`/`nextString`/`nextInt`/etc.) — a second-phase facade that walks the
-&nbsp; * already-fully-parsed in-memory `Map`/`List` AST built by [GhostYamlFlatReader.readDocument] via
-&nbsp; * plain iterators. Zero byte-level scanning happens here, and nothing here calls back into the
-&nbsp; * byte-level parser (`readValue`, `readBlockMapping`, ...).
+&nbsp; * (`beginObject`/`endObject`/`nextString`/etc.) — a second-phase facade walking the already-fully
+&nbsp; * parsed in-memory `Map`/`List` AST from [GhostYamlFlatReader.readDocument] via plain iterators.
+&nbsp; * No byte-level scanning or calls back into the byte-level parser happen here.
 &nbsp; *
-&nbsp; * Every method in [GhostYamlFlatReader] itself stays a thin one-line delegate to the identically-
-&nbsp; * named `xxxImpl` function here — deliberately, not following the plain extension-function pattern
-&nbsp; * the other subsystems use: `beginObject`/`nextString`/etc. are public members called by
-&nbsp; * KSP-generated `deserialize()` bodies that may live in a *different Gradle module&#39;s package*
-&nbsp; * (see `ghost-compiler`&#39;s `GhostEmitterConstants`), and Kotlin resolves true class members via the
-&nbsp; * receiver type with zero imports — converting them to extension functions directly would require
-&nbsp; * every downstream consumer&#39;s generated code to gain a new import the compiler doesn&#39;t emit today.
-&nbsp; * The state fields these functions manipulate (`traversalStack`, `currentMap`, `nextValue`, etc.)
-&nbsp; * necessarily stay declared on `GhostYamlFlatReader` itself — Kotlin classes can&#39;t span files, and
-&nbsp; * `readList`/`readSet`/`readMap` are `public inline fun` whose `@PublishedApi internal` field
-&nbsp; * access has to resolve against wherever the class body lives.
+&nbsp; * Every [GhostYamlFlatReader] method is a thin delegate to the identically-named `xxxImpl`
+&nbsp; * function here, not a plain extension function like other subsystems use: `beginObject` etc.
+&nbsp; * are public members called by KSP-generated `deserialize()` bodies that may live in a
+&nbsp; * *different Gradle module&#39;s package*, and Kotlin resolves class members via receiver type with
+&nbsp; * zero imports — extension functions would require every downstream consumer&#39;s generated code
+&nbsp; * to gain an import the compiler doesn&#39;t emit today. The state fields (`traversalStack`,
+&nbsp; * `currentMap`, `nextValue`, etc.) stay declared on `GhostYamlFlatReader` itself since Kotlin
+&nbsp; * classes can&#39;t span files, and `readList`/`readSet`/`readMap`&#39;s `@PublishedApi internal` field
+&nbsp; * access must resolve against wherever the class body lives.
 &nbsp; */
 &nbsp;
 &nbsp;@OptIn(InternalGhostApi::class)
@@ -582,7 +579,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

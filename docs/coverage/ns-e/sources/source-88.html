@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    90.9%
   </span>
   <span class="absValue">
-    (10/12)
+    (10/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    41.7%
+    37.5%
   </span>
   <span class="absValue">
-    (20/48)
+    (18/48)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66%
+    68.5%
   </span>
   <span class="absValue">
-    (105/159)
+    (100/146)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    59.2%
+    59.7%
   </span>
   <span class="absValue">
-    (389/657)
+    (356/596)
   </span>
 </td>
 </tr>
@@ -117,7 +117,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.endObject
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -227,9 +226,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="fc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
-<b class="pc">&nbsp;      if ((mask0 and MASK_MEDIUM) == 0L) {</b>
-<b class="fc">&nbsp;        reader.throwMissingRequiredField(&quot;medium&quot;)</b>
+<b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="nc">&nbsp;      if ((mask0 and MASK_MEDIUM) == 0L) {</b>
+<b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;medium&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_SMALL) == 0L) {</b>
 <b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;small&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_THUMB) == 0L) {</b>
@@ -345,19 +344,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: MediaSizes) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_MEDIUM)</b>
-<b class="nc">&nbsp;    MediaSizeSerializer.serialize(writer, value.medium)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_SMALL)</b>
-<b class="nc">&nbsp;    MediaSizeSerializer.serialize(writer, value.small)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_THUMB)</b>
-<b class="nc">&nbsp;    MediaSizeSerializer.serialize(writer, value.thumb)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_LARGE)</b>
-<b class="nc">&nbsp;    MediaSizeSerializer.serialize(writer, value.large)</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: MediaSizes) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(H_MEDIUM)</b>
 <b class="fc">&nbsp;    MediaSizeSerializer.serialize(writer, value.medium)</b>
@@ -392,13 +378,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;medium\&quot;:{},\&quot;small\&quot;:{},\&quot;thumb\&quot;:{},\&quot;large\&quot;:{}}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{\&quot;medium\&quot;:{},\&quot;small\&quot;:{},\&quot;thumb\&quot;:{},\&quot;large\&quot;:{}}&quot;</b>
 &nbsp;          )
@@ -430,7 +409,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

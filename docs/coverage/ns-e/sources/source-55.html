@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    63.6%
   </span>
   <span class="absValue">
-    (8/12)
+    (7/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    17.9%
+    15.4%
   </span>
   <span class="absValue">
-    (7/39)
+    (6/39)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    53.8%
+    48.8%
   </span>
   <span class="absValue">
-    (71/132)
+    (59/121)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45%
+    41.5%
   </span>
   <span class="absValue">
-    (241/536)
+    (201/484)
   </span>
 </td>
 </tr>
@@ -117,7 +117,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.endObject
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -227,16 +226,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [GhostDiscriminatorTestPayload].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): GhostDiscriminatorTestPayload {
-<b class="fc">&nbsp;    var defaultEventValue: ApiEventDefault? = null</b>
-<b class="fc">&nbsp;    var kindEventValue: GhostKindEvent? = null</b>
-<b class="fc">&nbsp;    var stripeObjectValue: StripeObject? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var defaultEventValue: ApiEventDefault? = null</b>
+<b class="nc">&nbsp;    var kindEventValue: GhostKindEvent? = null</b>
+<b class="nc">&nbsp;    var stripeObjectValue: StripeObject? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          defaultEventValue = ApiEventDefaultSerializer.deserialize(reader)</b>
+<b class="nc">&nbsp;          defaultEventValue = ApiEventDefaultSerializer.deserialize(reader)</b>
 <b class="nc">&nbsp;          mask0 = mask0 or MASK_DEFAULTEVENT</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
@@ -324,17 +323,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: GhostDiscriminatorTestPayload) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_DEFAULTEVENT)</b>
-<b class="nc">&nbsp;    ApiEventDefaultSerializer.serialize(writer, value.defaultEvent)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_KINDEVENT)</b>
-<b class="nc">&nbsp;    GhostKindEventSerializer.serialize(writer, value.kindEvent)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_STRIPEOBJECT)</b>
-<b class="nc">&nbsp;    StripeObjectSerializer.serialize(writer, value.stripeObject)</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: GhostDiscriminatorTestPayload) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(HS_DEFAULTEVENT)</b>
@@ -352,13 +340,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;defaultEvent\&quot;:{},\&quot;kindEvent\&quot;:{},\&quot;stripeObject\&quot;:{}}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;defaultEvent\&quot;:{},\&quot;kindEvent\&quot;:{},\&quot;stripeObject\&quot;:{}}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -393,7 +374,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

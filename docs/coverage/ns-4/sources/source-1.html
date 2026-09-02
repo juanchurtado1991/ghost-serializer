@@ -108,13 +108,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Extracts constructor-parameter default expressions from Kotlin source text.
-&nbsp; *
-&nbsp; * KSP only exposes [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the
-&nbsp; * expression itself. When the declaring file is available via
-&nbsp; * [com.google.devtools.ksp.symbol.FileLocation], this extractor reads the source, isolates
-&nbsp; * the parameter&#39;s RHS, and accepts it only when it matches a strict literal whitelist.
-&nbsp; * Anything unrecognized returns `null` so callers can fall back to `.copy()`.
+&nbsp; * Extracts constructor-parameter default expressions from Kotlin source text, since KSP only
+&nbsp; * exposes [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the expression
+&nbsp; * itself. Reads the declaring file and accepts the parameter&#39;s RHS only when it matches a
+&nbsp; * strict literal whitelist; anything unrecognized returns `null` so callers fall back to `.copy()`.
 &nbsp; */
 &nbsp;internal object DefaultExpressionExtractor {
 &nbsp;
@@ -193,19 +190,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                else -&gt; {
 <b class="fc">&nbsp;                    if (ch.isJavaIdentifierStart() &amp;&amp; matchesIdentifier(source, index, paramName)) {</b>
 <b class="fc">&nbsp;                        val after = index + paramName.length</b>
-&nbsp;                        // Must look like a parameter binder: name followed by &#39;:&#39; or annotation-free type start.
-&nbsp;                        // Reject when the identifier is a receiver/qualifier (name.) or call (name().
+&nbsp;                        // Parameter binder form: name followed by &#39;:&#39; — rejects receiver/call
+&nbsp;                        // sites like `name.` or `name(`.
 <b class="pc">&nbsp;                        if (after &lt; source.length) {</b>
 <b class="fc">&nbsp;                            val nextSignificant = skipTrivia(source, after)</b>
 <b class="pc">&nbsp;                            if (nextSignificant &lt; source.length) {</b>
 <b class="fc">&nbsp;                                val nextChar = source[nextSignificant]</b>
-&nbsp;                                // Parameter form: `name:` or `name /* */ :` — also allow `@Ann name:`
-&nbsp;                                // after we already landed on the name.
 <b class="pc">&nbsp;                                if (nextChar == CHAR_COLON) return index</b>
 &nbsp;                            }
 &nbsp;                        }
 &nbsp;                    }
-&nbsp;                    // Advance one identifier or one char.
 <b class="fc">&nbsp;                    if (ch.isJavaIdentifierStart()) {</b>
 <b class="fc">&nbsp;                        index++</b>
 <b class="pc">&nbsp;                        while (index &lt; end &amp;&amp; source[index].isJavaIdentifierPart()) index++</b>
@@ -215,8 +209,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
-&nbsp;        // Fallback: scan from file start near the same line window if the location pointed
-&nbsp;        // at an annotation above the parameter.
+&nbsp;        // Fallback: the location may have pointed at an annotation above the parameter.
 <b class="nc">&nbsp;        if (from &gt; 0) {</b>
 <b class="nc">&nbsp;            val back = (from - C.DEFAULT_EXPR_MAX_PARAM_BACKTRACK_CHARS).coerceAtLeast(0)</b>
 <b class="nc">&nbsp;            return findParameterName(source, paramName, back)?.takeIf { it &gt;= back }</b>
@@ -402,7 +395,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 &nbsp;
 &nbsp;                CHAR_NEWLINE -&gt; {
-&nbsp;                    // Allow multiline defaults while nested; at depth 0 keep going until `,` / `)`.
+&nbsp;                    // Newlines don&#39;t end the expression; only unnested `,`/`)` do.
 <b class="fc">&nbsp;                    index++</b>
 &nbsp;                }
 &nbsp;
@@ -445,7 +438,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        if (from &gt;= source.length) return from</b>
 <b class="fc">&nbsp;        val quote = source[from]</b>
 <b class="pc">&nbsp;        if (quote != CHAR_DOUBLE_QUOTE &amp;&amp; quote != CHAR_SINGLE_QUOTE) return from + 1</b>
-&nbsp;        // Triple-quoted string.
 <b class="pc">&nbsp;        if (quote == CHAR_DOUBLE_QUOTE &amp;&amp; from + 2 &lt; source.length &amp;&amp;</b>
 <b class="pc">&nbsp;            source[from + 1] == CHAR_DOUBLE_QUOTE &amp;&amp; source[from + 2] == CHAR_DOUBLE_QUOTE</b>
 &nbsp;        ) {
@@ -536,10 +528,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun isEnumOrConstRef(value: String): Boolean {
-&nbsp;        // Qual.Name or Name — identifiers joined by dots, no calls/generics.
+&nbsp;        // Qual.Name or Name only — reject lowercase-only identifiers (likely variables).
 <b class="fc">&nbsp;        if (!ENUM_REF_REGEX.matches(value)) return false</b>
-&nbsp;        // Reject lowercase-only single identifiers that look like variables (a, foo).
-&nbsp;        // Allow ALL_CAPS consts and Capitalized enum entries / class refs.
 <b class="fc">&nbsp;        val parts = value.split(CHAR_DOT)</b>
 <b class="fc">&nbsp;        return parts.all { part -&gt;</b>
 <b class="fc">&nbsp;            part.first().isUpperCase() ||</b>
@@ -608,7 +598,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

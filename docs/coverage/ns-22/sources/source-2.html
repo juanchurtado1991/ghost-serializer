@@ -114,14 +114,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;class GhostYamlException(
 &nbsp;    private val baseMessage: String,
-&nbsp;    /**
-&nbsp;     * JSONPath-style location for cursor-phase failures (e.g. `$.addresses[1].zip`).
-&nbsp;     * Defaults to `&quot;$&quot;` for parse-phase errors and unknown locations.
-&nbsp;     */
+&nbsp;    /** JSONPath-style location for cursor-phase failures; `&quot;$&quot;` for parse-phase/unknown. */
 &nbsp;    val path: String = &quot;$&quot;,
-&nbsp;    /**
-&nbsp;     * Optional fix suggestion. Omitted when there is no clear remediation.
-&nbsp;     */
+&nbsp;    /** Optional fix suggestion. */
 &nbsp;    val hint: String? = null,
 &nbsp;) : RuntimeException() {
 &nbsp;
@@ -194,7 +189,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

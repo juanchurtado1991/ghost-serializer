@@ -52,31 +52,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (31/31)
+    (29/29)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.1%
+    79.2%
   </span>
   <span class="absValue">
-    (217/278)
+    (209/264)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.7%
+    94.5%
   </span>
   <span class="absValue">
-    (268/283)
+    (259/274)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.3%
+    92.6%
   </span>
   <span class="absValue">
-    (1653/1790)
+    (1584/1711)
   </span>
 </td>
 </tr>
@@ -115,31 +115,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (32/32)
+    (30/30)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.1%
+    79.2%
   </span>
   <span class="absValue">
-    (217/278)
+    (209/264)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.7%
+    94.5%
   </span>
   <span class="absValue">
-    (269/284)
+    (260/275)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.4%
+    92.7%
   </span>
   <span class="absValue">
-    (1671/1808)
+    (1602/1729)
   </span>
 </td>
 </tr>
@@ -167,6 +167,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.analysis.isRawJson
 &nbsp;import com.ghost.serialization.compiler.analysis.isSet
 &nbsp;import com.ghost.serialization.compiler.analysis.isString
+&nbsp;import com.ghost.serialization.compiler.analysis.isValueClassType
+&nbsp;import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
 &nbsp;import com.ghost.serialization.compiler.model.GhostSerializerContext
 &nbsp;import com.google.devtools.ksp.symbol.KSType
@@ -210,8 +212,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                if (type.isMarkedNullable) {</b>
 <b class="fc">&nbsp;                    hasNullable = true</b>
 &nbsp;                }
-<b class="fc">&nbsp;                if (isValueClassType(type)) {</b>
-<b class="fc">&nbsp;                    val inner = resolveValueClassInnerType(type)</b>
+<b class="fc">&nbsp;                if (type.isValueClassType()) {</b>
+<b class="fc">&nbsp;                    val inner = type.resolveValueClassInnerType()</b>
 <b class="pc">&nbsp;                    if (inner != null) {</b>
 <b class="fc">&nbsp;                        collectTypes(inner)</b>
 &nbsp;                    }
@@ -364,7 +366,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val hasRawJson = allTypes.any { it.isRawJson() }</b>
 <b class="fc">&nbsp;        val needsNextString = needsNextStringImport() ||</b>
 <b class="fc">&nbsp;                byteArrayClassifications.contains(ByteArrayCoverage.COVERED)</b>
-&nbsp;        // Streaming reader extensions (GhostJsonReader.deserialize).
+&nbsp;        // GhostJsonReader.deserialize: nextInt/nextLong/nextFloat/nextDouble/nextULong/
+&nbsp;        // nextString/nextChar/nextBoolean are all top-level extensions on the streaming
+&nbsp;        // reader package and need an explicit import.
 <b class="fc">&nbsp;        if (needsNextIntImport()) {</b>
 <b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_INT_NAME)</b>
 &nbsp;        }
@@ -373,9 +377,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="fc">&nbsp;        if (needsNextULongImport()) {</b>
 <b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_ULONG_NAME)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        if (needsNextProtoUInt64Import()) {</b>
-<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_PROTO_UINT64_NAME)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (needsNextString) {</b>
 <b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_STRING_NAME)</b>
@@ -392,6 +393,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="fc">&nbsp;        if (needsNextBooleanImport()) {</b>
 <b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_BOOLEAN_NAME)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (needsNextProtoUInt64Import()) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_PROTO_UINT64_NAME)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (ctx.textChannel) {</b>
 <b class="fc">&nbsp;            if (needsNextIntImport()) {</b>
@@ -477,8 +481,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            if (type.isByteArray()) {</b>
 <b class="fc">&nbsp;                return if (isProto) ByteArrayCoverage.COVERED else ByteArrayCoverage.UNCOVERED</b>
 &nbsp;            }
-<b class="fc">&nbsp;            if (isValueClassType(type)) {</b>
-<b class="pc">&nbsp;                val inner = resolveValueClassInnerType(type) ?: return null</b>
+<b class="fc">&nbsp;            if (type.isValueClassType()) {</b>
+<b class="pc">&nbsp;                val inner = type.resolveValueClassInnerType() ?: return null</b>
 <b class="fc">&nbsp;                return classify(inner, isProto)</b>
 &nbsp;            }
 <b class="fc">&nbsp;            if (type.isList() || type.isSet()) {</b>
@@ -613,8 +617,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    private fun typeNeedsNestedScalar(type: KSType, leaf: (KSType) -&gt; Boolean): Boolean {
 &nbsp;        // List&lt;AccountId&gt; where AccountId is a value class over Long still emits nextLong().
-<b class="fc">&nbsp;        if (isValueClassType(type)) {</b>
-<b class="pc">&nbsp;            val inner = resolveValueClassInnerType(type) ?: return false</b>
+<b class="fc">&nbsp;        if (type.isValueClassType()) {</b>
+<b class="pc">&nbsp;            val inner = type.resolveValueClassInnerType() ?: return false</b>
 <b class="fc">&nbsp;            return leaf(inner)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        if (type.isList() || type.isSet()) {</b>
@@ -626,21 +630,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            return leaf(value)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return false</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun isValueClassType(type: KSType): Boolean {
-<b class="fc">&nbsp;        val declaration =</b>
-<b class="pc">&nbsp;            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return false</b>
-<b class="fc">&nbsp;        return declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.VALUE) ||</b>
-<b class="fc">&nbsp;                declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.INLINE)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun resolveValueClassInnerType(type: KSType): KSType? {
-<b class="fc">&nbsp;        val declaration =</b>
-<b class="pc">&nbsp;            type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration ?: return null</b>
-<b class="pc">&nbsp;        val primaryConstructor = declaration.primaryConstructor ?: return null</b>
-<b class="pc">&nbsp;        val param = primaryConstructor.parameters.firstOrNull() ?: return null</b>
-<b class="fc">&nbsp;        return param.type.resolve()</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -666,7 +655,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

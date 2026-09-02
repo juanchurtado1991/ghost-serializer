@@ -123,8 +123,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * **Read path:** Extracts the request body as a [ByteArray] and feeds it
 &nbsp; * directly to the pooled flat reader, avoiding intermediate Okio wrappers.
 &nbsp; *
-&nbsp; * **Write path:** Serializes through the pooled monomorphic
-&nbsp; * `GhostJsonFlatWriter` and writes the resulting [ByteArray] in a single bulk call.
+&nbsp; * **Write path:** Serializes through the pooled in-memory `GhostJsonWriter`
+&nbsp; * and writes the resulting [ByteArray] in a single bulk call.
 &nbsp; */
 <b class="fc">&nbsp;class GhostHttpMessageConverter : AbstractGenericHttpMessageConverter&lt;Any&gt;(</b>
 <b class="fc">&nbsp;    MediaType.APPLICATION_JSON,</b>
@@ -231,7 +231,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

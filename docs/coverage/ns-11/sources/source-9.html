@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonNumberParseHelpersKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonPathTracker</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonNumberParseHelpersKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostJsonPathTracker (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,7 +46,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonNumberParseHelpersKt</td>
+  <td class="name">GhostJsonPathTracker</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (36/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (51/51)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.8%
+  </span>
+  <span class="absValue">
+    (331/335)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostJsonPathTracker$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,18 +92,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    96.4%
   </span>
   <span class="absValue">
-    (11/11)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    98.7%
-  </span>
-  <span class="absValue">
-    (150/152)
+    (27/28)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,7 +103,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (198/198)
+    (6/6)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,11 +111,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (903/903)
+    (71/71)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (63/70)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (57/57)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99%
+  </span>
+  <span class="absValue">
+    (402/406)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -99,468 +157,170 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
-&nbsp;
-&nbsp;package com.ghost.serialization.parser.common
-&nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
 &nbsp;/**
-&nbsp; * Shared numeric-parse kernels for flat, streaming, and string JSON readers.
+&nbsp; * Lightweight JSONPath breadcrumb stack for parse errors.
 &nbsp; *
-&nbsp; * Reader-specific state (position, nextTokenByte, getByte, skipWhitespace, errors) is
-&nbsp; * supplied via inlined adapters so each call site stays monomorphic after inlining.
-&nbsp; */
-&nbsp;
-&nbsp;/**
-&nbsp; * Prepares the numeric header: optional coercion quote and leading minus.
+&nbsp; * Happy path: push/pop of ints + [String] refs only — no [StringBuilder] until [formatPath]
+&nbsp; * is called from [com.ghost.serialization.exception.GhostJsonException] construction.
 &nbsp; *
-&nbsp; * @return Bitmask of [C.NUMERIC_HEADER_QUOTED] and/or [C.NUMERIC_HEADER_NEGATIVE].
-&nbsp; */
-&nbsp;internal inline fun prepareNumericHeaderCore(
-&nbsp;    getNextTokenByte: () -&gt; Int,
-&nbsp;    setNextTokenByte: (Int) -&gt; Unit,
-&nbsp;    getPosition: () -&gt; Int,
-&nbsp;    setPosition: (Int) -&gt; Unit,
-&nbsp;    limit: Int,
-&nbsp;    coerceStringsToNumbers: Boolean,
-&nbsp;    skipWhitespace: () -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Int {
-<b class="fc">&nbsp;    if (getNextTokenByte() == C.RESET_TOKEN_BYTE) {</b>
-<b class="fc">&nbsp;        skipWhitespace()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (getPosition() &gt;= limit) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_NUMBER)</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    var header = 0</b>
-<b class="fc">&nbsp;    var token = getNextTokenByte()</b>
-&nbsp;
-<b class="fc">&nbsp;    if (token == C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;        if (!coerceStringsToNumbers) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_COERCION_DISABLED)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        setPosition(getPosition() + 1)</b>
-<b class="fc">&nbsp;        setNextTokenByte(C.RESET_TOKEN_BYTE)</b>
-<b class="fc">&nbsp;        skipWhitespace()</b>
-<b class="fc">&nbsp;        if (getPosition() &gt;= limit) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_NUMBER)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        token = getNextTokenByte()</b>
-<b class="fc">&nbsp;        header = header or C.NUMERIC_HEADER_QUOTED</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (token == C.MINUS_INT) {</b>
-<b class="fc">&nbsp;        if (getPosition() + 1 &gt;= limit) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_ISOLATED_MINUS)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        setPosition(getPosition() + 1)</b>
-<b class="fc">&nbsp;        setNextTokenByte(C.RESET_TOKEN_BYTE)</b>
-<b class="fc">&nbsp;        header = header or C.NUMERIC_HEADER_NEGATIVE</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return header</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Parses the exponent after an `e`/`E` marker at [startPosition].
+&nbsp; * Segment kinds:
+&nbsp; * - **Key** — object field name (after a successful select / [nextKey])
+&nbsp; * - **Object** — anonymous `{` frame (so nested [endObject] does not pop a parent key)
+&nbsp; * - **Array** — element index (`-1` = before first element; [enterArrayElement] advances)
 &nbsp; *
-&nbsp; * @param startPosition Index of the `e`/`E` marker.
-&nbsp; * @return Signed exponent value; [setPosition] receives the index after the last digit.
+&nbsp; * Each stack frame packs its kind and (for array frames) its element index into one `Int`
+&nbsp; * (`slots[i]`) instead of two parallel arrays — bits 0-1 are the kind tag, bits 2-31 are the
+&nbsp; * array index biased by +1 (so the `-1` &quot;before first element&quot; sentinel maps to `0` and needs
+&nbsp; * no sign bit). `keys` stays a separate array since it holds references.
 &nbsp; */
-&nbsp;internal inline fun parseExponentValueCore(
-&nbsp;    startPosition: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    setPosition: (Int) -&gt; Unit,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Int {
-<b class="fc">&nbsp;    var position = startPosition + 1</b>
-<b class="fc">&nbsp;    var isExpNegative = false</b>
-<b class="fc">&nbsp;    if (position &lt; limit) {</b>
-<b class="fc">&nbsp;        val marker = getByte(position)</b>
-<b class="fc">&nbsp;        if (marker == C.MINUS_INT) {</b>
-<b class="fc">&nbsp;            isExpNegative = true</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        } else if (marker == C.PLUS_INT) {
-<b class="fc">&nbsp;            position++</b>
+<b class="fc">&nbsp;@PublishedApi</b>
+<b class="fc">&nbsp;internal class GhostJsonPathTracker(initialCapacity: Int = 16) {</b>
+<b class="fc">&nbsp;    private var slots: IntArray = IntArray(initialCapacity)</b>
+<b class="fc">&nbsp;    private var keys: Array&lt;String?&gt; = arrayOfNulls(initialCapacity)</b>
+&nbsp;    private var size: Int = 0
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun reset() {
+<b class="fc">&nbsp;        size = 0</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal fun mark(): Int = size</b>
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun resetTo(mark: Int) {
+<b class="pc">&nbsp;        size = if (mark &lt; 0) 0 else mark.coerceAtMost(size)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // pushObject/pushArray don&#39;t write `keys[size]`, and pushKey/pushObject leave the index
+&nbsp;    // bits of `slots[size]` at zero — formatPath() only ever reads `keys[i]` under KIND_KEY and
+&nbsp;    // the index bits under KIND_ARRAY, so a stale value left over from a shallower frame at the
+&nbsp;    // same stack depth is never observed; only the kind tag needs to be current for every push.
+&nbsp;
+&nbsp;    fun pushKey(name: String) {
+<b class="fc">&nbsp;        ensureCapacity()</b>
+<b class="fc">&nbsp;        slots[size] = KIND_KEY</b>
+<b class="fc">&nbsp;        keys[size] = name</b>
+<b class="fc">&nbsp;        size++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun pushObject() {
+<b class="fc">&nbsp;        ensureCapacity()</b>
+<b class="fc">&nbsp;        slots[size] = KIND_OBJECT</b>
+<b class="fc">&nbsp;        size++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun pushArray() {
+<b class="fc">&nbsp;        ensureCapacity()</b>
+<b class="fc">&nbsp;        slots[size] = KIND_ARRAY // biased index 0 == actual index -1</b>
+<b class="fc">&nbsp;        size++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Call when [hasNext] returns true inside an array, or before each [readList] element. */
+&nbsp;    @PublishedApi
+&nbsp;    internal fun enterArrayElement() {
+<b class="pc">&nbsp;        if (size == 0) return</b>
+<b class="fc">&nbsp;        val i = size - 1</b>
+<b class="fc">&nbsp;        val slot = slots[i]</b>
+<b class="fc">&nbsp;        if (slot and KIND_MASK != KIND_ARRAY) return</b>
+&nbsp;        // ushr (not shr): the biased index is logically unsigned and its top bit sets once it
+&nbsp;        // approaches MAX_BIASED_INDEX, which would sign-extend under an arithmetic shift.
+<b class="fc">&nbsp;        val biased = slot ushr INDEX_SHIFT</b>
+<b class="pc">&nbsp;        if (biased &lt; MAX_BIASED_INDEX) {</b>
+<b class="fc">&nbsp;            slots[i] = slot + INDEX_UNIT</b>
+&nbsp;        }
+&nbsp;        // else: clamp — stop advancing rather than wrap; formatPath renders the capped index.
+&nbsp;    }
+&nbsp;
+&nbsp;    /** After a scalar under an object key: pop the key. Array elements leave the array frame. */
+&nbsp;    @PublishedApi
+&nbsp;    internal fun finishScalarValue() {
+<b class="fc">&nbsp;        if (size &gt; 0 &amp;&amp; (slots[size - 1] and KIND_MASK) == KIND_KEY) {</b>
+<b class="fc">&nbsp;            size--</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    var expValue = 0</b>
-<b class="fc">&nbsp;    var hasExpDigits = false</b>
-<b class="fc">&nbsp;    while (position &lt; limit) {</b>
-<b class="fc">&nbsp;        val currentByteInt = getByte(position)</b>
-<b class="fc">&nbsp;        if (isDigit(currentByteInt)) {</b>
-<b class="fc">&nbsp;            if (expValue &lt; C.EXPONENT_CLAMP_THRESHOLD) {</b>
-<b class="fc">&nbsp;                expValue = expValue * C.BASE_TEN + (currentByteInt - C.ZERO_INT)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            hasExpDigits = true</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        } else {
-&nbsp;            break
+&nbsp;    /**
+&nbsp;     * After [endObject]: pop the `{` frame, then the owning key if this object was a field value.
+&nbsp;     */
+&nbsp;    fun finishObjectValue() {
+<b class="fc">&nbsp;        if (size &gt; 0 &amp;&amp; (slots[size - 1] and KIND_MASK) == KIND_OBJECT) {</b>
+<b class="fc">&nbsp;            size--</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (size &gt; 0 &amp;&amp; (slots[size - 1] and KIND_MASK) == KIND_KEY) {</b>
+<b class="fc">&nbsp;            size--</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    if (!hasExpDigits) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    setPosition(position)</b>
-<b class="fc">&nbsp;    return if (isExpNegative) -expValue else expValue</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Consumes the closing `&quot;` after a coerced numeric string value.
-&nbsp; */
-&nbsp;internal inline fun consumeNumericCoercionFooterCore(
-&nbsp;    position: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;    afterQuote: () -&gt; Unit,
-&nbsp;) {
-<b class="fc">&nbsp;    if (position &gt;= limit || getByte(position) != C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_COERCION_QUOTE)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    afterQuote()</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Asserts that a leading `0` is not followed by another digit.
-&nbsp; */
-&nbsp;internal inline fun validateLeadingZeroCore(
-&nbsp;    position: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == C.ZERO_INT &amp;&amp; position + 1 &lt; limit) {</b>
-<b class="fc">&nbsp;        val nextDigitByte = getByte(position + 1)</b>
-<b class="fc">&nbsp;        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_LEADING_ZEROS)</b>
+&nbsp;    /**
+&nbsp;     * After [endArray]: pop the array frame, then the owning key if this array was a field value.
+&nbsp;     */
+&nbsp;    @PublishedApi
+&nbsp;    internal fun finishArrayValue() {
+<b class="pc">&nbsp;        if (size &gt; 0 &amp;&amp; (slots[size - 1] and KIND_MASK) == KIND_ARRAY) {</b>
+<b class="fc">&nbsp;            size--</b>
 &nbsp;        }
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Consumes a lone leading `0` (used by int/long fast paths) and rejects `0` + digit.
-&nbsp; */
-&nbsp;internal inline fun handleLeadingZeroCore(
-&nbsp;    position: Int,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;    consumeOne: () -&gt; Unit,
-&nbsp;) {
-<b class="fc">&nbsp;    val nextCursor = position + 1</b>
-<b class="fc">&nbsp;    if (nextCursor &lt; limit) {</b>
-<b class="fc">&nbsp;        val nextDigitByte = getByte(nextCursor)</b>
-<b class="fc">&nbsp;        if (nextDigitByte in C.ZERO_INT..C.NINE_INT) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_LEADING_ZEROS)</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    consumeOne()</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Scales a parsed mantissa/exponent into a finite [Float].
-&nbsp; */
-&nbsp;internal inline fun finalizeParsedFloat(
-&nbsp;    mantissa: Long,
-&nbsp;    exponent: Int,
-&nbsp;    isNegative: Boolean,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Float {
-<b class="fc">&nbsp;    var result = mantissa.toFloat()</b>
-<b class="fc">&nbsp;    if (exponent != 0) {</b>
-<b class="fc">&nbsp;        result *= getFloatPowerOfTen(exponent)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (isNegative) {</b>
-<b class="fc">&nbsp;        result = -result</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (result.isInfinite() || result.isNaN()) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_NUMERIC_OVERFLOW)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Scales a parsed mantissa/exponent into a finite [Double].
-&nbsp; */
-&nbsp;internal inline fun finalizeParsedDouble(
-&nbsp;    mantissa: Long,
-&nbsp;    exponent: Int,
-&nbsp;    isNegative: Boolean,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Double {
-<b class="fc">&nbsp;    var result = mantissa.toDouble()</b>
-<b class="fc">&nbsp;    if (exponent != 0) {</b>
-<b class="fc">&nbsp;        result *= getDoublePowerOfTen(exponent)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (isNegative) {</b>
-<b class="fc">&nbsp;        result = -result</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (result.isInfinite() || result.isNaN()) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_NUMERIC_OVERFLOW)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Parses the body of a JSON floating-point number (integer digits, optional fraction,
-&nbsp; * optional exponent) after the numeric header and leading-zero check.
-&nbsp; *
-&nbsp; * Digit runs are walked inside this core via [getByte]/[setPosition] (same allocation-safe
-&nbsp; * shape as [parseIntDigitsCore]) — do not pass nested `readDigitRun` callbacks.
-&nbsp; */
-&nbsp;internal inline fun &lt;R&gt; parseJsonFloatingBodyCore(
-&nbsp;    precisionLimit: Int,
-&nbsp;    getPosition: () -&gt; Int,
-&nbsp;    setPosition: (Int) -&gt; Unit,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    parseExponentValue: () -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;    finish: (mantissa: Long, exponent: Int) -&gt; R,
-&nbsp;): R {
-<b class="fc">&nbsp;    var mantissa = 0L</b>
-<b class="fc">&nbsp;    var exponent = 0</b>
-<b class="fc">&nbsp;    var digitCount = 0</b>
-<b class="fc">&nbsp;    var position = getPosition()</b>
-&nbsp;
-<b class="fc">&nbsp;    while (position &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte = getByte(position)</b>
-<b class="fc">&nbsp;        if (!isDigit(byte)) break</b>
-<b class="fc">&nbsp;        val digit = byte - C.ZERO_INT</b>
-<b class="fc">&nbsp;        if (digitCount &lt; precisionLimit) {</b>
-<b class="fc">&nbsp;            mantissa = mantissa * C.BASE_TEN + digit</b>
-<b class="fc">&nbsp;            digitCount++</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            exponent++</b>
-&nbsp;        }
-<b class="fc">&nbsp;        position++</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (digitCount == 0) {</b>
-<b class="fc">&nbsp;        setPosition(position)</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == C.DOT_INT) {</b>
-<b class="fc">&nbsp;        position++</b>
-<b class="fc">&nbsp;        val fractionStart = position</b>
-<b class="fc">&nbsp;        while (position &lt; limit) {</b>
-<b class="fc">&nbsp;            val byte = getByte(position)</b>
-<b class="fc">&nbsp;            if (!isDigit(byte)) break</b>
-<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
-<b class="fc">&nbsp;            if (digitCount &lt; precisionLimit) {</b>
-<b class="fc">&nbsp;                mantissa = mantissa * C.BASE_TEN + digit</b>
-<b class="fc">&nbsp;                digitCount++</b>
-<b class="fc">&nbsp;                exponent--</b>
-&nbsp;            }
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        }
-<b class="fc">&nbsp;        if (position == fractionStart) {</b>
-<b class="fc">&nbsp;            setPosition(position)</b>
-<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)</b>
+<b class="fc">&nbsp;        if (size &gt; 0 &amp;&amp; (slots[size - 1] and KIND_MASK) == KIND_KEY) {</b>
+<b class="fc">&nbsp;            size--</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    setPosition(position)</b>
-<b class="fc">&nbsp;    if (position &lt; limit &amp;&amp; isExponentMarker(getByte(position))) {</b>
-<b class="fc">&nbsp;        exponent += parseExponentValue()</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return finish(mantissa, exponent)</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Skips the body of a JSON number (integer / fraction / exponent) after the numeric header.
-&nbsp; *
-&nbsp; * Flat and string readers share this path via [getByte]. Streaming keeps its own
-&nbsp; * [readNumericLoop]-based skip to avoid cross-buffer coupling in this helper.
-&nbsp; */
-&nbsp;internal inline fun skipNumberBodyCore(
-&nbsp;    getPosition: () -&gt; Int,
-&nbsp;    setPosition: (Int) -&gt; Unit,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;) {
-<b class="fc">&nbsp;    var hasDigits = false</b>
-<b class="fc">&nbsp;    var position = getPosition()</b>
-&nbsp;
-<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == C.ZERO_INT) {</b>
-<b class="fc">&nbsp;        val newPos = position + 1</b>
-<b class="fc">&nbsp;        position = newPos</b>
-<b class="fc">&nbsp;        hasDigits = true</b>
-<b class="fc">&nbsp;        if (newPos &lt; limit &amp;&amp; isDigit(getByte(newPos))) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_LEADING_ZEROS)</b>
-&nbsp;        }
-&nbsp;    } else {
-<b class="fc">&nbsp;        while (position &lt; limit) {</b>
-<b class="fc">&nbsp;            val byte = getByte(position)</b>
-<b class="fc">&nbsp;            if (isDigit(byte)) {</b>
-<b class="fc">&nbsp;                hasDigits = true</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;            } else {
-&nbsp;                break
-&nbsp;            }
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (!hasDigits) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == C.DOT_INT) {</b>
-<b class="fc">&nbsp;        position++</b>
-<b class="fc">&nbsp;        var hasDecimalDigits = false</b>
-<b class="fc">&nbsp;        while (position &lt; limit) {</b>
-<b class="fc">&nbsp;            val byte = getByte(position)</b>
-<b class="fc">&nbsp;            if (isDigit(byte)) {</b>
-<b class="fc">&nbsp;                hasDecimalDigits = true</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;            } else {
-&nbsp;                break
-&nbsp;            }
-&nbsp;        }
-<b class="fc">&nbsp;        if (!hasDecimalDigits) {</b>
-<b class="fc">&nbsp;            throwError(C.ERR_EXPECTED_DECIMAL_DIGITS)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (position &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte = getByte(position)</b>
-<b class="fc">&nbsp;        if (byte == C.EXP_LOWER_INT || byte == C.EXP_UPPER_INT) {</b>
-<b class="fc">&nbsp;            var newPos = position + 1</b>
-<b class="fc">&nbsp;            position = newPos</b>
-<b class="fc">&nbsp;            if (newPos &lt; limit) {</b>
-<b class="fc">&nbsp;                val sign = getByte(newPos)</b>
-<b class="fc">&nbsp;                if (sign == C.PLUS_INT || sign == C.MINUS_INT) {</b>
-<b class="fc">&nbsp;                    newPos++</b>
-<b class="fc">&nbsp;                    position = newPos</b>
+&nbsp;    fun formatPath(): String {
+<b class="fc">&nbsp;        if (size == 0) return ROOT</b>
+<b class="fc">&nbsp;        val sb = StringBuilder(ROOT)</b>
+<b class="fc">&nbsp;        for (i in 0 until size) {</b>
+<b class="fc">&nbsp;            val slot = slots[i]</b>
+<b class="fc">&nbsp;            when (slot and KIND_MASK) {</b>
+&nbsp;                KIND_KEY -&gt; {
+<b class="pc">&nbsp;                    val name = keys[i] ?: continue</b>
+<b class="fc">&nbsp;                    if (isSimpleName(name)) {</b>
+<b class="fc">&nbsp;                        sb.append(&#39;.&#39;).append(name)</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        sb.append(&quot;[&#39;&quot;).append(name).append(&quot;&#39;]&quot;)</b>
+&nbsp;                    }
 &nbsp;                }
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            var hasExpDigits = false</b>
-<b class="fc">&nbsp;            while (position &lt; limit) {</b>
-<b class="fc">&nbsp;                val byteCode = getByte(position)</b>
-<b class="fc">&nbsp;                if (isDigit(byteCode)) {</b>
-<b class="fc">&nbsp;                    hasExpDigits = true</b>
-<b class="fc">&nbsp;                    position++</b>
-&nbsp;                } else {
-&nbsp;                    break
+&nbsp;                KIND_ARRAY -&gt; {
+<b class="fc">&nbsp;                    val biased = slot ushr INDEX_SHIFT</b>
+<b class="fc">&nbsp;                    if (biased &gt; 0) {</b>
+<b class="fc">&nbsp;                        sb.append(&#39;[&#39;).append(biased - INDEX_BIAS).append(&#39;]&#39;)</b>
+&nbsp;                    }
 &nbsp;                }
-&nbsp;            }
-<b class="fc">&nbsp;            if (!hasExpDigits) {</b>
-<b class="fc">&nbsp;                throwError(C.ERR_EXPECTED_EXPONENT_DIGITS)</b>
+&nbsp;                // KIND_OBJECT: no path segment
 &nbsp;            }
 &nbsp;        }
+<b class="fc">&nbsp;        return sb.toString()</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    setPosition(position)</b>
-&nbsp;}
+&nbsp;    private fun ensureCapacity() {
+<b class="fc">&nbsp;        if (size &lt; slots.size) return</b>
+<b class="fc">&nbsp;        val newSize = slots.size * 2</b>
+<b class="fc">&nbsp;        slots = slots.copyOf(newSize)</b>
+<b class="fc">&nbsp;        keys = keys.copyOf(newSize)</b>
+&nbsp;    }
 &nbsp;
-&nbsp;/**
-&nbsp; * Accumulates an [Int] from a digit run with overflow checks and early-exit when a
-&nbsp; * fractional/exponent separator appears (caller rewinds and parses as floating).
-&nbsp; *
-&nbsp; * The digit walk lives in this core (same shape as [skipNumberBodyCore]) so call sites
-&nbsp; * stay monomorphic after inlining — avoid nested function-type callbacks that can allocate.
-&nbsp; */
-&nbsp;internal inline fun parseIntDigitsCore(
-&nbsp;    isNegative: Boolean,
-&nbsp;    resetNextTokenByte: () -&gt; Unit,
-&nbsp;    getPosition: () -&gt; Int,
-&nbsp;    setPosition: (Int) -&gt; Unit,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    onNumericSeparator: () -&gt; Int,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Int {
-<b class="fc">&nbsp;    var accumulatedValue = 0</b>
-<b class="fc">&nbsp;    var digitCount = 0</b>
-<b class="fc">&nbsp;    var hasDigitsFound = false</b>
-<b class="fc">&nbsp;    resetNextTokenByte()</b>
-<b class="fc">&nbsp;    var position = getPosition()</b>
+&nbsp;    private companion object {
+&nbsp;        const val KIND_MASK = 0b11
+&nbsp;        const val INDEX_SHIFT = 2
+&nbsp;        const val INDEX_UNIT = 1 shl INDEX_SHIFT
+&nbsp;        const val INDEX_BIAS = 1
+&nbsp;        const val KIND_KEY = 0
+&nbsp;        const val KIND_ARRAY = 1
+&nbsp;        const val KIND_OBJECT = 2
+&nbsp;        const val MAX_BIASED_INDEX = (1 shl (Int.SIZE_BITS - INDEX_SHIFT)) - 1
+&nbsp;        const val ROOT = &quot;$&quot;
 &nbsp;
-<b class="fc">&nbsp;    while (position &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte = getByte(position)</b>
-<b class="fc">&nbsp;        if (isDigit(byte)) {</b>
-<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
-<b class="fc">&nbsp;            accumulatedValue = if (digitCount &lt; C.INT_SAFE_DIGITS) {</b>
-<b class="fc">&nbsp;                accumulatedValue * C.BASE_TEN + digit</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                accumulateIntWithOverflowCheck(accumulatedValue, digit, isNegative) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_INT_OVERFLOW)</b>
-&nbsp;                }
+&nbsp;        fun isSimpleName(name: String): Boolean {
+<b class="fc">&nbsp;            if (name.isEmpty()) return false</b>
+<b class="fc">&nbsp;            for (i in name.indices) {</b>
+<b class="fc">&nbsp;                val c = name[i]</b>
+<b class="pc">&nbsp;                val ok = c in &#39;a&#39;..&#39;z&#39; || c in &#39;A&#39;..&#39;Z&#39; || c in &#39;0&#39;..&#39;9&#39; || c == &#39;_&#39; || c == &#39;$&#39;</b>
+<b class="fc">&nbsp;                if (!ok) return false</b>
 &nbsp;            }
-<b class="fc">&nbsp;            digitCount++</b>
-<b class="fc">&nbsp;            hasDigitsFound = true</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            setPosition(position)</b>
-<b class="fc">&nbsp;            if (isNumericSeparator(byte)) {</b>
-<b class="fc">&nbsp;                return onNumericSeparator()</b>
-&nbsp;            }
-&nbsp;            break
+<b class="fc">&nbsp;            return true</b>
 &nbsp;        }
 &nbsp;    }
-<b class="fc">&nbsp;    setPosition(position)</b>
-<b class="fc">&nbsp;    if (!hasDigitsFound) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return accumulatedValue</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Accumulates a [Long] from a digit run; same early-exit contract as [parseIntDigitsCore].
-&nbsp; */
-&nbsp;internal inline fun parseLongDigitsCore(
-&nbsp;    isNegative: Boolean,
-&nbsp;    resetNextTokenByte: () -&gt; Unit,
-&nbsp;    getPosition: () -&gt; Int,
-&nbsp;    setPosition: (Int) -&gt; Unit,
-&nbsp;    limit: Int,
-&nbsp;    getByte: (Int) -&gt; Int,
-&nbsp;    onNumericSeparator: () -&gt; Long,
-&nbsp;    throwError: (String) -&gt; Nothing,
-&nbsp;): Long {
-<b class="fc">&nbsp;    var accumulatedValue = 0L</b>
-<b class="fc">&nbsp;    var digitCount = 0</b>
-<b class="fc">&nbsp;    var hasDigitsFound = false</b>
-<b class="fc">&nbsp;    resetNextTokenByte()</b>
-<b class="fc">&nbsp;    var position = getPosition()</b>
-&nbsp;
-<b class="fc">&nbsp;    while (position &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte = getByte(position)</b>
-<b class="fc">&nbsp;        if (isDigit(byte)) {</b>
-<b class="fc">&nbsp;            val digit = byte - C.ZERO_INT</b>
-<b class="fc">&nbsp;            accumulatedValue = if (digitCount &lt; C.LONG_SAFE_DIGITS) {</b>
-<b class="fc">&nbsp;                accumulatedValue * C.BASE_TEN + digit</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                accumulateLongWithOverflowCheck(accumulatedValue, digit, isNegative) {</b>
-<b class="fc">&nbsp;                    throwError(C.ERR_LONG_OVERFLOW)</b>
-&nbsp;                }
-&nbsp;            }
-<b class="fc">&nbsp;            digitCount++</b>
-<b class="fc">&nbsp;            hasDigitsFound = true</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            setPosition(position)</b>
-<b class="fc">&nbsp;            if (isNumericSeparator(byte)) {</b>
-<b class="fc">&nbsp;                return onNumericSeparator()</b>
-&nbsp;            }
-&nbsp;            break
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    setPosition(position)</b>
-<b class="fc">&nbsp;    if (!hasDigitsFound) {</b>
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_INT_PART)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return accumulatedValue</b>
 &nbsp;}
 </code>
 </pre>
@@ -585,7 +345,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -107,15 +107,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;object RawJsonDecode {
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Parses this opaque JSON into [T] without copying the slice when it aliases a parent buffer.
-&nbsp;     */
+&nbsp;    /** Parses this opaque JSON into [T] without copying the slice when it aliases a parent buffer. */
 &nbsp;    inline fun &lt;reified T : Any&gt; decode(raw: RawJson): T =
 &nbsp;        decode(raw, T::class)
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Parses this opaque JSON with an explicit [serializer].
-&nbsp;     */
+&nbsp;    /** Parses this opaque JSON with an explicit [serializer]. */
 &nbsp;    fun &lt;T : Any&gt; decode(raw: RawJson, serializer: GhostSerializer&lt;T&gt;): T {
 &nbsp;        if (raw.storageOffset == 0 &amp;&amp; raw.storageLength == raw.storage.size) {
 &nbsp;            return Ghost.deserialize(serializer, raw.storage)
@@ -162,7 +158,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

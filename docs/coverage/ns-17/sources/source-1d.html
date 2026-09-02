@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    28.6%
+    33.3%
   </span>
   <span class="absValue">
-    (2/7)
+    (2/6)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    28.6%
+    33.3%
   </span>
   <span class="absValue">
-    (2/7)
+    (2/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    24%
+    30%
   </span>
   <span class="absValue">
-    (6/25)
+    (6/20)
   </span>
 </td>
 </tr>
@@ -104,7 +104,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -117,10 +116,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    override val typeName: String get() = C.WKT_TIMESTAMP_TYPE</b>
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoTimestamp) {
-<b class="nc">&nbsp;        writer.value(formatTimestamp(value))</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoTimestamp) {
 <b class="nc">&nbsp;        writer.value(formatTimestamp(value))</b>
 &nbsp;    }
 &nbsp;
@@ -380,7 +375,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

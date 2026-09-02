@@ -100,12 +100,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import kotlin.jvm.JvmInline
 &nbsp;
 &nbsp;/**
-&nbsp; * Full `uint64` range (0 to [ULong.MAX_VALUE], `18446744073709551615`) — [Long] cannot represent
-&nbsp; * values above `Long.MAX_VALUE` (`9223372036854775807`), which is only half of uint64&#39;s range.
-&nbsp; *
-&nbsp; * Wrapper message for `uint64`.
-&nbsp; *
-&nbsp; * The JSON representation for `UInt64Value` is JSON string.
+&nbsp; * Wrapper message for `uint64`; JSON representation is a JSON string. Uses [ULong] for the
+&nbsp; * full uint64 range (0 to `18446744073709551615`) — [Long] only covers half of it.
 &nbsp; */
 &nbsp;@JvmInline
 <b class="fc">&nbsp;value class ProtoUInt64Value(val value: ULong)</b>
@@ -132,7 +128,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

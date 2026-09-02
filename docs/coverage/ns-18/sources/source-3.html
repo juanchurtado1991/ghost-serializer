@@ -113,10 +113,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;internal object GhostRetrofitBuffers {
 &nbsp;    const val INITIAL_SIZE = 524288
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Reads [stream] into a pooled scratch buffer that doubles when full.
-&nbsp;     * Invokes [block] with the buffer and filled length, then releases the scratch.
-&nbsp;     */
+&nbsp;    /** Reads [stream] into a pooled scratch buffer that doubles when full, then invokes [block]. */
 &nbsp;    inline fun &lt;T&gt; readToScratch(
 &nbsp;        stream: InputStream,
 &nbsp;        block: (buffer: ByteArray, length: Int) -&gt; T
@@ -165,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

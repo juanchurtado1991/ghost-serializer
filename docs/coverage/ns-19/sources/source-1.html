@@ -52,42 +52,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">BooleanArraySerializer</td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/1)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    66.7%
   </span>
   <span class="absValue">
-    (0/7)
+    (4/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    33.3%
   </span>
   <span class="absValue">
-    (0/24)
+    (10/30)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    59.4%
   </span>
   <span class="absValue">
-    (0/49)
+    (38/64)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    66.8%
   </span>
   <span class="absValue">
-    (0/177)
+    (229/343)
   </span>
 </td>
 </tr>
@@ -119,7 +119,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.endArray
 &nbsp;import com.ghost.serialization.parser.strings.hasNext
 &nbsp;import com.ghost.serialization.parser.strings.nextBoolean
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;
@@ -128,46 +127,41 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;object BooleanArraySerializer : GhostSerializer&lt;BooleanArray&gt; {
 &nbsp;
-<b class="nc">&nbsp;    override val typeName: String = C.TYPE_NAME_BOOLEAN_ARRAY</b>
+<b class="fc">&nbsp;    override val typeName: String = C.TYPE_NAME_BOOLEAN_ARRAY</b>
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: BooleanArray) {
 <b class="nc">&nbsp;        writer.beginArray()</b>
-<b class="nc">&nbsp;        val size = value.size</b>
-<b class="nc">&nbsp;        for (i in 0 until size) {</b>
-<b class="nc">&nbsp;            writer.value(value[i])</b>
-&nbsp;        }
-<b class="nc">&nbsp;        writer.endArray()</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: BooleanArray) {
-<b class="nc">&nbsp;        writer.beginArray()</b>
-<b class="nc">&nbsp;        val size = value.size</b>
-<b class="nc">&nbsp;        for (i in 0 until size) {</b>
-<b class="nc">&nbsp;            writer.value(value[i])</b>
-&nbsp;        }
+<b class="nc">&nbsp;        writeArrayElements(value.size) { writer.value(value[it]) }</b>
 <b class="nc">&nbsp;        writer.endArray()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: BooleanArray) {
 <b class="nc">&nbsp;        writer.beginArray()</b>
-<b class="nc">&nbsp;        val size = value.size</b>
-<b class="nc">&nbsp;        for (i in 0 until size) {</b>
-<b class="nc">&nbsp;            writer.value(value[i])</b>
-&nbsp;        }
+<b class="nc">&nbsp;        writeArrayElements(value.size) { writer.value(value[it]) }</b>
 <b class="nc">&nbsp;        writer.endArray()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonReader): BooleanArray {
-<b class="nc">&nbsp;        reader.beginArray()</b>
-<b class="nc">&nbsp;        if (reader.peekByte() == C.CLOSE_ARR) {</b>
+<b class="fc">&nbsp;        reader.beginArray()</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_ARR) {</b>
 <b class="nc">&nbsp;            reader.endArray()</b>
 <b class="nc">&nbsp;            return BooleanArray(0)</b>
 &nbsp;        }
+<b class="fc">&nbsp;        val fast = tryFastBooleanArrayCore(</b>
+<b class="fc">&nbsp;            startPosition = reader.position,</b>
+<b class="fc">&nbsp;            limit = reader.limit,</b>
+<b class="fc">&nbsp;            getByte = { reader.getByte(it) },</b>
+<b class="fc">&nbsp;            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },</b>
+&nbsp;        )
+<b class="pc">&nbsp;        if (fast != null) {</b>
+<b class="fc">&nbsp;            reader.endArray()</b>
+<b class="fc">&nbsp;            return fast</b>
+&nbsp;        }
+&nbsp;
 <b class="nc">&nbsp;        val list = ArrayList&lt;Boolean&gt;()</b>
+<b class="nc">&nbsp;        val strict = reader.strictMode</b>
 <b class="nc">&nbsp;        while (reader.hasNext()) {</b>
-<b class="nc">&nbsp;            if (list.isNotEmpty()) {</b>
-<b class="nc">&nbsp;                reader.consumeArraySeparator()</b>
-&nbsp;            }
+<b class="nc">&nbsp;            if (strict &amp;&amp; list.isNotEmpty()) { reader.consumeArraySeparator() }</b>
 <b class="nc">&nbsp;            list.add(reader.nextBoolean())</b>
 &nbsp;        }
 <b class="nc">&nbsp;        reader.endArray()</b>
@@ -175,33 +169,53 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonFlatReader): BooleanArray {
-<b class="nc">&nbsp;        reader.beginArray()</b>
-<b class="nc">&nbsp;        if (reader.peekByte() == C.CLOSE_ARR) {</b>
+<b class="fc">&nbsp;        reader.beginArray()</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_ARR) {</b>
 <b class="nc">&nbsp;            reader.endArray()</b>
 <b class="nc">&nbsp;            return BooleanArray(0)</b>
 &nbsp;        }
-<b class="nc">&nbsp;        val list = ArrayList&lt;Boolean&gt;()</b>
-<b class="nc">&nbsp;        while (reader.hasNext()) {</b>
-<b class="nc">&nbsp;            if (list.isNotEmpty()) {</b>
-<b class="nc">&nbsp;                reader.consumeArraySeparator()</b>
-&nbsp;            }
-<b class="nc">&nbsp;            list.add(reader.nextBoolean())</b>
+<b class="fc">&nbsp;        val fast = tryFastBooleanArrayCore(</b>
+<b class="fc">&nbsp;            startPosition = reader.position,</b>
+<b class="fc">&nbsp;            limit = reader.limit,</b>
+<b class="fc">&nbsp;            getByte = { reader.getByte(it) },</b>
+<b class="fc">&nbsp;            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },</b>
+&nbsp;        )
+<b class="fc">&nbsp;        if (fast != null) {</b>
+<b class="fc">&nbsp;            reader.endArray()</b>
+<b class="fc">&nbsp;            return fast</b>
 &nbsp;        }
-<b class="nc">&nbsp;        reader.endArray()</b>
-<b class="nc">&nbsp;        return list.toBooleanArray()</b>
+&nbsp;
+<b class="fc">&nbsp;        val list = ArrayList&lt;Boolean&gt;()</b>
+<b class="fc">&nbsp;        val strict = reader.strictMode</b>
+<b class="fc">&nbsp;        while (reader.hasNext()) {</b>
+<b class="pc">&nbsp;            if (strict &amp;&amp; list.isNotEmpty()) { reader.consumeArraySeparator() }</b>
+<b class="fc">&nbsp;            list.add(reader.nextBoolean())</b>
+&nbsp;        }
+<b class="fc">&nbsp;        reader.endArray()</b>
+<b class="fc">&nbsp;        return list.toBooleanArray()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    override fun deserialize(reader: GhostJsonStringReader): BooleanArray {
-<b class="nc">&nbsp;        reader.beginArray()</b>
-<b class="nc">&nbsp;        if (reader.peekByte() == C.CLOSE_ARR) {</b>
+<b class="fc">&nbsp;        reader.beginArray()</b>
+<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_ARR) {</b>
 <b class="nc">&nbsp;            reader.endArray()</b>
 <b class="nc">&nbsp;            return BooleanArray(0)</b>
 &nbsp;        }
+<b class="fc">&nbsp;        val fast = tryFastBooleanArrayCore(</b>
+<b class="fc">&nbsp;            startPosition = reader.position,</b>
+<b class="fc">&nbsp;            limit = reader.limit,</b>
+<b class="fc">&nbsp;            getByte = { reader.getByte(it) },</b>
+<b class="fc">&nbsp;            setPosition = { reader.position = it; reader.nextTokenByte = C.RESET_TOKEN_BYTE },</b>
+&nbsp;        )
+<b class="pc">&nbsp;        if (fast != null) {</b>
+<b class="fc">&nbsp;            reader.endArray()</b>
+<b class="fc">&nbsp;            return fast</b>
+&nbsp;        }
+&nbsp;
 <b class="nc">&nbsp;        val list = ArrayList&lt;Boolean&gt;()</b>
+<b class="nc">&nbsp;        val strict = reader.strictMode</b>
 <b class="nc">&nbsp;        while (reader.hasNext()) {</b>
-<b class="nc">&nbsp;            if (list.isNotEmpty()) {</b>
-<b class="nc">&nbsp;                reader.consumeArraySeparator()</b>
-&nbsp;            }
+<b class="nc">&nbsp;            if (strict &amp;&amp; list.isNotEmpty()) { reader.consumeArraySeparator() }</b>
 <b class="nc">&nbsp;            list.add(reader.nextBoolean())</b>
 &nbsp;        }
 <b class="nc">&nbsp;        reader.endArray()</b>
@@ -231,7 +245,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

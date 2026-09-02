@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlFlatWriter</title>
+  <title>GhostSerialization Coverage Report > GhostYamlWriter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.writer.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlFlatWriter (com.ghost.serialization.writer.yaml)</h1>
+<h1>Coverage Summary for Class: GhostYamlWriter (com.ghost.serialization.writer.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlFlatWriter</td>
+  <td class="name">GhostYamlWriter</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,10 +60,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.2%
+    89.2%
   </span>
   <span class="absValue">
-    (30/34)
+    (33/37)
   </span>
 </td>
 <td class="coverageStat">
@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.8%
+    89%
   </span>
   <span class="absValue">
-    (724/815)
+    (735/826)
   </span>
 </td>
 </tr>
@@ -102,19 +102,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.yaml
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.writer.bytes.BufferGhostByteSink
 &nbsp;import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+&nbsp;import com.ghost.serialization.writer.bytes.GhostByteSink
 &nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
+&nbsp;import okio.BufferedSink
 &nbsp;import okio.ByteString
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Contiguous in-memory specialized YAML writer backed by FlatByteArrayWriter.
+&nbsp; * A highly optimized, low-allocation YAML writer for Kotlin Multiplatform.
+&nbsp; *
+&nbsp; * Backed by either a streaming Okio [BufferedSink] or, for in-memory encodes, a
+&nbsp; * [FlatByteArrayWriter] — both funnel through [GhostByteSink], so the body of
+&nbsp; * this class is written once and shared by both channels.
 &nbsp; */
 <b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
-&nbsp;@Suppress(&quot;CascadeIf&quot;)
-&nbsp;class GhostYamlFlatWriter @InternalGhostApi constructor(
-<b class="fc">&nbsp;    @InternalGhostApi val buffer: FlatByteArrayWriter</b>
+&nbsp;class GhostYamlWriter private constructor(
+<b class="fc">&nbsp;    @PublishedApi internal val sink: GhostByteSink</b>
 &nbsp;) {
+&nbsp;
+&nbsp;    /** Streaming constructor — writes flow through an Okio [BufferedSink]. */
+<b class="fc">&nbsp;    constructor(sink: BufferedSink) : this(BufferGhostByteSink(sink))</b>
+&nbsp;
+&nbsp;    /** In-memory constructor — writes accumulate in a [FlatByteArrayWriter]. */
+&nbsp;    @InternalGhostApi
+<b class="fc">&nbsp;    constructor(flatBuffer: FlatByteArrayWriter) : this(flatBuffer as GhostByteSink)</b>
+&nbsp;
 <b class="nc">&nbsp;    internal var depth = 0</b>
 <b class="nc">&nbsp;    internal var scratch: ByteArray? = null</b>
 &nbsp;
@@ -145,7 +159,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        depth = 0</b>
 <b class="fc">&nbsp;        pendingSpace = false</b>
 <b class="fc">&nbsp;        justWroteDash = false</b>
-<b class="fc">&nbsp;        buffer.reset()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun flush() {
+<b class="fc">&nbsp;        sink.flush()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun prepareValue(isStructural: Boolean) {
@@ -156,7 +174,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            contextAtDepth = contexts[currentDepth],</b>
 <b class="fc">&nbsp;            justWroteDash = justWroteDash,</b>
 <b class="fc">&nbsp;            pendingSpace = pendingSpace,</b>
-<b class="fc">&nbsp;            writeByte = { buffer.writeByte(it) },</b>
+<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
 &nbsp;        )
 <b class="fc">&nbsp;        justWroteDash = (flags and GhostYamlWriterHelpers.PREPARE_JUST_WROTE_DASH) != 0</b>
 <b class="fc">&nbsp;        pendingSpace = (flags and GhostYamlWriterHelpers.PREPARE_PENDING_SPACE) != 0</b>
@@ -165,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    fun beginObject(): GhostYamlFlatWriter {
+&nbsp;    fun beginObject(): GhostYamlWriter {
 <b class="fc">&nbsp;        val currentDepth = depth</b>
 <b class="fc">&nbsp;        if (currentDepth &gt;= C.MAX_DEPTH) {</b>
 <b class="fc">&nbsp;            throw GhostYamlException(C.ERR_MAX_DEPTH_EXCEEDED)</b>
@@ -178,14 +196,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun endObject(): GhostYamlFlatWriter {
+&nbsp;    fun endObject(): GhostYamlWriter {
 <b class="fc">&nbsp;        writeEmptyPlaceholderIfNeeded(C.LEFT_BRACE_INT, C.RIGHT_BRACE_INT)</b>
 <b class="fc">&nbsp;        depth--</b>
 <b class="fc">&nbsp;        justWroteDash = false</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun beginArray(): GhostYamlFlatWriter {
+&nbsp;    fun beginArray(): GhostYamlWriter {
 <b class="fc">&nbsp;        val currentDepth = depth</b>
 <b class="pc">&nbsp;        if (currentDepth &gt;= C.MAX_DEPTH) {</b>
 <b class="nc">&nbsp;            throw GhostYamlException(C.ERR_MAX_DEPTH_EXCEEDED)</b>
@@ -198,7 +216,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun endArray(): GhostYamlFlatWriter {
+&nbsp;    fun endArray(): GhostYamlWriter {
 <b class="fc">&nbsp;        writeEmptyPlaceholderIfNeeded(C.LEFT_BRACKET_INT, C.RIGHT_BRACKET_INT)</b>
 <b class="fc">&nbsp;        depth--</b>
 <b class="fc">&nbsp;        justWroteDash = false</b>
@@ -221,107 +239,107 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            parentContext = if (parentDepth &gt; 0) contexts[parentDepth] else 0,</b>
 <b class="fc">&nbsp;            openInt = openInt,</b>
 <b class="fc">&nbsp;            closeInt = closeInt,</b>
-<b class="fc">&nbsp;            writeByte = { buffer.writeByte(it) },</b>
-<b class="fc">&nbsp;            writeOpenClose = { open, close -&gt; buffer.write2Bytes(open, close) },</b>
+<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
+<b class="fc">&nbsp;            writeOpenClose = { open, close -&gt; sink.write2Bytes(open, close) },</b>
 &nbsp;        )
 &nbsp;    }
 &nbsp;
-&nbsp;    fun name(key: String): GhostYamlFlatWriter {
+&nbsp;    fun name(key: String): GhostYamlWriter {
 <b class="fc">&nbsp;        val currentDepth = GhostYamlWriterHelpers.prepareNameLayout(</b>
 <b class="fc">&nbsp;            depth = depth,</b>
 <b class="fc">&nbsp;            itemCountAtDepth = itemCounts[depth],</b>
 <b class="fc">&nbsp;            justWroteDash = justWroteDash,</b>
-<b class="fc">&nbsp;            writeByte = { buffer.writeByte(it) },</b>
+<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
 &nbsp;        )
 <b class="fc">&nbsp;        justWroteDash = false</b>
 <b class="fc">&nbsp;        if (GhostYamlWriterHelpers.keyNeedsQuoting(key)) {</b>
 <b class="fc">&nbsp;            writeStringValueRaw(key)</b>
 &nbsp;        } else {
-<b class="fc">&nbsp;            buffer.writeUtf8(key)</b>
+<b class="fc">&nbsp;            sink.writeUtf8(key)</b>
 &nbsp;        }
-<b class="fc">&nbsp;        buffer.writeByte(C.COLON_INT)</b>
+<b class="fc">&nbsp;        sink.writeByte(C.COLON_INT)</b>
 <b class="fc">&nbsp;        itemCounts[currentDepth]++</b>
 <b class="fc">&nbsp;        pendingSpace = true</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun name(key: ByteString): GhostYamlFlatWriter {
+&nbsp;    fun name(key: ByteString): GhostYamlWriter {
 <b class="nc">&nbsp;        val currentDepth = GhostYamlWriterHelpers.prepareNameLayout(</b>
 <b class="nc">&nbsp;            depth = depth,</b>
 <b class="nc">&nbsp;            itemCountAtDepth = itemCounts[depth],</b>
 <b class="nc">&nbsp;            justWroteDash = justWroteDash,</b>
-<b class="nc">&nbsp;            writeByte = { buffer.writeByte(it) },</b>
+<b class="nc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
 &nbsp;        )
 <b class="nc">&nbsp;        justWroteDash = false</b>
-<b class="nc">&nbsp;        buffer.write(key)</b>
+<b class="nc">&nbsp;        sink.write(key)</b>
 <b class="nc">&nbsp;        itemCounts[currentDepth]++</b>
 <b class="nc">&nbsp;        pendingSpace = false</b>
 <b class="nc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(text: String): GhostYamlFlatWriter {
+&nbsp;    fun value(text: String): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
 <b class="fc">&nbsp;        writeStringValueRaw(text)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(number: Int): GhostYamlFlatWriter {
+&nbsp;    fun value(number: Int): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
 <b class="fc">&nbsp;        writeLong(number.toLong())</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(number: Long): GhostYamlFlatWriter {
+&nbsp;    fun value(number: Long): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
 <b class="fc">&nbsp;        writeLong(number)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(number: ULong): GhostYamlFlatWriter {
+&nbsp;    fun value(number: ULong): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
 <b class="pc">&nbsp;        if (number &gt; Long.MAX_VALUE.toULong()) {</b>
-<b class="fc">&nbsp;            buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
-<b class="fc">&nbsp;            buffer.writeUtf8(number.toString())</b>
-<b class="fc">&nbsp;            buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;            sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;            sink.writeUtf8(number.toString())</b>
+<b class="fc">&nbsp;            sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
 &nbsp;        } else {
-<b class="nc">&nbsp;            buffer.writeUtf8(number.toString())</b>
+<b class="nc">&nbsp;            sink.writeUtf8(number.toString())</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(number: Double): GhostYamlFlatWriter {
+&nbsp;    fun value(number: Double): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
-<b class="fc">&nbsp;        buffer.writeUtf8(number.toString())</b>
+<b class="fc">&nbsp;        sink.writeUtf8(number.toString())</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(number: Float): GhostYamlFlatWriter {
+&nbsp;    fun value(number: Float): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
-<b class="fc">&nbsp;        buffer.writeUtf8(number.toString())</b>
+<b class="fc">&nbsp;        sink.writeUtf8(number.toString())</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(value: Boolean): GhostYamlFlatWriter {
+&nbsp;    fun value(value: Boolean): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
 <b class="fc">&nbsp;        if (value) {</b>
-<b class="fc">&nbsp;            buffer.writeUtf8(C.STR_TRUE)</b>
+<b class="fc">&nbsp;            sink.writeUtf8(C.STR_TRUE)</b>
 &nbsp;        } else {
-<b class="fc">&nbsp;            buffer.writeUtf8(C.STR_FALSE)</b>
+<b class="fc">&nbsp;            sink.writeUtf8(C.STR_FALSE)</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun value(value: Char): GhostYamlFlatWriter {
+&nbsp;    fun value(value: Char): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
-<b class="fc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
-<b class="fc">&nbsp;        buffer.writeUtf8(value.toString())</b>
-<b class="fc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;        sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;        sink.writeUtf8(value.toString())</b>
+<b class="fc">&nbsp;        sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun nullValue(): GhostYamlFlatWriter {
+&nbsp;    fun nullValue(): GhostYamlWriter {
 <b class="fc">&nbsp;        prepareValue(isStructural = false)</b>
-<b class="fc">&nbsp;        buffer.writeUtf8(C.STR_NULL)</b>
+<b class="fc">&nbsp;        sink.writeUtf8(C.STR_NULL)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
@@ -329,7 +347,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    fun writeStringValueRaw(value: String) {
 <b class="fc">&nbsp;        val length = value.length</b>
 <b class="fc">&nbsp;        if (length == 0) {</b>
-<b class="fc">&nbsp;            buffer.write2Bytes(C.DOUBLE_QUOTE_INT, C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;            sink.write2Bytes(C.DOUBLE_QUOTE_INT, C.DOUBLE_QUOTE_INT)</b>
 &nbsp;            return
 &nbsp;        }
 &nbsp;
@@ -338,33 +356,30 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            var index = 0</b>
 <b class="fc">&nbsp;            while (index &lt; length) {</b>
 <b class="fc">&nbsp;                val code = value[index].code</b>
-<b class="fc">&nbsp;                if (code !in C.SPACE_INT..C.TILDE_INT ||</b>
-<b class="fc">&nbsp;                    code == C.DOUBLE_QUOTE_INT ||</b>
-<b class="fc">&nbsp;                    code == C.BACKSLASH_INT</b>
-&nbsp;                ) {
+<b class="fc">&nbsp;                if (code !in C.SPACE_INT..C.TILDE_INT || code == C.DOUBLE_QUOTE_INT || code == C.BACKSLASH_INT) {</b>
 <b class="fc">&nbsp;                    allPlain = false</b>
 &nbsp;                    break
 &nbsp;                }
 <b class="fc">&nbsp;                index++</b>
 &nbsp;            }
 <b class="fc">&nbsp;            if (allPlain) {</b>
-<b class="fc">&nbsp;                buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
-<b class="fc">&nbsp;                buffer.writeUtf8(value)</b>
-<b class="fc">&nbsp;                buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;                sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;                sink.writeUtf8(value)</b>
+<b class="fc">&nbsp;                sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
 &nbsp;                return
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;        sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
 <b class="fc">&nbsp;        writeEscaped(value)</b>
-<b class="fc">&nbsp;        buffer.writeByte(C.DOUBLE_QUOTE_INT)</b>
+<b class="fc">&nbsp;        sink.writeByte(C.DOUBLE_QUOTE_INT)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun writeEscaped(text: String) {
 <b class="fc">&nbsp;        GhostYamlWriterHelpers.writeEscaped(</b>
 <b class="fc">&nbsp;            text = text,</b>
-<b class="fc">&nbsp;            writeByte = { buffer.writeByte(it) },</b>
-<b class="fc">&nbsp;            writeUtf8Range = { s, begin, end -&gt; buffer.writeUtf8(s, begin, end) },</b>
+<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
+<b class="fc">&nbsp;            writeUtf8Range = { s, begin, end -&gt; sink.writeUtf8(s, begin, end) },</b>
 &nbsp;        )
 &nbsp;    }
 &nbsp;
@@ -373,61 +388,61 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            value = value,</b>
 <b class="fc">&nbsp;            scratch = scratch,</b>
 <b class="fc">&nbsp;            acquireScratch = { acquireScratch() },</b>
-<b class="fc">&nbsp;            writeByte = { buffer.writeByte(it) },</b>
-<b class="fc">&nbsp;            writeUtf8 = { buffer.writeUtf8(it) },</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, len -&gt; buffer.write(buf, offset, len) },</b>
+<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
+<b class="fc">&nbsp;            writeUtf8 = { sink.writeUtf8(it) },</b>
+<b class="fc">&nbsp;            writeBytes = { buf, offset, len -&gt; sink.write(buf, offset, len) },</b>
 &nbsp;        )
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeNameRaw(header: ByteString): GhostYamlFlatWriter {
+&nbsp;    fun writeNameRaw(header: ByteString): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeField(header: ByteString, value: String): GhostYamlFlatWriter {
-<b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
-<b class="fc">&nbsp;        name(key)</b>
-<b class="fc">&nbsp;        value(value)</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    fun writeField(header: ByteString, value: Int): GhostYamlFlatWriter {
+&nbsp;    fun writeField(header: ByteString, value: String): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        value(value)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeField(header: ByteString, value: Long): GhostYamlFlatWriter {
+&nbsp;    fun writeField(header: ByteString, value: Int): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        value(value)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeField(header: ByteString, value: ULong): GhostYamlFlatWriter {
+&nbsp;    fun writeField(header: ByteString, value: Long): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        value(value)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeField(header: ByteString, value: Double): GhostYamlFlatWriter {
+&nbsp;    fun writeField(header: ByteString, value: ULong): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        value(value)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeField(header: ByteString, value: Float): GhostYamlFlatWriter {
+&nbsp;    fun writeField(header: ByteString, value: Double): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        value(value)</b>
 <b class="fc">&nbsp;        return this</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun writeField(header: ByteString, value: Boolean): GhostYamlFlatWriter {
+&nbsp;    fun writeField(header: ByteString, value: Float): GhostYamlWriter {
+<b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
+<b class="fc">&nbsp;        name(key)</b>
+<b class="fc">&nbsp;        value(value)</b>
+<b class="fc">&nbsp;        return this</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun writeField(header: ByteString, value: Boolean): GhostYamlWriter {
 <b class="fc">&nbsp;        val key = GhostYamlWriterHelpers.extractKey(header)</b>
 <b class="fc">&nbsp;        name(key)</b>
 <b class="fc">&nbsp;        value(value)</b>
@@ -457,7 +472,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    72.7%
   </span>
   <span class="absValue">
-    (10/12)
+    (8/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    42.2%
+    32.6%
   </span>
   <span class="absValue">
-    (19/45)
+    (14/43)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    56.7%
   </span>
   <span class="absValue">
-    (98/147)
+    (76/134)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    58.4%
+    51.9%
   </span>
   <span class="absValue">
-    (364/623)
+    (284/547)
   </span>
 </td>
 </tr>
@@ -125,7 +125,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.readMap
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.collections.Map
@@ -229,7 +228,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_FAMILYNAME) == 0L) {</b>
 <b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;familyName&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_ROCKETCOUNT) == 0L) {</b>
@@ -242,21 +241,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [EmojiKeyModel].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): EmojiKeyModel {
-<b class="fc">&nbsp;    var familyNameValue: String? = null</b>
-<b class="fc">&nbsp;    var rocketCountValue: Int = 0</b>
-<b class="fc">&nbsp;    var emojiMapValue: Map&lt;String, String&gt;? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var familyNameValue: String? = null</b>
+<b class="nc">&nbsp;    var rocketCountValue: Int = 0</b>
+<b class="nc">&nbsp;    var emojiMapValue: Map&lt;String, String&gt;? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          familyNameValue = reader.nextString()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_FAMILYNAME</b>
+<b class="nc">&nbsp;          familyNameValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_FAMILYNAME</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
-<b class="fc">&nbsp;          rocketCountValue = reader.nextInt()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_ROCKETCOUNT</b>
+<b class="nc">&nbsp;          rocketCountValue = reader.nextInt()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_ROCKETCOUNT</b>
 &nbsp;        }
 &nbsp;        2 -&gt; {
 <b class="nc">&nbsp;          emojiMapValue = reader.readMap({ reader.nextKey()!! }) {</b>
@@ -270,18 +269,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
-<b class="fc">&nbsp;    reader.endObject()</b>
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_EMOJIMAP) == MASK_OPTS_EMOJIMAP) {</b>
+<b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_EMOJIMAP) == MASK_OPTS_EMOJIMAP) {</b>
 <b class="nc">&nbsp;      return EmojiKeyModel(</b>
 <b class="nc">&nbsp;        familyName = familyNameValue!!,</b>
 <b class="nc">&nbsp;        rocketCount = rocketCountValue,</b>
 <b class="nc">&nbsp;        emojiMap = emojiMapValue!!,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="fc">&nbsp;    return EmojiKeyModel(</b>
-<b class="fc">&nbsp;      familyName = familyNameValue!!,</b>
-<b class="fc">&nbsp;      rocketCount = rocketCountValue,</b>
+<b class="nc">&nbsp;    return EmojiKeyModel(</b>
+<b class="nc">&nbsp;      familyName = familyNameValue!!,</b>
+<b class="nc">&nbsp;      rocketCount = rocketCountValue,</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
@@ -356,20 +355,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: EmojiKeyModel) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_FAMILYNAME, value.familyName)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ROCKETCOUNT, value.rocketCount)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_EMOJIMAP)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    for ((mapKey0, mapVal0) in value.emojiMap) {</b>
-<b class="nc">&nbsp;      writer.name(mapKey0)</b>
-<b class="nc">&nbsp;      writer.value(mapVal0)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: EmojiKeyModel) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeField(HS_FAMILYNAME, value.familyName)</b>
@@ -390,13 +375,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;familyName\&quot;:\&quot;\&quot;,\&quot;rocketCount\&quot;:0}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;familyName\&quot;:\&quot;\&quot;,\&quot;rocketCount\&quot;:0}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -431,7 +409,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

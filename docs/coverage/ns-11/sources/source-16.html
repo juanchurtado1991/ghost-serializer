@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostWrappedKeysCaptureKt</title>
+  <title>GhostSerialization Coverage Report > JsonReaderOptions</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostWrappedKeysCaptureKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: JsonReaderOptions (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,42 +46,110 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostWrappedKeysCaptureKt</td>
+  <td class="name">JsonReaderOptions</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.2%
+  </span>
+  <span class="absValue">
+    (84/106)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.5%
+  </span>
+  <span class="absValue">
+    (115/123)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.7%
+  </span>
+  <span class="absValue">
+    (759/819)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">JsonReaderOptions$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (12/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    85%
   </span>
   <span class="absValue">
-    (2/3)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    66.7%
-  </span>
-  <span class="absValue">
-    (2/3)
+    (34/40)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    94.7%
   </span>
   <span class="absValue">
-    (10/15)
+    (196/207)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    84.6%
+  </span>
+  <span class="absValue">
+    (11/13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.4%
+  </span>
+  <span class="absValue">
+    (96/118)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.4%
+  </span>
+  <span class="absValue">
+    (149/163)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.1%
+  </span>
+  <span class="absValue">
+    (955/1026)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -92,152 +157,327 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;ReplaceSizeCheckWithIsNotEmpty&quot;)
 &nbsp;
 &nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.acquireScratchBuffer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.bytes.captureRawJson
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.captureRawJson
-&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;import com.ghost.serialization.parser.strings.packChars4
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Stack-scoped accumulator for `@GhostWrappedKeys`
-&nbsp; * deserialization.
+&nbsp; * Dispatch options for optimized JSON field identification; uses a 4-byte hashing engine
+&nbsp; * to minimize collisions during field lookup.
 &nbsp; *
-&nbsp; * Each slot stores a zero-copy [RawJson] slice for one wire key. [materializeWrappedObject] builds
-&nbsp; * a synthetic `{ &quot;k1&quot;: v1, &quot;k2&quot;: v2, ... }` object in a pooled scratch buffer (amortized zero
-&nbsp; * allocation on the hot path).
+&nbsp; * [rawBytes] stores field names as raw [ByteArray] (not Okio ByteString) so [verifyKeyMatch]
+&nbsp; * compares bytes directly, no virtual dispatch or Okio `rangeEquals` bounds checks.
+&nbsp; * [rawChars] mirrors [rawStrings] as [CharArray] for the same reason on the String channel.
 &nbsp; */
-&nbsp;class GhostWrappedKeysCapture(
-&nbsp;    private val slotCount: Int,
+&nbsp;class JsonReaderOptions(
+<b class="fc">&nbsp;    val rawBytes: Array&lt;ByteArray&gt;,</b>
+<b class="fc">&nbsp;    @PublishedApi internal val shift: Int,</b>
+<b class="fc">&nbsp;    @PublishedApi internal val multiplier: Int,</b>
+<b class="fc">&nbsp;    @PublishedApi internal val tableSize: Int,</b>
+<b class="fc">&nbsp;    val rawStrings: Array&lt;String&gt;,</b>
+<b class="fc">&nbsp;    @PublishedApi internal val enableStringDispatch: Boolean = false,</b>
+<b class="fc">&nbsp;    @PublishedApi internal val extendedKeyHash: Boolean? = null</b>
 &nbsp;) {
-&nbsp;    private val values = arrayOfNulls&lt;RawJson&gt;(slotCount)
-&nbsp;    private var presentMask = 0
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Records a captured JSON value for [index] (position in the annotation `keys` array).
-&nbsp;     */
-&nbsp;    fun put(index: Int, value: RawJson) {
-&nbsp;        values[index] = value
-&nbsp;        presentMask = presentMask or (1 shl index)
+&nbsp;    /** Field names as [CharArray], built once from [rawStrings]; used by the String-channel key matcher. */
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val rawChars: Array&lt;CharArray&gt; = Array(rawStrings.size) { i -&gt;</b>
+<b class="fc">&nbsp;        rawStrings[i].toCharArray()</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Builds UTF-8 bytes for a synthetic wrapper object, or `null` when [omitIfEmpty] /
-&nbsp;     * [omitIfAbsentIndices] rules reject assembly.
-&nbsp;     *
-&nbsp;     * @param keyUtf8Literals Pre-encoded `&quot;key&quot;:` prefixes (including quotes and colon) in key order.
-&nbsp;     * @param omitIfEmpty Skip assembly when every slot is absent or JSON `null`.
-&nbsp;     * @param omitIfAbsentIndices Slot indices that must be present and non-null.
+&nbsp;     * [rawBytes] entries of at most [C.LONG_BYTES] bytes, zero-padded up to exactly
+&nbsp;     * [C.LONG_BYTES] (`ByteArray.copyOf` zero-fills on growth) — lets the predicted-field fast
+&nbsp;     * path compare a short key with a single masked [com.ghost.serialization.parser.bytes.ghostReadLong8]
+&nbsp;     * read instead of a byte-by-byte loop. Entries longer than [C.LONG_BYTES] map to
+&nbsp;     * [EMPTY_PADDED_KEY] and stay on the existing loop+tail path.
 &nbsp;     */
-&nbsp;    fun materializeWrappedObject(
-&nbsp;        keyUtf8Literals: Array&lt;ByteArray&gt;,
-&nbsp;        omitIfEmpty: Boolean,
-&nbsp;        omitIfAbsentIndices: IntArray,
-&nbsp;    ): ByteArray? {
-&nbsp;        if (omitIfEmpty &amp;&amp; !hasNonNullValue()) {
-&nbsp;            return null
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val predictedKeyPadded: Array&lt;ByteArray&gt; = Array(rawBytes.size) { i -&gt;</b>
+<b class="fc">&nbsp;        val bytes = rawBytes[i]</b>
+<b class="pc">&nbsp;        if (bytes.size in 1..C.LONG_BYTES) bytes.copyOf(C.LONG_BYTES) else EMPTY_PADDED_KEY</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Two packed-Long words per candidate (see [com.ghost.serialization.parser.strings.packChars4]),
+&nbsp;     * covering predicted-key names up to [C.MAX_CHAR_FASTPATH_LEN] chars for the String-channel
+&nbsp;     * fast path in [com.ghost.serialization.parser.strings.internalSelect]. Both entries stay `0L`
+&nbsp;     * for candidates outside that range — the `candidateLength` guard at the call site keeps those
+&nbsp;     * on the existing loop+tail path, so the zero value is never read.
+&nbsp;     */
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val predictedCharWord0: LongArray = LongArray(rawChars.size)</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val predictedCharWord1: LongArray = LongArray(rawChars.size)</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val dispatch = IntArray(tableSize) { -1 }</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal var stringDispatch = if (enableStringDispatch) {</b>
+<b class="fc">&nbsp;        IntArray(tableSize) { -1 }</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        EMPTY_DISPATCH_TABLE</b>
+&nbsp;    }
+&nbsp;        get() {
+<b class="fc">&nbsp;            val table = field</b>
+<b class="pc">&nbsp;            if (table === EMPTY_DISPATCH_TABLE) {</b>
+<b class="nc">&nbsp;                val newTable = IntArray(tableSize) { -1 }</b>
+<b class="nc">&nbsp;                buildStringDispatchTable(newTable)</b>
+<b class="nc">&nbsp;                field = newTable</b>
+<b class="nc">&nbsp;                return newTable</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return table</b>
 &nbsp;        }
-&nbsp;        for (index in omitIfAbsentIndices) {
-&nbsp;            val captured = values[index]
-&nbsp;            if (captured == null || captured.isJsonNull) {
-&nbsp;                return null
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val hasCollisions: Boolean</b>
+&nbsp;
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        var detectedCollision = false</b>
+<b class="fc">&nbsp;        val seen = HashSet&lt;Long&gt;()</b>
+<b class="fc">&nbsp;        for (bytes in rawBytes) {</b>
+<b class="pc">&nbsp;            if (bytes.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                var key = 0L</b>
+<b class="pc">&nbsp;                if (bytes.size &gt;= C.SINGLE_CHAR_SIZE) {</b>
+<b class="fc">&nbsp;                    key = key or (bytes[0].toLong() and C.LONG_BYTE_MASK)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE) {</b>
+<b class="fc">&nbsp;                    key = key or ((bytes[1].toLong() and C.LONG_BYTE_MASK) shl C.SHIFT_8)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {</b>
+<b class="fc">&nbsp;                    key = key or ((bytes[2].toLong() and C.LONG_BYTE_MASK) shl C.SHIFT_16)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.UNICODE_HEX_LENGTH) {</b>
+<b class="fc">&nbsp;                    key = key or ((bytes[3].toLong() and C.LONG_BYTE_MASK) shl C.SHIFT_24)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val packed = key or (bytes.size.toLong() shl (C.SHIFT_24 + C.SHIFT_8))</b>
+<b class="fc">&nbsp;                if (!seen.add(packed)) {</b>
+<b class="fc">&nbsp;                    detectedCollision = true</b>
+&nbsp;                    break
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        hasCollisions = if (extendedKeyHash == true) {</b>
+<b class="fc">&nbsp;            true</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            detectedCollision</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val tableMask = tableSize - 1</b>
+<b class="fc">&nbsp;        for (index in rawBytes.indices) {</b>
+<b class="fc">&nbsp;            val bytes = rawBytes[index]</b>
+<b class="pc">&nbsp;            if (bytes.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                var key = 0</b>
+<b class="pc">&nbsp;                if (bytes.size &gt;= C.SINGLE_CHAR_SIZE) {</b>
+<b class="fc">&nbsp;                    key = key or (bytes[0].toInt() and C.BYTE_MASK)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE) {</b>
+<b class="fc">&nbsp;                    key = key or ((bytes[1].toInt() and C.BYTE_MASK) shl C.SHIFT_8)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {</b>
+<b class="fc">&nbsp;                    key = key or ((bytes[2].toInt() and C.BYTE_MASK) shl C.SHIFT_16)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (bytes.size &gt;= C.UNICODE_HEX_LENGTH) {</b>
+<b class="fc">&nbsp;                    key = key or ((bytes[3].toInt() and C.BYTE_MASK) shl C.SHIFT_24)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (hasCollisions) {</b>
+<b class="fc">&nbsp;                    var ci = C.UNICODE_HEX_LENGTH</b>
+<b class="fc">&nbsp;                    while (ci &lt; bytes.size) {</b>
+<b class="fc">&nbsp;                        key =</b>
+<b class="fc">&nbsp;                            key * C.COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and C.BYTE_MASK); ci++</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                val perfectHashKey = ((key * multiplier + bytes.size) shr shift) and tableMask</b>
+<b class="pc">&nbsp;                if (dispatch[perfectHashKey] == -1) {</b>
+<b class="fc">&nbsp;                    dispatch[perfectHashKey] = index</b>
+&nbsp;                }
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-&nbsp;        var estimatedSize = OPEN_CLOSE_BRACE_SIZE
-&nbsp;        var presentCount = 0
-&nbsp;        for (index in 0 until slotCount) {
-&nbsp;            if ((presentMask and (1 shl index)) == 0) {
-&nbsp;                continue
-&nbsp;            }
-&nbsp;            presentCount++
-&nbsp;            estimatedSize += keyUtf8Literals[index].size
-&nbsp;            estimatedSize += values[index]!!.storageLength
-&nbsp;        }
-&nbsp;        if (presentCount == 0) {
-&nbsp;            return if (omitIfEmpty) {
-&nbsp;                null
-&nbsp;            } else {
-&nbsp;                byteArrayOf(OPEN_BRACE, CLOSE_BRACE)
-&nbsp;            }
-&nbsp;        }
-&nbsp;        if (presentCount &gt; 1) {
-&nbsp;            estimatedSize += presentCount - 1
+<b class="fc">&nbsp;        if (enableStringDispatch) {</b>
+<b class="fc">&nbsp;            buildStringDispatchTable(stringDispatch)</b>
 &nbsp;        }
 &nbsp;
-&nbsp;        val scratch = acquireScratchBuffer(estimatedSize)
-&nbsp;        var writePos = 0
-&nbsp;        scratch[writePos++] = OPEN_BRACE
-&nbsp;        var wroteAny = false
-&nbsp;        for (index in 0 until slotCount) {
-&nbsp;            if ((presentMask and (1 shl index)) == 0) {
-&nbsp;                continue
+<b class="fc">&nbsp;        for (i in rawChars.indices) {</b>
+<b class="fc">&nbsp;            val candidate = rawChars[i]</b>
+<b class="pc">&nbsp;            if (candidate.size in 1..C.MAX_CHAR_FASTPATH_LEN) {</b>
+<b class="fc">&nbsp;                val padded = candidate.copyOf(C.MAX_CHAR_FASTPATH_LEN)</b>
+<b class="fc">&nbsp;                predictedCharWord0[i] = packChars4(padded, 0)</b>
+<b class="fc">&nbsp;                if (candidate.size &gt; C.LONG_CHARS) {</b>
+<b class="fc">&nbsp;                    predictedCharWord1[i] = packChars4(padded, C.LONG_CHARS)</b>
+&nbsp;                }
 &nbsp;            }
-&nbsp;            if (wroteAny) {
-&nbsp;                scratch[writePos++] = COMMA
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+&nbsp;
+&nbsp;    private fun buildStringDispatchTable(table: IntArray) {
+<b class="fc">&nbsp;        val tableMask = tableSize - 1</b>
+<b class="fc">&nbsp;        for (index in rawStrings.indices) {</b>
+<b class="fc">&nbsp;            val keyString = rawStrings[index]</b>
+<b class="pc">&nbsp;            if (keyString.isNotEmpty()) {</b>
+<b class="fc">&nbsp;                var key = 0</b>
+<b class="pc">&nbsp;                if (keyString.length &gt;= C.SINGLE_CHAR_SIZE) {</b>
+<b class="fc">&nbsp;                    key = key or (keyString[0].code and C.BYTE_MASK)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (keyString.length &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE) {</b>
+<b class="fc">&nbsp;                    key = key or ((keyString[1].code and C.BYTE_MASK) shl C.SHIFT_8)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (keyString.length &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {</b>
+<b class="fc">&nbsp;                    key = key or ((keyString[2].code and C.BYTE_MASK) shl C.SHIFT_16)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (keyString.length &gt;= C.UNICODE_HEX_LENGTH) {</b>
+<b class="fc">&nbsp;                    key = key or ((keyString[3].code and C.BYTE_MASK) shl C.SHIFT_24)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (hasCollisions) {</b>
+<b class="fc">&nbsp;                    var ci = C.UNICODE_HEX_LENGTH</b>
+<b class="fc">&nbsp;                    while (ci &lt; keyString.length) {</b>
+<b class="fc">&nbsp;                        key =</b>
+<b class="fc">&nbsp;                            key * C.COLLISION_HASH_MULTIPLIER + (keyString[ci].code and C.BYTE_MASK); ci++</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask</b>
+<b class="pc">&nbsp;                if (table[perfectHashKey] == -1) {</b>
+<b class="fc">&nbsp;                    table[perfectHashKey] = index</b>
+&nbsp;                }
 &nbsp;            }
-&nbsp;            wroteAny = true
-&nbsp;            val keyPrefix = keyUtf8Literals[index]
-&nbsp;            keyPrefix.copyInto(scratch, writePos)
-&nbsp;            writePos += keyPrefix.size
-&nbsp;            val captured = values[index]!!
-&nbsp;            captured.storage.copyInto(
-&nbsp;                scratch,
-&nbsp;                writePos,
-&nbsp;                captured.storageOffset,
-&nbsp;                captured.endExclusive,
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Linear lookup helper for YAML enum-style matching on plain string keys. */
+&nbsp;    fun findOptionIndex(name: String): Int {
+<b class="fc">&nbsp;        val table = stringDispatch</b>
+<b class="fc">&nbsp;        val tableSize = table.size</b>
+<b class="pc">&nbsp;        if (tableSize == 0 || name.isEmpty()) return -1</b>
+&nbsp;
+<b class="fc">&nbsp;        val len = name.length</b>
+<b class="fc">&nbsp;        var key = 0</b>
+<b class="pc">&nbsp;        if (len &gt;= C.SINGLE_CHAR_SIZE) {</b>
+<b class="fc">&nbsp;            key = key or (name[0].code and C.BYTE_MASK)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (len &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE) {</b>
+<b class="fc">&nbsp;            key = key or ((name[1].code and C.BYTE_MASK) shl C.SHIFT_8)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (len &gt;= C.UNICODE_ESCAPE_PREFIX_SIZE + 1) {</b>
+<b class="fc">&nbsp;            key = key or ((name[2].code and C.BYTE_MASK) shl C.SHIFT_16)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (len &gt;= C.UNICODE_HEX_LENGTH) {</b>
+<b class="fc">&nbsp;            key = key or ((name[3].code and C.BYTE_MASK) shl C.SHIFT_24)</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (hasCollisions &amp;&amp; len &gt;= C.UNICODE_HEX_LENGTH) {</b>
+<b class="nc">&nbsp;            key = key xor (name[len - C.SINGLE_CHAR_SIZE].code and C.BYTE_MASK)</b>
+<b class="nc">&nbsp;            key = key xor (name[len shr C.SINGLE_CHAR_SIZE].code and C.BYTE_MASK)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val tableMask = tableSize - 1</b>
+<b class="fc">&nbsp;        val perfectHashKey = ((key * multiplier + len) shr shift) and tableMask</b>
+<b class="fc">&nbsp;        val index = table[perfectHashKey]</b>
+<b class="pc">&nbsp;        if (index != -1 &amp;&amp; rawStrings[index] == name) {</b>
+<b class="fc">&nbsp;            return index</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return -1</b>
+&nbsp;    }
+&nbsp;
+<b class="nc">&nbsp;    fun getOptionString(index: Int): String = rawStrings[index]</b>
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        // Collision disambiguation uses polynomial accumulation inlined directly in init,
+&nbsp;        // buildStringDispatchTable, and each computeKeyHash. See C.COLLISION_HASH_MULTIPLIER.
+&nbsp;        // All five sites must stay identical; PerfectHashFinder (compiler-side) is the sixth.
+&nbsp;
+<b class="fc">&nbsp;        fun of(vararg names: String): JsonReaderOptions = of(</b>
+<b class="fc">&nbsp;            C.DEFAULT_DISPATCH_SHIFT,</b>
+<b class="fc">&nbsp;            C.DEFAULT_DISPATCH_MULTIPLIER,</b>
+<b class="fc">&nbsp;            C.DEFAULT_DISPATCH_TABLE_SIZE,</b>
+<b class="fc">&nbsp;            *names</b>
+&nbsp;        )
+&nbsp;
+&nbsp;        fun of(shift: Int, multiplier: Int, vararg names: String): JsonReaderOptions {
+<b class="fc">&nbsp;            return of(shift, multiplier, C.DEFAULT_DISPATCH_TABLE_SIZE, *names)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        fun of(
+&nbsp;            shift: Int,
+&nbsp;            multiplier: Int,
+&nbsp;            tableSize: Int,
+&nbsp;            vararg names: String
+&nbsp;        ): JsonReaderOptions {
+<b class="fc">&nbsp;            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }</b>
+<b class="fc">&nbsp;            val rawStrings = Array(names.size) { names[it] }</b>
+<b class="fc">&nbsp;            return JsonReaderOptions(</b>
+<b class="fc">&nbsp;                rawBytes,</b>
+<b class="fc">&nbsp;                shift,</b>
+<b class="fc">&nbsp;                multiplier,</b>
+<b class="fc">&nbsp;                tableSize,</b>
+<b class="fc">&nbsp;                rawStrings,</b>
+<b class="fc">&nbsp;                enableStringDispatch = true</b>
 &nbsp;            )
-&nbsp;            writePos += captured.storageLength
 &nbsp;        }
-&nbsp;        scratch[writePos++] = CLOSE_BRACE
-&nbsp;        return scratch.copyOf(writePos)
-&nbsp;    }
 &nbsp;
-&nbsp;    private fun hasNonNullValue(): Boolean {
-&nbsp;        for (index in 0 until slotCount) {
-&nbsp;            val captured = values[index]
-&nbsp;            if (captured != null &amp;&amp; !captured.isJsonNull) {
-&nbsp;                return true
-&nbsp;            }
+&nbsp;        fun of(
+&nbsp;            shift: Int,
+&nbsp;            multiplier: Int,
+&nbsp;            enableStringDispatch: Boolean,
+&nbsp;            vararg names: String
+&nbsp;        ): JsonReaderOptions {
+<b class="nc">&nbsp;            return of(</b>
+<b class="nc">&nbsp;                shift,</b>
+<b class="nc">&nbsp;                multiplier,</b>
+<b class="nc">&nbsp;                C.DEFAULT_DISPATCH_TABLE_SIZE,</b>
+<b class="nc">&nbsp;                enableStringDispatch,</b>
+<b class="nc">&nbsp;                *names</b>
+&nbsp;            )
 &nbsp;        }
-&nbsp;        return false
+&nbsp;
+&nbsp;        fun of(
+&nbsp;            shift: Int,
+&nbsp;            multiplier: Int,
+&nbsp;            tableSize: Int,
+&nbsp;            enableStringDispatch: Boolean,
+&nbsp;            vararg names: String
+&nbsp;        ): JsonReaderOptions {
+<b class="fc">&nbsp;            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }</b>
+<b class="fc">&nbsp;            val rawStrings = Array(names.size) { names[it] }</b>
+<b class="fc">&nbsp;            return JsonReaderOptions(</b>
+<b class="fc">&nbsp;                rawBytes,</b>
+<b class="fc">&nbsp;                shift,</b>
+<b class="fc">&nbsp;                multiplier,</b>
+<b class="fc">&nbsp;                tableSize,</b>
+<b class="fc">&nbsp;                rawStrings,</b>
+<b class="fc">&nbsp;                enableStringDispatch = enableStringDispatch</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        fun of(
+&nbsp;            shift: Int,
+&nbsp;            multiplier: Int,
+&nbsp;            tableSize: Int,
+&nbsp;            enableStringDispatch: Boolean,
+&nbsp;            extendedKeyHash: Boolean,
+&nbsp;            vararg names: String
+&nbsp;        ): JsonReaderOptions {
+<b class="fc">&nbsp;            val rawBytes = Array(names.size) { names[it].encodeToByteArray() }</b>
+<b class="fc">&nbsp;            val rawStrings = Array(names.size) { names[it] }</b>
+<b class="fc">&nbsp;            return JsonReaderOptions(</b>
+<b class="fc">&nbsp;                rawBytes,</b>
+<b class="fc">&nbsp;                shift,</b>
+<b class="fc">&nbsp;                multiplier,</b>
+<b class="fc">&nbsp;                tableSize,</b>
+<b class="fc">&nbsp;                rawStrings,</b>
+<b class="fc">&nbsp;                enableStringDispatch = enableStringDispatch,</b>
+<b class="fc">&nbsp;                extendedKeyHash = extendedKeyHash</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        private val EMPTY_DISPATCH_TABLE = IntArray(0)</b>
+<b class="fc">&nbsp;        private val EMPTY_PADDED_KEY = ByteArray(0)</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    private companion object {
-&nbsp;        private const val OPEN_BRACE: Byte = &#39;{&#39;.code.toByte()
-&nbsp;        private const val CLOSE_BRACE: Byte = &#39;}&#39;.code.toByte()
-&nbsp;        private const val COMMA: Byte = &#39;,&#39;.code.toByte()
-&nbsp;        private const val OPEN_CLOSE_BRACE_SIZE = 2
-&nbsp;    }
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Captures the next JSON value into [capture] at [slotIndex] using a zero-copy [RawJson] slice.
-&nbsp; */
-&nbsp;fun GhostJsonFlatReader.captureWrappedKey(capture: GhostWrappedKeysCapture, slotIndex: Int) {
-<b class="fc">&nbsp;    capture.put(slotIndex, captureRawJson())</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * @see captureWrappedKey
-&nbsp; */
-&nbsp;fun GhostJsonReader.captureWrappedKey(capture: GhostWrappedKeysCapture, slotIndex: Int) {
-<b class="nc">&nbsp;    capture.put(slotIndex, captureRawJson())</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * @see captureWrappedKey
-&nbsp; */
-&nbsp;fun GhostJsonStringReader.captureWrappedKey(capture: GhostWrappedKeysCapture, slotIndex: Int) {
-<b class="fc">&nbsp;    capture.put(slotIndex, captureRawJson())</b>
 &nbsp;}
 </code>
 </pre>
@@ -262,7 +502,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

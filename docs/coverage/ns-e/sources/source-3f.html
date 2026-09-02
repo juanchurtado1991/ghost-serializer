@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    63.6%
   </span>
   <span class="absValue">
-    (8/12)
+    (7/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    20%
+    16.7%
   </span>
   <span class="absValue">
-    (6/30)
+    (5/30)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    57.1%
+    51%
   </span>
   <span class="absValue">
-    (60/105)
+    (49/96)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    49.2%
+    44.6%
   </span>
   <span class="absValue">
-    (204/415)
+    (166/372)
   </span>
 </td>
 </tr>
@@ -117,7 +117,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.endObject
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -210,15 +209,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [DeviceStateWrapper].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): DeviceStateWrapper {
-<b class="fc">&nbsp;    var stateValue: DeviceState? = null</b>
-<b class="fc">&nbsp;    var syncValue: SyncStatus? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var stateValue: DeviceState? = null</b>
+<b class="nc">&nbsp;    var syncValue: SyncStatus? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          stateValue = DeviceStateSerializer.deserialize(reader)</b>
+<b class="nc">&nbsp;          stateValue = DeviceStateSerializer.deserialize(reader)</b>
 <b class="nc">&nbsp;          mask0 = mask0 or MASK_STATE</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
@@ -291,15 +290,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: DeviceStateWrapper) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_STATE)</b>
-<b class="nc">&nbsp;    DeviceStateSerializer.serialize(writer, value.state)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_SYNC)</b>
-<b class="nc">&nbsp;    SyncStatusSerializer.serialize(writer, value.sync)</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: DeviceStateWrapper) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(HS_STATE)</b>
@@ -315,13 +305,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;state\&quot;:{},\&quot;sync\&quot;:{}}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;state\&quot;:{},\&quot;sync\&quot;:{}}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -356,7 +339,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

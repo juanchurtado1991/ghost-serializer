@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80%
+    88.9%
   </span>
   <span class="absValue">
-    (8/10)
+    (8/9)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    52.5%
+    62.7%
   </span>
   <span class="absValue">
-    (32/61)
+    (32/51)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    61.6%
+    71.9%
   </span>
   <span class="absValue">
-    (154/250)
+    (151/210)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    56.9%
+    67.2%
   </span>
   <span class="absValue">
-    (562/988)
+    (543/808)
   </span>
 </td>
 </tr>
@@ -123,7 +123,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.readList
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.collections.List
@@ -381,51 +380,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: TweetEntities) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_HASHTAGS)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size0 = value.hashtags.size</b>
-<b class="nc">&nbsp;    for (i0 in 0 until size0) {</b>
-<b class="nc">&nbsp;      val item0 = value.hashtags[i0]</b>
-<b class="nc">&nbsp;      HashtagItemSerializer.serialize(writer, item0)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_SYMBOLS)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size1 = value.symbols.size</b>
-<b class="nc">&nbsp;    for (i1 in 0 until size1) {</b>
-<b class="nc">&nbsp;      val item1 = value.symbols[i1]</b>
-<b class="nc">&nbsp;      SymbolItemSerializer.serialize(writer, item1)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_URLS)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size2 = value.urls.size</b>
-<b class="nc">&nbsp;    for (i2 in 0 until size2) {</b>
-<b class="nc">&nbsp;      val item2 = value.urls[i2]</b>
-<b class="nc">&nbsp;      UrlItemSerializer.serialize(writer, item2)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_USER_MENTIONS)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size3 = value.userMentions.size</b>
-<b class="nc">&nbsp;    for (i3 in 0 until size3) {</b>
-<b class="nc">&nbsp;      val item3 = value.userMentions[i3]</b>
-<b class="nc">&nbsp;      UserMentionSerializer.serialize(writer, item3)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_MEDIA)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size4 = value.media.size</b>
-<b class="nc">&nbsp;    for (i4 in 0 until size4) {</b>
-<b class="nc">&nbsp;      val item4 = value.media[i4]</b>
-<b class="nc">&nbsp;      MediaItemSerializer.serialize(writer, item4)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: TweetEntities) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(H_HASHTAGS)</b>
 <b class="fc">&nbsp;    writer.beginArray()</b>
@@ -524,13 +478,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{}&quot;</b>
 &nbsp;          )
@@ -562,7 +509,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

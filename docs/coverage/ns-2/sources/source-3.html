@@ -123,10 +123,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;@PublishedApi
 <b class="fc">&nbsp;internal val SCRATCH_BUFFER_SIZE_INT = SCRATCH_BUFFER_SIZE</b>
 &nbsp;
-&nbsp;/**
-&nbsp; * Provides access to reusable buffers to minimize allocations during hot paths.
-&nbsp; * Tiered strategy handles small, medium, and large payloads efficiently.
-&nbsp; */
+&nbsp;/** Acquires a reusable buffer of at least [minSize] from the tiered pool, minimizing hot-path allocations. */
 &nbsp;@InternalGhostApi
 <b class="nc">&nbsp;fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {</b>
 <b class="fc">&nbsp;    val pool = getLocalPool()</b>
@@ -195,9 +192,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;}
 &nbsp;
-&nbsp;/**
-&nbsp; * Releases a buffer back to the pool.
-&nbsp; */
+&nbsp;/** Releases a buffer back to the pool. */
 &nbsp;@InternalGhostApi
 &nbsp;fun releaseScratchBuffer(buffer: ByteArray) {
 <b class="fc">&nbsp;    val pool = getLocalPool()</b>
@@ -234,7 +229,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

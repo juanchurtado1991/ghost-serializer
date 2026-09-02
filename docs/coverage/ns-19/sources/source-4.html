@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    42.9%
+    33.3%
   </span>
   <span class="absValue">
-    (3/7)
+    (2/6)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    42.9%
+    33.3%
   </span>
   <span class="absValue">
-    (3/7)
+    (2/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    40.9%
+    33.3%
   </span>
   <span class="absValue">
-    (9/22)
+    (6/18)
   </span>
 </td>
 </tr>
@@ -105,7 +105,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextChar
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextChar
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;
@@ -119,17 +118,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        writer.value(value)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: Char) {
-<b class="nc">&nbsp;        writer.value(value)</b>
-&nbsp;    }
-&nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Char) {
 <b class="nc">&nbsp;        writer.value(value)</b>
 &nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonReader): Char = reader.nextChar()</b>
 &nbsp;
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Char = reader.nextChar()</b>
+<b class="nc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Char = reader.nextChar()</b>
 &nbsp;
 <b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Char = reader.nextChar()</b>
 &nbsp;}
@@ -156,7 +151,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -107,19 +107,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Extension methods for [GhostPropertyModel] to facilitate code generation.
-&nbsp; *
-&nbsp; * These helpers encapsulate the logic for determining variable types, initial values,
-&nbsp; * and return expressions based on the property&#39;s metadata (e.g., nullability,
-&nbsp; * primitive types, value classes).
+&nbsp; * Extension methods for [GhostPropertyModel] used during codegen to compute variable types,
+&nbsp; * initial values, and return expressions from a property&#39;s metadata.
 &nbsp; */
 &nbsp;
 &nbsp;/**
-&nbsp; * Resolves the appropriate KotlinPoet [TypeName] to declare the local tracking variable
-&nbsp; * for this property. Handled cases include:
-&nbsp; * - Non-nullable primitives: mapped directly to their unboxed Kotlin/JVM types.
-&nbsp; * - Non-nullable inline/value classes: mapped to the underlying unboxed primitive type.
-&nbsp; * - Nullable/Object types: coerced to a nullable KotlinPoet type representation.
+&nbsp; * Resolves the [TypeName] for this property&#39;s local tracking variable: unboxed for
+&nbsp; * non-nullable primitives and inline/value classes, nullable otherwise.
 &nbsp; */
 &nbsp;internal fun GhostPropertyModel.getVariableType(): TypeName {
 <b class="fc">&nbsp;    val isPrimitive = type.isPrimitive() &amp;&amp; !isNullable</b>
@@ -195,9 +189,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Generates the conditional fallback return expression when standard deserialization
-&nbsp; * supports default arguments. If the property mask bit is set, it resolves to the parsed variable,
-&nbsp; * otherwise it resolves to the copy-based result field value.
+&nbsp; * Fallback return expression for standard deserialization: the parsed variable when the mask
+&nbsp; * bit is set, otherwise the copy-based result field value.
 &nbsp; *
 &nbsp; * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
 &nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
@@ -252,10 +245,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * True when the whitelisted ctor default equals the local placeholder init
-&nbsp; * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed`.
-&nbsp; *
-&nbsp; * Safe because absent fields leave the local at its init value, which is already the
-&nbsp; * Kotlin default (`null` / `false` / `0` / `0L` / …).
+&nbsp; * ([getInitialValue]), so `if (mask) parsed else default` collapses to just `parsed` — safe
+&nbsp; * because absent fields already leave the local at that same default.
 &nbsp; */
 &nbsp;internal fun GhostPropertyModel.defaultMatchesLocalInit(): Boolean {
 <b class="pc">&nbsp;    val expr = defaultExpression ?: return false</b>
@@ -264,10 +255,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Single-ctor arg for a default property: parsed value when the mask bit is set, otherwise the
-&nbsp; * whitelisted source default expression.
-&nbsp; *
-&nbsp; * When [defaultMatchesLocalInit] is true, emits only the parsed local — the mask ternary is
-&nbsp; * redundant because an absent field already left the local at the Kotlin default.
+&nbsp; * whitelisted source default expression. Emits only the parsed local when
+&nbsp; * [defaultMatchesLocalInit] holds, since the mask ternary would be redundant.
 &nbsp; */
 &nbsp;internal fun GhostPropertyModel.getSingleShotDefaultArgExpression(
 &nbsp;    maskIdx: Int,
@@ -340,9 +329,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Generates the conditional fallback return expression when fragmented deserialization
-&nbsp; * supports default arguments. It maps tracking mask checks directly to the fields on
-&nbsp; * the `DecodingContext` instance.
+&nbsp; * Fragmented variant of [getDefaultValueReturnExpression]: maps tracking mask checks directly
+&nbsp; * to fields on the `DecodingContext` instance.
 &nbsp; *
 &nbsp; * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
 &nbsp; * @param bitMaskStr String representation of the bitmask representing this property.
@@ -415,7 +403,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

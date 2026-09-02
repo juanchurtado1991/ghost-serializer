@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    87.5%
+    85.7%
   </span>
   <span class="absValue">
-    (7/8)
+    (6/7)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    70%
+    66.7%
   </span>
   <span class="absValue">
-    (7/10)
+    (6/9)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    38.2%
+    33.3%
   </span>
   <span class="absValue">
-    (21/55)
+    (17/51)
   </span>
 </td>
 </tr>
@@ -105,7 +105,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.captureRawJson
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;
@@ -124,10 +123,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        reader.captureRawJson()</b>
 &nbsp;
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: RawJson) {
-<b class="fc">&nbsp;        writer.rawValue(value)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: RawJson) {
 <b class="fc">&nbsp;        writer.rawValue(value)</b>
 &nbsp;    }
 &nbsp;
@@ -170,7 +165,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -118,10 +118,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * Maps `typeUrl` strings to the Kotlin types packed inside a [ProtoAny], so `pack`/`unpack`
 &nbsp; * work without the caller manually juggling bytes.
 &nbsp; *
-&nbsp; * Registration is independent of [Ghost]&#39;s own serializer registry — the type still needs a
-&nbsp; * `GhostSerializer` registered there too (e.g. via `@GhostProtoSerialization` + KSP, or a manual
-&nbsp; * `GhostRegistry`). This registry only remembers which
-&nbsp; * `typeUrl` string corresponds to which [KClass].
+&nbsp; * Independent of [Ghost]&#39;s serializer registry — the type still needs a `GhostSerializer`
+&nbsp; * registered there too (e.g. via `@GhostProtoSerialization` + KSP). This registry only
+&nbsp; * remembers which `typeUrl` corresponds to which [KClass].
 &nbsp; *
 &nbsp; * ```kotlin
 &nbsp; * ProtoAnyRegistry.register&lt;DeviceRebooted&gt;(&quot;type.googleapis.com/myapp.DeviceRebooted&quot;)
@@ -261,7 +260,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

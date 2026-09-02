@@ -126,10 +126,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            if (byteCode &lt;= C.SPACE_INT) continue</b>
 <b class="fc">&nbsp;            chunk[chunkIndex++] = byteCode</b>
 <b class="fc">&nbsp;            if (chunkIndex == 4) {</b>
-&nbsp;                // Chars outside the LUT&#39;s range (any non-Latin-1 code unit) are never valid
-&nbsp;                // base64 alphabet members — bounds-check rather than indexing lut[] directly,
-&nbsp;                // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
-&nbsp;                // documented parse error.
+&nbsp;                // Bounds-check rather than indexing lut[] directly: a non-Latin-1 code unit would
+&nbsp;                // throw ArrayIndexOutOfBoundsException instead of the documented parse error.
 <b class="fc">&nbsp;                val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
 <b class="fc">&nbsp;                val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
 <b class="fc">&nbsp;                val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
@@ -194,7 +192,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

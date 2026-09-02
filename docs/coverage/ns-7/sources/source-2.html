@@ -108,33 +108,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;internal object PerfectHashFinder {
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Utility to find a collision-free hash multiplier and shift configuration
-&nbsp;     * mapping a set of field names to unique index slots inside a 1024-entry table.
+&nbsp;     * Finds a collision-free hash multiplier/shift pair mapping [names] to unique index slots
+&nbsp;     * in a dispatch table, used by the generated reader&#39;s `selectNameAndConsume`. The first four
+&nbsp;     * bytes of each name are packed into a 32-bit key; names longer than that fall back to an
+&nbsp;     * extended (polynomial) hash if the prefix alone collides.
 &nbsp;     *
-&nbsp;     * ### How the Reader uses these parameters (Runtime Walkthrough):
-&nbsp;     *
-&nbsp;     * For a field named **&quot;age&quot;** (3 bytes: &#39;a&#39;=97, &#39;g&#39;=103, &#39;e&#39;=101)
-&nbsp;     * and optimizer parameters `multiplier = 31` and `shift = 5`:
-&nbsp;     *
-&nbsp;     * | Step | Action | Description | Resulting Value |
-&nbsp;     * | :--- | :--- | :--- | :--- |
-&nbsp;     * | **1. Bytes** | Capture | Read the first 4 bytes of &quot;age&quot; | `[97, 103, 101]` |
-&nbsp;     * | **2. Packing** | Create `key` | Place bytes into 4 slots (32-bit container) | `0x00656761` (hex) |
-&nbsp;     * | **3. Hash** | Apply formula | Calculate: `((key * mult + size) &gt;&gt; shift) &amp; 1023` | `((6645601 * 31 + 3) &gt;&gt; 5) &amp; 1023` |
-&nbsp;     * | **4. Lookup** | Index | Access the dispatch table | `dispatch(hash)` -&gt; Returns index |
-&nbsp;     *
-&nbsp;     * #### Deep dive into &quot;Packing&quot; (Step 2):
-&nbsp;     * A 32-bit integer is treated as four byte slots. Each input byte is placed in its slot,
-&nbsp;     * shifted left so the slots do not overlap:
-&nbsp;     *
-&nbsp;     * ```text
-&nbsp;     * Slot 4 (24-31) | Slot 3 (16-23) | Slot 2 (8-15) | Slot 1 (0-7)
-&nbsp;     * --------------------------------------------------------------
-&nbsp;     * Empty      |     &#39;e&#39; (101)  |   &#39;g&#39; (103)   |  &#39;a&#39; (97)
-&nbsp;     * ```
-&nbsp;     * *Each shift (&lt;&lt; 8, &lt;&lt; 16, etc.) just pushes the byte into its assigned slot.*
-&nbsp;     *
-&nbsp;     * @param names The list of unique field names to index.
 &nbsp;     * @return Optimal hash parameters and whether extended key hashing is required at runtime.
 &nbsp;     */
 &nbsp;    fun findPerfectHash(names: List&lt;String&gt;): PerfectHashConfig {
@@ -272,7 +250,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

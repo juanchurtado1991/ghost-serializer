@@ -103,9 +103,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
-&nbsp;/**
-&nbsp; * Subsystem for parsing YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]).
-&nbsp; */
+&nbsp;/** Parses YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]). */
 &nbsp;
 &nbsp;/** Parses flow-style mappings (`{key: value}`). */
 &nbsp;internal fun GhostYamlFlatReader.readFlowMapping(): Map&lt;String, Any?&gt; {
@@ -121,9 +119,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return result</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    // Flow collections nest via ordinary recursive readValue calls the same way block ones do
-&nbsp;    // (a value can itself be another &quot;{&quot;/&quot;[&quot;), so they need the same depth guard — without it,
-&nbsp;    // deeply nested flow input has no bound on Kotlin call-stack recursion at all.
+&nbsp;    // Flow collections recurse into readValue the same way block ones do, so they need the same
+&nbsp;    // depth guard — without it, deeply nested flow input has no bound on call-stack recursion.
 <b class="fc">&nbsp;    if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}&quot;)</b>
 <b class="fc">&nbsp;    depth++</b>
 &nbsp;    try {
@@ -138,10 +135,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_MAPPING)</b>
 &nbsp;            }
 &nbsp;
-&nbsp;            // Read key. A nested flow collection used as a key (e.g. &quot;[d, e]: f&quot;) has to go
-&nbsp;            // through readValue — readKey()&#39;s bare-scalar scan has no notion of bracket nesting,
-&nbsp;            // so a comma inside it would look identical to the comma separating this entry from
-&nbsp;            // the next one.
+&nbsp;            // A nested flow collection used as a key (e.g. &quot;[d, e]: f&quot;) must go through
+&nbsp;            // readValue — readKey()&#39;s bare-scalar scan has no bracket-nesting awareness, so a
+&nbsp;            // comma inside it would look identical to the entry separator.
 <b class="fc">&nbsp;            val key = if (localRawData[position] == C.LEFT_BRACKET_BYTE || localRawData[position] == C.LEFT_BRACE_BYTE) {</b>
 <b class="fc">&nbsp;                stringifyExplicitMappingKey(readValue(indent = 0, inFlow = true))</b>
 &nbsp;            } else {
@@ -149,8 +145,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 <b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
 &nbsp;
-&nbsp;            // A flow mapping entry can be just a key with no &#39;:&#39; at all (e.g. &quot;{ a, b }&quot;) — same
-&nbsp;            // &quot;e-node&quot; empty-value shorthand as an explicit block key with nothing after it.
+&nbsp;            // A flow mapping entry can be just a key with no &#39;:&#39; (e.g. &quot;{ a, b }&quot;) — same
+&nbsp;            // empty-value shorthand as an explicit block key with nothing after it.
 <b class="pc">&nbsp;            val value = if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE) {</b>
 <b class="fc">&nbsp;                position++ // consume &#39;:&#39;</b>
 <b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
@@ -233,15 +229,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Reads one flow-sequence entry, which may be a plain value *or* an implicit single-pair
-&nbsp; * mapping (`[a: 1]` is really `[{a: 1}]`, per the &quot;ns-flow-pair&quot; production) — YAML lets a
-&nbsp; * sequence entry look like a bare &quot;key: value&quot; without its own `{ }`. An entry can also be an
-&nbsp; * empty-key pair (`[: value]`), or an *explicit* key/value pair (`[? key\n bar : value]`, the
-&nbsp; * same `?`/`:` shape a block mapping key gets).
+&nbsp; * mapping (`[a: 1]` is really `[{a: 1}]`, per &quot;ns-flow-pair&quot;) — YAML lets an entry look like a
+&nbsp; * bare &quot;key: value&quot; without its own `{ }`. Also handles an empty-key pair (`[: value]`) or an
+&nbsp; * *explicit* key/value pair (`[? key\n bar : value]`, same `?`/`:` shape as a block mapping key).
 &nbsp; *
-&nbsp; * The key may be a plain scalar, a quoted string, or a nested flow collection. For a plain
-&nbsp; * scalar, [GhostYamlFlatReader.readPlainScalarOrMapping] itself stops right before the &#39;:&#39; when
-&nbsp; * inside a flow collection (rather than redirecting into a block mapping the way it would
-&nbsp; * outside one), so this only has to check for a &#39;:&#39; immediately after the value it read.
+&nbsp; * The key may be a plain scalar, quoted string, or nested flow collection. For a plain scalar,
+&nbsp; * [GhostYamlFlatReader.readPlainScalarOrMapping] stops right before the &#39;:&#39; inside a flow
+&nbsp; * collection (instead of redirecting into a block mapping), so this only checks for a &#39;:&#39;
+&nbsp; * immediately after the value read.
 &nbsp; */
 &nbsp;internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
 <b class="fc">&nbsp;    val localRawData = rawData</b>
@@ -255,13 +250,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
 <b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
 <b class="fc">&nbsp;        val value = readValue(indent = 0, inFlow = true)</b>
-<b class="fc">&nbsp;        return linkedMapOf&lt;String, Any?&gt;(&quot;&quot; to value)</b>
+<b class="fc">&nbsp;        return linkedMapOf(&quot;&quot; to value)</b>
 &nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    val keyOrValue = readValue(indent = 0, inFlow = true)</b>
-&nbsp;    // Inline whitespace only — an implicit key&#39;s &#39;:&#39; must be on the same line as the key itself
-&nbsp;    // (crossing a newline here would let e.g. &quot;[ key\n  : value ]&quot; be misread as a pair, when
-&nbsp;    // the caller&#39;s own end-of-entry check should instead reject it for an unexpected &#39;:&#39;).
+&nbsp;    // Inline whitespace only — an implicit key&#39;s &#39;:&#39; must be on the same line as the key
+&nbsp;    // (crossing a newline would misread &quot;[ key\n  : value ]&quot; as a pair).
 <b class="fc">&nbsp;    skipInlineWhitespace()</b>
 <b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE) {</b>
 <b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
@@ -273,10 +267,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Reads an explicit key/value flow-sequence entry (`? key\n bar : value`) — the same `?`/`:`
-&nbsp; * shape a block mapping key gets ([GhostYamlFlatReader.readExplicitKeyEntry]), just without any
-&nbsp; * indentation to track since it&#39;s inside a flow collection. The leading `?` has already been
-&nbsp; * confirmed present via [isExplicitKeyIndicator] but not yet consumed.
+&nbsp; * Reads an explicit key/value flow-sequence entry (`? key\n bar : value`) — same `?`/`:` shape
+&nbsp; * as a block mapping key ([GhostYamlFlatReader.readExplicitKeyEntry]), but no indentation to
+&nbsp; * track since it&#39;s inside a flow collection. The leading `?` is confirmed via
+&nbsp; * [isExplicitKeyIndicator] but not yet consumed.
 &nbsp; */
 &nbsp;private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
 <b class="fc">&nbsp;    position++ // consume &#39;?&#39;</b>
@@ -306,10 +300,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * True if the &#39;:&#39; at the current position is a genuine flow-pair separator (a bare leading &#39;:&#39;
-&nbsp; * with nothing before it needs the same lookahead a plain scalar&#39;s own colon-detection uses) —
-&nbsp; * followed by whitespace or end of input — rather than just the first character of a plain
-&nbsp; * scalar that happens to start with &#39;:&#39; (e.g. &quot;::vector&quot; or &quot;:x&quot;, both valid YAML strings).
+&nbsp; * True if the &#39;:&#39; at the current position is a genuine flow-pair separator (followed by
+&nbsp; * whitespace or EOF) rather than the first character of a plain scalar starting with &#39;:&#39;
+&nbsp; * (e.g. &quot;::vector&quot; or &quot;:x&quot;, both valid YAML strings).
 &nbsp; */
 &nbsp;private fun GhostYamlFlatReader.isFlowPairColon(): Boolean {
 <b class="fc">&nbsp;    val nextPosition = position + 1</b>
@@ -342,7 +335,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

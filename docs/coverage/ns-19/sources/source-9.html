@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostIntList</title>
+  <title>GhostSerialization Coverage Report > GhostBooleanList</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.serializers</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostIntList (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostBooleanList (com.ghost.serialization.serializers)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostIntList</td>
+  <td class="name">GhostBooleanList</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    66.7%
   </span>
   <span class="absValue">
-    (5/6)
+    (4/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.7%
+    81.8%
   </span>
   <span class="absValue">
-    (11/12)
+    (9/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.3%
+    94.4%
   </span>
   <span class="absValue">
-    (73/75)
+    (68/72)
   </span>
 </td>
 </tr>
@@ -104,20 +104,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Highly optimized, zero-allocation internal list implementation for [Int] primitives.
+&nbsp; * Highly optimized, zero-allocation internal list implementation for [Boolean] primitives.
 &nbsp; * Avoids boxing overhead and memory allocation pressure.
 &nbsp; */
-<b class="fc">&nbsp;internal class GhostIntList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {</b>
-<b class="fc">&nbsp;    private var buffer = IntArray(initialCapacity)</b>
+<b class="fc">&nbsp;internal class GhostBooleanList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {</b>
+<b class="fc">&nbsp;    private var buffer = BooleanArray(initialCapacity)</b>
 &nbsp;    private var currentSize = 0
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Adds an integer item to the list, expanding the backing buffer if necessary.
-&nbsp;     */
-&nbsp;    fun add(value: Int) {
+&nbsp;    fun add(value: Boolean) {
 <b class="fc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="fc">&nbsp;            val newCapacity = if (buffer.isEmpty()) {</b>
-<b class="fc">&nbsp;                C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY</b>
+<b class="pc">&nbsp;            val newCapacity = if (buffer.isEmpty()) {</b>
+<b class="nc">&nbsp;                C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY</b>
 &nbsp;            } else {
 <b class="fc">&nbsp;                (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
 &nbsp;            }
@@ -126,21 +123,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        buffer[currentSize++] = value</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Returns the accumulated list elements as a raw [IntArray].
-&nbsp;     */
-&nbsp;    fun toArray(): IntArray {
+&nbsp;    fun toArray(): BooleanArray {
 <b class="pc">&nbsp;        if (currentSize == buffer.size) {</b>
 <b class="nc">&nbsp;            return buffer</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return buffer.copyOf(currentSize)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Returns true if the collection has no elements.
-&nbsp;     */
-&nbsp;    fun isEmpty(): Boolean {
-<b class="fc">&nbsp;        return currentSize == 0</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -166,7 +153,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

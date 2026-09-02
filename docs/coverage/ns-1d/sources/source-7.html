@@ -1,0 +1,172 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostByteSink</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.writer.bytes</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostByteSink (com.ghost.serialization.writer.bytes)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostByteSink</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.bytes
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.DOT_ZERO
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.FALSE_BS
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.NULL_BS
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.TRUE_BS
+&nbsp;import okio.BufferedSink
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/**
+&nbsp; * Byte-level sink shared by [GhostJsonWriter]&#39;s and `GhostYamlWriter`&#39;s two backing
+&nbsp; * stores each: an Okio [BufferedSink] (streaming) and a [FlatByteArrayWriter]
+&nbsp; * (in-memory). Each implementation picks its own fastest path per operation; the
+&nbsp; * writers themselves only call through this interface. YAML&#39;s writer only uses the
+&nbsp; * generic subset (`writeByte`/`write2Bytes`/`write`/`writeUtf8`/`flush`) — the
+&nbsp; * JSON-specific intrinsics below exist for [GhostJsonWriter].
+&nbsp; */
+&nbsp;interface GhostByteSink {
+&nbsp;    fun writeByte(byteAsInt: Int)
+&nbsp;    fun write2Bytes(firstByte: Int, secondByte: Int)
+&nbsp;    fun write(bytes: ByteArray)
+&nbsp;    fun write(bytes: ByteArray, offset: Int, length: Int)
+&nbsp;    fun write(byteString: ByteString)
+&nbsp;    fun writeUtf8(text: String)
+&nbsp;    fun writeUtf8(text: String, beginIndex: Int, endIndex: Int)
+&nbsp;    fun writeQuotedAscii(text: String, length: Int)
+&nbsp;    fun writeQuotedBmpCodeUnit(codePoint: Int)
+&nbsp;    fun writeTrue()
+&nbsp;    fun writeFalse()
+&nbsp;    fun writeNull()
+&nbsp;    fun writeDotZero()
+&nbsp;    fun flush()
+&nbsp;}
+&nbsp;
+&nbsp;/** [GhostByteSink] backed by an Okio [BufferedSink] — the streaming write path. */
+&nbsp;internal class BufferGhostByteSink(private val sink: BufferedSink) : GhostByteSink {
+&nbsp;
+&nbsp;    private val buffer = sink.buffer
+&nbsp;
+&nbsp;    override fun writeByte(byteAsInt: Int) {
+&nbsp;        buffer.writeByte(byteAsInt)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write2Bytes(firstByte: Int, secondByte: Int) {
+&nbsp;        buffer.writeByte(firstByte)
+&nbsp;        buffer.writeByte(secondByte)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write(bytes: ByteArray) {
+&nbsp;        buffer.write(bytes)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write(bytes: ByteArray, offset: Int, length: Int) {
+&nbsp;        buffer.write(bytes, offset, length)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write(byteString: ByteString) {
+&nbsp;        buffer.write(byteString)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeUtf8(text: String) {
+&nbsp;        buffer.writeUtf8(text)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeUtf8(text: String, beginIndex: Int, endIndex: Int) {
+&nbsp;        buffer.writeUtf8(text, beginIndex, endIndex)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeQuotedAscii(text: String, length: Int) {
+&nbsp;        buffer.writeByte(QUOTE_INT)
+&nbsp;        buffer.writeUtf8(text)
+&nbsp;        buffer.writeByte(QUOTE_INT)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeQuotedBmpCodeUnit(codePoint: Int) {
+&nbsp;        buffer.writeQuotedBmpCodeUnit(codePoint)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeTrue() {
+&nbsp;        buffer.write(TRUE_BS)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeFalse() {
+&nbsp;        buffer.write(FALSE_BS)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeNull() {
+&nbsp;        buffer.write(NULL_BS)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeDotZero() {
+&nbsp;        buffer.write(DOT_ZERO)
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun flush() {
+&nbsp;        sink.emit()
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
+</div>
+</body>
+</html>

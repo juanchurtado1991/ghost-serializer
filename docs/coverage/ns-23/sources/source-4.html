@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlIntArraySerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlFloatArraySerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.yaml.serializer</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlIntArraySerializer (com.ghost.serialization.yaml.serializer)</h1>
+<h1>Coverage Summary for Class: GhostYamlFloatArraySerializer (com.ghost.serialization.yaml.serializer)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlIntArraySerializer</td>
+  <td class="name">GhostYamlFloatArraySerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    50%
   </span>
   <span class="absValue">
-    (2/3)
+    (1/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    54.5%
+  </span>
+  <span class="absValue">
+    (6/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    43.8%
   </span>
   <span class="absValue">
-    (4/6)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    65%
-  </span>
-  <span class="absValue">
-    (13/20)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    66.2%
-  </span>
-  <span class="absValue">
-    (43/65)
+    (14/32)
   </span>
 </td>
 </tr>
@@ -102,42 +95,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml.serializer
 &nbsp;
 &nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-&nbsp;import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 &nbsp;import com.ghost.serialization.writer.yaml.GhostYamlWriter
 &nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 &nbsp;
-&nbsp;object GhostYamlIntArraySerializer : GhostYamlSerializer&lt;IntArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: IntArray) {
-<b class="nc">&nbsp;        writer.beginArray()</b>
-<b class="nc">&nbsp;        val size = value.size</b>
-<b class="nc">&nbsp;        var index = 0</b>
-<b class="nc">&nbsp;        while (index &lt; size) {</b>
-<b class="nc">&nbsp;            writer.value(value[index])</b>
-<b class="nc">&nbsp;            index++</b>
-&nbsp;        }
-<b class="nc">&nbsp;        writer.endArray()</b>
+&nbsp;object GhostYamlFloatArraySerializer : GhostYamlSerializer&lt;FloatArray&gt; {
+&nbsp;    override fun serialize(writer: GhostYamlWriter, value: FloatArray) {
+<b class="nc">&nbsp;        writeYamlArrayCore(</b>
+<b class="nc">&nbsp;            size = value.size,</b>
+<b class="nc">&nbsp;            beginArray = { writer.beginArray() },</b>
+<b class="nc">&nbsp;            writeElement = { writer.value(value[it]) },</b>
+<b class="nc">&nbsp;            endArray = { writer.endArray() },</b>
+&nbsp;        )
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: IntArray) {
-<b class="fc">&nbsp;        writer.beginArray()</b>
-<b class="fc">&nbsp;        val size = value.size</b>
-<b class="fc">&nbsp;        var index = 0</b>
-<b class="fc">&nbsp;        while (index &lt; size) {</b>
-<b class="fc">&nbsp;            writer.value(value[index])</b>
-<b class="fc">&nbsp;            index++</b>
-&nbsp;        }
-<b class="fc">&nbsp;        writer.endArray()</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): IntArray {
-<b class="fc">&nbsp;        reader.beginArray()</b>
-<b class="fc">&nbsp;        val list = ArrayList&lt;Int&gt;()</b>
-<b class="fc">&nbsp;        while (reader.hasNextArrayElement()) {</b>
-<b class="fc">&nbsp;            list.add(reader.nextInt())</b>
-&nbsp;        }
-<b class="fc">&nbsp;        reader.endArray()</b>
-<b class="fc">&nbsp;        return list.toIntArray()</b>
-&nbsp;    }
+&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): FloatArray =
+<b class="fc">&nbsp;        readYamlArrayCore(</b>
+<b class="fc">&nbsp;            beginArray = { reader.beginArray() },</b>
+<b class="fc">&nbsp;            hasNextArrayElement = { reader.hasNextArrayElement() },</b>
+<b class="fc">&nbsp;            readElement = { reader.nextFloat() },</b>
+<b class="fc">&nbsp;            endArray = { reader.endArray() },</b>
+<b class="fc">&nbsp;        ).toFloatArray()</b>
 &nbsp;}
 </code>
 </pre>
@@ -162,7 +139,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

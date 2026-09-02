@@ -104,27 +104,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
 &nbsp;
-&nbsp;/**
-&nbsp; * Subsystem for parsing and managing YAML Anchors (&amp;anchor), Aliases (*alias), and Merge Keys (&lt;&lt;).
-&nbsp; */
+&nbsp;/** Parses/manages YAML Anchors (&amp;anchor), Aliases (*alias), and Merge Keys (&lt;&lt;). */
 &nbsp;
 &nbsp;/**
-&nbsp; * Entry point for [GhostYamlFlatReader.readValue]&#39;s `&amp;` dispatch. An anchor at the start of a
-&nbsp; * block-context line is ambiguous on sight: it may anchor a *value* (`key: &amp;a value`, a bare
-&nbsp; * `&amp;a value` sequence item) or it may anchor the *key* of an implicit mapping entry (`&amp;a a: &amp;b b`
-&nbsp; * — the anchor belongs to the bare scalar key &quot;a&quot;, not to the &quot;a: &amp;b b&quot; mapping as a whole).
-&nbsp; * [readAnchoredValue] alone only handles the first shape — it recurses into [GhostYamlFlatReader.readValue]
-&nbsp; * for its &quot;value&quot;, and if that redirects into [GhostYamlFlatReader.readBlockMapping] (because the
-&nbsp; * text after the anchor looks like a key), the mapping greedily consumes every sibling entry at
-&nbsp; * that indent before ever returning, so the anchor ends up bound to the *whole resulting map*
-&nbsp; * instead of the bare key.
+&nbsp; * Entry point for [GhostYamlFlatReader.readValue]&#39;s `&amp;` dispatch. A block-context anchor is
+&nbsp; * ambiguous on sight: it may anchor a *value* (`key: &amp;a value`) or the *key* of an implicit
+&nbsp; * mapping entry (`&amp;a a: &amp;b b` — the anchor belongs to bare key &quot;a&quot;, not the whole mapping).
+&nbsp; * [readAnchoredValue] alone only handles the value shape: if the text after the anchor looks
+&nbsp; * like a key, it recurses into [GhostYamlFlatReader.readBlockMapping], which greedily consumes
+&nbsp; * every sibling entry at that indent, binding the anchor to the whole resulting map instead of
+&nbsp; * just the key.
 &nbsp; *
-&nbsp; * This speculatively re-parses the anchor + following text as [GhostYamlFlatReader.readKey] would
-&nbsp; * (reusing its already-correct anchor-on-key binding — see commit 9812d08c / case SU74 — rather
-&nbsp; * than duplicating that scan here), checks whether a `:` key separator follows, then always
-&nbsp; * rewinds and re-dispatches for real: to [GhostYamlFlatReader.readBlockMapping] if it looked like
-&nbsp; * a key line, or to the ordinary [readAnchoredValue] otherwise. Flow context has no such ambiguity
-&nbsp; * (a flow mapping key is delimited by `{`/`,`/`}`, not indentation), so it&#39;s left untouched.
+&nbsp; * This speculatively re-parses the anchor + following text with [GhostYamlFlatReader.readKey]
+&nbsp; * (reusing its anchor-on-key binding — commit 9812d08c / case SU74), checks for a following `:`,
+&nbsp; * then rewinds and re-dispatches for real: [GhostYamlFlatReader.readBlockMapping] if it looked
+&nbsp; * like a key line, else [readAnchoredValue]. Flow context has no such ambiguity (a flow mapping
+&nbsp; * key is delimited by `{`/`,`/`}`, not indentation), so it&#39;s untouched here.
 &nbsp; */
 &nbsp;internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(indent: Int, inFlow: Boolean, strictDedent: Boolean): Any? {
 <b class="fc">&nbsp;    if (inFlow) return readAnchoredValue(indent, inFlow, strictDedent)</b>
@@ -133,9 +128,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val localLimit = limit</b>
 <b class="fc">&nbsp;    val localRawData = rawData</b>
 &nbsp;
-&nbsp;    // Non-mutating lookahead: skip &quot;&amp;anchorname&quot; + inline whitespace (mirroring readAnchoredValue&#39;s
-&nbsp;    // own anchor-name scan) to see what immediately follows the anchor prefix, without touching
-&nbsp;    // `position` yet.
+&nbsp;    // Non-mutating lookahead: skip &quot;&amp;anchorname&quot; + inline whitespace to see what follows the
+&nbsp;    // anchor prefix, without touching `position` yet.
 <b class="fc">&nbsp;    var lookahead = startPosition + 1 // &#39;&amp;&#39;</b>
 <b class="pc">&nbsp;    while (lookahead &lt; localLimit) {</b>
 <b class="fc">&nbsp;        val tokenByte = localRawData[lookahead]</b>
@@ -148,13 +142,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;    while (lookahead &lt; localLimit &amp;&amp; (localRawData[lookahead] == C.SPACE_BYTE || localRawData[lookahead] == C.TAB_BYTE)) {</b>
 <b class="fc">&nbsp;        lookahead++</b>
 &nbsp;    }
-&nbsp;    // A flow collection right after the anchor is a case readKey&#39;s plain-text scan below can&#39;t
-&nbsp;    // safely evaluate: it has no bracket-depth awareness, so &quot;&amp;ORIGIN {x: 73, y: 129}&quot; would
-&nbsp;    // falsely look like a key at its own first *inner* &#39;:&#39; (case C4HZ). readKey handles a quoted
-&nbsp;    // scalar here just fine (it has its own dedicated branch for that), so only flow collections
-&nbsp;    // need to be excluded — when this anchor turns out to actually wrap a flow-collection value,
-&nbsp;    // readAnchoredValue&#39;s own readValue() dispatch (readFlowCollectionOrMappingKey) already
-&nbsp;    // determines correctly whether that&#39;s a key or a value.
+&nbsp;    // A flow collection right after the anchor can&#39;t safely go through readKey&#39;s plain-text scan:
+&nbsp;    // it has no bracket-depth awareness, so &quot;&amp;ORIGIN {x: 73, y: 129}&quot; would falsely look like a
+&nbsp;    // key at its first *inner* &#39;:&#39; (case C4HZ). readKey handles a quoted scalar fine, so only
+&nbsp;    // flow collections need excluding — readAnchoredValue&#39;s own readValue() dispatch
+&nbsp;    // (readFlowCollectionOrMappingKey) correctly resolves those as key or value.
 <b class="pc">&nbsp;    val followedByFlowCollection = lookahead &lt; localLimit &amp;&amp;</b>
 <b class="fc">&nbsp;        (localRawData[lookahead] == C.LEFT_BRACE_BYTE || localRawData[lookahead] == C.LEFT_BRACKET_BYTE)</b>
 &nbsp;
@@ -167,15 +159,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                localRawData[position + 1] == C.CR_BYTE ||</b>
 <b class="pc">&nbsp;                localRawData[position + 1] == C.TAB_BYTE)</b>
 &nbsp;    } catch (e: GhostYamlException) {
-&nbsp;        // A legitimate anchored value that doesn&#39;t happen to parse as a sensible key (e.g.
-&nbsp;        // &quot;&amp;anchor:\n  nested: mapping&quot; tripping readKey&#39;s own validation) must fall through to
-&nbsp;        // readAnchoredValue cleanly, not propagate this speculative attempt&#39;s error.
+&nbsp;        // A legitimate anchored value that doesn&#39;t parse as a sensible key (e.g.
+&nbsp;        // &quot;&amp;anchor:\n  nested: mapping&quot;) must fall through to readAnchoredValue cleanly,
+&nbsp;        // not propagate this speculative attempt&#39;s error.
 <b class="fc">&nbsp;        false</b>
 &nbsp;    } finally {
-&nbsp;        // Undo the peek regardless of outcome — readBlockMapping/readAnchoredValue below re-reads
-&nbsp;        // this text for real. (readKey may have already bound the anchor into anchorTable as a
-&nbsp;        // side effect of the peek itself; that&#39;s harmless, since whichever real path runs next
-&nbsp;        // unconditionally overwrites it with the correct binding before anything else can observe it.)
+&nbsp;        // Undo the peek — readBlockMapping/readAnchoredValue below re-reads this text for real.
+&nbsp;        // (readKey may have already bound the anchor as a side effect of the peek; harmless,
+&nbsp;        // since whichever real path runs next overwrites it with the correct binding.)
 <b class="fc">&nbsp;        position = startPosition</b>
 &nbsp;    }
 &nbsp;
@@ -199,19 +190,19 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val anchorName = localRawData.decodeToString(start, position)</b>
 &nbsp;
 &nbsp;    // Skip inline whitespace, then a same-line trailing comment (e.g. &quot;top: &amp;node # comment&quot;) —
-&nbsp;    // that leaves no inline value either, same as a bare newline would.
+&nbsp;    // leaves no inline value, same as a bare newline would.
 <b class="fc">&nbsp;    skipInlineWhitespace()</b>
 <b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.HASH_BYTE) {</b>
 <b class="fc">&nbsp;        skipToEndOfLine()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    // An anchor can&#39;t directly wrap an alias reference — anchoring applies to actual node
-&nbsp;    // content, not to a reference to something else.
+&nbsp;    // An anchor can&#39;t directly wrap an alias reference — it anchors actual node content, not
+&nbsp;    // a reference to something else.
 <b class="pc">&nbsp;    if (!inFlow &amp;&amp; position &lt; localLimit &amp;&amp; localRawData[position] == C.ASTERISK_BYTE) {</b>
 <b class="fc">&nbsp;        yamlError(&quot;${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}&quot;)</b>
 &nbsp;    }
-&nbsp;    // Nor can a block sequence entry start inline right after it on the same line — &quot;&amp;anchor -
-&nbsp;    // item&quot; isn&#39;t a valid way to anchor a sequence, the &quot;-&quot; needs its own line.
+&nbsp;    // Nor can a block sequence entry start inline on the same line — &quot;&amp;anchor - item&quot; is
+&nbsp;    // invalid, the &quot;-&quot; needs its own line.
 <b class="pc">&nbsp;    if (!inFlow &amp;&amp; position &lt; localLimit &amp;&amp; localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry()) {</b>
 <b class="fc">&nbsp;        yamlError(&quot;${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX}&quot;)</b>
 &nbsp;    }
@@ -224,16 +215,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val nextLineIndent = currentIndent</b>
 <b class="fc">&nbsp;            val continuesAsSequenceEntry =</b>
 <b class="fc">&nbsp;                position &lt; localLimit &amp;&amp; localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry()</b>
-&nbsp;            // Mirrors readBlockMapping/readBlockSequence&#39;s own &quot;is there really nested content
-&nbsp;            // here&quot; check for an unanchored value at this same position: a mapping value must be
-&nbsp;            // indented *more* than its key (strictDedent), while a sequence item&#39;s inline value
-&nbsp;            // may continue at exactly its element indent (not strictDedent) — see the call sites.
+&nbsp;            // Mirrors readBlockMapping/readBlockSequence&#39;s &quot;is there nested content&quot; check: a
+&nbsp;            // mapping value must indent *more* than its key (strictDedent), a sequence item&#39;s
+&nbsp;            // inline value may continue at exactly its element indent (not strictDedent).
 <b class="fc">&nbsp;            val isDedent = if (strictDedent) nextLineIndent &lt;= indent else nextLineIndent &lt; indent</b>
 <b class="pc">&nbsp;            if (!inFlow &amp;&amp; (position &gt;= localLimit || (isDedent &amp;&amp; !continuesAsSequenceEntry))) {</b>
-&nbsp;                // The next line dedents back to a sibling (or there&#39;s nothing left) — this
-&nbsp;                // anchor&#39;s own value is empty/null. Rewind past just the line break so the
-&nbsp;                // caller&#39;s loop sees that line fresh, the same way a plain &quot;key:&quot; with no value
-&nbsp;                // leaves it for the next iteration to process as the next key.
+&nbsp;                // Next line dedents back to a sibling (or nothing&#39;s left) — this anchor&#39;s value
+&nbsp;                // is empty/null. Rewind past the line break so the caller&#39;s loop sees that line
+&nbsp;                // fresh, same as a plain &quot;key:&quot; with no value.
 <b class="fc">&nbsp;                position = positionBeforeLineBreak</b>
 <b class="fc">&nbsp;                null</b>
 &nbsp;            } else {
@@ -247,12 +236,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Reads an alias via [readAlias], then — mirroring [GhostYamlFlatReader.readQuotedScalarOrMappingKey]
-&nbsp; * — checks whether a `:` follows: an alias can itself be a block-mapping key (e.g.
-&nbsp; * `top3: &amp;node3\n  *alias1 : scalar3`, where the resolved value of `*alias1` becomes the key),
-&nbsp; * not just a value. Without this, [GhostYamlFlatReader.readValue]&#39;s `*` dispatch would read only
-&nbsp; * the alias itself as a complete value and choke on (or silently misplace) the trailing
-&nbsp; * `: scalar3` as an unrelated sibling entry instead of nesting it under this key.
+&nbsp; * Reads an alias via [readAlias], then checks whether a `:` follows: an alias can itself be a
+&nbsp; * block-mapping key (e.g. `top3: &amp;node3\n  *alias1 : scalar3`, where `*alias1`&#39;s resolved value
+&nbsp; * becomes the key), not just a value. Without this, [GhostYamlFlatReader.readValue]&#39;s `*`
+&nbsp; * dispatch would read only the alias as a complete value and mishandle the trailing
+&nbsp; * `: scalar3` instead of nesting it under this key.
 &nbsp; */
 &nbsp;internal fun GhostYamlFlatReader.readAliasOrMappingKey(indent: Int, inFlow: Boolean): Any? {
 <b class="fc">&nbsp;    val startPosition = position</b>
@@ -287,9 +275,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 <b class="fc">&nbsp;    val aliasName = localRawData.decodeToString(start, position)</b>
-&nbsp;    // anchorTable[aliasName] ?: error(...) would be wrong here: a Map lookup returns null both
-&nbsp;    // when the key is absent *and* when it&#39;s present with a null value (e.g. an anchor on an
-&nbsp;    // empty node, &quot;a: &amp;anchor\nb: *anchor&quot;), so the two cases must be told apart explicitly.
+&nbsp;    // anchorTable[aliasName] ?: error(...) would be wrong: a Map lookup returns null both when
+&nbsp;    // the key is absent and when present with a null value (e.g. &quot;a: &amp;anchor\nb: *anchor&quot;),
+&nbsp;    // so the two cases must be told apart explicitly.
 <b class="fc">&nbsp;    if (!anchorTable.containsKey(aliasName)) {</b>
 <b class="fc">&nbsp;        yamlError(&quot;${C.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${C.ERR_ANCHOR_NOT_FOUND_SUFFIX}&quot;)</b>
 &nbsp;    }
@@ -340,7 +328,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -150,8 +150,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;internal const val CLIENT_ERROR_SUFFIX = &quot;. Make sure it is annotated with @GhostSerialization.&quot;
 &nbsp;
 &nbsp;/**
-&nbsp; * Deserializes the response body directly using Ghost, bypassing Ktor Client&#39;s
-&nbsp; * ContentNegotiation pipeline.
+&nbsp; * Deserializes the response body directly using Ghost, bypassing Ktor&#39;s ContentNegotiation pipeline.
 &nbsp; */
 &nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhost(): T {
 <b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
@@ -161,9 +160,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Proto3-JSON variant of [bodyGhost] for `@GhostProtoSerialization` types — parses through
-&nbsp; * `GhostProtoJsonFlatReader` (quoted-or-bare int64, lenient
-&nbsp; * int32, quoted `NaN`/`Infinity`) instead of the plain flat reader.
+&nbsp; * Proto3-JSON variant of [bodyGhost]: parses via `GhostProtoJsonFlatReader` for proto3 JSON
+&nbsp; * leniency (quoted-or-bare int64, lenient int32, quoted `NaN`/`Infinity`).
 &nbsp; */
 &nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhostProto(): T {
 <b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
@@ -171,9 +169,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * YAML variant of [bodyGhost] for types whose serializer implements
-&nbsp; * `GhostYamlSerializer`.
-&nbsp; * Public API for frameworks — bypasses Ktor ContentNegotiation.
+&nbsp; * YAML variant of [bodyGhost], bypassing Ktor&#39;s ContentNegotiation.
 &nbsp; */
 &nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhostYaml(): T {
 <b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
@@ -202,7 +198,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

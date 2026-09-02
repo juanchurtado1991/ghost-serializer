@@ -68,18 +68,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.9%
+    67.1%
   </span>
   <span class="absValue">
-    (111/166)
+    (110/164)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.8%
+    70.5%
   </span>
   <span class="absValue">
-    (97/137)
+    (93/132)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     80.5%
   </span>
   <span class="absValue">
-    (752/934)
+    (742/922)
   </span>
 </td>
 </tr>
@@ -204,7 +204,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        val payloadMappings = if (isGenericMode) {</b>
-<b class="fc">&nbsp;            val genericProp = genericDataProperty!!</b>
 <b class="fc">&nbsp;            properties.filter { prop -&gt;</b>
 <b class="fc">&nbsp;                prop.kotlinName != discriminatorProperty.kotlinName &amp;&amp;</b>
 <b class="pc">&nbsp;                        prop.kotlinName != timeKotlinName &amp;&amp;</b>
@@ -213,16 +212,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null</b>
 <b class="pc">&nbsp;                val payloadAnnotation = declaration.annotations.find {</b>
 <b class="fc">&nbsp;                    it.shortName.asString() == C.STR_GHOST_ENVELOPE_PAYLOAD</b>
-&nbsp;                }
-<b class="fc">&nbsp;                if (payloadAnnotation == null) {</b>
-<b class="pc">&nbsp;                    if (prop.kotlinName == genericProp.kotlinName) {</b>
-<b class="fc">&nbsp;                        null</b>
-&nbsp;                    } else {
-<b class="nc">&nbsp;                        null</b>
-&nbsp;                    }
-&nbsp;                } else {
-<b class="fc">&nbsp;                    buildPayloadMapping(payloadAnnotation, prop, classDeclaration)</b>
-<b class="fc">&nbsp;                }</b>
+<b class="fc">&nbsp;                } ?: return@mapNotNull null</b>
+<b class="fc">&nbsp;                buildPayloadMapping(payloadAnnotation, prop, classDeclaration)</b>
 &nbsp;            }
 &nbsp;        } else {
 <b class="fc">&nbsp;            properties.mapNotNull { prop -&gt;</b>
@@ -369,7 +360,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

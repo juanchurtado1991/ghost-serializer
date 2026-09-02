@@ -182,27 +182,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Analyzes Kotlin classes during KSP processing to generate serialization metadata.
-&nbsp; *
-&nbsp; * This analyzer inspects a [com.google.devtools.ksp.symbol.KSClassDeclaration], validates it against
-&nbsp; * the framework&#39;s serialization rules, and converts its valid properties into a list of
-&nbsp; * [GhostPropertyModel] instances for code generation.
-&nbsp; *
-&nbsp; * ### Validations:
-&nbsp; * - **Supported Types:** The target must be a `data class`, `sealed class`, `value class`, or `enum class`.
-&nbsp; * - **Visibility:** Properties cannot be `private`.
-&nbsp; * - **Maps:** If a property is a `Map`, its key must resolve to a `String`.
-&nbsp; * - **Naming:** Duplicate JSON keys within the same class are not allowed.
-&nbsp; *
-&nbsp; * @property logger The [com.google.devtools.ksp.processing.KSPLogger] used to report compilation errors for invalid declarations.
+&nbsp; * Analyzes a Kotlin class declaration during KSP processing, validating it against the
+&nbsp; * framework&#39;s serialization rules (supported class kind, no private properties, string map
+&nbsp; * keys, unique JSON names) and converting its properties into [GhostPropertyModel]s.
 &nbsp; */
 <b class="fc">&nbsp;internal class GhostAnalyzer(private val logger: KSPLogger) {</b>
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Analyzes the given class declaration and resolves its properties to a list of models.
-&nbsp;     *
-&nbsp;     * @param classDeclaration The class metadata declaration to analyze.
-&nbsp;     * @return List of parsed [GhostPropertyModel] configurations.
 &nbsp;     */
 &nbsp;    fun analyze(classDeclaration: KSClassDeclaration): List&lt;GhostPropertyModel&gt; {
 <b class="fc">&nbsp;        val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)</b>
@@ -291,7 +278,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private fun resolvePropertyModels(
 &nbsp;        classDeclaration: KSClassDeclaration,
 &nbsp;        properties: List&lt;KSPropertyDeclaration&gt;,
-&nbsp;        parameters: List&lt;com.google.devtools.ksp.symbol.KSValueParameter&gt;,
+&nbsp;        parameters: List&lt;KSValueParameter&gt;,
 &nbsp;        isEnum: Boolean,
 &nbsp;        enumValues: Map&lt;String, String&gt;?
 &nbsp;    ): List&lt;GhostPropertyModel&gt; {
@@ -437,7 +424,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    private fun buildPropertyModel(
 &nbsp;        prop: KSPropertyDeclaration,
-&nbsp;        parameters: List&lt;com.google.devtools.ksp.symbol.KSValueParameter&gt;
+&nbsp;        parameters: List&lt;KSValueParameter&gt;
 &nbsp;    ): GhostPropertyModel {
 <b class="fc">&nbsp;        val type = prop.type.resolve()</b>
 <b class="pc">&nbsp;        val qualifiedName = type.declaration.qualifiedName?.asString()</b>
@@ -583,9 +570,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return sb.toString()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Warns if a custom encoder or decoder is configured for the given property.
-&nbsp;     */
 &nbsp;    private fun warnIfCustomCoder(
 &nbsp;        propName: String,
 &nbsp;        customDecoder: CustomCoderModel?,
@@ -613,9 +597,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            } ?: false</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Resolves the sealed subclasses of the given type, if it represents a sealed class.
-&nbsp;     */
 &nbsp;    private fun resolveSealedSubclassesForType(type: KSType): List&lt;KSClassDeclaration&gt; {
 <b class="fc">&nbsp;        return if (isSealedClass(type)) {</b>
 <b class="fc">&nbsp;            (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()</b>
@@ -838,11 +819,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * proto3 `oneof` mapping support: when the wrapped type is a sealed class (e.g. an
-&nbsp;     * `inferred = true` hierarchy used to decode whichever wire key is present), the wire keys
-&nbsp;     * live on its *subclasses*, not on the sealed parent itself (which typically declares no
-&nbsp;     * properties of its own). Resolves the wire key against each subclass&#39; direct properties and
-&nbsp;     * tags the result with that subclass so the emitter can smart-cast before accessing it.
+&nbsp;     * proto3 `oneof` support: when the wrapped type is sealed, wire keys live on its subclasses
+&nbsp;     * rather than the parent. Resolves the key against each subclass and tags the result with it
+&nbsp;     * so the emitter can smart-cast before accessing it.
 &nbsp;     */
 &nbsp;    private fun resolveUnwrapFieldFromSealedSubclass(
 &nbsp;        wrapperPath: List&lt;String&gt;,
@@ -946,26 +925,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return true // Third party types</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Checks if the type is a value class or inline class.
-&nbsp;     */
 &nbsp;    private fun isValueClass(type: KSType): Boolean {
 <b class="pc">&nbsp;        val declaration = type.declaration as? KSClassDeclaration ?: return false</b>
 <b class="fc">&nbsp;        return declaration.modifiers.contains(Modifier.VALUE) ||</b>
 <b class="fc">&nbsp;                declaration.modifiers.contains(Modifier.INLINE)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Checks if the type is a sealed class.
-&nbsp;     */
 &nbsp;    private fun isSealedClass(type: KSType): Boolean {
 <b class="pc">&nbsp;        val declaration = type.declaration as? KSClassDeclaration ?: return false</b>
 <b class="fc">&nbsp;        return declaration.modifiers.contains(Modifier.SEALED)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Resolves the underlying property model for a value class type.
-&nbsp;     */
 &nbsp;    private fun resolveValueClassProperty(
 &nbsp;        type: KSType,
 <b class="nc">&nbsp;        isProto: Boolean = false</b>
@@ -980,28 +950,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return buildPropertyModel(prop, listOf(param)).copy(isProto = isProto)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Resolves the first type argument of a generic type.
-&nbsp;     */
 &nbsp;    private fun resolveFirstTypeArg(type: KSType): KSType? {
 <b class="pc">&nbsp;        return type.arguments.firstOrNull()?.type?.resolve()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Resolves the second type argument of a generic type.
-&nbsp;     */
 &nbsp;    private fun resolveSecondTypeArg(type: KSType): KSType? {
 <b class="pc">&nbsp;        return type.arguments.getOrNull(1)?.type?.resolve()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Returns the serialized JSON name of a property.
-&nbsp;     */
 <b class="fc">&nbsp;    private fun getJsonName(prop: KSPropertyDeclaration): String = getSerialName(prop)</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Extension to check if a property has a specific annotation by name.
-&nbsp;     */
 &nbsp;    private fun KSPropertyDeclaration.hasAnnotation(name: String): Boolean {
 <b class="fc">&nbsp;        return annotations.any { it.shortName.asString() == name }</b>
 &nbsp;    }
@@ -1040,9 +998,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            ?: C.STR_EMPTY</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Checks if the type is an enum class.
-&nbsp;     */
 &nbsp;    private fun isEnumType(type: KSType): Boolean =
 <b class="pc">&nbsp;        (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS</b>
 &nbsp;
@@ -1056,9 +1011,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;
 &nbsp;    companion object {
-&nbsp;        /**
-&nbsp;         * Set of fully qualified primitive array types.
-&nbsp;         */
 <b class="fc">&nbsp;        private val PRIMITIVE_ARRAYS = setOf(</b>
 <b class="fc">&nbsp;            C.STR_TYPE_INT_ARRAY,</b>
 <b class="fc">&nbsp;            C.STR_TYPE_LONG_ARRAY,</b>
@@ -1091,7 +1043,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostFormatUtils</title>
+  <title>GhostSerialization Coverage Report > GhostHeuristics</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostFormatUtils (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostHeuristics (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostFormatUtils</td>
+  <td class="name">GhostHeuristics</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,7 +63,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (3/3)
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (6/24)
   </span>
 </td>
 <td class="coverageStat">
@@ -71,23 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (20/20)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    48.1%
   </span>
   <span class="absValue">
-    (6/6)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (38/38)
+    (38/79)
   </span>
 </td>
 </tr>
@@ -99,23 +99,32 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING&quot;)
 &nbsp;
-&nbsp;/**
-&nbsp; * Precomputed decimal digit lookup tables for fast integer-to-ASCII formatting.
-&nbsp; */
-&nbsp;internal object GhostFormatUtils {
-&nbsp;    private const val DIGIT_PAIR_TABLE_SIZE = 100
+&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-<b class="fc">&nbsp;    val DIGIT_TENS = ByteArray(DIGIT_PAIR_TABLE_SIZE)</b>
-<b class="fc">&nbsp;    val DIGIT_ONES = ByteArray(DIGIT_PAIR_TABLE_SIZE)</b>
-&nbsp;
-<b class="fc">&nbsp;    init {</b>
-<b class="fc">&nbsp;        for (i in 0 until DIGIT_PAIR_TABLE_SIZE) {</b>
-<b class="fc">&nbsp;            DIGIT_TENS[i] = ((i / GhostJsonConstants.BASE_TEN) + GhostJsonConstants.ASCII_OFFSET).toByte()</b>
-<b class="fc">&nbsp;            DIGIT_ONES[i] = ((i % GhostJsonConstants.BASE_TEN) + GhostJsonConstants.ASCII_OFFSET).toByte()</b>
-&nbsp;        }
-&nbsp;    }
+&nbsp;private const val PROP_INITIAL_COLLECTION_CAPACITY = &quot;ghost.initialCollectionCapacity&quot;
+<b class="fc">&nbsp;private const val PROP_MAX_STRING_POOL_LENGTH = &quot;ghost.maxStringPoolLength&quot;</b>
+<b class="fc">&nbsp;private const val PROP_MAX_COLLECTION_SIZE = &quot;ghost.maxCollectionSize&quot;</b>
+<b class="fc">&nbsp;private const val PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE = &quot;ghost.maxDiscriminatorPeekDistance&quot;</b>
+<b class="fc">&nbsp;private const val PROP_MAX_WARM_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmWriteBufferCapacity&quot;</b>
+<b class="fc">&nbsp;private const val PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmCharWriteBufferCapacity&quot;</b>
+<b class="fc">&nbsp;</b>
+&nbsp;actual object GhostHeuristics {
+<b class="fc">&nbsp;    actual val initialCollectionCapacity: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_INITIAL_COLLECTION_CAPACITY)?.toIntOrNull() ?: 10</b>
+<b class="fc">&nbsp;    actual val maxStringPoolLength: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_MAX_STRING_POOL_LENGTH)?.toIntOrNull() ?: 64</b>
+<b class="fc">&nbsp;    actual val maxCollectionSize: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_MAX_COLLECTION_SIZE)?.toIntOrNull() ?: 1_000_000</b>
+<b class="fc">&nbsp;    actual val maxDiscriminatorPeekDistance: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)?.toIntOrNull() ?: 2048</b>
+<b class="fc">&nbsp;    actual val maxWarmWriteBufferCapacity: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (8 * 1024 * 1024)</b>
+<b class="fc">&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int =</b>
+<b class="pc">&nbsp;        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull()</b>
+<b class="fc">&nbsp;            ?: (2 * 1024 * 1024)</b>
+<b class="fc">&nbsp;    actual val encodeToStringViaUtf8Bytes: Boolean = false</b>
 &nbsp;}
 </code>
 </pre>
@@ -140,7 +149,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

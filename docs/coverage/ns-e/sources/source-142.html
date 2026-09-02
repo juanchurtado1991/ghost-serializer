@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    71.4%
   </span>
   <span class="absValue">
-    (12/16)
+    (10/14)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    44.4%
+    36.2%
   </span>
   <span class="absValue">
-    (63/142)
+    (50/138)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    44.5%
+    38.4%
   </span>
   <span class="absValue">
-    (211/474)
+    (173/451)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45.8%
+    40.1%
   </span>
   <span class="absValue">
-    (781/1705)
+    (635/1584)
   </span>
 </td>
 </tr>
@@ -128,10 +128,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
 &nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-&nbsp;import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 &nbsp;import com.ghost.serialization.writer.yaml.GhostYamlWriter
 &nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 &nbsp;import okio.ByteString
@@ -360,7 +358,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
 <b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_NAME) == 0L) {</b>
@@ -377,33 +375,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [YamlBenchUser].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): YamlBenchUser {
-<b class="fc">&nbsp;    var idValue: Int = 0</b>
-<b class="fc">&nbsp;    var nameValue: String? = null</b>
-<b class="fc">&nbsp;    var emailValue: String? = null</b>
-<b class="fc">&nbsp;    var scoreValue: Double = 0.0</b>
-<b class="fc">&nbsp;    var isActiveValue: Boolean = false</b>
-<b class="fc">&nbsp;    var roleValue: String? = null</b>
-<b class="fc">&nbsp;    var bioValue: String? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var idValue: Int = 0</b>
+<b class="nc">&nbsp;    var nameValue: String? = null</b>
+<b class="nc">&nbsp;    var emailValue: String? = null</b>
+<b class="nc">&nbsp;    var scoreValue: Double = 0.0</b>
+<b class="nc">&nbsp;    var isActiveValue: Boolean = false</b>
+<b class="nc">&nbsp;    var roleValue: String? = null</b>
+<b class="nc">&nbsp;    var bioValue: String? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          idValue = reader.nextInt()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_ID</b>
+<b class="nc">&nbsp;          idValue = reader.nextInt()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_ID</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
-<b class="fc">&nbsp;          nameValue = reader.nextString()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_NAME</b>
+<b class="nc">&nbsp;          nameValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_NAME</b>
 &nbsp;        }
 &nbsp;        2 -&gt; {
-<b class="fc">&nbsp;          emailValue = reader.nextString()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_EMAIL</b>
+<b class="nc">&nbsp;          emailValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_EMAIL</b>
 &nbsp;        }
 &nbsp;        3 -&gt; {
-<b class="fc">&nbsp;          scoreValue = reader.nextDouble()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_SCORE</b>
+<b class="nc">&nbsp;          scoreValue = reader.nextDouble()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_SCORE</b>
 &nbsp;        }
 &nbsp;        4 -&gt; {
 <b class="nc">&nbsp;          isActiveValue = reader.nextBoolean()</b>
@@ -423,9 +421,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
-<b class="fc">&nbsp;    reader.endObject()</b>
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_BIO_ISACTIVE_ROLE) == MASK_OPTS_BIO_ISACTIVE_ROLE) {</b>
+<b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_BIO_ISACTIVE_ROLE) == MASK_OPTS_BIO_ISACTIVE_ROLE) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -436,7 +434,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        bio = bioValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ISACTIVE_ROLE) == MASK_OPTS_ISACTIVE_ROLE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ISACTIVE_ROLE) == MASK_OPTS_ISACTIVE_ROLE) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -446,7 +444,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        role = roleValue!!,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_BIO_ISACTIVE) == MASK_OPTS_BIO_ISACTIVE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_BIO_ISACTIVE) == MASK_OPTS_BIO_ISACTIVE) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -456,7 +454,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        bio = bioValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_BIO_ROLE) == MASK_OPTS_BIO_ROLE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_BIO_ROLE) == MASK_OPTS_BIO_ROLE) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -466,7 +464,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        bio = bioValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ISACTIVE) == MASK_OPTS_ISACTIVE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ISACTIVE) == MASK_OPTS_ISACTIVE) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -475,7 +473,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        isActive = isActiveValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ROLE) == MASK_OPTS_ROLE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ROLE) == MASK_OPTS_ROLE) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -484,7 +482,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        role = roleValue!!,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_BIO) == MASK_OPTS_BIO) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_BIO) == MASK_OPTS_BIO) {</b>
 <b class="nc">&nbsp;      return YamlBenchUser(</b>
 <b class="nc">&nbsp;        id = idValue,</b>
 <b class="nc">&nbsp;        name = nameValue!!,</b>
@@ -493,11 +491,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        bio = bioValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="fc">&nbsp;    return YamlBenchUser(</b>
-<b class="fc">&nbsp;      id = idValue,</b>
-<b class="fc">&nbsp;      name = nameValue!!,</b>
-<b class="fc">&nbsp;      email = emailValue!!,</b>
-<b class="fc">&nbsp;      score = scoreValue,</b>
+<b class="nc">&nbsp;    return YamlBenchUser(</b>
+<b class="nc">&nbsp;      id = idValue,</b>
+<b class="nc">&nbsp;      name = nameValue!!,</b>
+<b class="nc">&nbsp;      email = emailValue!!,</b>
+<b class="nc">&nbsp;      score = scoreValue,</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
@@ -799,20 +797,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: YamlBenchUser) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID, value.id)</b>
-<b class="nc">&nbsp;    writer.writeField(H_NAME, value.name)</b>
-<b class="nc">&nbsp;    writer.writeField(H_EMAIL, value.email)</b>
-<b class="nc">&nbsp;    writer.writeField(H_SCORE, value.score)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ISACTIVE, value.isActive)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ROLE, value.role)</b>
-<b class="nc">&nbsp;    if (value.bio != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_BIO, value.bio)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: YamlBenchUser) {
 <b class="nc">&nbsp;    writer.beginObject()</b>
 <b class="nc">&nbsp;    writer.writeField(HS_ID, value.id)</b>
@@ -828,20 +812,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostYamlWriter, `value`: YamlBenchUser) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID, value.id)</b>
-<b class="nc">&nbsp;    writer.writeField(H_NAME, value.name)</b>
-<b class="nc">&nbsp;    writer.writeField(H_EMAIL, value.email)</b>
-<b class="nc">&nbsp;    writer.writeField(H_SCORE, value.score)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ISACTIVE, value.isActive)</b>
-<b class="nc">&nbsp;    writer.writeField(H_ROLE, value.role)</b>
-<b class="nc">&nbsp;    if (value.bio != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_BIO, value.bio)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostYamlFlatWriter, `value`: YamlBenchUser) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeField(H_ID, value.id)</b>
 <b class="fc">&nbsp;    writer.writeField(H_NAME, value.name)</b>
@@ -861,13 +831,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:0,\&quot;name\&quot;:\&quot;\&quot;,\&quot;email\&quot;:\&quot;\&quot;,\&quot;score\&quot;:0.0}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:0,\&quot;name\&quot;:\&quot;\&quot;,\&quot;email\&quot;:\&quot;\&quot;,\&quot;score\&quot;:0.0}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -902,7 +865,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

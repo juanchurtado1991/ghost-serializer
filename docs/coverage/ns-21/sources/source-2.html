@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlPools_androidKt</title>
+  <title>GhostSerialization Coverage Report > GhostYamlPools_jvmAndroidKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlPools_androidKt (com.ghost.serialization.yaml)</h1>
+<h1>Coverage Summary for Class: GhostYamlPools_jvmAndroidKt (com.ghost.serialization.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlPools_androidKt</td>
+  <td class="name">GhostYamlPools_jvmAndroidKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -68,10 +68,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    83.3%
   </span>
   <span class="absValue">
-    (4/4)
+    (5/6)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (14/14)
+    (19/19)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (54/54)
+    (72/72)
   </span>
 </td>
 </tr>
@@ -104,10 +104,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.InternalGhostApi
 &nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 &nbsp;import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
-&nbsp;import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+&nbsp;import com.ghost.serialization.writer.yaml.GhostYamlWriter
 &nbsp;
 <b class="fc">&nbsp;private val flatReaderPool = ThreadLocal&lt;GhostYamlFlatReader&gt;()</b>
-<b class="fc">&nbsp;private val flatWriterPool = ThreadLocal&lt;GhostYamlFlatWriter&gt;()</b>
+<b class="fc">&nbsp;private val flatWriterPool = ThreadLocal&lt;GhostYamlWriter&gt;()</b>
+<b class="fc">&nbsp;private val flatWriterBufferPool = ThreadLocal&lt;FlatByteArrayWriter&gt;()</b>
 &nbsp;
 &nbsp;@InternalGhostApi
 &nbsp;actual fun &lt;T&gt; ghostYamlInternalUseFlatReader(
@@ -126,16 +127,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;@InternalGhostApi
 &nbsp;actual fun &lt;T&gt; ghostYamlInternalUseFlatWriter(
-&nbsp;    block: (GhostYamlFlatWriter) -&gt; T
+&nbsp;    block: (GhostYamlWriter, FlatByteArrayWriter) -&gt; T
 &nbsp;): T {
 <b class="fc">&nbsp;    var writer = flatWriterPool.get()</b>
-<b class="fc">&nbsp;    if (writer == null) {</b>
-<b class="fc">&nbsp;        writer = GhostYamlFlatWriter(FlatByteArrayWriter())</b>
+<b class="fc">&nbsp;    var buffer = flatWriterBufferPool.get()</b>
+<b class="pc">&nbsp;    if (writer == null || buffer == null) {</b>
+<b class="fc">&nbsp;        buffer = FlatByteArrayWriter()</b>
+<b class="fc">&nbsp;        writer = GhostYamlWriter(buffer)</b>
 <b class="fc">&nbsp;        flatWriterPool.set(writer)</b>
+<b class="fc">&nbsp;        flatWriterBufferPool.set(buffer)</b>
 &nbsp;    } else {
 <b class="fc">&nbsp;        writer.reset()</b>
+<b class="fc">&nbsp;        buffer.reset()</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return block(writer)</b>
+<b class="fc">&nbsp;    return block(writer, buffer)</b>
 &nbsp;}
 </code>
 </pre>
@@ -160,7 +165,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

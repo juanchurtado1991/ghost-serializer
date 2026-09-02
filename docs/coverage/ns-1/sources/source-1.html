@@ -435,14 +435,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 &nbsp;
 &nbsp;/**
-&nbsp; * Gradle plugin that wires Ghost Serialization into Android, JVM, and Kotlin Multiplatform projects.
-&nbsp; *
-&nbsp; * Apply with plugin id `com.ghostserializer.ghost`. The plugin:
-&nbsp; * - Adds `ghost-compiler` to KSP when the KSP plugin is present
-&nbsp; * - Adds `ghost-serialization` and `ghost-api` to the appropriate source set or configuration
-&nbsp; * - Optionally adds `ghost-ktor` or `ghost-retrofit` when matching network libraries are detected
-&nbsp; *
-&nbsp; * Configure behavior through the [GhostExtension] `ghost` block.
+&nbsp; * Gradle plugin (id `com.ghostserializer.ghost`) that wires Ghost Serialization into Android, JVM,
+&nbsp; * and KMP projects: adds `ghost-compiler` to KSP, adds the runtime/API dependencies, and optionally
+&nbsp; * injects `ghost-ktor`/`ghost-retrofit` when those libraries are detected. Configure via the
+&nbsp; * [GhostExtension] `ghost` block.
 &nbsp; */
 <b class="fc">&nbsp;class GhostPlugin : Plugin&lt;Project&gt; {</b>
 &nbsp;
@@ -453,7 +449,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val extension = createExtension(project)</b>
 <b class="fc">&nbsp;        val ghostVersion = extension.version</b>
 &nbsp;
-&nbsp;        // 1. Core &amp; KSP (Reactive)
+&nbsp;        // Wired reactively via withId listeners so this works regardless of whether KSP/KMP/Android
+&nbsp;        // plugins are applied before or after this plugin.
 <b class="fc">&nbsp;        var kspSetupDone = false</b>
 &nbsp;        fun configureKspDependencies() {
 <b class="fc">&nbsp;            if (kspSetupDone) return</b>
@@ -508,7 +505,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 <b class="fc">&nbsp;        }</b>
 &nbsp;
-&nbsp;        // 2. Network Adapters (Safe afterEvaluate)
+&nbsp;        // afterEvaluate: configurations must be fully resolved before we can detect ktor/retrofit deps.
 <b class="fc">&nbsp;        project.afterEvaluate {</b>
 <b class="fc">&nbsp;            val version = ghostVersion.get()</b>
 <b class="fc">&nbsp;            if (extension.autoInjectKtor.get() &amp;&amp; hasKtorDependency(project)) {</b>
@@ -630,7 +627,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

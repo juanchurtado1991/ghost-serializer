@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.9%
+    66.7%
   </span>
   <span class="absValue">
-    (10/13)
+    (8/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45.2%
+    35%
   </span>
   <span class="absValue">
-    (19/42)
+    (14/40)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69.6%
+    56.1%
   </span>
   <span class="absValue">
-    (80/115)
+    (60/107)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    64.6%
+    52.2%
   </span>
   <span class="absValue">
-    (305/472)
+    (225/431)
   </span>
 </td>
 </tr>
@@ -122,7 +122,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -209,7 +208,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_ID) == 0L) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_ID) == 0L) {</b>
 <b class="nc">&nbsp;      reader.throwMissingRequiredField(&quot;id&quot;)</b>
 &nbsp;    }
 &nbsp;  }
@@ -218,18 +217,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [ResilientItem].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): ResilientItem {
-<b class="fc">&nbsp;    var idValue: String? = null</b>
-<b class="fc">&nbsp;    var valueValue: Int? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var idValue: String? = null</b>
+<b class="nc">&nbsp;    var valueValue: Int? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="pc">&nbsp;          reader.decodeResilient { reader.nextString() }?.let {</b>
-<b class="fc">&nbsp;            idValue = it</b>
-<b class="fc">&nbsp;            mask0 = mask0 or MASK_ID</b>
-<b class="fc">&nbsp;          }</b>
+<b class="nc">&nbsp;          reader.decodeResilient { reader.nextString() }?.let {</b>
+<b class="nc">&nbsp;            idValue = it</b>
+<b class="nc">&nbsp;            mask0 = mask0 or MASK_ID</b>
+<b class="nc">&nbsp;          }</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
 <b class="nc">&nbsp;          reader.decodeResilient { reader.nextIntOrNull() }?.let {</b>
@@ -243,16 +242,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
-<b class="fc">&nbsp;    reader.endObject()</b>
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_VALUE) == MASK_OPTS_VALUE) {</b>
+<b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_VALUE) == MASK_OPTS_VALUE) {</b>
 <b class="nc">&nbsp;      return ResilientItem(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        `value` = valueValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="fc">&nbsp;    return ResilientItem(</b>
-<b class="fc">&nbsp;      id = idValue!!,</b>
+<b class="nc">&nbsp;    return ResilientItem(</b>
+<b class="nc">&nbsp;      id = idValue!!,</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
@@ -313,15 +312,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: ResilientItem) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID, value.id)</b>
-<b class="nc">&nbsp;    if (value.`value` != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_VALUE, value.`value`)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: ResilientItem) {
 <b class="nc">&nbsp;    writer.beginObject()</b>
 <b class="nc">&nbsp;    writer.writeField(HS_ID, value.id)</b>
@@ -337,13 +327,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -378,7 +361,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

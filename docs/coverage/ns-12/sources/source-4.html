@@ -104,10 +104,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.parser.proto
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.bytes.nextDoubleExtension
 &nbsp;import com.ghost.serialization.parser.bytes.nextFloatExtension
 &nbsp;import com.ghost.serialization.parser.bytes.nextLongExtension
-&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
@@ -119,7 +119,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val b0 = getByte(start)</b>
 <b class="fc">&nbsp;            val b1 = getByte(start + 1)</b>
 <b class="fc">&nbsp;            val b2 = getByte(start + 2)</b>
-&nbsp;            // check closing quote
 <b class="fc">&nbsp;            if (start + C.NAN_QUOTED_LEN - 1 &lt;= limit &amp;&amp; getByte(start + C.NAN_QUOTED_LEN - 2) == C.QUOTE_INT) {</b>
 <b class="fc">&nbsp;                if (b0 == C.N_UPPER_BYTE_INT &amp;&amp; b1 == C.A_LOWER_BYTE_INT &amp;&amp; b2 == C.N_UPPER_BYTE_INT) { // &quot;NaN&quot;</b>
 <b class="fc">&nbsp;                    position = start + C.NAN_QUOTED_LEN - 1</b>
@@ -201,8 +200,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;private fun GhostProtoJsonFlatReader.matchInfinityBytes(start: Int): Boolean {
-&nbsp;    // Infinity has 8 characters: I, n, f, i, n, i, t, y
-&nbsp;    // We already checked &#39;I&#39; (73) in the caller, verify remaining 7 bytes
+&nbsp;    // Caller already checked &#39;I&#39;; verify the remaining 7 bytes of &quot;Infinity&quot;.
 <b class="fc">&nbsp;    return getByte(start + 1) == C.N_LOWER_BYTE_INT &amp;&amp;</b>
 <b class="fc">&nbsp;            getByte(start + 2) == C.F_LOWER_BYTE_INT &amp;&amp;</b>
 <b class="fc">&nbsp;            getByte(start + 3) == C.I_LOWER_BYTE_INT &amp;&amp;</b>
@@ -258,7 +256,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="fc">&nbsp;        throwError(C.ERR_UNKNOWN_ENUM)</b>
 &nbsp;    } else {
-&nbsp;        // Read as integer value index
 <b class="fc">&nbsp;        return nextInt()</b>
 &nbsp;    }
 &nbsp;}
@@ -285,7 +282,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

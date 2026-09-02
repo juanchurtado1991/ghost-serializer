@@ -65,18 +65,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.4%
+    96.3%
   </span>
   <span class="absValue">
-    (54/56)
+    (52/54)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.8%
+    89.5%
   </span>
   <span class="absValue">
-    (265/295)
+    (255/285)
   </span>
 </td>
 </tr>
@@ -103,15 +103,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     98%
   </span>
   <span class="absValue">
-    (100/102)
+    (98/100)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.2%
+    96.1%
   </span>
   <span class="absValue">
-    (735/764)
+    (711/740)
   </span>
 </td>
   </tr>
@@ -135,18 +135,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.5%
+    97.4%
   </span>
   <span class="absValue">
-    (154/158)
+    (150/154)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.4%
+    94.2%
   </span>
   <span class="absValue">
-    (1000/1059)
+    (966/1025)
   </span>
 </td>
 </tr>
@@ -193,7 +193,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val hasFallbackEnum: Boolean,</b>
 <b class="fc">&nbsp;    val serializerInterface: ClassName,</b>
 <b class="fc">&nbsp;    val streamingWriterClass: ClassName,</b>
-<b class="fc">&nbsp;    val flatWriterClass: ClassName,</b>
 <b class="fc">&nbsp;    val stringWriterClass: ClassName,</b>
 <b class="fc">&nbsp;    val streamingReaderClass: ClassName,</b>
 <b class="fc">&nbsp;    val flatReaderClass: ClassName,</b>
@@ -201,7 +200,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val hasYaml: Boolean,</b>
 <b class="fc">&nbsp;    val yamlSerializerInterface: ClassName,</b>
 <b class="fc">&nbsp;    val yamlWriterClass: ClassName,</b>
-<b class="fc">&nbsp;    val yamlFlatWriterClass: ClassName,</b>
 <b class="fc">&nbsp;    val yamlFlatReaderClass: ClassName,</b>
 &nbsp;) {
 <b class="fc">&nbsp;    val serializerName: String = baseClassName + C.STR_SERIALIZER_SUFFIX</b>
@@ -348,7 +346,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                hasFallbackEnum = hasFallbackEnum,</b>
 <b class="fc">&nbsp;                serializerInterface = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER),</b>
 <b class="fc">&nbsp;                streamingWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER),</b>
-<b class="fc">&nbsp;                flatWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_FLAT_WRITER),</b>
 <b class="fc">&nbsp;                stringWriterClass = ClassName(C.PKG_WRITER_STRINGS, C.STR_GHOST_JSON_STRING_WRITER),</b>
 <b class="fc">&nbsp;                streamingReaderClass = ClassName(C.PKG_PARSER_STREAMING, C.STR_GHOST_JSON_READER),</b>
 <b class="fc">&nbsp;                flatReaderClass = ClassName(C.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),</b>
@@ -359,7 +356,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    C.STR_GHOST_YAML_SERIALIZER</b>
 &nbsp;                ),
 <b class="fc">&nbsp;                yamlWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_WRITER),</b>
-<b class="fc">&nbsp;                yamlFlatWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_FLAT_WRITER),</b>
 <b class="fc">&nbsp;                yamlFlatReaderClass = yamlFlatReaderClass,</b>
 &nbsp;            )
 &nbsp;        }
@@ -408,7 +404,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -153,18 +153,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.types
 &nbsp;
 &nbsp;/**
-&nbsp; * Opaque JSON held as verbatim UTF-8 bytes of the wire representation.
+&nbsp; * Opaque JSON held as verbatim UTF-8 bytes of the wire representation, captured zero-copy from a
+&nbsp; * [ByteArray] source without building an intermediate parse tree. Prefer over [ByteArray] on
+&nbsp; * model fields: it documents intent and provides value-based [equals]/[hashCode].
 &nbsp; *
-&nbsp; * Ghost serializes and deserializes [RawJson] as an inline JSON value (object, array, string,
-&nbsp; * number, boolean, or null) using zero-copy capture when parsed from a [ByteArray] source,
-&nbsp; * without building an intermediate parse tree.
-&nbsp; *
-&nbsp; * Prefer [RawJson] over [ByteArray] on public model fields: it documents intent and provides
-&nbsp; * value-based [equals] / [hashCode].
-&nbsp; *
-&nbsp; * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength]
-&nbsp; * alias the parse input buffer until [bytes] is accessed (which materializes an
-&nbsp; * exact-length copy for slice values).
+&nbsp; * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength] alias
+&nbsp; * the parse input buffer until [bytes] is accessed, which materializes an exact-length copy.
 &nbsp; */
 <b class="fc">&nbsp;class RawJson internal constructor(</b>
 <b class="fc">&nbsp;    val storage: ByteArray,</b>
@@ -306,7 +300,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

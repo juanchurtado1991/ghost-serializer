@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostVersionsKt</title>
+  <title>GhostSerialization Coverage Report > GhostExtension</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.gradle</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostVersionsKt (com.ghost.gradle)</h1>
+<h1>Coverage Summary for Class: GhostExtension (com.ghost.gradle)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostVersionsKt</td>
+  <td class="name">GhostExtension</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,7 +46,33 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.gradle
 &nbsp;
-&nbsp;internal const val DEFAULT_VERSION = &quot;1.3.1&quot;
+&nbsp;import org.gradle.api.provider.Property
+&nbsp;
+&nbsp;/**
+&nbsp; * Gradle extension for configuring the Ghost Serialization plugin, registered under the `ghost` block when [GhostPlugin] is applied.
+&nbsp; */
+&nbsp;interface GhostExtension {
+&nbsp;    /**
+&nbsp;     * When `true`, adds `ghost-ktor` if a Ktor client dependency is detected on the classpath.
+&nbsp;     *
+&nbsp;     * Defaults to `true`.
+&nbsp;     */
+&nbsp;    val autoInjectKtor: Property&lt;Boolean&gt;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * When `true`, adds `ghost-retrofit` if Retrofit is detected on the classpath.
+&nbsp;     *
+&nbsp;     * Defaults to `true`.
+&nbsp;     */
+&nbsp;    val autoInjectRetrofit: Property&lt;Boolean&gt;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Ghost Serialization artifact version used for runtime, API, compiler, and adapter dependencies.
+&nbsp;     *
+&nbsp;     * Defaults to the plugin release version.
+&nbsp;     */
+&nbsp;    val version: Property&lt;String&gt;
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -70,7 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

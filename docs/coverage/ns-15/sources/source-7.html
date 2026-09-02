@@ -193,14 +193,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * High-performance YAML reader operating on a [ByteArray] with minimal intermediate allocations.
 &nbsp; *
-&nbsp; * ## Design
-&nbsp; * - Compare bytes directly; avoid `.toChar()` in performance-sensitive paths.
-&nbsp; * - All control bytes are defined in `GhostYamlConstants`.
-&nbsp; * - Validations use bitwise operations for digits, whitespace, and alphabetic characters.
-&nbsp; * - Field matching operates on raw bytes; string decoding is deferred until final value extraction.
-&nbsp; * - Extension hooks for block scalars, flow style, tags, and anchors are wired at construction time.
-&nbsp; *
-&nbsp; * @param rawData The full YAML document as a UTF-8 [ByteArray].
+&nbsp; * Compares bytes directly (avoids `.toChar()` on hot paths); control bytes live in
+&nbsp; * `GhostYamlConstants`; digit/whitespace/alpha checks use bitwise ops; field matching operates
+&nbsp; * on raw bytes with string decoding deferred until final value extraction.
 &nbsp; */
 <b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
 <b class="fc">&nbsp;open class GhostYamlFlatReader(var rawData: ByteArray) {</b>
@@ -215,11 +210,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    internal var currentIndent: Int = 0</b>
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Whether a tab byte appears in the current line&#39;s leading whitespace, between the counted
+&nbsp;     * Whether a tab appears in the current line&#39;s leading whitespace between the counted
 &nbsp;     * [currentIndent] spaces and the first non-whitespace byte. Tabs have no fixed column width,
-&nbsp;     * so the YAML spec forbids them in the indentation used to open or extend a block mapping/
-&nbsp;     * sequence — but they&#39;re harmless as ordinary whitespace once a scalar&#39;s own content has
-&nbsp;     * started. See the [currentIndent]-consuming checks in `readBlockMapping`/`readBlockSequence`.
+&nbsp;     * so YAML forbids them in indentation that opens/extends a block mapping/sequence, but
+&nbsp;     * they&#39;re harmless once a scalar&#39;s content has started.
 &nbsp;     */
 <b class="fc">&nbsp;    internal var indentHasTab: Boolean = false</b>
 &nbsp;
@@ -232,9 +226,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /** Table of defined tag directives for the current document. */
 <b class="fc">&nbsp;    internal val tagDirectives = HashMap&lt;String, String&gt;()</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Resets the reader&#39;s state to process a new byte payload.
-&nbsp;     */
+&nbsp;    /** Resets the reader&#39;s state to process a new byte payload. */
 &nbsp;    fun reset(newData: ByteArray) {
 <b class="fc">&nbsp;        rawData = newData</b>
 <b class="fc">&nbsp;        position = 0</b>
@@ -292,9 +284,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val sawExplicitMarker = skipDirectivesAndDocumentStart()</b>
 <b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
 <b class="pc">&nbsp;            if (!sawExplicitMarker &amp;&amp; position &gt;= localLimit) break</b>
-&nbsp;            // A bare `...` with no preceding `---` isn&#39;t an empty document — it&#39;s the end
-&nbsp;            // marker for a document that was never started (e.g. after a comment, or another
-&nbsp;            // `...`). Consume it and loop rather than reading it as a null-valued document.
+&nbsp;            // A bare `...` with no preceding `---` isn&#39;t an empty document — it&#39;s the end marker
+&nbsp;            // for a document that never started. Consume it and loop instead of reading it as
+&nbsp;            // a null-valued document.
 <b class="fc">&nbsp;            if (!sawExplicitMarker &amp;&amp; isDocumentEndMarker()) {</b>
 <b class="fc">&nbsp;                skipDocumentEnd()</b>
 <b class="fc">&nbsp;                previousDocumentExplicitlyEnded = true</b>
@@ -357,46 +349,41 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        expectedTag: Int = GhostYamlTags.TAG_NONE,</b>
 <b class="fc">&nbsp;        strictDedent: Boolean = false,</b>
 <b class="fc">&nbsp;        allowMappingRedirect: Boolean = true,</b>
-&nbsp;        // Distinct from `indent`: if this value turns out to be a plain scalar, later lines only
-&nbsp;        // need to be indented more than *this* to keep folding into it — normally the same as
-&nbsp;        // `indent`, since a value read inline (same line as its key&#39;s &#39;:&#39;) and an already-known
-&nbsp;        // nested-collection&#39;s own indent boundary coincide. The one case they diverge is a
-&nbsp;        // mapping value that starts on its own line (resolveValueAfterColon&#39;s newline branch):
-&nbsp;        // `indent` there is the *auto-detected column of this specific value* (needed unchanged
-&nbsp;        // if it turns out to be a nested block collection instead), but a plain scalar&#39;s fold
-&nbsp;        // boundary per the YAML spec is the *enclosing mapping&#39;s* own indent, not the value&#39;s.
+&nbsp;        // Distinct from `indent`: if this value is a plain scalar, later lines must indent more
+&nbsp;        // than *this* to keep folding into it. Normally equals `indent`, but diverges for a
+&nbsp;        // mapping value starting on its own line: `indent` there is this value&#39;s auto-detected
+&nbsp;        // column (needed if it turns out to be a nested block collection), while a plain
+&nbsp;        // scalar&#39;s fold boundary per spec is the *enclosing mapping&#39;s* indent, not the value&#39;s.
 <b class="fc">&nbsp;        foldIndent: Int = indent</b>
 &nbsp;    ): Any? {
 <b class="fc">&nbsp;        skipInlineWhitespace()</b>
 <b class="fc">&nbsp;        val localLimit = limit</b>
 <b class="fc">&nbsp;        if (position &gt;= localLimit) {</b>
-&nbsp;            // A tag forcing string type (e.g. a bare &quot;!!str&quot; with nothing after it, even at
-&nbsp;            // end of input) still resolves to an empty string, not &quot;no value at all&quot; — same as
-&nbsp;            // it would if there were trailing whitespace/newline instead of EOF.
+&nbsp;            // A bare &quot;!!str&quot; with nothing after it, even at EOF, still resolves to an empty
+&nbsp;            // string, not &quot;no value at all&quot; — same as trailing whitespace/newline instead of EOF.
 <b class="fc">&nbsp;            return if (expectedTag == GhostYamlTags.TAG_STR) &quot;&quot; else null</b>
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        val currentByte = rawData[position]</b>
 <b class="fc">&nbsp;        return when (currentByte) {</b>
-<b class="fc">&nbsp;            C.PIPE_BYTE, C.GT_BYTE -&gt; readBlockScalar(currentByte, indent)           // block scalar</b>
+<b class="fc">&nbsp;            C.PIPE_BYTE, C.GT_BYTE -&gt; readBlockScalar(currentByte, indent)</b>
 <b class="fc">&nbsp;            C.LEFT_BRACE_BYTE -&gt; readFlowCollectionOrMappingKey(indent, inFlow) { readFlowMapping() }</b>
 <b class="fc">&nbsp;            C.LEFT_BRACKET_BYTE -&gt; readFlowCollectionOrMappingKey(indent, inFlow) { readFlowSequence() }</b>
-<b class="fc">&nbsp;            C.EXCLAMATION_BYTE -&gt; readTaggedValue(indent, inFlow)      // tagged value</b>
-<b class="fc">&nbsp;            C.AMPERSAND_BYTE -&gt; readAnchoredValueOrMappingKey(indent, inFlow, strictDedent)    // anchor definition</b>
-<b class="fc">&nbsp;            C.ASTERISK_BYTE -&gt; readAliasOrMappingKey(indent, inFlow)                  // alias reference</b>
+<b class="fc">&nbsp;            C.EXCLAMATION_BYTE -&gt; readTaggedValue(indent, inFlow)</b>
+<b class="fc">&nbsp;            C.AMPERSAND_BYTE -&gt; readAnchoredValueOrMappingKey(indent, inFlow, strictDedent)</b>
+<b class="fc">&nbsp;            C.ASTERISK_BYTE -&gt; readAliasOrMappingKey(indent, inFlow)</b>
 <b class="fc">&nbsp;            C.DOUBLE_QUOTE_BYTE -&gt; readQuotedScalarOrMappingKey(indent, inFlow) { readDoubleQuotedString() }</b>
 <b class="fc">&nbsp;            C.SINGLE_QUOTE_BYTE -&gt; readQuotedScalarOrMappingKey(indent, inFlow) { readSingleQuotedString() }</b>
 <b class="fc">&nbsp;            C.DOT_BYTE -&gt; if (isDocumentEndMarker()) null else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)</b>
-&nbsp;            // &#39;%&#39; is reserved for directives and can never start a plain scalar (no &quot;followed by
-&nbsp;            // a safe character&quot; exception the way &#39;-&#39;/&#39;?&#39;/&#39;:&#39; get) — a directive-shaped line
-&nbsp;            // appearing where a value is expected (e.g. after the &quot;---&quot; it should have preceded)
-&nbsp;            // is simply invalid, not a scalar that happens to start with &#39;%&#39;.
+&nbsp;            // &#39;%&#39; is reserved for directives, never a plain scalar start (no &quot;followed by a safe
+&nbsp;            // character&quot; exception like &#39;-&#39;/&#39;?&#39;/&#39;:&#39; get) — a directive-shaped line where a value
+&nbsp;            // is expected is invalid, not a scalar starting with &#39;%&#39;.
 <b class="fc">&nbsp;            C.PERCENT_BYTE -&gt; yamlError(C.ERR_PLAIN_SCALAR_PERCENT)</b>
 <b class="fc">&nbsp;            C.QUESTION_BYTE -&gt;</b>
 <b class="fc">&nbsp;                if (!inFlow &amp;&amp; isExplicitKeyIndicator()) readBlockMapping(indent.coerceAtLeast(0))</b>
 <b class="fc">&nbsp;                else readPlainScalarOrMapping(indent, inFlow, expectedTag, allowMappingRedirect, foldIndent)</b>
 <b class="fc">&nbsp;            C.DASH_BYTE -&gt; {</b>
-&nbsp;                // Either: negative number &quot;-42&quot;, block sequence &quot;- item&quot;, or doc separator &quot;---&quot;
+&nbsp;                // Negative number &quot;-42&quot;, block sequence &quot;- item&quot;, or doc separator &quot;---&quot;.
 <b class="fc">&nbsp;                val nextByte = if (position + 1 &lt; localLimit) rawData[position + 1] else 0</b>
 <b class="fc">&nbsp;                when {</b>
 <b class="fc">&nbsp;                    expectedTag != GhostYamlTags.TAG_STR &amp;&amp; isDigit(nextByte) -&gt; readNumber()</b>
@@ -404,7 +391,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                        nextByte == C.TAB_BYTE || position + 1 &gt;= localLimit -&gt;</b>
 <b class="fc">&nbsp;                        readBlockSequence(indent)</b>
 &nbsp;
-<b class="fc">&nbsp;                    isDocumentMarker() -&gt; null  // document end</b>
+<b class="fc">&nbsp;                    isDocumentMarker() -&gt; null</b>
 <b class="fc">&nbsp;                    else -&gt; readPlainScalar(indent, inFlow, expectedTag, allowMappingRedirect)</b>
 &nbsp;                }
 &nbsp;            }
@@ -414,12 +401,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Reads a quoted scalar via [readQuoted], then checks whether a `:` (key separator) follows —
-&nbsp;     * a quoted string can be a mapping key, not just a value (e.g. `&quot;400&quot;:` in `responses:` below
-&nbsp;     * a `- `/another key). [readPlainScalarOrMapping] already does this colon-scan for *bare* keys,
-&nbsp;     * but readValue&#39;s dispatch never reaches it for quoted content since [C.DOUBLE_QUOTE_BYTE] /
-&nbsp;     * [C.SINGLE_QUOTE_BYTE] are handled directly above — without this check, a quoted key&#39;s value
-&nbsp;     * would be silently misread as the quoted string itself, dropping everything nested under it.
+&nbsp;     * Reads a quoted scalar via [readQuoted], then checks whether a `:` follows — a quoted
+&nbsp;     * string can be a mapping key, not just a value (e.g. `&quot;400&quot;:`). [readPlainScalarOrMapping]
+&nbsp;     * already does this colon-scan for *bare* keys, but readValue&#39;s dispatch never reaches it
+&nbsp;     * for quoted content. Without this check a quoted key&#39;s value would be misread as the
+&nbsp;     * quoted string itself, dropping everything nested under it.
 &nbsp;     */
 &nbsp;    private inline fun readQuotedScalarOrMappingKey(indent: Int, inFlow: Boolean, readQuoted: () -&gt; String): Any? {
 <b class="fc">&nbsp;        val startPosition = position</b>
@@ -433,19 +419,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                rawData[position + 1] == C.CR_BYTE ||</b>
 <b class="pc">&nbsp;                rawData[position + 1] == C.TAB_BYTE)</b>
 &nbsp;        // Inside a flow collection there&#39;s no block mapping to redirect into — leave position
-&nbsp;        // right where readQuoted()/skipInlineWhitespace() left it (at a &#39;:&#39; or not) and let the
-&nbsp;        // caller (a flow sequence entry may be an implicit single-pair mapping) decide.
+&nbsp;        // where it is and let the caller (a flow sequence entry may be an implicit single-pair
+&nbsp;        // mapping) decide.
 <b class="fc">&nbsp;        if (inFlow || !isMappingKey) return text</b>
 <b class="fc">&nbsp;        position = startPosition</b>
 <b class="fc">&nbsp;        return readBlockMapping(indent.coerceAtLeast(0))</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Reads a flow collection ([readCollection], `{...}` or `[...]`) via [readValue]&#39;s dispatch,
-&nbsp;     * then — mirroring [readQuotedScalarOrMappingKey] — checks whether a `:` follows: a flow
-&nbsp;     * collection can itself be a block-mapping key (e.g. `[flow]: block`), not just a value.
-&nbsp;     * Without this, `[flow]: block` at the top of a block context would read the `[flow]` list as
-&nbsp;     * a complete document value and then choke on the trailing `: block` as garbage.
+&nbsp;     * Reads a flow collection ([readCollection]), then — mirroring
+&nbsp;     * [readQuotedScalarOrMappingKey] — checks whether a `:` follows: a flow collection can
+&nbsp;     * itself be a block-mapping key (e.g. `[flow]: block`), not just a value. Without this,
+&nbsp;     * `[flow]: block` would read `[flow]` as a complete document value and choke on `: block`.
 &nbsp;     */
 &nbsp;    private inline fun readFlowCollectionOrMappingKey(indent: Int, inFlow: Boolean, readCollection: () -&gt; Any?): Any? {
 <b class="fc">&nbsp;        val startPosition = position</b>
@@ -497,10 +482,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                    ) {
 <b class="fc">&nbsp;                        if (!inFlow) {</b>
 <b class="fc">&nbsp;                            if (!allowMappingRedirect) {</b>
-&nbsp;                                // This colon is being read as an *inline* value/key-node on the
-&nbsp;                                // same line as an enclosing key&#39;s own &#39;:&#39; (e.g. the &quot;b: c&quot; in
-&nbsp;                                // &quot;a: b: c&quot;) — there&#39;s no fresh, more-indented line for a nested
-&nbsp;                                // mapping to start on here, so this shape is just ambiguous, not
+&nbsp;                                // This colon is an *inline* value/key-node on the same line as an
+&nbsp;                                // enclosing key&#39;s own &#39;:&#39; (e.g. &quot;b: c&quot; in &quot;a: b: c&quot;) — no fresh,
+&nbsp;                                // more-indented line for a nested mapping, so it&#39;s ambiguous, not
 &nbsp;                                // a legal redirect. yaml-test-suite case ZCZ6.
 <b class="fc">&nbsp;                                yamlError(C.ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON)</b>
 &nbsp;                            }
@@ -508,9 +492,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                            position = startPosition</b>
 <b class="fc">&nbsp;                            return readBlockMapping(indent.coerceAtLeast(0))</b>
 &nbsp;                        }
-&nbsp;                        // Inside a flow collection there&#39;s no block mapping to redirect into —
-&nbsp;                        // stop the scalar right here and let the caller (a flow sequence entry
-&nbsp;                        // may be an implicit single-pair mapping) decide what the colon means.
+&nbsp;                        // No block mapping to redirect into inside a flow collection — stop the
+&nbsp;                        // scalar here and let the caller decide what the colon means.
 &nbsp;                        break
 &nbsp;                    }
 <b class="fc">&nbsp;                    scanPosition++</b>
@@ -518,8 +501,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="pc">&nbsp;                currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE -&gt; break</b>
 <b class="fc">&nbsp;                currentByte == C.HASH_BYTE -&gt; {</b>
-&nbsp;                    // Inline comment — the plain scalar ends before &#39;#&#39; (only if preceded by
-&nbsp;                    // whitespace; &quot;d#X&quot; isn&#39;t a comment, &quot;d\t#X&quot;/&quot;d #X&quot; are).
+&nbsp;                    // Inline comment ends the scalar before &#39;#&#39;, only if preceded by whitespace
+&nbsp;                    // (&quot;d#X&quot; isn&#39;t a comment, &quot;d #X&quot; is).
 <b class="fc">&nbsp;                    if (scanPosition &gt; startPosition &amp;&amp;</b>
 <b class="fc">&nbsp;                        (localRawData[scanPosition - 1] == C.SPACE_BYTE || localRawData[scanPosition - 1] == C.TAB_BYTE)</b>
 &nbsp;                    ) break
@@ -531,25 +514,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-&nbsp;        // Extract the plain scalar bytes
 <b class="fc">&nbsp;        val endPosition = trimTrailingSpaces(startPosition, scanPosition)</b>
 <b class="fc">&nbsp;        position = scanPosition</b>
 &nbsp;
-&nbsp;        // A bare &quot;-&quot; is only a valid plain-scalar start when followed by a &quot;safe&quot; character
-&nbsp;        // (ns-plain-first&#39;s rule for &#39;-&#39;/&#39;?&#39;/&#39;:&#39;) — in flow context that excludes flow indicators
-&nbsp;        // (&quot;,[]{}&quot;), so a lone &quot;-&quot; immediately touching one, like the entries in &quot;[-, -]&quot; or
-&nbsp;        // &quot;[-]&quot;, has nothing valid to be: it isn&#39;t the block sequence indicator (flow has no such
-&nbsp;        // thing) and it doesn&#39;t satisfy the plain-scalar exception either.
+&nbsp;        // A bare &quot;-&quot; is a valid plain-scalar start only when followed by a &quot;safe&quot; character
+&nbsp;        // (ns-plain-first&#39;s rule for &#39;-&#39;/&#39;?&#39;/&#39;:&#39;) — in flow context that excludes flow
+&nbsp;        // indicators (&quot;,[]{}&quot;), so a lone &quot;-&quot; touching one (e.g. &quot;[-, -]&quot;) is neither a block
+&nbsp;        // sequence indicator (flow has none) nor a valid plain scalar.
 <b class="fc">&nbsp;        if (inFlow &amp;&amp; endPosition - startPosition == 1 &amp;&amp; localRawData[startPosition] == C.DASH_BYTE) {</b>
 <b class="fc">&nbsp;            yamlError(C.ERR_LONE_DASH_IN_FLOW)</b>
 &nbsp;        }
 &nbsp;
-&nbsp;        // Plain scalars can continue onto following lines, both in block context (more-indented
-&nbsp;        // lines) and in flow context (any line that isn&#39;t itself a flow terminator) — see
-&nbsp;        // [foldPlainScalarContinuation] and [foldFlowPlainScalarContinuation] respectively.
-&nbsp;        // Line-folding rule either way: a single newline between continuation lines becomes a
-&nbsp;        // space; a blank line (or N of them) becomes N newlines — same rule readBlockScalarContent
-&nbsp;        // applies for folded (&quot;&gt;&quot;) block scalars.
+&nbsp;        // Plain scalars continue onto following lines: more-indented lines in block context
+&nbsp;        // ([foldPlainScalarContinuation]), any non-terminator line in flow context
+&nbsp;        // ([foldFlowPlainScalarContinuation]). Folding rule either way: a single newline becomes
+&nbsp;        // a space; N blank lines become N newlines (same as readBlockScalarContent&#39;s &quot;&gt;&quot; style).
 <b class="fc">&nbsp;        if (position &lt; localLimit &amp;&amp;</b>
 <b class="pc">&nbsp;            (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)</b>
 &nbsp;        ) {
@@ -564,10 +543,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Consumes zero or more following lines that continue a plain scalar (each more indented than
-&nbsp;     * [indent], the enclosing block&#39;s own indentation), folding them onto [firstLine] per the
-&nbsp;     * usual YAML line-folding rule. Returns `null` (without moving [position]) if the very next
-&nbsp;     * line isn&#39;t actually a continuation, so the caller falls back to its single-line result.
+&nbsp;     * Consumes following lines that continue a plain scalar (each more indented than [indent],
+&nbsp;     * the enclosing block&#39;s indentation), folding them onto [firstLine] per YAML&#39;s line-folding
+&nbsp;     * rule. Returns `null` (without moving [position]) if the next line isn&#39;t a continuation, so
+&nbsp;     * the caller falls back to its single-line result.
 &nbsp;     */
 &nbsp;    private fun foldPlainScalarContinuation(indent: Int, firstLine: String): String? {
 <b class="fc">&nbsp;        val localRawData = rawData</b>
@@ -579,7 +558,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        while (true) {</b>
 <b class="fc">&nbsp;            val beforeNewline = position</b>
 &nbsp;            // Blank-ness is judged after skipping *all* leading whitespace (spaces and tabs) — a
-&nbsp;            // line that&#39;s purely whitespace is blank even if that whitespace includes a tab.
+&nbsp;            // line that&#39;s purely whitespace is blank even if it includes a tab.
 <b class="fc">&nbsp;            val blankScan = scanFoldBlankLine(localRawData, position, localLimit)</b>
 <b class="fc">&nbsp;            if (blankScan.isBlank) {</b>
 <b class="fc">&nbsp;                blankLines++</b>
@@ -589,13 +568,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 <b class="fc">&nbsp;            position = blankScan.afterNewline</b>
 &nbsp;
-&nbsp;            // Not blank — how &quot;indented&quot; this line is (for the continuation-vs-dedent decision)
-&nbsp;            // is judged by real spaces only, the same as everywhere else a tab can&#39;t be part of
-&nbsp;            // establishing block-structure indentation (recomputeCurrentIndent/indentHasTab):
-&nbsp;            // otherwise a tab sitting right at a sibling key&#39;s indentation would silently read as
-&nbsp;            // &quot;more indented, still a continuation&quot; instead of surfacing as ambiguous/invalid.
-&nbsp;            // Once a real continuation is confirmed, any tab(s) right after those spaces are still
-&nbsp;            // ordinary leading whitespace to skip, same as the spaces themselves.
+&nbsp;            // How &quot;indented&quot; this line is (continuation-vs-dedent) is judged by real spaces only
+&nbsp;            // — a tab can&#39;t establish block-structure indentation (see recomputeCurrentIndent/
+&nbsp;            // indentHasTab), else a tab at a sibling key&#39;s indentation would falsely read as
+&nbsp;            // &quot;still a continuation&quot; instead of ambiguous/invalid. Once continuation is
+&nbsp;            // confirmed, tabs after those spaces are ordinary leading whitespace like the spaces.
 <b class="fc">&nbsp;            var spaces = 0</b>
 <b class="fc">&nbsp;            var peekPos = position</b>
 <b class="pc">&nbsp;            while (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] == C.SPACE_BYTE) {</b>
@@ -607,11 +584,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;            position = peekPos</b>
 <b class="fc">&nbsp;            if (spaces &lt;= indent || isDocumentMarker() || isDocumentEndMarker()) {</b>
-&nbsp;                // Not a continuation (dedented, sibling-level, or a new document). If we&#39;d already
-&nbsp;                // folded at least one real continuation line, rewind just past it (trailing blank
-&nbsp;                // lines aren&#39;t part of the value). Otherwise rewind all the way to right after the
-&nbsp;                // first line, undoing any blank lines we tentatively scanned past too — the caller
-&nbsp;                // must see them again to reprocess this content correctly.
+&nbsp;                // Not a continuation (dedented, sibling-level, or a new document). If we already
+&nbsp;                // folded a real continuation line, rewind just past it (trailing blank lines
+&nbsp;                // aren&#39;t part of the value); otherwise rewind to right after the first line,
+&nbsp;                // undoing any tentatively-scanned blank lines so the caller sees them again.
 <b class="fc">&nbsp;                position = if (folded != null) beforeNewline else scalarEndPosition</b>
 &nbsp;                break
 &nbsp;            }
@@ -620,11 +596,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            var sawComment = false</b>
 <b class="pc">&nbsp;            while (position &lt; localLimit &amp;&amp; localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE) {</b>
 <b class="fc">&nbsp;                val currentByte = localRawData[position]</b>
-&nbsp;                // A comment ends this line&#39;s content the same way it ends a single-line plain
-&nbsp;                // scalar (only when preceded by whitespace) — and since a comment can&#39;t appear
-&nbsp;                // inside a still-open plain scalar&#39;s fold, it ends the whole scalar right here
-&nbsp;                // too, not just this one line (see BF9H: content after the comment needs its own
-&nbsp;                // valid token, it can&#39;t be folded in as if the comment weren&#39;t there).
+&nbsp;                // A comment ends this line the same way it ends a single-line plain scalar (only
+&nbsp;                // when preceded by whitespace) — and since a comment can&#39;t appear inside a
+&nbsp;                // still-open fold, it ends the whole scalar here, not just this line (case BF9H).
 <b class="pc">&nbsp;                if (currentByte == C.HASH_BYTE &amp;&amp; position &gt; lineStart &amp;&amp;</b>
 <b class="pc">&nbsp;                    (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)</b>
 &nbsp;                ) {
@@ -635,8 +609,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 <b class="fc">&nbsp;            val lineEnd = trimTrailingSpaces(lineStart, position)</b>
 &nbsp;            // A continuation line can&#39;t itself look like a mapping key (&quot;word: &quot;) — a plain
-&nbsp;            // scalar&#39;s fold can&#39;t contain what would otherwise be a nested key/value pair (see
-&nbsp;            // 2CMS: &quot;invalid: x&quot; on a continuation line is forbidden content, not literal text).
+&nbsp;            // scalar&#39;s fold can&#39;t contain a nested key/value pair (case 2CMS).
 <b class="fc">&nbsp;            var colonScan = lineStart</b>
 <b class="fc">&nbsp;            while (colonScan &lt; lineEnd) {</b>
 <b class="fc">&nbsp;                if (localRawData[colonScan] == C.COLON_BYTE) {</b>
@@ -656,9 +629,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            appendFoldedLine(folded, blankLines, lineText)</b>
 <b class="fc">&nbsp;            blankLines = 0</b>
 &nbsp;
-&nbsp;            // Leave position sitting right at the &#39;#&#39; either way — consistent with how the
-&nbsp;            // initial single-line scan above also stops there without consuming it, letting the
-&nbsp;            // caller&#39;s own skipWhitespaceAndComments handle it afterward.
+&nbsp;            // Leave position at the &#39;#&#39; — the caller&#39;s skipWhitespaceAndComments handles it.
 <b class="fc">&nbsp;            if (sawComment) break</b>
 <b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
 &nbsp;        }
@@ -667,13 +638,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Flow-context counterpart to [foldPlainScalarContinuation]: folds a plain scalar&#39;s
-&nbsp;     * continuation lines inside a flow collection (`[...]`/`{...}`). Unlike block context, a flow
-&nbsp;     * collection isn&#39;t indentation-bounded by its surroundings once opened (it&#39;s delimited by its
-&nbsp;     * own closing bracket/brace instead), so there&#39;s no indentation threshold to compare against
-&nbsp;     * here — continuation is decided purely by what the next line actually starts with, using the
-&nbsp;     * same terminators (`,`, `]`, `}`, a real `:` key separator, or a whitespace-preceded `#`
-&nbsp;     * comment) that already end a single-line flow scalar.
+&nbsp;     * Flow-context counterpart to [foldPlainScalarContinuation]. Unlike block context, a flow
+&nbsp;     * collection isn&#39;t indentation-bounded once opened (delimited by its closing bracket/brace
+&nbsp;     * instead), so there&#39;s no indentation threshold here — continuation is decided purely by
+&nbsp;     * what the next line starts with, using the same terminators (`,`, `]`, `}`, a real `:` key
+&nbsp;     * separator, or a whitespace-preceded `#` comment) that end a single-line flow scalar.
 &nbsp;     */
 &nbsp;    private fun foldFlowPlainScalarContinuation(firstLine: String): String? {
 <b class="fc">&nbsp;        val localRawData = rawData</b>
@@ -692,8 +661,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                continue
 &nbsp;            }
 &nbsp;
-&nbsp;            // No indentation threshold to check here (see the KDoc above) — just skip this
-&nbsp;            // line&#39;s leading whitespace and look at what actually comes next.
+&nbsp;            // No indentation threshold here (see KDoc above) — skip this line&#39;s leading
+&nbsp;            // whitespace and look at what comes next.
 <b class="fc">&nbsp;            position = blankScan.contentStart</b>
 <b class="fc">&nbsp;            val lineStart = position</b>
 <b class="fc">&nbsp;            val leadByte = localRawData[position]</b>
@@ -707,18 +676,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;                leadByte == C.HASH_BYTE || leadIsColonSeparator || isDocumentMarker() || isDocumentEndMarker()</b>
 &nbsp;            ) {
 &nbsp;                // This line is nothing but the scalar&#39;s own terminator (or a comment) — not a
-&nbsp;                // continuation. A comment can&#39;t appear inside a still-open plain scalar&#39;s line-
-&nbsp;                // folding, so a comment-only line ends the scalar right here too, regardless of
-&nbsp;                // what follows it — same as it would outside any fold (see CML9: the line after
-&nbsp;                // a comment that interrupts a plain scalar needs its own comma, not a fold).
-&nbsp;                // Same rewind rule as the block version: undo blank lines tentatively scanned
-&nbsp;                // past, since the caller needs to see them fresh either way.
+&nbsp;                // continuation. A comment can&#39;t appear inside a still-open fold, so a
+&nbsp;                // comment-only line ends the scalar here too regardless of what follows
+&nbsp;                // (case CML9). Same rewind rule as the block version.
 <b class="pc">&nbsp;                position = if (folded != null) beforeNewline else scalarEndPosition</b>
 &nbsp;                break
 &nbsp;            }
 &nbsp;
-&nbsp;            // Scan this continuation line&#39;s own content with the same stop rules a single-line
-&nbsp;            // flow scalar already uses (mirrors the scan at the top of readPlainScalarOrMapping).
+&nbsp;            // Scan this line&#39;s content with the same stop rules a single-line flow scalar uses
+&nbsp;            // (mirrors the scan at the top of readPlainScalarOrMapping).
 <b class="fc">&nbsp;            var scanPos = lineStart</b>
 <b class="pc">&nbsp;            while (scanPos &lt; localLimit) {</b>
 <b class="fc">&nbsp;                val currentByte = localRawData[scanPos]</b>
@@ -756,8 +722,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;            position = scanPos</b>
 <b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
-&nbsp;            // This line&#39;s own scan may have stopped at a mid-line terminator (not a newline) —
-&nbsp;            // if so the scalar is done, don&#39;t loop around expecting another continuation line.
+&nbsp;            // If the scan stopped at a mid-line terminator (not a newline), the scalar is done —
+&nbsp;            // don&#39;t loop expecting another continuation line.
 <b class="pc">&nbsp;            if (localRawData[position] != C.NEWLINE_BYTE &amp;&amp; localRawData[position] != C.CR_BYTE) break</b>
 &nbsp;        }
 &nbsp;
@@ -784,18 +750,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val localRawData = rawData</b>
 <b class="pc">&nbsp;        if (position &gt;= localLimit) return null</b>
 &nbsp;
-&nbsp;        // Alias as key: &quot;*name&quot; resolves immediately to the aliased node&#39;s own value, stringified
-&nbsp;        // the same way an explicit-key node would be (e.g. &quot;*b : *a&quot; below &quot;&amp;a a: &amp;b b&quot; — the
-&nbsp;        // key is whatever &quot;&amp;b&quot; was bound to). Only recognized with no anchor/tag prefix before
-&nbsp;        // it; combining both isn&#39;t a case any test exercises and has no clear meaning anyway.
+&nbsp;        // Alias as key: &quot;*name&quot; resolves immediately to the aliased node&#39;s value, stringified the
+&nbsp;        // same way an explicit-key node would be. Only recognized with no anchor/tag prefix
+&nbsp;        // before it; combining both has no clear meaning and isn&#39;t exercised by any test.
 <b class="fc">&nbsp;        if (localRawData[position] == C.ASTERISK_BYTE) {</b>
 <b class="fc">&nbsp;            return stringifyExplicitMappingKey(readAlias())</b>
 &nbsp;        }
 &nbsp;
-&nbsp;        // An anchor and/or tag may prefix a key (e.g. &quot;&amp;a5 !!str key5:&quot;, &quot;!!str &amp;a10 key10:&quot;) —
-&nbsp;        // a tag has no JSON representation on a key, so it&#39;s dropped the same way an ordinary
-&nbsp;        // tagged value&#39;s tag is; an anchor, though, still needs to end up bound to the key&#39;s own
-&nbsp;        // text once known, so later aliases can resolve it (e.g. &quot;&amp;a a: ...&quot; then &quot;*a&quot; elsewhere).
+&nbsp;        // An anchor and/or tag may prefix a key (e.g. &quot;&amp;a5 !!str key5:&quot;). A tag has no JSON
+&nbsp;        // representation on a key, so it&#39;s dropped like an ordinary tagged value&#39;s tag; an
+&nbsp;        // anchor still needs binding to the key&#39;s text so later aliases can resolve it.
 <b class="fc">&nbsp;        var anchorName: String? = null</b>
 <b class="fc">&nbsp;        val positionBeforePrefixes = position</b>
 <b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp;</b>
@@ -815,18 +779,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            if (isAnchor) anchorName = localRawData.decodeToString(prefixStart, position)</b>
 <b class="fc">&nbsp;            skipInlineWhitespace()</b>
 &nbsp;        }
-&nbsp;        // Having consumed an anchor/tag prefix commits us to there being a real key afterward —
-&nbsp;        // unlike the &quot;nothing here at all&quot; case below, silently returning null having already
-&nbsp;        // eaten those bytes would let a genuinely invalid &quot;dangling&quot; anchor/tag (nothing valid
-&nbsp;        // following it) masquerade as &quot;no more keys in this mapping&quot; instead of erroring.
+&nbsp;        // Having consumed an anchor/tag prefix commits us to a real key afterward — silently
+&nbsp;        // returning null after eating those bytes would let a dangling anchor/tag masquerade as
+&nbsp;        // &quot;no more keys&quot; instead of erroring.
 <b class="fc">&nbsp;        val hadPrefixes = position != positionBeforePrefixes</b>
 <b class="pc">&nbsp;        if (position &gt;= localLimit) {</b>
 <b class="nc">&nbsp;            if (hadPrefixes) yamlError(C.ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY)</b>
 <b class="nc">&nbsp;            return null</b>
 &nbsp;        }
 &nbsp;        // An anchor can&#39;t wrap an alias reference here either — same rule readAnchoredValue
-&nbsp;        // already enforces for values (an alias points at an existing node, it isn&#39;t itself a
-&nbsp;        // node that a new anchor can attach to).
+&nbsp;        // enforces for values (an alias points at an existing node, not one a new anchor can attach to).
 <b class="fc">&nbsp;        if (anchorName != null &amp;&amp; localRawData[position] == C.ASTERISK_BYTE) {</b>
 <b class="fc">&nbsp;            yamlError(&quot;${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}&quot;)</b>
 &nbsp;        }
@@ -847,9 +809,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                        ) break
 &nbsp;                    }
 <b class="pc">&nbsp;                    if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) break</b>
-&nbsp;                    // An inline comment ends the key the same way it ends a plain scalar value
-&nbsp;                    // (see readPlainScalarOrMapping) — only when preceded by whitespace, so
-&nbsp;                    // &quot;a#b&quot; stays one key while &quot;a #b&quot; ends the key at &quot;a&quot;.
+&nbsp;                    // An inline comment ends the key like it ends a plain scalar value, only
+&nbsp;                    // when preceded by whitespace: &quot;a#b&quot; stays one key, &quot;a #b&quot; ends at &quot;a&quot;.
 <b class="fc">&nbsp;                    if (currentByte == C.HASH_BYTE &amp;&amp; position &gt; startPosition &amp;&amp;</b>
 <b class="pc">&nbsp;                        (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)</b>
 &nbsp;                    ) break
@@ -859,13 +820,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                val endPosition = trimTrailingSpaces(startPosition, position)</b>
 <b class="fc">&nbsp;                if (endPosition == startPosition) {</b>
 &nbsp;                    // A bare &#39;:&#39; with nothing before it is a valid empty-string key (e.g.
-&nbsp;                    // &quot;: value&quot;, or repeated &quot;: a&quot; / &quot;: b&quot; pairs) — the loop above breaks on
-&nbsp;                    // the very first byte in that case, without advancing. A tag can be the
-&nbsp;                    // entire key by itself the same way (e.g. &quot;!!str : bar&quot; is an empty-string
-&nbsp;                    // key) — a prefix followed directly by &#39;:&#39; isn&#39;t &quot;dangling&quot;, it&#39;s this same
-&nbsp;                    // empty-key shape with the tag already consumed. Anything else here (a
-&nbsp;                    // newline, EOF) really is &quot;no more mapping to read&quot; — or, if a prefix was
-&nbsp;                    // consumed first, a genuinely dangling one.
+&nbsp;                    // &quot;: value&quot;) — the loop above breaks on the first byte without advancing.
+&nbsp;                    // A prefix followed directly by &#39;:&#39; is this same empty-key shape, not
+&nbsp;                    // dangling. Anything else (newline, EOF) is &quot;no more mapping to read&quot;, or a
+&nbsp;                    // genuinely dangling prefix if one was consumed.
 <b class="pc">&nbsp;                    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE) {</b>
 <b class="fc">&nbsp;                        &quot;&quot;</b>
 <b class="pc">&nbsp;                    } else if (hadPrefixes) {</b>
@@ -875,9 +833,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                    }
 &nbsp;                } else {
 <b class="fc">&nbsp;                    val firstLine = localRawData.decodeToString(startPosition, endPosition)</b>
-&nbsp;                    // A flow mapping key can fold across lines the same way any other flow plain
-&nbsp;                    // scalar does (e.g. &quot;{ matches\n% : 20 }&quot; — the key is &quot;matches %&quot;) — block-
-&nbsp;                    // context keys never reach here still sitting on a newline, since a colon
+&nbsp;                    // A flow mapping key can fold across lines like any other flow plain scalar
+&nbsp;                    // — block-context keys never reach here sitting on a newline, since a colon
 &nbsp;                    // must follow on the same line there.
 <b class="pc">&nbsp;                    if (inFlow &amp;&amp; position &lt; localLimit &amp;&amp;</b>
 <b class="pc">&nbsp;                        (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)</b>
@@ -898,10 +855,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Reads a quoted key via [readQuoted], then — in block context only — rejects it if it
 &nbsp;     * spanned more than one line. An implicit block-mapping key (no `?` indicator) must fit on a
-&nbsp;     * single line, unlike a quoted scalar used as an ordinary value (which folds across lines
-&nbsp;     * fine); a flow-mapping key has no such restriction, since the surrounding brackets already
-&nbsp;     * give the parser an unambiguous boundary (confirmed by 9BXH/9SA2 expecting a folded multi-
-&nbsp;     * line flow key to succeed, vs. JKF3 expecting the equivalent block key to fail).
+&nbsp;     * single line, unlike an ordinary quoted-scalar value (which folds fine); a flow-mapping key
+&nbsp;     * has no such restriction since its brackets give an unambiguous boundary (cases 9BXH/9SA2
+&nbsp;     * expect a folded multi-line flow key to succeed, JKF3 expects the block equivalent to fail).
 &nbsp;     */
 &nbsp;    private inline fun readQuotedKeyRejectingMultiLine(inFlow: Boolean, readQuoted: () -&gt; String): String {
 <b class="fc">&nbsp;        val startPosition = position</b>
@@ -954,11 +910,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Called by both [readAllDocuments] overloads right after a document&#39;s value is read.
-&nbsp;     * What may legally follow a document&#39;s value is: end of input, a `---` document-start
-&nbsp;     * marker (the next document), or a `%` directive (the next document&#39;s directives) — anything
-&nbsp;     * else is leftover content that the value&#39;s own reader stopped in front of without
-&nbsp;     * understanding, e.g. a stray closing bracket or a bare word after a flow collection closed.
+&nbsp;     * Called by both [readAllDocuments] overloads after a document&#39;s value is read. What may
+&nbsp;     * legally follow is: EOF, a `---` document-start marker, or a `%` directive — anything else
+&nbsp;     * is leftover content the value&#39;s reader stopped in front of without understanding.
 &nbsp;     */
 &nbsp;    private fun rejectTrailingGarbageAfterDocument() {
 <b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
@@ -970,11 +924,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Called by both [readAllDocuments] overloads right before deciding whether the next thing
-&nbsp;     * is a directive. Directives only apply to a document that hasn&#39;t started yet — legal at the
-&nbsp;     * very start of the stream, or right after an explicit `...` — not merely because the
-&nbsp;     * previous document&#39;s content happened to end (e.g. right after an implicit `---`-to-`---`
-&nbsp;     * transition with no `...` in between).
+&nbsp;     * Called by both [readAllDocuments] overloads before deciding whether the next thing is a
+&nbsp;     * directive. Directives only apply to a document that hasn&#39;t started yet — legal at stream
+&nbsp;     * start or right after an explicit `...`, not merely because the previous document ended
+&nbsp;     * (e.g. an implicit `---`-to-`---` transition with no `...` between).
 &nbsp;     */
 &nbsp;    private fun requireExplicitEndBeforeDirectives(previousDocumentExplicitlyEnded: Boolean) {
 <b class="fc">&nbsp;        if (previousDocumentExplicitlyEnded) return</b>
@@ -1166,7 +1119,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

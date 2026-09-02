@@ -186,15 +186,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Main KSP Processor for Ghost Serialization.
-&nbsp; *
-&nbsp; * It analyzes classes annotated with `@GhostSerialization`, generates their respective
-&nbsp; * specialized serializers, and builds a global registry mapping classes to serializers
+&nbsp; * Main KSP processor for Ghost Serialization: analyzes `@GhostSerialization`-annotated classes,
+&nbsp; * generates their serializers, and builds a per-module registry mapping classes to serializers
 &nbsp; * to avoid reflection at runtime.
-&nbsp; *
-&nbsp; * @property codeGenerator KSP `CodeGenerator` used to create serializer and registry files.
-&nbsp; * @property logger KSP `KSPLogger` used to report compilation errors, warnings, and messages.
-&nbsp; * @property options Map of key-value pairs representing processor options passed from build scripts.
 &nbsp; */
 &nbsp;class GhostSerializationProcessor(
 <b class="fc">&nbsp;    private val codeGenerator: CodeGenerator,</b>
@@ -217,9 +211,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 <b class="fc">&nbsp;    private val processedFiles = mutableSetOf&lt;String&gt;()</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Analyzer that reads declarations and constructs property metadata models.
-&nbsp;     */
 <b class="fc">&nbsp;    private val analyzer = GhostAnalyzer(logger)</b>
 <b class="fc">&nbsp;    private val envelopeAnalyzer = EnvelopeAnalyzer(logger)</b>
 &nbsp;
@@ -248,12 +239,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Entry point of the processor phase.
-&nbsp;     * Searches for `@GhostSerialization` annotated classes, generates their serializers,
-&nbsp;     * and compiles the final module registry if any class was successfully processed.
+&nbsp;     * Entry point of the processor phase. Searches for `@GhostSerialization`-annotated classes,
+&nbsp;     * generates their serializers, and compiles the module registry.
 &nbsp;     *
-&nbsp;     * @param resolver KSP [com.google.devtools.ksp.processing.Resolver] used to query symbols and types.
-&nbsp;     * @return List of symbols that couldn&#39;t be processed in this round.
+&nbsp;     * @return Symbols that could not be processed in this round (deferred to KSP&#39;s next round).
 &nbsp;     */
 &nbsp;    override fun process(resolver: Resolver): List&lt;KSAnnotated&gt; {
 <b class="fc">&nbsp;        val symbols = (resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION) +</b>
@@ -308,9 +297,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Analyzes, compiles code specs, and writes the serializer companion class file for a target class.
-&nbsp;     *
-&nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
+&nbsp;     * Compiles and writes the serializer companion file for a target class.
 &nbsp;     */
 &nbsp;    private fun processClass(
 &nbsp;        classDeclaration: KSClassDeclaration,
@@ -347,9 +334,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Generates and writes the serializer class file for the target class declaration.
 &nbsp;     *
-&nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
-&nbsp;     * @param propertiesModel The properties metadata model parsed from the declaration.
-&nbsp;     * @return The [com.squareup.kotlinpoet.ClassName] of the generated serializer class, or null if it was already processed.
+&nbsp;     * @return The generated serializer&#39;s [ClassName], or null if this file was already processed.
 &nbsp;     */
 &nbsp;    private fun generateSerializer(
 &nbsp;        classDeclaration: KSClassDeclaration,
@@ -535,11 +520,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Registers the generated serializer class name mapping for a given model, tracking sealed subclasses
-&nbsp;     * and recording originating files for incremental compilation.
-&nbsp;     *
-&nbsp;     * @param classDeclaration KSP class declaration of the target serializable model.
-&nbsp;     * @param serializerClassName The [com.squareup.kotlinpoet.ClassName] of the generated serializer.
+&nbsp;     * Registers the generated serializer for [classDeclaration], also mapping any sealed
+&nbsp;     * subclasses to the same serializer, and records the originating file for incremental
+&nbsp;     * compilation.
 &nbsp;     */
 &nbsp;    private fun registerSerializer(
 &nbsp;        classDeclaration: KSClassDeclaration,
@@ -576,29 +559,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;        val chunks = entries.chunked(C.REGISTRY_CHUNK_SIZE)</b>
 &nbsp;
-&nbsp;        // 1. Generate full serializers map (Lazy + Fragmented)
 <b class="fc">&nbsp;        generateSerializersMapProperty(registrySpec, chunks, entries, mapType)</b>
-&nbsp;
-&nbsp;        // 2. Generate getSerializer method (Fragmented when)
 <b class="fc">&nbsp;        generateGetSerializerMethod(registrySpec, chunks, entries, serializerType, type)</b>
-&nbsp;
-&nbsp;        // 3. Generate Shard Methods if fragmented
 <b class="fc">&nbsp;        generateShardMethods(registrySpec, chunks, mapType, serializerType)</b>
-&nbsp;
-&nbsp;        // 4. Generate Metadata Methods &amp; Companion
 <b class="fc">&nbsp;        generateMetadataMethodsAndCompanion(registrySpec, entries.size, mapType)</b>
 &nbsp;
-&nbsp;        // Write the spec to file
 <b class="fc">&nbsp;        writeRegistryFile(registrySpec.build())</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Generates the lazily-initialized full serializers map property for the registry.
-&nbsp;     *
-&nbsp;     * @param registrySpec The type spec builder for the module registry.
-&nbsp;     * @param chunks Chunked lists of serializable class entry mappings.
-&nbsp;     * @param entries All serializable class entry mappings.
-&nbsp;     * @param mapType The parameterized type description of the mapping.
 &nbsp;     */
 &nbsp;    private fun generateSerializersMapProperty(
 &nbsp;        registrySpec: TypeSpec.Builder,
@@ -633,12 +603,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Generates the polymorphic `getSerializer` method routing requests to matches or shards.
-&nbsp;     *
-&nbsp;     * @param registrySpec The type spec builder for the module registry.
-&nbsp;     * @param chunks Chunked lists of serializable class entry mappings.
-&nbsp;     * @param entries All serializable class entry mappings.
-&nbsp;     * @param serializerType The parameterized serializer type description.
-&nbsp;     * @param type The type variable representation for return type casting.
 &nbsp;     */
 &nbsp;    private fun generateGetSerializerMethod(
 &nbsp;        registrySpec: TypeSpec.Builder,
@@ -680,11 +644,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Generates private helper lookup/mapping shard methods if the registry size warrants fragmentation.
-&nbsp;     *
-&nbsp;     * @param registrySpec The type spec builder for the module registry.
-&nbsp;     * @param chunks Chunked lists of serializable class entry mappings.
-&nbsp;     * @param mapType The parameterized type description of the mapping.
-&nbsp;     * @param serializerType The parameterized serializer type description.
 &nbsp;     */
 &nbsp;    private fun generateShardMethods(
 &nbsp;        registrySpec: TypeSpec.Builder,
@@ -720,10 +679,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Generates metadata info methods (prewarm, registry size count, and global companion instance).
-&nbsp;     *
-&nbsp;     * @param registrySpec The type spec builder for the module registry.
-&nbsp;     * @param entriesCount The total number of serializable class entry mappings.
-&nbsp;     * @param mapType The parameterized type description of the mapping.
 &nbsp;     */
 &nbsp;    private fun generateMetadataMethodsAndCompanion(
 &nbsp;        registrySpec: TypeSpec.Builder,
@@ -770,8 +725,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Writes the completed registry type specification to a file.
-&nbsp;     *
-&nbsp;     * @param registrySpec The built registry type specification.
 &nbsp;     */
 &nbsp;    private fun writeRegistryFile(registrySpec: TypeSpec) {
 <b class="fc">&nbsp;        GeneratedSourceTrimmer.write(</b>
@@ -784,10 +737,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Generates a KotlinPoet [com.squareup.kotlinpoet.CodeBlock] mapping class types to their serializer instances.
-&nbsp;     *
-&nbsp;     * @param entries Serializable class entry mappings.
-&nbsp;     * @return Pre-compiled registry map code block.
+&nbsp;     * Generates a KotlinPoet [CodeBlock] mapping class types to their serializer instances.
 &nbsp;     */
 &nbsp;    private fun buildMapBlock(
 &nbsp;        entries: List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;
@@ -808,12 +758,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Generates a high-performance Kotlin `when (clazz)` lookup expression.
-&nbsp;     *
-&nbsp;     * @param entries Registry entry mappings.
-&nbsp;     * @param serializerType Serializer class name representation.
-&nbsp;     * @param type Generic type variable for mapping return types safely.
-&nbsp;     * @return Generated routing when code block.
+&nbsp;     * Generates a `when (clazz)` lookup expression mapping classes to serializer instances.
 &nbsp;     */
 &nbsp;    private fun buildWhenBlock(
 &nbsp;        entries: List&lt;Map.Entry&lt;ClassName, ClassName&gt;&gt;,
@@ -903,7 +848,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            )
 &nbsp;        }
 &nbsp;    }
-&nbsp;
 &nbsp;}
 </code>
 </pre>
@@ -928,7 +872,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

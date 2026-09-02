@@ -81,8 +81,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;        val tagLen = position - tagStart
 &nbsp;        // A %TAG directive redefining the secondary handle (&quot;!!&quot;) overrides the core schema —
-&nbsp;        // &quot;!!int&quot; under a redefined &quot;!!&quot; is that app&#39;s custom &quot;int&quot; tag, not YAML&#39;s actual
-&nbsp;        // integer type, so it must not be resolved (or type-coerced) as one.
+&nbsp;        // &quot;!!int&quot; under a redefined &quot;!!&quot; is the app&#39;s custom &quot;int&quot; tag, not YAML&#39;s integer
+&nbsp;        // type, so it must not be resolved (or type-coerced) as one.
 &nbsp;        val customSecondaryPrefix = tagDirectives[C.STR_EXCLAMATION + C.STR_EXCLAMATION]
 &nbsp;        if (customSecondaryPrefix != null) {
 &nbsp;            if (tagLen &gt; 0) resolvedTag = customSecondaryPrefix + localRawData.decodeToString(tagStart, tagStart + tagLen)
@@ -126,10 +126,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                    resolvedTag = rawTagName
 &nbsp;                }
 &nbsp;            } else {
-&nbsp;                // Bare &quot;!&quot; with nothing else on this token — YAML&#39;s &quot;non-specific tag&quot;, which
-&nbsp;                // forces the scalar to resolve as a string rather than running the usual
-&nbsp;                // null/bool/int/float cascade (e.g. &quot;! 12&quot; must decode to the string &quot;12&quot;, not
-&nbsp;                // the integer 12).
+&nbsp;                // Bare &quot;!&quot; with nothing else — YAML&#39;s &quot;non-specific tag&quot;, forcing the scalar to
+&nbsp;                // resolve as a string instead of running the usual null/bool/int/float cascade
+&nbsp;                // (e.g. &quot;! 12&quot; must decode to string &quot;12&quot;, not integer 12).
 &nbsp;                tagType = GhostYamlTags.TAG_STR
 &nbsp;            }
 &nbsp;        }
@@ -182,10 +181,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    return value
 &nbsp;}
 &nbsp;
-&nbsp;/** Flow indicators (`,[]{}`) end a tag name the same way whitespace does — a tag name can never
-&nbsp; *  contain one, in either context — but *stopping* there is only valid inside an actual flow
-&nbsp; *  collection (a tag-only entry like `!!str,`); in block context a tag directly touching one of
-&nbsp; *  these with no separating whitespace is invalid, same as any other unexpected character.
+&nbsp;/**
+&nbsp; * Flow indicators (`,[]{}`) end a tag name like whitespace does — a tag name can never contain
+&nbsp; * one — but *stopping* there is only valid inside a flow collection (a tag-only entry like
+&nbsp; * `!!str,`); in block context a tag touching one with no separating whitespace is invalid.
 &nbsp; */
 &nbsp;private fun isTagNameTerminator(currByte: Byte): Boolean =
 &nbsp;    currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||
@@ -259,7 +258,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

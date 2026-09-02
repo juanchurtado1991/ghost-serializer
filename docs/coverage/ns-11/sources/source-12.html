@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostSourceKt</title>
+  <title>GhostSerialization Coverage Report > GhostSource_jvmAndroidKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostSourceKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostSource_jvmAndroidKt (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostSourceKt</td>
+  <td class="name">GhostSource_jvmAndroidKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -95,94 +95,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.StreamingGhostSource
-&nbsp;import okio.BufferedSource
-&nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
+&nbsp;import java.nio.charset.StandardCharsets
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Core data source abstraction for the Ghost JSON parser.
-&nbsp; *
-&nbsp; * This interface allows the parser to operate on both [ByteArray] and streaming `okio.BufferedSource`
-&nbsp; * with a unified, high-performance API.
-&nbsp; *
-&nbsp; * **Key Constraints:**
-&nbsp; * - Implementations MUST return bytes as [Int] values in the range 0-255 (unsigned).
-&nbsp; * - This prevents sign-extension bugs and allows direct comparisons with [GhostJsonConstants].
+&nbsp; * JVM/Android-optimized [GhostSource] that overrides [decodeJsonStringRange]
+&nbsp; * to use [StandardCharsets.ISO_8859_1] for known 7-bit content.
+&nbsp; * ISO_8859_1 does a direct byte copy without ASCII validation — safe here
+&nbsp; * because isKnown7BitContent already guarantees all bytes are &lt; 128.
 &nbsp; */
 &nbsp;@InternalGhostApi
-&nbsp;interface GhostSource {
-&nbsp;    val size: Int
+&nbsp;class JvmByteArraySource(
+&nbsp;    data: ByteArray
+&nbsp;) : ByteArrayGhostSource(data) {
 &nbsp;
-&nbsp;    operator fun get(index: Int): Int
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Like [get], but returns [GhostJsonConstants.MATCH_END] instead of throwing when [index]
-&nbsp;     * is past the available data. Streaming sources report [size] as [Int.MAX_VALUE] because
-&nbsp;     * the document length is unknown, so callers that speculatively read ahead (such as the
-&nbsp;     * in-order field prediction) cannot bounds-check against [size] and need this instead.
-&nbsp;     */
-&nbsp;    fun byteOrEof(index: Int): Int =
-&nbsp;        if (index &lt; size) get(index) else GhostJsonConstants.MATCH_END
-&nbsp;
-&nbsp;    fun decodeToString(start: Int, end: Int): String
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Decodes bytes [start, end) as UTF-8. When [isKnown7BitContent] is true, the caller guarantees
-&nbsp;     * every byte in the range had bit 7 clear (ASCII); JVM/Android may use a faster decoder.
-&nbsp;     */
-&nbsp;    fun decodeJsonStringRange(start: Int, end: Int, isKnown7BitContent: Boolean): String =
-&nbsp;        decodeToString(start, end)
-&nbsp;
-&nbsp;    fun contentEquals(start: Int, expected: ByteString): Boolean
-&nbsp;
-&nbsp;
-&nbsp;    /** Access to the raw byte array if the source is backed by one. Returns EMPTY_BYTES otherwise. */
-&nbsp;    val rawSourceData: ByteArray get() = GhostJsonConstants.EMPTY_BYTES
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Finds the next non-whitespace byte (&gt; 32) starting from [position].
-&nbsp;     * Returns the position or -1 if not found.
-&nbsp;     */
-&nbsp;    fun findNextNonWhitespace(position: Int, limit: Int): Int
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Finds the closing quote (&quot;) starting from [position], stopping at [limit].
-&nbsp;     *
-&nbsp;     * This is a &quot;Fast-Path&quot; scan:
-&nbsp;     * - Returns the position of the closing quote.
-&nbsp;     * - Returns -1 if it hits a backslash (\) or control character, signaling that the
-&nbsp;     *   parser must switch to the &quot;Slow-Path&quot; ( StringBuilder/escaping logic).
-&nbsp;     */
-&nbsp;    fun findClosingQuote(position: Int, limit: Int): Int
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Scans for the closing quote while calculating a rolling hash in a single pass.
-&nbsp;     *
-&nbsp;     * This is the &quot;Ultra-Fast-Path&quot; for string reading:
-&nbsp;     * - Returns the rolling hash (low 31 bits) AND the length (high 32 bits) if successful.
-&nbsp;     * - Returns -1L if an escape sequence or control character is encountered.
-&nbsp;     */
-&nbsp;    fun scanString(start: Int, limit: Int): Long
-&nbsp;
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Compares the source bytes against a cached [String] instance.
-&nbsp;     *
-&nbsp;     * This optimization is crucial for the [GhostJsonReader] string pool.
-&nbsp;     * It allows checking if a pool-cached string matches the source bytes WITHOUT
-&nbsp;     * allocating a new [String] for the comparison.
-&nbsp;     */
-&nbsp;    fun contentEqualsString(start: Int, length: Int, expected: String): Boolean
+&nbsp;    override fun decodeJsonStringRange(
+&nbsp;        start: Int,
+&nbsp;        end: Int,
+&nbsp;        isKnown7BitContent: Boolean
+&nbsp;    ): String {
+&nbsp;        if (!isKnown7BitContent) {
+&nbsp;            return decodeToString(start, end)
+&nbsp;        }
+&nbsp;        return String(
+&nbsp;            data,
+&nbsp;            start,
+&nbsp;            end - start,
+&nbsp;            StandardCharsets.ISO_8859_1
+&nbsp;        )
+&nbsp;    }
 &nbsp;}
 &nbsp;
 &nbsp;@InternalGhostApi
-&nbsp;expect fun createByteArraySource(data: ByteArray): GhostSource
-&nbsp;
-&nbsp;@InternalGhostApi
-&nbsp;fun createSourceBridge(source: BufferedSource): GhostSource =
-<b class="fc">&nbsp;    StreamingGhostSource(source)</b>
+&nbsp;actual fun createByteArraySource(
+&nbsp;    data: ByteArray
+<b class="fc">&nbsp;): GhostSource = JvmByteArraySource(data)</b>
 </code>
 </pre>
 </div>
@@ -206,7 +154,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

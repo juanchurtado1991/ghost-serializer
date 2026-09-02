@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    72.7%
   </span>
   <span class="absValue">
-    (10/12)
+    (8/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45.1%
+    39.2%
   </span>
   <span class="absValue">
-    (23/51)
+    (20/51)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    54.7%
+    54.8%
   </span>
   <span class="absValue">
-    (157/287)
+    (144/263)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    55.9%
+    55.7%
   </span>
   <span class="absValue">
-    (475/849)
+    (422/758)
   </span>
 </td>
 </tr>
@@ -119,7 +119,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -337,8 +336,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_VALUE) == 0L) {</b>
-<b class="fc">&nbsp;      reader.throwMissingRequiredField(&quot;g&quot;)</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_VALUE) == 0L) {</b>
+<b class="nc">&nbsp;      reader.throwMissingRequiredField(&quot;g&quot;)</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
@@ -346,12 +345,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [DeepFlattenedModel].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): DeepFlattenedModel {
-<b class="fc">&nbsp;    var valueValue: String? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var valueValue: String? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
 <b class="nc">&nbsp;          reader.beginObject()</b>
 <b class="nc">&nbsp;          while (true) {</b>
@@ -436,11 +435,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;        -1 -&gt; break
 &nbsp;        -2 -&gt; {
-<b class="fc">&nbsp;          reader.skipValue()</b>
+<b class="nc">&nbsp;          reader.skipValue()</b>
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
 <b class="nc">&nbsp;    reader.endObject()</b>
 <b class="nc">&nbsp;    return DeepFlattenedModel(</b>
 <b class="nc">&nbsp;      `value` = valueValue!!,</b>
@@ -559,30 +558,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: DeepFlattenedModel) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_A)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_B)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_C)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_D)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_E)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_F)</b>
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_G, value.`value`)</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: DeepFlattenedModel) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(H_A)</b>
 <b class="fc">&nbsp;    writer.beginObject()</b>
@@ -639,13 +614,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;g\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{\&quot;g\&quot;:\&quot;\&quot;}&quot;</b>
 &nbsp;          )
@@ -677,7 +645,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlLongArraySerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlListSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.yaml.serializer</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlLongArraySerializer (com.ghost.serialization.yaml.serializer)</h1>
+<h1>Coverage Summary for Class: GhostYamlListSerializer (com.ghost.serialization.yaml.serializer)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlLongArraySerializer</td>
+  <td class="name">GhostYamlListSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    37.5%
   </span>
   <span class="absValue">
-    (1/3)
+    (3/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    100%
   </span>
   <span class="absValue">
-    (2/6)
+    (4/4)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    30%
+    68.8%
   </span>
   <span class="absValue">
-    (6/20)
+    (11/16)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    32.3%
+    77.8%
   </span>
   <span class="absValue">
-    (21/65)
+    (77/99)
   </span>
 </td>
 </tr>
@@ -101,43 +101,62 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml.serializer
 &nbsp;
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-&nbsp;import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
+&nbsp;import com.ghost.serialization.serializers.ListSerializer
+&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.writer.yaml.GhostYamlWriter
+&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 &nbsp;
-&nbsp;object GhostYamlLongArraySerializer : GhostYamlSerializer&lt;LongArray&gt; {
-&nbsp;    override fun serialize(writer: GhostYamlWriter, value: LongArray) {
-<b class="nc">&nbsp;        writer.beginArray()</b>
-<b class="nc">&nbsp;        val size = value.size</b>
-<b class="nc">&nbsp;        var index = 0</b>
-<b class="nc">&nbsp;        while (index &lt; size) {</b>
-<b class="nc">&nbsp;            writer.value(value[index])</b>
-<b class="nc">&nbsp;            index++</b>
+&nbsp;/**
+&nbsp; * YAML list body serializer — used by Retrofit/Ktor YAML adapters for `List&lt;T&gt;` endpoints when
+&nbsp; * [itemSerializer] also implements [GhostYamlSerializer].
+&nbsp; */
+<b class="fc">&nbsp;class GhostYamlListSerializer&lt;T&gt;(</b>
+<b class="fc">&nbsp;    private val itemSerializer: GhostSerializer&lt;T&gt;,</b>
+&nbsp;) : GhostSerializer&lt;List&lt;T&gt;&gt;, GhostYamlSerializer&lt;List&lt;T&gt;&gt; {
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;    private val yamlItem: GhostYamlSerializer&lt;T&gt; = run {</b>
+<b class="fc">&nbsp;        require(itemSerializer is GhostYamlSerializer&lt;*&gt;) {</b>
+<b class="fc">&nbsp;            C.ERR_YAML_LIST_NEEDS_YAML_ITEM_PREFIX + itemSerializer.typeName</b>
 &nbsp;        }
-<b class="nc">&nbsp;        writer.endArray()</b>
+<b class="fc">&nbsp;        itemSerializer as GhostYamlSerializer&lt;T&gt;</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostYamlFlatWriter, value: LongArray) {
-<b class="nc">&nbsp;        writer.beginArray()</b>
-<b class="nc">&nbsp;        val size = value.size</b>
-<b class="nc">&nbsp;        var index = 0</b>
-<b class="nc">&nbsp;        while (index &lt; size) {</b>
-<b class="nc">&nbsp;            writer.value(value[index])</b>
-<b class="nc">&nbsp;            index++</b>
-&nbsp;        }
-<b class="nc">&nbsp;        writer.endArray()</b>
+<b class="fc">&nbsp;    private val jsonList = ListSerializer(itemSerializer)</b>
+&nbsp;
+&nbsp;    override val typeName: String
+<b class="nc">&nbsp;        get() = &quot;List&lt;${itemSerializer.typeName}&gt;&quot;</b>
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonWriter,
+&nbsp;        value: List&lt;T&gt;
+<b class="nc">&nbsp;    ) = jsonList.serialize(writer, value)</b>
+&nbsp;
+&nbsp;    override fun serialize(
+&nbsp;        writer: GhostJsonStringWriter,
+&nbsp;        value: List&lt;T&gt;
+<b class="nc">&nbsp;    ) = jsonList.serialize(writer, value)</b>
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostYamlWriter, value: List&lt;T&gt;) {
+<b class="fc">&nbsp;        writer.beginArray()</b>
+<b class="fc">&nbsp;        for (item in value) { yamlItem.serialize(writer, item) }</b>
+<b class="fc">&nbsp;        writer.endArray()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): LongArray {
-<b class="fc">&nbsp;        reader.beginArray()</b>
-<b class="fc">&nbsp;        val list = ArrayList&lt;Long&gt;()</b>
-<b class="fc">&nbsp;        while (reader.hasNextArrayElement()) {</b>
-<b class="fc">&nbsp;            list.add(reader.nextLong())</b>
-&nbsp;        }
-<b class="fc">&nbsp;        reader.endArray()</b>
-<b class="fc">&nbsp;        return list.toLongArray()</b>
-&nbsp;    }
+&nbsp;    override fun deserialize(reader: GhostJsonReader): List&lt;T&gt; =
+<b class="nc">&nbsp;        jsonList.deserialize(reader)</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): List&lt;T&gt; =
+<b class="nc">&nbsp;        jsonList.deserialize(reader)</b>
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostYamlFlatReader): List&lt;T&gt; =
+<b class="fc">&nbsp;        reader.readList { yamlItem.deserialize(reader) }</b>
 &nbsp;}
 </code>
 </pre>
@@ -162,7 +181,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -329,8 +329,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_WHEN_ELSE_NULL = &quot;    else -&gt; null\n&quot;
 &nbsp;    const val STR_WHEN_CLOSE_CAST = &quot;} as %T\n&quot;
 &nbsp;    const val PKG_PARSER_COMMON = &quot;com.ghost.serialization.parser.common&quot;
-&nbsp;    const val PKG_PARSER_BYTES = &quot;com.ghost.serialization.parser.bytes&quot;
 &nbsp;    const val PKG_PARSER_STRINGS = &quot;com.ghost.serialization.parser.strings&quot;
+&nbsp;    const val PKG_PARSER_BYTES = &quot;com.ghost.serialization.parser.bytes&quot;
 &nbsp;    const val PKG_PARSER_STREAMING = &quot;com.ghost.serialization.parser.streaming&quot;
 &nbsp;    const val STR_RETURN_L = &quot;return %L&quot;
 &nbsp;
@@ -486,7 +486,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val OKIO_PACKAGE = &quot;okio&quot;
 &nbsp;    const val DECODE_RESILIENT = &quot;decodeResilient&quot;
 &nbsp;    const val STR_GHOST_JSON_WRITER = &quot;GhostJsonWriter&quot;
-&nbsp;    const val STR_GHOST_JSON_FLAT_WRITER = &quot;GhostJsonFlatWriter&quot;
 &nbsp;    const val STR_FLAT_BYTE_ARRAY_WRITER = &quot;FlatByteArrayWriter&quot;
 &nbsp;    const val STR_GHOST_JSON_STRING_WRITER = &quot;GhostJsonStringWriter&quot;
 &nbsp;    const val STR_GHOST_JSON_READER = &quot;GhostJsonReader&quot;
@@ -505,7 +504,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val PKG_YAML_SERIALIZER = &quot;com.ghost.serialization.yaml.serializer&quot;
 &nbsp;    const val STR_GHOST_YAML_SERIALIZER = &quot;GhostYamlSerializer&quot;
 &nbsp;    const val STR_GHOST_YAML_WRITER = &quot;GhostYamlWriter&quot;
-&nbsp;    const val STR_GHOST_YAML_FLAT_WRITER = &quot;GhostYamlFlatWriter&quot;
 &nbsp;    const val STR_GHOST_YAML_FLAT_READER = &quot;GhostYamlFlatReader&quot;
 &nbsp;    const val STR_GHOST_YAML_PREFIX = &quot;GhostYaml&quot;
 &nbsp;    const val TEMPLATE_YAML_ARRAY_SERIALIZER = &quot;GhostYaml%sSerializer&quot;
@@ -549,7 +547,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val TEMPLATE_WARM_UP_STRING_READER_INIT = &quot;val %L = %T(\n  %S\n)&quot;
 &nbsp;    const val TEMPLATE_WARM_UP_DESERIALIZE = &quot;deserialize(%L)&quot;
 &nbsp;    const val STR_READER1 = &quot;reader1&quot;
-&nbsp;    const val STR_READER2 = &quot;reader2&quot;
 &nbsp;    const val STR_READER3 = &quot;reader3&quot;
 &nbsp;
 &nbsp;    // Import names (raw function names)
@@ -727,12 +724,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val STR_NULLABLE_SUFFIX = &quot;Nullable&quot;
 &nbsp;    const val STR_ENUM_UNKNOWN = &quot;UNKNOWN&quot;
 &nbsp;    const val STR_TEMP_FLAT_WRITER = &quot;bridgeFlatWriter&quot;
-&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = &quot;val %L = %T(\n&quot;
-&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_BUFFER = &quot;%T()\n&quot;
-&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_CLOSE = &quot;)\n&quot;
+&nbsp;    const val STR_TEMP_FLAT_BUFFER = &quot;bridgeFlatBuffer&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_BUFFER_DECL = &quot;val %L = %T()&quot;
+&nbsp;    const val TEMPLATE_TEMP_FLAT_WRITER_DECL = &quot;val %L = %T(%L)&quot;
 &nbsp;    const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = &quot;%T.%L(%L, %L)&quot;
 &nbsp;    const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
-&nbsp;        &quot;writer.buffer.writeString(%L.buffer.toStringUtf8())&quot;
+&nbsp;        &quot;writer.buffer.writeString(%L.toStringUtf8())&quot;
 &nbsp;    const val TEMPLATE_ENUM_ELSE_FALLBACK = &quot;else -&gt; %T.%L&quot;
 &nbsp;    const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
 &nbsp;        &quot;Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class &quot;
@@ -955,7 +952,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

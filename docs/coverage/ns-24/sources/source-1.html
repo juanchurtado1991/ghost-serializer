@@ -47,12 +47,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml.contract
 &nbsp;
 &nbsp;import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
-&nbsp;import com.ghost.serialization.writer.yaml.GhostYamlFlatWriter
 &nbsp;import com.ghost.serialization.writer.yaml.GhostYamlWriter
 &nbsp;
 &nbsp;interface GhostYamlSerializer&lt;T&gt; {
 &nbsp;    fun serialize(writer: GhostYamlWriter, value: T)
-&nbsp;    fun serialize(writer: GhostYamlFlatWriter, value: T)
 &nbsp;    fun deserialize(reader: GhostYamlFlatReader): T
 &nbsp;}
 &nbsp;
@@ -79,7 +77,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostSwar_androidKt</title>
+  <title>GhostSerialization Coverage Report > GhostSwarKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.bytes</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostSwar_androidKt (com.ghost.serialization.parser.bytes)</h1>
+<h1>Coverage Summary for Class: GhostSwarKt (com.ghost.serialization.parser.bytes)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostSwar_androidKt</td>
+  <td class="name">GhostSwarKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,10 +63,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (2/2)
   </span>
 </td>
-    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -80,7 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (83/83)
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (50/50)
   </span>
 </td>
 </tr>
@@ -94,35 +101,39 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.bytes
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_1
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_2
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_3
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_4
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_5
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_6
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTE_OFFSET_7
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_16
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_24
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_32
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_40
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_48
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_56
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_BYTES
 &nbsp;
+&nbsp;/**
+&nbsp; * Reads [LONG_BYTES] bytes at [index] into one [Long]. Byte order is
+&nbsp; * platform-defined/unspecified — only use for order-independent comparisons (byte-symmetric
+&nbsp; * constants). Caller must guarantee `index + LONG_BYTES &lt;= data.size`. Used by SWAR hot paths.
+&nbsp; */
+&nbsp;internal expect fun ghostReadLong8(data: ByteArray, index: Int): Long
 &nbsp;
-&nbsp;// Scalar assembly: Android&#39;s minSdk (21) predates VarHandle byte[] views (API 26), so the
-&nbsp;// bytes are combined by hand. Byte order is irrelevant for the symmetric comparisons this
-&nbsp;// feeds; the JIT/AOT compiler folds the shifts efficiently.
-&nbsp;internal actual fun ghostReadLong8(data: ByteArray, index: Int): Long =
-<b class="fc">&nbsp;    (data[index].toLong() and LONG_BYTE_MASK) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_1].toLong() and LONG_BYTE_MASK) shl SHIFT_8) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_2].toLong() and LONG_BYTE_MASK) shl SHIFT_16) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_3].toLong() and LONG_BYTE_MASK) shl SHIFT_24) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_4].toLong() and LONG_BYTE_MASK) shl SHIFT_32) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_5].toLong() and LONG_BYTE_MASK) shl SHIFT_40) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_6].toLong() and LONG_BYTE_MASK) shl SHIFT_48) or</b>
-<b class="fc">&nbsp;            ((data[index + LONG_BYTE_OFFSET_7].toLong() and LONG_BYTE_MASK) shl SHIFT_56)</b>
+&nbsp;/**
+&nbsp; * `ghostSWARLengthMasks[]` keeps exactly the bits [ghostReadLong8] would assign to byte
+&nbsp; * positions `0 until n`, zeroing the rest — masking `ghostReadLong8(data, i) and
+&nbsp; * ghostSWARLengthMasks[]` compares only the first `n` bytes at `i`, regardless of this
+&nbsp; * platform&#39;s (unspecified) byte order, since the mask is built by calling the same
+&nbsp; * [ghostReadLong8] on an `n`-byte `0xFF` prefix rather than assuming a layout.
+&nbsp; *
+&nbsp; * Computed once (plain initializer, not a `get()` accessor) — this is indexed on every
+&nbsp; * predicted-key compare in the `internalSelect` hot path, so recomputing the array (and its
+&nbsp; * per-element scratch [ByteArray]) on every access would be a per-call allocation storm.
+&nbsp; */
+<b class="fc">&nbsp;internal val ghostSWARLengthMasks: LongArray = LongArray(LONG_BYTES + 1) { n -&gt;</b>
+<b class="fc">&nbsp;    if (n == 0) {</b>
+<b class="fc">&nbsp;        0L</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        ghostReadLong8(</b>
+<b class="fc">&nbsp;            data = ByteArray(LONG_BYTES) { index -&gt;</b>
+<b class="fc">&nbsp;                if (index &lt; n) BYTE_MASK.toByte() else 0</b>
+&nbsp;            },
+<b class="fc">&nbsp;            index = 0</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -146,7 +157,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

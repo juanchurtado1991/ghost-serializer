@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    71.4%
   </span>
   <span class="absValue">
-    (6/8)
+    (5/7)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    87.5%
+    83.3%
   </span>
   <span class="absValue">
-    (14/16)
+    (10/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.7%
+    87.3%
   </span>
   <span class="absValue">
-    (70/78)
+    (48/55)
   </span>
 </td>
 </tr>
@@ -103,7 +103,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextString
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;
@@ -122,7 +121,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  /**
 &nbsp;   * Robust deserialization for [GhostUserToken].
 &nbsp;   */
-<b class="fc">&nbsp;  override fun deserialize(reader: GhostJsonFlatReader): GhostUserToken = GhostUserToken(reader.nextString())</b>
+<b class="nc">&nbsp;  override fun deserialize(reader: GhostJsonFlatReader): GhostUserToken = GhostUserToken(reader.nextString())</b>
 &nbsp;
 &nbsp;  /**
 &nbsp;   * Robust deserialization for [GhostUserToken].
@@ -130,10 +129,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;  override fun deserialize(reader: GhostJsonStringReader): GhostUserToken = GhostUserToken(reader.nextString())</b>
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: GhostUserToken) {
-<b class="nc">&nbsp;    writer.value(value.`value`)</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: GhostUserToken) {
 <b class="nc">&nbsp;    writer.value(value.`value`)</b>
 &nbsp;  }
 &nbsp;
@@ -147,13 +142,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -188,7 +176,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

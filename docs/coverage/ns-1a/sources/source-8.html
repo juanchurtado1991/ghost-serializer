@@ -117,13 +117,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import kotlin.reflect.KClass
 &nbsp;
 &nbsp;/**
-&nbsp; * Resolves Ghost serializers from Java [Type] / Spring [ResolvableType], including
-&nbsp; * top-level `List` / `Set` / `Map` unwrap (parity with Retrofit / Ktor).
+&nbsp; * Resolves Ghost serializers from Java [Type] / Spring [ResolvableType], unwrapping
+&nbsp; * top-level `List` / `Set` / `Map` (parity with Retrofit / Ktor).
 &nbsp; *
 &nbsp; * Top-level `String` / `byte[]` / primitives / `java.lang.*` stay excluded so Spring&#39;s
-&nbsp; * default converters keep those bodies. The same types are still valid as List/Set/Map
-&nbsp; * element arguments (e.g. `List&lt;String&gt;`), matching Retrofit&#39;s `Ghost.getSerializer` path.
-&nbsp; * Map unwrap requires a [String] key type.
+&nbsp; * default converters keep those bodies, though they&#39;re still valid as collection element
+&nbsp; * types. Map unwrap requires a [String] key.
 &nbsp; */
 &nbsp;internal object GhostSpringTypeSerializers {
 &nbsp;
@@ -255,7 +254,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

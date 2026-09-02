@@ -106,33 +106,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * High-performance, Zero-Allocation formatting engine for [Double] numbers.
+&nbsp; * Zero-allocation ASCII formatter for [Double] values, writing directly into a pre-allocated
+&nbsp; * [ByteArray] to bypass the GC overhead of `Double.toString()` on the hot serialization path.
 &nbsp; *
-&nbsp; * This utility writes the ASCII representation of floating-point numbers directly to a pre-allocated
-&nbsp; * [ByteArray] buffer. This completely bypasses the garbage collection (GC) overhead typically associated
-&nbsp; * with calling `Double.toString()` or `String.format()`, making it ideal for high-throughput JSON serialization.
-&nbsp; *
-&nbsp; * ### Thresholds and Precision Limits
-&nbsp; * - **Fast-Path Precision:** Supports up to [MAX_DECIMALS] (9) decimal places of precision.
-&nbsp; * - **Magnitude Limits:** Works with values in `[1e-9, 1e9]`
-&nbsp; *   ([MICROSCOPIC_DOUBLE_THRESHOLD] / [MASSIVE_DOUBLE_THRESHOLD]).
-&nbsp; * - **Fallback Mechanism:** Values outside this range, non-finite values (NaN, Infinity), or microscopic
-&nbsp; *   numbers return [FALLBACK_REQUIRED] so the caller can use a platform `toString()` without
-&nbsp; *   allocating a lambda on the hot fractional path.
-&nbsp; *
-&nbsp; * ### Algorithm Overview
-&nbsp; * 1. **Sign Handling:** Negative values write `-` to the buffer, and the absolute value is processed.
-&nbsp; * 2. **Whole Number Fast-Path:** Numbers without decimal fractions are converted to [Long] and written
-&nbsp; *    using [writeLongDirect] with a appended `.0` suffix.
-&nbsp; * 3. **Split and Scale:** Splits the number into its integer part `intPart` and fractional part `fracPart`.
-&nbsp; *    The fractional part is multiplied by `1_000_000_000.0` (precision scale) and rounded to a 9-digit integer `fracInt`.
-&nbsp; * 4. **Carry-over Correction:** If rounding `fracInt` causes a carry-over to the integer boundary (i.e. `fracInt &gt;= 1e9`),
-&nbsp; *    the integer part is incremented by 1, and printed with `.0`.
-&nbsp; * 5. **Trailing Zeros Trimming:** If `fracInt` ends with zeros, they are trimmed by dividing by 10
-&nbsp; *    to write the shortest equivalent decimal representation (e.g., `3.5` instead of `3.500000000`).
-&nbsp; * 6. **Digit Emission:** The integer part is written. A decimal point `.` is appended. Then, digits of `fracInt`
-&nbsp; *    are emitted. Digits are processed in pairs (base 100) using [C.DOUBLE_DIGIT_LUT] for fast lookup
-&nbsp; *    and written backward to maintain correct decimal alignment.
+&nbsp; * Handles up to [MAX_DECIMALS] (9) decimal places for values in `[1e-9, 1e9]`; anything outside
+&nbsp; * that range, non-finite, or microscopic returns [FALLBACK_REQUIRED] so the caller falls back to
+&nbsp; * a platform `toString()` without allocating a lambda on the hot path.
 &nbsp; */
 &nbsp;internal object GhostDoubleFormatter {
 &nbsp;
@@ -155,7 +134,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    private const val MAX_DECIMALS = 9
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Bytes reserved past [pos] for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
+&nbsp;     * Bytes reserved past position for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
 &nbsp;     */
 &nbsp;    private const val LONG_DIRECT_SCRATCH_SPAN = 32
 &nbsp;
@@ -170,11 +149,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    const val FALLBACK_REQUIRED = -1
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Formats and writes the given [Double] value directly into the [scratch] buffer starting at [offset].
-&nbsp;     *
-&nbsp;     * @param value The double value to write.
-&nbsp;     * @param scratch The destination byte array.
-&nbsp;     * @param offset The starting position in the destination buffer.
+&nbsp;     * Formats and writes [value] directly into [scratch] starting at [offset].
 &nbsp;     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
 &nbsp;     */
 &nbsp;    fun writeDoubleDirect(
@@ -184,11 +159,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    ): Int {
 <b class="fc">&nbsp;        if (!value.isFinite()) return FALLBACK_REQUIRED</b>
 &nbsp;
-<b class="fc">&nbsp;        var pos = offset</b>
+<b class="fc">&nbsp;        var position = offset</b>
 <b class="fc">&nbsp;        var localValue = value</b>
 &nbsp;
 <b class="fc">&nbsp;        if (value.toRawBits() &lt; 0) {</b>
-<b class="fc">&nbsp;            scratch[pos++] = C.MINUS</b>
+<b class="fc">&nbsp;            scratch[position++] = C.MINUS</b>
 <b class="fc">&nbsp;            localValue = -localValue</b>
 &nbsp;        }
 &nbsp;
@@ -201,8 +176,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            return writeLongDirect(</b>
 <b class="fc">&nbsp;                localValue.toLong(),</b>
 <b class="fc">&nbsp;                scratch,</b>
-<b class="fc">&nbsp;                pos,</b>
-<b class="fc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="fc">&nbsp;                position,</b>
+<b class="fc">&nbsp;                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="fc">&nbsp;                writeDecimalZero = true</b>
 <b class="fc">&nbsp;            ) - offset</b>
 &nbsp;        }
@@ -225,25 +200,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;            return writeLongDirect(</b>
 <b class="nc">&nbsp;                intPart + 1,</b>
 <b class="nc">&nbsp;                scratch,</b>
-<b class="nc">&nbsp;                pos,</b>
-<b class="nc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="nc">&nbsp;                position,</b>
+<b class="nc">&nbsp;                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="nc">&nbsp;                writeDecimalZero = true</b>
 <b class="nc">&nbsp;            ) - offset</b>
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        pos = writeLongDirect(</b>
+<b class="fc">&nbsp;        position = writeLongDirect(</b>
 <b class="fc">&nbsp;            intPart,</b>
 <b class="fc">&nbsp;            scratch,</b>
-<b class="fc">&nbsp;            pos,</b>
-<b class="fc">&nbsp;            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="fc">&nbsp;            position,</b>
+<b class="fc">&nbsp;            scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,</b>
 <b class="fc">&nbsp;            writeDecimalZero = false</b>
 &nbsp;        )
 &nbsp;
-<b class="fc">&nbsp;        scratch[pos++] = C.DOT</b>
+<b class="fc">&nbsp;        scratch[position++] = C.DOT</b>
 &nbsp;
 <b class="pc">&nbsp;        if (fracInt == 0) {</b>
-<b class="nc">&nbsp;            scratch[pos++] = C.ZERO</b>
-<b class="nc">&nbsp;            return pos - offset</b>
+<b class="nc">&nbsp;            scratch[position++] = C.ZERO</b>
+<b class="nc">&nbsp;            return position - offset</b>
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        var decimalsToPrint = MAX_DECIMALS</b>
@@ -253,8 +228,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            decimalsToPrint--</b>
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        pos += decimalsToPrint</b>
-<b class="fc">&nbsp;        var writePos = pos - 1</b>
+<b class="fc">&nbsp;        position += decimalsToPrint</b>
+<b class="fc">&nbsp;        var writePos = position - 1</b>
 &nbsp;
 <b class="fc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
 <b class="fc">&nbsp;            val quotient = fracInt / C.BASE_HUNDRED</b>
@@ -273,7 +248,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            scratch[writePos] = (C.ZERO_INT + fracInt % 10).toByte()</b>
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        return pos - offset</b>
+<b class="fc">&nbsp;        return position - offset</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
@@ -381,19 +356,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Converts a [Long] integer value into its ASCII bytes and writes it directly to [scratch].
-&nbsp;     *
-&nbsp;     * Digits are extracted from right to left using division and base-100 modulo arithmetic.
-&nbsp;     * Digit values are translated via pre-calculated ones and tens lookup tables to minimize computation.
-&nbsp;     * The compiled instruction utilizes an optimized `System.arraycopy` (via [ByteArray.copyInto])
-&nbsp;     * block operation to transfer the written string to its final offset.
-&nbsp;     *
-&nbsp;     * @param value The Long integer to write.
-&nbsp;     * @param scratch The destination byte array.
-&nbsp;     * @param offset The starting position in the destination buffer.
-&nbsp;     * @param scratchEnd The boundary of the scratch segment reserved for backward digit writing.
-&nbsp;     * @param writeDecimalZero If true, appends a `.0` suffix to the formatted integer.
-&nbsp;     * @return The next write index in the scratch buffer.
+&nbsp;     * Writes [value]&#39;s ASCII digits into [scratch], extracting right-to-left via base-100
+&nbsp;     * modulo and pre-computed ones/tens lookup tables, then block-copying into place.
+&nbsp;     * @return The next write index in [scratch].
 &nbsp;     */
 &nbsp;    private fun writeLongDirect(
 &nbsp;        value: Long,
@@ -473,7 +438,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

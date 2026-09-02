@@ -144,10 +144,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;private const val NDJSON_NEWLINE: Byte = &#39;\n&#39;.code.toByte()
 &nbsp;
 &nbsp;/**
-&nbsp; * Reactive Decoder for Ghost Serialization.
-&nbsp; *
-&nbsp; * Resolves serializers from the full [ResolvableType] so `List` / `Set` / `Map`
-&nbsp; * element types are unwrapped (parity with MVC / Retrofit / Ktor).
+&nbsp; * Reactive Decoder for Ghost Serialization. Resolves serializers from the full
+&nbsp; * [ResolvableType] so `List` / `Set` / `Map` element types are unwrapped (parity with
+&nbsp; * MVC / Retrofit / Ktor).
 &nbsp; */
 <b class="fc">&nbsp;class GhostReactiveDecoder : AbstractDecoder&lt;Any&gt;(</b>
 <b class="fc">&nbsp;    MimeTypeUtils.APPLICATION_JSON,</b>
@@ -182,11 +181,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * NDJSON records aren&#39;t guaranteed to arrive one-per-[DataBuffer] — a small multi-line
-&nbsp;     * request body will typically arrive as a single network buffer, and a single record can
-&nbsp;     * just as easily be split across two. This re-frames the raw buffer stream on `\n` before
-&nbsp;     * decoding each line, carrying any trailing partial line over to the next buffer and
-&nbsp;     * flushing a final unterminated line at stream completion.
+&nbsp;     * NDJSON records don&#39;t align with [DataBuffer] boundaries, so this re-frames the byte
+&nbsp;     * stream on `\n`, carrying partial lines across buffers and flushing the final
+&nbsp;     * unterminated line at completion.
 &nbsp;     */
 &nbsp;    private fun decodeStreaming(
 &nbsp;        inputStream: Publisher&lt;DataBuffer&gt;,
@@ -287,7 +284,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

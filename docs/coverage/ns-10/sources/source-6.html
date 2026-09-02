@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    81.6%
+    50%
   </span>
   <span class="absValue">
-    (31/38)
+    (19/38)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.4%
+    75%
   </span>
   <span class="absValue">
-    (85/92)
+    (69/92)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93%
+    81.5%
   </span>
   <span class="absValue">
-    (542/583)
+    (475/583)
   </span>
 </td>
 </tr>
@@ -207,42 +207,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val start = position</b>
 <b class="fc">&nbsp;    val localData = rawData</b>
 <b class="fc">&nbsp;    val end = findClosingQuoteImpl(start, limit) { localData[it].toInt() and C.BYTE_MASK }</b>
-<b class="fc">&nbsp;    if (end != -1) {</b>
+<b class="pc">&nbsp;    if (end != -1) {</b>
 <b class="fc">&nbsp;        position = end + 1</b>
 &nbsp;        return
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    var pos = start</b>
-<b class="fc">&nbsp;    while (pos &lt; limit) {</b>
-<b class="fc">&nbsp;        val byteValue = getByte(pos++)</b>
-<b class="fc">&nbsp;        if (byteValue == C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;            position = pos</b>
-<b class="fc">&nbsp;            nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="nc">&nbsp;    var pos = start</b>
+<b class="nc">&nbsp;    while (pos &lt; limit) {</b>
+<b class="nc">&nbsp;        val byteValue = getByte(pos++)</b>
+<b class="nc">&nbsp;        if (byteValue == C.QUOTE_INT) {</b>
+<b class="nc">&nbsp;            position = pos</b>
+<b class="nc">&nbsp;            nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;            return
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        if (byteValue == C.BACKSLASH_INT) {</b>
-<b class="pc">&nbsp;            if (pos &gt;= limit) {</b>
+<b class="nc">&nbsp;        if (byteValue == C.BACKSLASH_INT) {</b>
+<b class="nc">&nbsp;            if (pos &gt;= limit) {</b>
 <b class="nc">&nbsp;                position = pos</b>
 <b class="nc">&nbsp;                throwError(C.UNTERMINATED_ESCAPE_ERROR)</b>
 &nbsp;            }
-<b class="fc">&nbsp;            val escaped = getByte(pos++)</b>
+<b class="nc">&nbsp;            val escaped = getByte(pos++)</b>
 &nbsp;
-<b class="fc">&nbsp;            if (escaped == C.UNICODE_PREFIX_U_INT) {</b>
-<b class="pc">&nbsp;                if (pos + C.UNICODE_HEX_LENGTH &gt; limit) {</b>
+<b class="nc">&nbsp;            if (escaped == C.UNICODE_PREFIX_U_INT) {</b>
+<b class="nc">&nbsp;                if (pos + C.UNICODE_HEX_LENGTH &gt; limit) {</b>
 <b class="nc">&nbsp;                    position = pos</b>
 <b class="nc">&nbsp;                    throwError(C.UNTERMINATED_UNICODE_ERROR)</b>
 &nbsp;                }
-<b class="fc">&nbsp;                parseUnicodeHex(pos)</b>
-<b class="fc">&nbsp;                pos += C.UNICODE_HEX_LENGTH</b>
+<b class="nc">&nbsp;                parseUnicodeHex(pos)</b>
+<b class="nc">&nbsp;                pos += C.UNICODE_HEX_LENGTH</b>
 &nbsp;            }
-<b class="pc">&nbsp;        } else if (byteValue &lt; C.SPACE_INT) {</b>
+<b class="nc">&nbsp;        } else if (byteValue &lt; C.SPACE_INT) {</b>
 <b class="nc">&nbsp;            position = pos</b>
 <b class="nc">&nbsp;            throwError(C.UNESCAPED_CONTROL_CHAR_ERROR)</b>
 &nbsp;        }
 &nbsp;    }
-<b class="fc">&nbsp;    position = pos</b>
-<b class="fc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
+<b class="nc">&nbsp;    position = pos</b>
+<b class="nc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -292,7 +292,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

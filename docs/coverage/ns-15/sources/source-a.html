@@ -109,24 +109,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Subsystem for turning raw scalar bytes into Kotlin values: quoted-string unescaping, number
-&nbsp; * parsing, and null/bool/int/float type resolution (YAML 1.2 core schema priority). Pulled out of
-&nbsp; * `GhostYamlFlatReader` itself since this layer is only ever called *from* the core block/flow
-&nbsp; * parser (`readValue`, `readPlainScalarOrMapping`, `readKey`) and never calls back into it.
+&nbsp; * Turns raw scalar bytes into Kotlin values: quoted-string unescaping, number parsing, and
+&nbsp; * null/bool/int/float type resolution (YAML 1.2 core schema priority). Pulled out of
+&nbsp; * `GhostYamlFlatReader` since this layer is only called *from* the core block/flow parser and
+&nbsp; * never calls back into it.
 &nbsp; */
 &nbsp;
-&nbsp;/**
-&nbsp; * Interprets raw bytes as the appropriate Kotlin type.
-&nbsp; * Never allocates a String until we know it&#39;s needed.
-&nbsp; *
-&nbsp; * Type priority (YAML 1.2 core schema):
-&nbsp; *   null → bool → int → float → string
-&nbsp; */
+&nbsp;/** Interprets raw bytes as the right Kotlin type; never allocates a String until needed. Type priority: null → bool → int → float → string. */
 &nbsp;internal fun GhostYamlFlatReader.interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
 <b class="fc">&nbsp;    val length = end - start</b>
-&nbsp;    // A tag forcing string type still resolves to &quot;&quot; on empty content (e.g. a flow-mapping
-&nbsp;    // entry whose value is just &quot;!!str,&quot;) — same as it does at EOF in readValue — so this has
-&nbsp;    // to run before the untagged &quot;empty content means null&quot; default just below.
+&nbsp;    // A tag forcing string type still resolves to &quot;&quot; on empty content (e.g. &quot;!!str,&quot;) — same
+&nbsp;    // as at EOF in readValue — so this runs before the untagged &quot;empty means null&quot; default below.
 <b class="fc">&nbsp;    if (expectedTag == GhostYamlTags.TAG_STR) {</b>
 <b class="fc">&nbsp;        return data.decodeToString(start, end)</b>
 &nbsp;    }
@@ -205,10 +198,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;    var outBuffer = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)</b>
 <b class="fc">&nbsp;    var outPos = 0</b>
-&nbsp;    // Trailing whitespace before a fold is normally trimmed (see below), but a *escaped*
-&nbsp;    // space/tab (&quot;\ &quot;/&quot;\t&quot;/&quot;\&lt;literal tab&gt;&quot;) is real content the author deliberately protected
-&nbsp;    // from exactly that trimming — trimFloor marks how far back the trim loop is allowed to go,
-&nbsp;    // advanced to outPos after every escape write so it can never remove one.
+&nbsp;    // Trailing whitespace before a fold is normally trimmed, but an *escaped* space/tab
+&nbsp;    // (&quot;\ &quot;/&quot;\t&quot;) is real content the author deliberately protected — trimFloor marks how far
+&nbsp;    // back the trim loop may go, advanced to outPos after every escape write.
 <b class="fc">&nbsp;    var trimFloor = 0</b>
 &nbsp;    try {
 <b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
@@ -285,8 +277,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                }
 <b class="fc">&nbsp;                trimFloor = outPos</b>
 <b class="pc">&nbsp;            } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {</b>
-&nbsp;                // Trailing spaces/tabs are trimmed before the fold, but never past trimFloor —
-&nbsp;                // that would eat an escaped space/tab the author deliberately protected.
+&nbsp;                // Trim trailing spaces/tabs before the fold, never past trimFloor — that would
+&nbsp;                // eat an escaped space/tab the author deliberately protected.
 <b class="fc">&nbsp;                while (outPos &gt; trimFloor &amp;&amp; (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {</b>
 <b class="fc">&nbsp;                    outPos--</b>
 &nbsp;                }
@@ -388,9 +380,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    return outBuffer.decodeToString(0, outPos)</b>
 &nbsp;                }
 <b class="pc">&nbsp;            } else if (currentByte == C.NEWLINE_BYTE || currentByte == C.CR_BYTE) {</b>
-&nbsp;                // Single-quoted scalars have no backslash-escape mechanism at all, so — unlike
-&nbsp;                // the double-quoted reader — there&#39;s never a protected trailing space/tab to
-&nbsp;                // preserve here; trailing whitespace before a fold is always trimmed in full.
+&nbsp;                // Single-quoted scalars have no backslash-escape mechanism, so unlike the
+&nbsp;                // double-quoted reader there&#39;s never a protected trailing space/tab — always
+&nbsp;                // trim trailing whitespace before a fold in full.
 <b class="pc">&nbsp;                while (outPos &gt; 0 &amp;&amp; (outBuffer[outPos - 1] == C.SPACE_BYTE || outBuffer[outPos - 1] == C.TAB_BYTE)) {</b>
 <b class="fc">&nbsp;                    outPos--</b>
 &nbsp;                }
@@ -439,12 +431,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Called with [GhostYamlFlatReader.position] at a line-break byte inside a quoted scalar. Folds
-&nbsp; * it the same way plain and block-folded scalars do: a single line break becomes a space, N
-&nbsp; * consecutive breaks (i.e. N-1 blank lines) become N-1 newlines. Each line&#39;s leading whitespace
-&nbsp; * is fully skipped — quoted scalars have no block-style indentation to preserve, unlike literal
-&nbsp; * block scalars. Leaves [GhostYamlFlatReader.position] at the first non-blank content (or the
-&nbsp; * closing quote). Returns the number of line breaks folded.
+&nbsp; * Called with [GhostYamlFlatReader.position] at a line-break inside a quoted scalar. Folds it
+&nbsp; * like plain/block-folded scalars: one line break becomes a space, N consecutive breaks (N-1
+&nbsp; * blank lines) become N-1 newlines. Each line&#39;s leading whitespace is fully skipped — quoted
+&nbsp; * scalars have no block-style indentation to preserve. Leaves position at the first non-blank
+&nbsp; * content (or closing quote); returns the number of line breaks folded.
 &nbsp; */
 &nbsp;private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
 <b class="fc">&nbsp;    val localRawData = rawData</b>
@@ -466,9 +457,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val next = localRawData[position]</b>
 <b class="pc">&nbsp;        if (next != C.NEWLINE_BYTE &amp;&amp; next != C.CR_BYTE) break</b>
 &nbsp;    }
-&nbsp;    // A quoted scalar is still &quot;open&quot; here — the closing quote hasn&#39;t been seen yet — but a line
-&nbsp;    // that looks like a document marker is forbidden content inside it regardless (spec&#39;s
-&nbsp;    // c-forbidden production), not literal text to fold in.
+&nbsp;    // The quoted scalar is still &quot;open&quot; (closing quote not yet seen), but a line that looks like
+&nbsp;    // a document marker is forbidden content inside it regardless (spec&#39;s c-forbidden production).
 <b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; (isDocumentMarker() || isDocumentEndMarker())) {</b>
 <b class="fc">&nbsp;        yamlError(&quot;${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX}${if (localRawData[position] == C.DASH_BYTE) C.STR_DOC_START else C.STR_DOC_END}${C.ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX}&quot;)</b>
 &nbsp;    }
@@ -547,10 +537,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val localLimit = limit</b>
 <b class="fc">&nbsp;    val localRawData = rawData</b>
 &nbsp;
-&nbsp;    // Negative hex/octal/binary (&quot;-0x10&quot;, &quot;-0o17&quot;, &quot;-0b101&quot;) aren&#39;t plain decimal digits,
-&nbsp;    // so the digit-only loop below would stop right after the leading &quot;-0&quot;. Scan their
-&nbsp;    // digit classes explicitly and hand the full token to tryParseNumber, which already
-&nbsp;    // knows how to parse (and negate) these bases — see the DASH_BYTE branch below.
+&nbsp;    // Negative hex/octal/binary (&quot;-0x10&quot;, &quot;-0o17&quot;, &quot;-0b101&quot;) aren&#39;t plain decimal digits, so the
+&nbsp;    // digit-only loop below would stop right after the leading &quot;-0&quot;. Scan their digit classes
+&nbsp;    // explicitly and hand the full token to tryParseNumber, which parses (and negates) these bases.
 <b class="fc">&nbsp;    var prefixPosition = position</b>
 <b class="pc">&nbsp;    if (prefixPosition &lt; localLimit &amp;&amp; localRawData[prefixPosition] == C.DASH_BYTE) {</b>
 <b class="fc">&nbsp;        prefixPosition++</b>
@@ -602,7 +591,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
 <b class="fc">&nbsp;    val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
 <b class="fc">&nbsp;    val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
-<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_N_BYTE &amp;&amp; byte1 == C.LOWERCASE_U_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_L_BYTE  // n,u,l,l</b>
+<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_N_BYTE &amp;&amp; byte1 == C.LOWERCASE_U_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_L_BYTE</b>
 &nbsp;}
 &nbsp;
 &nbsp;/** Checks if bytes[start..start+len) match &#39;true&#39;, &#39;True&#39;, or &#39;TRUE&#39;. */
@@ -612,7 +601,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val byte1 = (data[start + 1].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
 <b class="fc">&nbsp;    val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
 <b class="fc">&nbsp;    val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
-<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_T_BYTE &amp;&amp; byte1 == C.LOWERCASE_R_BYTE &amp;&amp; byte2 == C.LOWERCASE_U_BYTE &amp;&amp; byte3 == C.LOWERCASE_E_BYTE  // t,r,u,e</b>
+<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_T_BYTE &amp;&amp; byte1 == C.LOWERCASE_R_BYTE &amp;&amp; byte2 == C.LOWERCASE_U_BYTE &amp;&amp; byte3 == C.LOWERCASE_E_BYTE</b>
 &nbsp;}
 &nbsp;
 &nbsp;/** Checks if bytes[start..start+len) match &#39;false&#39;, &#39;False&#39;, or &#39;FALSE&#39;. */
@@ -623,7 +612,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val byte2 = (data[start + 2].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
 <b class="fc">&nbsp;    val byte3 = (data[start + 3].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
 <b class="fc">&nbsp;    val byte4 = (data[start + 4].toInt() or C.ASCII_TO_LOWER_MASK).toByte()</b>
-<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_F_BYTE &amp;&amp; byte1 == C.LOWERCASE_A_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_S_BYTE &amp;&amp; byte4 == C.LOWERCASE_E_BYTE  // f,a,l,s,e</b>
+<b class="pc">&nbsp;    return byte0 == C.LOWERCASE_F_BYTE &amp;&amp; byte1 == C.LOWERCASE_A_BYTE &amp;&amp; byte2 == C.LOWERCASE_L_BYTE &amp;&amp; byte3 == C.LOWERCASE_S_BYTE &amp;&amp; byte4 == C.LOWERCASE_E_BYTE</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
@@ -647,15 +636,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    // Check for hex (0x), octal (0o), binary (0b)
 <b class="fc">&nbsp;    if (end - currentPosition &gt;= 3 &amp;&amp; data[currentPosition] == C.ZERO_BYTE) {</b>
 <b class="fc">&nbsp;        val nextByte = data[currentPosition + 1]</b>
-<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) { // x or X</b>
+<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_X_BYTE || nextByte == C.UPPERCASE_X_BYTE) {</b>
 <b class="fc">&nbsp;            var value = 0L</b>
 <b class="fc">&nbsp;            var index = currentPosition + 2</b>
 <b class="fc">&nbsp;            while (index &lt; end) {</b>
 <b class="fc">&nbsp;                val currentByte = data[index]</b>
 <b class="fc">&nbsp;                val digit = when {</b>
 <b class="fc">&nbsp;                    isDigit(currentByte) -&gt; (currentByte - C.ZERO_BYTE).toLong()</b>
-<b class="pc">&nbsp;                    currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; (currentByte - C.LOWERCASE_A_BYTE + 10).toLong() // a-f</b>
-<b class="pc">&nbsp;                    currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; (currentByte - C.UPPERCASE_A_BYTE + 10).toLong() // A-F</b>
+<b class="pc">&nbsp;                    currentByte in C.LOWERCASE_A_BYTE..C.LOWERCASE_F_BYTE -&gt; (currentByte - C.LOWERCASE_A_BYTE + 10).toLong()</b>
+<b class="pc">&nbsp;                    currentByte in C.UPPERCASE_A_BYTE..C.UPPERCASE_F_BYTE -&gt; (currentByte - C.UPPERCASE_A_BYTE + 10).toLong()</b>
 <b class="nc">&nbsp;                    else -&gt; return null</b>
 &nbsp;                }
 <b class="fc">&nbsp;                value = (value shl C.HEX_SHIFT) or digit</b>
@@ -663,24 +652,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 <b class="fc">&nbsp;            return if (isNegative) -value else value</b>
 &nbsp;        }
-<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) { // o or O</b>
+<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_O_BYTE || nextByte == C.UPPERCASE_O_BYTE) {</b>
 <b class="fc">&nbsp;            var value = 0L</b>
 <b class="fc">&nbsp;            var index = currentPosition + 2</b>
 <b class="fc">&nbsp;            while (index &lt; end) {</b>
 <b class="fc">&nbsp;                val currentByte = data[index]</b>
-<b class="pc">&nbsp;                if (currentByte &lt; C.ZERO_BYTE || currentByte &gt; C.SEVEN_BYTE) return null // 0-7</b>
+<b class="pc">&nbsp;                if (currentByte &lt; C.ZERO_BYTE || currentByte &gt; C.SEVEN_BYTE) return null</b>
 <b class="fc">&nbsp;                val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
 <b class="fc">&nbsp;                value = (value shl C.OCTAL_SHIFT) or digit</b>
 <b class="fc">&nbsp;                index++</b>
 &nbsp;            }
 <b class="fc">&nbsp;            return if (isNegative) -value else value</b>
 &nbsp;        }
-<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) { // b or B</b>
+<b class="pc">&nbsp;        if (nextByte == C.LOWERCASE_B_BYTE || nextByte == C.UPPERCASE_B_BYTE) {</b>
 <b class="fc">&nbsp;            var value = 0L</b>
 <b class="fc">&nbsp;            var index = currentPosition + 2</b>
 <b class="fc">&nbsp;            while (index &lt; end) {</b>
 <b class="fc">&nbsp;                val currentByte = data[index]</b>
-<b class="pc">&nbsp;                if (currentByte != C.ZERO_BYTE &amp;&amp; currentByte != C.ONE_BYTE) return null // 0 or 1</b>
+<b class="pc">&nbsp;                if (currentByte != C.ZERO_BYTE &amp;&amp; currentByte != C.ONE_BYTE) return null</b>
 <b class="fc">&nbsp;                val digit = (currentByte - C.ZERO_BYTE).toLong()</b>
 <b class="fc">&nbsp;                value = (value shl C.BINARY_SHIFT) or digit</b>
 <b class="fc">&nbsp;                index++</b>
@@ -761,7 +750,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

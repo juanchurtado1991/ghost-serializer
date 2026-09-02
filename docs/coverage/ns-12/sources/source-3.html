@@ -110,14 +110,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;
 &nbsp;internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
-&nbsp;    // Spec: &quot;Values with nonzero fractional portions are not allowed&quot;
-&nbsp;    // E.g. &quot;1.0&quot; ok, &quot;1.5&quot; error.
-&nbsp;    // Peek to see if there is a dot.
+&nbsp;    // Spec: nonzero fractional portions are not allowed (&quot;1.0&quot; ok, &quot;1.5&quot; error).
 <b class="fc">&nbsp;    val token = peekNextToken()</b>
 <b class="fc">&nbsp;    val isQuoted = token == C.QUOTE_INT</b>
 &nbsp;
-&nbsp;    // We parse via double if there&#39;s a dot, otherwise standard nextInt()
-&nbsp;    // To check if there&#39;s a dot without allocations:
+&nbsp;    // Scan for a dot without allocating, to decide double vs. int parse path.
 <b class="fc">&nbsp;    var hasDot = false</b>
 <b class="fc">&nbsp;    var scanPos = position</b>
 <b class="fc">&nbsp;    if (isQuoted) scanPos++</b>
@@ -184,7 +181,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

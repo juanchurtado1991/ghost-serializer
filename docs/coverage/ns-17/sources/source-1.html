@@ -107,13 +107,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * `Any` contains an arbitrary serialized protocol buffer message along with a
-&nbsp; * URL that describes the type of the serialized message.
+&nbsp; * `Any` contains an arbitrary serialized protocol buffer message along with a URL describing
+&nbsp; * its type.
 &nbsp; *
-&nbsp; * [value] holds the raw JSON bytes of the WKT-style `&quot;value&quot;` sibling key verbatim
-&nbsp; * (e.g. `&quot;123s&quot;` for a packed `Duration`, or a full JSON object for a packed `Struct`).
-&nbsp; * Empty when the wire object had no `&quot;value&quot;` key. This preserves round-tripping without
-&nbsp; * a type registry to resolve [typeUrl] into a concrete message — see docs/wiki for details.
+&nbsp; * [value] holds the raw JSON bytes of the WKT-style `&quot;value&quot;` sibling key verbatim (empty if
+&nbsp; * absent) — this preserves round-tripping without a type registry to resolve [typeUrl].
 &nbsp; */
 <b class="fc">&nbsp;data class ProtoAny(val typeUrl: String, val value: ByteArray) {</b>
 &nbsp;    override fun equals(other: Any?): Boolean {
@@ -151,7 +149,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

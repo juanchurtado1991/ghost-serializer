@@ -105,31 +105,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Exception type thrown for JSON parsing/encoding errors.
+&nbsp; * Exception for JSON parsing/encoding errors.
 &nbsp; *
-&nbsp; * To keep the failure path cheap (the parser may raise this exception in tight
-&nbsp; * loops while probing payloads), [line] and [column] are computed lazily — the
-&nbsp; * O(N) scan over the source bytes is only paid if the caller actually reads
-&nbsp; * either property or accesses [message].
-&nbsp; *
-&nbsp; * [path] is a JSONPath (e.g. `$.user.age`) maintained by JSON readers via a
-&nbsp; * lightweight breadcrumb stack; the path string is formatted only when the
-&nbsp; * exception is constructed, not on the successful hot path.
-&nbsp; *
-&nbsp; * [hint] is an optional fix suggestion derived from the error kind (similar in spirit
-&nbsp; * to kotlinx.serialization&#39;s actionable hints). Omitted when there is no clear fix.
+&nbsp; * [line]/[column] are computed lazily: the parser can raise this in tight probing
+&nbsp; * loops, so the O(N) source scan only runs if a caller actually reads them.
 &nbsp; */
 &nbsp;class GhostJsonException @InternalGhostApi internal constructor(
 <b class="fc">&nbsp;    private val baseMessage: String,</b>
 <b class="fc">&nbsp;    private val computeLineCol: () -&gt; IntArray,</b>
-&nbsp;    /**
-&nbsp;     * JSONPath where the parsing/encoding error occurred (e.g. `$.user.addresses[1].zip`).
-&nbsp;     * Defaults to `&quot;$&quot;` when the error is at the document root or path is unknown.
-&nbsp;     */
+&nbsp;    /** JSONPath of the error (e.g. `$.user.addresses[1].zip`); `&quot;$&quot;` if root/unknown. */
 <b class="fc">&nbsp;    val path: String = &quot;$&quot;,</b>
-&nbsp;    /**
-&nbsp;     * Optional developer-facing suggestion for how to fix or diagnose the failure.
-&nbsp;     */
+&nbsp;    /** Optional developer-facing fix suggestion. */
 <b class="fc">&nbsp;    val hint: String? = null,</b>
 &nbsp;) : RuntimeException() {
 &nbsp;
@@ -153,9 +139,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Constructs a [GhostJsonException] with an explicit line, column, path, and optional hint.
-&nbsp;     */
+&nbsp;    /** Constructs with an explicit line, column, path, and optional hint. */
 &nbsp;    @OptIn(InternalGhostApi::class)
 &nbsp;    constructor(
 &nbsp;        message: String,
@@ -277,7 +261,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

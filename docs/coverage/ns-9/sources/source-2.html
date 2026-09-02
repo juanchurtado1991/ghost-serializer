@@ -104,21 +104,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;/**
-&nbsp; * Heuristics / options for deciding whether annotated sources belong to a test compilation
-&nbsp; * so the default module registry can take a `_Test` suffix.
+&nbsp; * Heuristics for whether annotated sources belong to a test compilation, so the default
+&nbsp; * module registry can take a `_Test` suffix.
 &nbsp; *
-&nbsp; * **Why this exists:** KSP does not expose a stable `isTest` / source-set API on
-&nbsp; * [com.google.devtools.ksp.symbol.KSFile]. Main and test compilations are separate processor
-&nbsp; * runs, but when `@GhostSerialization` models live under test roots and
-&nbsp; * [C.OPTION_MODULE_NAME] is unset (Default), production and test would both emit
-&nbsp; * `GhostModuleRegistry_Default` without a distinguishing suffix.
+&nbsp; * KSP exposes no stable `isTest` / source-set API on [com.google.devtools.ksp.symbol.KSFile], so
+&nbsp; * without this, main and test compilations with [C.OPTION_MODULE_NAME] unset would both emit
+&nbsp; * `GhostModuleRegistry_Default` with no distinguishing suffix.
 &nbsp; *
-&nbsp; * **Preference order:**
-&nbsp; * 1. Explicit [C.OPTION_IS_TEST] (`&quot;true&quot;` / `&quot;false&quot;`) when present.
-&nbsp; * 2. Path sniffing for common Gradle layouts (`src/test`, `src/androidTest`, `src/testKsp`).
-&nbsp; *
-&nbsp; * Path sniffing is intentionally narrow: custom source-set directory names will not match;
-&nbsp; * pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) in those layouts.
+&nbsp; * Preference order: explicit [C.OPTION_IS_TEST] first, then path sniffing for common Gradle
+&nbsp; * layouts (`src/test`, `src/androidTest`, `src/testKsp`). Sniffing is narrow — custom source-set
+&nbsp; * names won&#39;t match; pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) instead.
 &nbsp; */
 &nbsp;internal object TestSourceSetDetection {
 &nbsp;
@@ -173,7 +168,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

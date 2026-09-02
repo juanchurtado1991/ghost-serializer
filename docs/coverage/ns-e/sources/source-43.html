@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (3/4)
+    (3/3)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    53.3%
+    88.9%
   </span>
   <span class="absValue">
-    (8/15)
+    (8/9)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    52.8%
+    82.6%
   </span>
   <span class="absValue">
-    (38/72)
+    (38/46)
   </span>
 </td>
 </tr>
@@ -99,7 +99,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;
 &nbsp;
@@ -118,8 +117,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return reader.nextString().replace(&quot;-&quot;, &quot;&quot;).toLong()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    // Support for GhostJsonFlatWriter (Flat path)
-&nbsp;    fun encodeLegacyDate(writer: GhostJsonFlatWriter, value: Long) {
+&nbsp;    fun encodeLegacyDate(writer: GhostJsonWriter, value: Long) {
 <b class="fc">&nbsp;        val stringValue = value.toString()</b>
 <b class="fc">&nbsp;        val formatted = &quot;${</b>
 <b class="fc">&nbsp;            stringValue.take(4)</b>
@@ -129,19 +127,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            stringValue.substring(6, 8)</b>
 &nbsp;        }&quot;
 <b class="fc">&nbsp;        writer.value(formatted)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    // Support for GhostJsonWriter (Streaming path)
-&nbsp;    fun encodeLegacyDate(writer: GhostJsonWriter, value: Long) {
-<b class="nc">&nbsp;        val stringValue = value.toString()</b>
-<b class="nc">&nbsp;        val formatted = &quot;${</b>
-<b class="nc">&nbsp;            stringValue.take(4)</b>
-&nbsp;        }-${
-<b class="nc">&nbsp;            stringValue.substring(4, 6)</b>
-&nbsp;        }-${
-<b class="nc">&nbsp;            stringValue.substring(6, 8)</b>
-&nbsp;        }&quot;
-<b class="nc">&nbsp;        writer.value(formatted)</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -167,7 +152,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

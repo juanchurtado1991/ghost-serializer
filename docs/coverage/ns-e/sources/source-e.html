@@ -156,10 +156,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.moshi.JsonClass
 &nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-&nbsp;/**
-&nbsp; * Multi-branch constructor fixture with 2 required + 3 default-valued properties (N=3, 8 branches).
-&nbsp; * Stays below the compiler limit of N=4 (`MAX_DEFAULT_BRANCH_COUNT`).
-&nbsp; */
+&nbsp;/** N=3 default-branch fixture (2 required + 3 defaulted) — below the N=4 `MAX_DEFAULT_BRANCH_COUNT` compiler limit. */
 <b class="pc">&nbsp;@Serializable</b>
 &nbsp;@JsonClass(generateAdapter = true)
 &nbsp;@GhostSerialization
@@ -193,7 +190,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

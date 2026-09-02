@@ -108,8 +108,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;
 &nbsp;/**
-&nbsp; * Reads a block mapping starting at the current position.
-&nbsp; * Called when we detect &quot;key: value&quot; on a new line.
+&nbsp; * Reads a block mapping starting at the current position (&quot;key: value&quot; on a new line).
 &nbsp; *
 &nbsp; * @param blockIndent The indentation of the first key in this mapping.
 &nbsp; */
@@ -127,10 +126,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            val lineIndent = currentIndent</b>
 <b class="fc">&nbsp;            if (result.isNotEmpty() &amp;&amp; lineIndent &lt; blockIndent) break  // dedented — end of this mapping</b>
 <b class="fc">&nbsp;            if (isDocumentMarker() || isDocumentEndMarker()) break</b>
-&nbsp;            // A tab can&#39;t be part of the indentation opening or extending a block mapping —
-&nbsp;            // tabs have no fixed column width, so there&#39;s no way to compare this line&#39;s
-&nbsp;            // indentation against blockIndent/a sibling&#39;s. Harmless once inside an already-
-&nbsp;            // established scalar&#39;s own content (readValue never reaches this loop for that).
+&nbsp;            // Tabs have no fixed column width, so they can&#39;t open/extend a block mapping&#39;s
+&nbsp;            // indentation — harmless once inside an already-established scalar&#39;s own content.
 <b class="fc">&nbsp;            if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_MAPPING_INDENT)</b>
 &nbsp;
 <b class="fc">&nbsp;            if (isExplicitKeyIndicator()) {</b>
@@ -139,20 +136,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                continue
 &nbsp;            }
 &nbsp;
-&nbsp;            // Read key
 <b class="pc">&nbsp;            val key = readKey(inFlow = false) ?: break</b>
 <b class="fc">&nbsp;            skipInlineWhitespace()</b>
 &nbsp;
-&nbsp;            // Expect &#39;:&#39; after the key
 <b class="fc">&nbsp;            if (position &gt;= localLimit || localRawData[position] != C.COLON_BYTE) {</b>
 <b class="fc">&nbsp;                yamlError(&quot;${C.ERR_EXPECTED_COLON_AFTER_KEY_PREFIX}$key${C.ERR_EXPECTED_COLON_AFTER_KEY_MID}$position&quot;)</b>
 &nbsp;            }
 <b class="fc">&nbsp;            position++ // consume &#39;:&#39;</b>
-&nbsp;            // An implicit &quot;key: value&quot; pair&#39;s value can&#39;t redirect into a nested block
-&nbsp;            // mapping while still inline on the same physical line as this &#39;:&#39; (that shape is
-&nbsp;            // only legal via YAML&#39;s &quot;compact notation&quot;, reserved for explicit &quot;?&quot;/&quot;:&quot; entries
-&nbsp;            // — see resolveValueAfterColon&#39;s KDoc). Without this, &quot;a: b: c: d&quot; silently parsed
-&nbsp;            // as {&quot;a&quot;: {&quot;b&quot;: {&quot;c&quot;: &quot;d&quot;}}} instead of being rejected (yaml-test-suite ZCZ6).
+&nbsp;            // An implicit pair&#39;s value can&#39;t redirect into a nested mapping while still inline
+&nbsp;            // on this line — that&#39;s only legal via &quot;compact notation&quot; (explicit &quot;?&quot;/&quot;:&quot; entries).
+&nbsp;            // Without this, &quot;a: b: c: d&quot; would parse instead of being rejected (yaml-test-suite ZCZ6).
 <b class="fc">&nbsp;            val value = resolveValueAfterColon(blockIndent, allowMappingRedirect = false)</b>
 &nbsp;
 <b class="fc">&nbsp;            if (key == C.STR_MERGE_KEY) {</b>
@@ -169,13 +162,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/**
 &nbsp; * Called right after a mapping &#39;:&#39; has been consumed and inline whitespace skipped, to
-&nbsp; * determine and read the value. Shared by [readBlockMapping]&#39;s implicit (&quot;key: value&quot;)
-&nbsp; * entries and [readExplicitKeyEntry]&#39;s explicit (&quot;? key\n: value&quot;) entries — both need
-&nbsp; * exactly the same &quot;same line, next line indented, or no value at all&quot; resolution, but differ
-&nbsp; * on whether an *inline* value may itself redirect into a nested block mapping: explicit
-&nbsp; * entries get YAML&#39;s &quot;compact notation&quot; allowance (see the comment at
-&nbsp; * [readExplicitKeyEntry]&#39;s call site), implicit ones
-&nbsp; * don&#39;t — [allowMappingRedirect] lets each caller opt in/out.
+&nbsp; * determine and read the value. Shared by [readBlockMapping]&#39;s implicit entries and
+&nbsp; * [readExplicitKeyEntry]&#39;s explicit ones, which differ on whether an *inline* value may
+&nbsp; * redirect into a nested block mapping (YAML&#39;s &quot;compact notation&quot;) — [allowMappingRedirect]
+&nbsp; * lets each caller opt in/out.
 &nbsp; */
 <b class="fc">&nbsp;internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowMappingRedirect: Boolean = true): Any? {</b>
 <b class="fc">&nbsp;    skipInlineWhitespace()</b>
@@ -198,12 +188,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                } else if (valueIndent == blockIndent &amp;&amp; !(localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry())) {</b>
 <b class="fc">&nbsp;                    null</b>
 &nbsp;                } else {
-&nbsp;                    // foldIndent = blockIndent (not valueIndent): if this value turns out to
-&nbsp;                    // be a plain scalar, later continuation lines only need to be indented
-&nbsp;                    // more than the *enclosing mapping&#39;s* indent to keep folding — matching
-&nbsp;                    // the inline-value case below — not more than this value&#39;s own
-&nbsp;                    // auto-detected column, which is typically the SAME indent every
-&nbsp;                    // continuation line also sits at (see 4CQQ/M5C3/NB6Z/RZT7/UGM3).
+&nbsp;                    // foldIndent = blockIndent (not valueIndent): a plain-scalar continuation
+&nbsp;                    // line only needs to be indented past the *enclosing mapping&#39;s* indent to
+&nbsp;                    // keep folding, not past this value&#39;s own auto-detected column (see
+&nbsp;                    // 4CQQ/M5C3/NB6Z/RZT7/UGM3).
 <b class="fc">&nbsp;                    readValue(valueIndent, inFlow = false, foldIndent = blockIndent)</b>
 &nbsp;                }
 &nbsp;            }
@@ -233,24 +221,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            if (result.isNotEmpty() &amp;&amp; lineIndent &lt; seqIndent) break</b>
 <b class="fc">&nbsp;            if (!isBlockSequenceEntry()) break</b>
 <b class="pc">&nbsp;            if (isDocumentMarker()) break</b>
-&nbsp;            // See the equivalent check in readBlockMapping — tabs can&#39;t be part of the
-&nbsp;            // indentation opening or extending a block sequence.
+&nbsp;            // See the equivalent tab check in readBlockMapping.
 <b class="pc">&nbsp;            if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_SEQUENCE_INDENT)</b>
 &nbsp;
-&nbsp;            // Consume &#39;-&#39;
 <b class="fc">&nbsp;            position++ // &#39;-&#39;</b>
 &nbsp;
-&nbsp;            // Indentation of the element value is the position of &#39;-&#39; plus 2.
+&nbsp;            // Element value indent is the &#39;-&#39; column plus 2 (the dash and its following space).
 <b class="fc">&nbsp;            val elementIndent = lineIndent + 2</b>
 &nbsp;
-&nbsp;            // Skip the optional inline space after &#39;-&#39;
 <b class="fc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.SPACE_BYTE) {</b>
 <b class="fc">&nbsp;                position++</b>
 &nbsp;            }
 &nbsp;
 &nbsp;            // A comment directly after &quot;- &quot; (e.g. &quot;- # Empty&quot;) leaves no inline value, same
-&nbsp;            // as it would after a mapping key&#39;s &#39;:&#39; (see resolveValueAfterColon) — without
-&nbsp;            // this, the comment text would be read as the item&#39;s own plain-scalar content.
+&nbsp;            // as after a mapping key&#39;s &#39;:&#39; (see resolveValueAfterColon).
 <b class="fc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.HASH_BYTE) {</b>
 <b class="fc">&nbsp;                skipToEndOfLine()</b>
 &nbsp;            }
@@ -265,19 +249,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                    else {
 <b class="fc">&nbsp;                        val itemIndent = currentIndent</b>
 <b class="fc">&nbsp;                        if (itemIndent &lt; elementIndent) null</b>
-&nbsp;                        // Delegate to readValue&#39;s own dispatch — see the equivalent comment
-&nbsp;                        // in readBlockMapping for why (bare scalar vs. mapping vs. block
-&nbsp;                        // scalar, not just sequence-vs-mapping).
+&nbsp;                        // Delegate to readValue&#39;s own dispatch (bare scalar vs. mapping vs.
+&nbsp;                        // block scalar) — see the equivalent comment in readBlockMapping.
 <b class="fc">&nbsp;                        else readValue(itemIndent, inFlow = false)</b>
 &nbsp;                    }
 &nbsp;                }
 &nbsp;
-&nbsp;                else -&gt; {
-&nbsp;                    // Value starts on the same line after &#39;- &#39;
-&nbsp;                    // Try reading plain scalar or mapping or sequence.
-&nbsp;                    // Since we are parsing the list item, we can call readValue with elementIndent.
-<b class="fc">&nbsp;                    readValue(elementIndent, inFlow = false)</b>
-&nbsp;                }
+<b class="fc">&nbsp;                else -&gt; readValue(elementIndent, inFlow = false)</b>
 &nbsp;            }
 <b class="fc">&nbsp;            result.add(item)</b>
 &nbsp;        }
@@ -309,7 +287,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

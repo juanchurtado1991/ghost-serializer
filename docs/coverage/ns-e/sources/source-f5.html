@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    63.6%
   </span>
   <span class="absValue">
-    (9/12)
+    (7/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    37.5%
+    28.8%
   </span>
   <span class="absValue">
-    (72/192)
+    (53/184)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    32.4%
+    26%
   </span>
   <span class="absValue">
-    (168/519)
+    (129/497)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    32.6%
+    26%
   </span>
   <span class="absValue">
-    (739/2267)
+    (562/2165)
   </span>
 </td>
 </tr>
@@ -134,7 +134,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.readList
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.collections.List
@@ -435,7 +434,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
-<b class="pc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((mask0 and MASK_ID) == 0L) {</b>
 <b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;id&quot;)</b>
 <b class="nc">&nbsp;      } else if ((mask0 and MASK_DEVICES) == 0L) {</b>
@@ -448,20 +447,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [SmartHome].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): SmartHome {
-<b class="fc">&nbsp;    var idValue: String? = null</b>
-<b class="fc">&nbsp;    var activeValue: Boolean? = null</b>
-<b class="fc">&nbsp;    var deviceCountValue: Int = 0</b>
-<b class="fc">&nbsp;    var devicesValue: List&lt;SmartDevice&gt;? = null</b>
-<b class="fc">&nbsp;    var statusValue: HomeStatus? = null</b>
-<b class="fc">&nbsp;    var configValue: HomeConfig? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var idValue: String? = null</b>
+<b class="nc">&nbsp;    var activeValue: Boolean? = null</b>
+<b class="nc">&nbsp;    var deviceCountValue: Int = 0</b>
+<b class="nc">&nbsp;    var devicesValue: List&lt;SmartDevice&gt;? = null</b>
+<b class="nc">&nbsp;    var statusValue: HomeStatus? = null</b>
+<b class="nc">&nbsp;    var configValue: HomeConfig? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          idValue = reader.nextString()</b>
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_ID</b>
+<b class="nc">&nbsp;          idValue = reader.nextString()</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_ID</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
 <b class="nc">&nbsp;          reader.decodeResilient { reader.nextBooleanOrNull() }?.let {</b>
@@ -476,10 +475,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;          }</b>
 &nbsp;        }
 &nbsp;        3 -&gt; {
-<b class="fc">&nbsp;          devicesValue = reader.readList {</b>
+<b class="nc">&nbsp;          devicesValue = reader.readList {</b>
 <b class="nc">&nbsp;                SmartDeviceSerializer.deserialize(reader)</b>
 &nbsp;              }
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_DEVICES</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_DEVICES</b>
 &nbsp;        }
 &nbsp;        4 -&gt; {
 <b class="nc">&nbsp;          reader.decodeResilient { if (reader.isNextNullValue()) {</b>
@@ -509,9 +508,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
-<b class="fc">&nbsp;    reader.endObject()</b>
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT_STATUS) == MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT_STATUS) {</b>
+<b class="nc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT_STATUS) == MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -521,7 +520,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_DEVICECOUNT_STATUS) == MASK_OPTS_ACTIVE_DEVICECOUNT_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_DEVICECOUNT_STATUS) == MASK_OPTS_ACTIVE_DEVICECOUNT_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -530,7 +529,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        status = statusValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT) == MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT) == MASK_OPTS_ACTIVE_CONFIG_DEVICECOUNT) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -539,7 +538,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG_STATUS) == MASK_OPTS_ACTIVE_CONFIG_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG_STATUS) == MASK_OPTS_ACTIVE_CONFIG_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -548,7 +547,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG_DEVICECOUNT_STATUS) == MASK_OPTS_CONFIG_DEVICECOUNT_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG_DEVICECOUNT_STATUS) == MASK_OPTS_CONFIG_DEVICECOUNT_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -557,7 +556,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_DEVICECOUNT) == MASK_OPTS_ACTIVE_DEVICECOUNT) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_DEVICECOUNT) == MASK_OPTS_ACTIVE_DEVICECOUNT) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -565,7 +564,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        deviceCount = deviceCountValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_STATUS) == MASK_OPTS_ACTIVE_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_STATUS) == MASK_OPTS_ACTIVE_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -573,7 +572,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        status = statusValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_DEVICECOUNT_STATUS) == MASK_OPTS_DEVICECOUNT_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_DEVICECOUNT_STATUS) == MASK_OPTS_DEVICECOUNT_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -581,7 +580,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        status = statusValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG) == MASK_OPTS_ACTIVE_CONFIG) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE_CONFIG) == MASK_OPTS_ACTIVE_CONFIG) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -589,7 +588,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG_DEVICECOUNT) == MASK_OPTS_CONFIG_DEVICECOUNT) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG_DEVICECOUNT) == MASK_OPTS_CONFIG_DEVICECOUNT) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -597,7 +596,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG_STATUS) == MASK_OPTS_CONFIG_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG_STATUS) == MASK_OPTS_CONFIG_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
@@ -605,37 +604,37 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE) == MASK_OPTS_ACTIVE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_ACTIVE) == MASK_OPTS_ACTIVE) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
 <b class="nc">&nbsp;        active = activeValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_DEVICECOUNT) == MASK_OPTS_DEVICECOUNT) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_DEVICECOUNT) == MASK_OPTS_DEVICECOUNT) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
 <b class="nc">&nbsp;        deviceCount = deviceCountValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_STATUS) == MASK_OPTS_STATUS) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_STATUS) == MASK_OPTS_STATUS) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
 <b class="nc">&nbsp;        status = statusValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG) == MASK_OPTS_CONFIG) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_CONFIG) == MASK_OPTS_CONFIG) {</b>
 <b class="nc">&nbsp;      return SmartHome(</b>
 <b class="nc">&nbsp;        id = idValue!!,</b>
 <b class="nc">&nbsp;        devices = devicesValue!!,</b>
 <b class="nc">&nbsp;        config = configValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="fc">&nbsp;    return SmartHome(</b>
-<b class="fc">&nbsp;      id = idValue!!,</b>
-<b class="fc">&nbsp;      devices = devicesValue!!,</b>
+<b class="nc">&nbsp;    return SmartHome(</b>
+<b class="nc">&nbsp;      id = idValue!!,</b>
+<b class="nc">&nbsp;      devices = devicesValue!!,</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
@@ -870,32 +869,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: SmartHome) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_ID, value.id)</b>
-<b class="nc">&nbsp;    if (value.active != null) {</b>
-<b class="nc">&nbsp;      writer.writeField(H_ACTIVE, value.active)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.writeField(H_DEVICECOUNT, value.deviceCount)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_DEVICES)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size0 = value.devices.size</b>
-<b class="nc">&nbsp;    for (i0 in 0 until size0) {</b>
-<b class="nc">&nbsp;      val item0 = value.devices[i0]</b>
-<b class="nc">&nbsp;      SmartDeviceSerializer.serialize(writer, item0)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    if (value.status != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_STATUS)</b>
-<b class="nc">&nbsp;      HomeStatusSerializer.serialize(writer, value.status)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.config != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_CONFIG)</b>
-<b class="nc">&nbsp;      HomeConfigSerializer.serialize(writer, value.config)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: SmartHome) {
 <b class="nc">&nbsp;    writer.beginObject()</b>
 <b class="nc">&nbsp;    writer.writeField(HS_ID, value.id)</b>
@@ -931,13 +904,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:\&quot;\&quot;,\&quot;devices\&quot;:[]}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{\&quot;id\&quot;:\&quot;\&quot;,\&quot;devices\&quot;:[]}&quot;</b>
 &nbsp;          )
@@ -969,7 +935,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

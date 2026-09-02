@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostResilient</title>
+  <title>GhostSerialization Coverage Report > GhostJsonEnvelope</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostResilient (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostJsonEnvelope (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostResilient</td>
+  <td class="name">GhostJsonEnvelope</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,17 +47,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Applies resilient parsing to a property on **JSON readers only**.
+&nbsp; * Marks a data class as an external-discriminator JSON envelope (webhook / SSE / EventBridge shape).
 &nbsp; *
-&nbsp; * If a type mismatch occurs, or an unknown enum value is received, Ghost catches the error,
-&nbsp; * assigns `null` to the field (if nullable), and continues parsing instead of throwing.
+&nbsp; * The KSP plugin generates zero-copy payload routing on the companion serializer:
+&nbsp; * `routePayload(envelope)`, `parsePayload(bytes)`, and optional typed variants when
+&nbsp; * [GhostEnvelopePayload.target] is set. Supports either a &quot;fat&quot; envelope (one nullable `RawJson`
+&nbsp; * field per event type, each tagged with [GhostEnvelopePayload]) or a generic envelope with a
+&nbsp; * single shared payload field (via [dataField]).
 &nbsp; *
-&nbsp; * **JSON-only** — not emitted for YAML ([GhostYamlSerialization]) or proto3 YAML paths.
-&nbsp; * Combining `@GhostResilient` with `@GhostYamlSerialization` on the same class is a KSP error.
+&nbsp; * @param discriminator JSON field holding the wire type name (default `&quot;type&quot;`).
+&nbsp; * @param timeField Optional JSON field copied into routed results metadata (e.g. `&quot;eventTime&quot;`).
+&nbsp; * @param dataField When non-empty, enables generic single-payload mode using this JSON field name.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
+&nbsp;@Target(AnnotationTarget.CLASS)
 &nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostResilient
+&nbsp;annotation class GhostJsonEnvelope(
+&nbsp;    val discriminator: String = &quot;type&quot;,
+&nbsp;    val timeField: String = &quot;&quot;,
+&nbsp;    val dataField: String = &quot;&quot;
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -81,7 +89,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

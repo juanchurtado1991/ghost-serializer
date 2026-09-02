@@ -99,50 +99,20 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.TypeName
 &nbsp;
 &nbsp;/**
-&nbsp; * Main metadata model representing a serializable property.
+&nbsp; * Metadata for a serializable property: type resolutions, constraints, annotations, and
+&nbsp; * hierarchical structures resolved during compiler analysis to drive codegen.
 &nbsp; *
-&nbsp; * Contains all type resolutions, constraints, annotations, and hierarchical structures
-&nbsp; * resolved during compiler analysis to drive target code generation.
-&nbsp; *
-&nbsp; * @property kotlinName Name of the property as declared in Kotlin code.
-&nbsp; * @property jsonName Target JSON field name (resolves compatibility annotations like GhostName).
-&nbsp; * @property type The KSP [KSType] representation of the property&#39;s resolved type.
-&nbsp; * @property typeName KotlinPoet [TypeName] representation of the property&#39;s type.
-&nbsp; * @property isNullable True if the property&#39;s type is marked nullable.
-&nbsp; * @property isGhost True if the property&#39;s type is itself annotated with @GhostSerialization.
-&nbsp; * @property isList True if the property type is a [List].
-&nbsp; * @property isSet True if the property type is a [Set].
-&nbsp; * @property isEnum True if the property type is an enum.
-&nbsp; * @property listInnerType The resolved [KSType] of the generic element inside the list, if applicable.
-&nbsp; * @property listInnerIsGhost True if the list inner type is annotated with @GhostSerialization.
-&nbsp; * @property listInnerIsEnum True if the list inner type is an enum.
-&nbsp; * @property hasDefaultValue True if the property has a parameter default value in the constructor.
+&nbsp; * @property jsonName Target JSON field name, resolved from @GhostName if present.
 &nbsp; * @property defaultExpression Whitelisted Kotlin source of the ctor default (`&quot;viewer&quot;`, `1`,
 &nbsp; *   `emptyList()`, …), or `null` when unavailable / unsafe — callers must fall back to `.copy()`.
-&nbsp; * @property isMap True if the property type is a [Map].
-&nbsp; * @property mapValueType The resolved [KSType] of the map&#39;s value parameter, if applicable.
-&nbsp; * @property mapValueIsGhost True if the map&#39;s value type is annotated with @GhostSerialization.
-&nbsp; * @property isPrimitiveArray True if the type represents a primitive array (e.g. IntArray, LongArray).
-&nbsp; * @property primitiveArrayType String suffix/type representing the primitive array element type.
-&nbsp; * @property isValueClass True if the type is declared as an inline or value class.
-&nbsp; * @property valueClassProperty Analyzed property model of the underlying value class property, if applicable.
-&nbsp; * @property isSealedClass True if the type represents a sealed class hierarchy.
-&nbsp; * @property sealedSubclasses List of declarations for all direct subclasses of the sealed class.
-&nbsp; * @property enumValues Map of enum entry names to their customized JSON serialization names.
+&nbsp; * @property isGhost True if the property&#39;s type is itself annotated with @GhostSerialization.
 &nbsp; * @property isResilient True if this property or class is marked with @GhostResilient.
-&nbsp; * @property isContextual True if the type relies on contextual serialization (e.g., third party classes).
-&nbsp; * @property customDecoder Provider configuration for a custom decoder annotated on this property.
-&nbsp; * @property customEncoder Provider configuration for a custom encoder annotated on this property.
-&nbsp; * @property flattenPath Nested JSON path list if this property is flattened using @GhostFlatten.
-&nbsp; * @property wrapPath Nested JSON path list if this property is wrapped using @GhostWrap.
+&nbsp; * @property flattenPath Nested JSON path if this property is flattened via @GhostFlatten.
+&nbsp; * @property wrapPath Nested JSON path if this property is wrapped via @GhostWrap.
 &nbsp; * @property wrappedSourceKeys Wire keys collapsed into this property via @GhostWrappedKeys.
 &nbsp; * @property wrappedOmitIfEmpty When true, absent/null-only captures yield a null wrapper property.
 &nbsp; * @property wrappedOmitIfAbsent Keys that force a null wrapper when absent or JSON null.
-&nbsp; * @property wrappedUnwrapFields Ordered wire fields used to unwrap this property during serialization.
-&nbsp; * @property isInferredSignature True if this property serves as an inferred signature candidate.
-&nbsp; * @property inferredSubclasses Inferred sealed subclasses associated with this property model.
-&nbsp; * @property isProto True if the enclosing class is annotated with `@GhostProtoSerialization`.
-&nbsp; *   Applies proto3 JSON mapping rules to this property: 64-bit integer (`Long`) fields are
+&nbsp; * @property isProto True if the enclosing class is `@GhostProtoSerialization`: `Long` fields are
 &nbsp; *   read/written as quoted decimal strings instead of bare JSON numbers.
 &nbsp; */
 &nbsp;internal data class GhostPropertyModel(
@@ -208,7 +178,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

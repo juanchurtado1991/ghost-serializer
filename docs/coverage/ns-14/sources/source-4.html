@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonStringReaderSubsystemKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonStringReaderNumbersKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.strings</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonStringReaderSubsystemKt (com.ghost.serialization.parser.strings)</h1>
+<h1>Coverage Summary for Class: GhostJsonStringReaderNumbersKt (com.ghost.serialization.parser.strings)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonStringReaderSubsystemKt</td>
+  <td class="name">GhostJsonStringReaderNumbersKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.1%
+    100%
   </span>
   <span class="absValue">
-    (33/34)
+    (12/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.8%
+    81.2%
   </span>
   <span class="absValue">
-    (142/160)
+    (13/16)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    94.4%
+    93.3%
   </span>
   <span class="absValue">
-    (368/390)
+    (112/120)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.6%
+    93%
   </span>
   <span class="absValue">
-    (1727/1927)
+    (651/700)
   </span>
 </td>
 </tr>
@@ -105,642 +105,210 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;package com.ghost.serialization.parser.strings
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
-&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
-&nbsp;import com.ghost.serialization.parser.common.JsonReaderOptions
-&nbsp;import com.ghost.serialization.parser.common.beginArrayCore
-&nbsp;import com.ghost.serialization.parser.common.beginObjectCore
-&nbsp;import com.ghost.serialization.parser.common.computeKeyHashCore
-&nbsp;import com.ghost.serialization.parser.common.consumeArraySeparatorCore
-&nbsp;import com.ghost.serialization.parser.common.consumeKeySeparatorCore
-&nbsp;import com.ghost.serialization.parser.common.endArrayCore
-&nbsp;import com.ghost.serialization.parser.common.endObjectCore
-&nbsp;import com.ghost.serialization.parser.common.handleSelectNoMatchCore
-&nbsp;import com.ghost.serialization.parser.common.hasNextCore
-&nbsp;import com.ghost.serialization.parser.common.nextBooleanCore
-&nbsp;import com.ghost.serialization.parser.common.nextKeyCommaPreambleCore
-&nbsp;import com.ghost.serialization.parser.common.nextOrNullCore
-&nbsp;import com.ghost.serialization.parser.common.selectValidateCommasCore
-&nbsp;import com.ghost.serialization.parser.common.skipValueCore
+&nbsp;import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
+&nbsp;import com.ghost.serialization.parser.common.finalizeParsedDouble
+&nbsp;import com.ghost.serialization.parser.common.finalizeParsedFloat
+&nbsp;import com.ghost.serialization.parser.common.parseExponentValueCore
+&nbsp;import com.ghost.serialization.parser.common.parseIntDigitsCore
+&nbsp;import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
+&nbsp;import com.ghost.serialization.parser.common.parseLongDigitsCore
+&nbsp;import com.ghost.serialization.parser.common.prepareNumericHeaderCore
+&nbsp;import com.ghost.serialization.parser.common.skipNumberBodyCore
+&nbsp;import com.ghost.serialization.parser.common.validateLeadingZeroCore
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
+&nbsp;fun GhostJsonStringReader.nextInt(): Int {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
 &nbsp;
-&nbsp;fun GhostJsonStringReader.beginObject() {
-<b class="fc">&nbsp;    beginObjectCore(</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        getDepth = { depth },</b>
-<b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="fc">&nbsp;        maxDepth = maxDepth,</b>
-<b class="fc">&nbsp;        getNeedsCommaMask = { needsCommaMask },</b>
-<b class="fc">&nbsp;        setNeedsCommaMask = { needsCommaMask = it },</b>
-<b class="fc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
-<b class="fc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
-<b class="fc">&nbsp;        setPredictedFieldIndex = { predictedFieldIndex = it },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-<b class="fc">&nbsp;    pathTracker.pushObject()</b>
-&nbsp;}
+<b class="fc">&nbsp;    val startOfNumber = position</b>
+<b class="fc">&nbsp;    validateLeadingZero()</b>
 &nbsp;
-&nbsp;fun GhostJsonStringReader.endObject() {
-<b class="fc">&nbsp;    endObjectCore(</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        getDepth = { depth },</b>
-<b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-<b class="fc">&nbsp;    pathTracker.finishObjectValue()</b>
-&nbsp;}
+<b class="fc">&nbsp;    val accumulatedValue = parseIntDigits(isNegativeValue, startOfNumber)</b>
 &nbsp;
-&nbsp;fun GhostJsonStringReader.beginArray() {
-<b class="fc">&nbsp;    beginArrayCore(</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        getDepth = { depth },</b>
-<b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="fc">&nbsp;        maxDepth = maxDepth,</b>
-<b class="fc">&nbsp;        getNeedsCommaMask = { needsCommaMask },</b>
-<b class="fc">&nbsp;        setNeedsCommaMask = { needsCommaMask = it },</b>
-<b class="fc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
-<b class="fc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-<b class="fc">&nbsp;    pathTracker.pushArray()</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.endArray() {
-<b class="fc">&nbsp;    endArrayCore(</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        getDepth = { depth },</b>
-<b class="fc">&nbsp;        setDepth = { depth = it },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-<b class="fc">&nbsp;    pathTracker.finishArrayValue()</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.hasNext(): Boolean {
-<b class="fc">&nbsp;    val hasMore = hasNextCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        strictMode = strictMode,</b>
-<b class="fc">&nbsp;        depth = depth,</b>
-<b class="nc">&nbsp;        getNeedsCommaMask = { needsCommaMask },</b>
-<b class="nc">&nbsp;        setNeedsCommaMask = { needsCommaMask = it },</b>
-<b class="nc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
-<b class="nc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
-<b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-<b class="fc">&nbsp;    if (hasMore &amp;&amp; pathTracker.isInArray()) {</b>
-<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return hasMore</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.nextKey(): String? {
-<b class="fc">&nbsp;    if (!nextKeyCommaPreambleCore(</b>
-<b class="fc">&nbsp;            peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;            strictMode = strictMode,</b>
-<b class="fc">&nbsp;            depth = depth,</b>
-<b class="fc">&nbsp;            getNeedsCommaMask = { needsCommaMask },</b>
-<b class="fc">&nbsp;            setNeedsCommaMask = { needsCommaMask = it },</b>
-<b class="fc">&nbsp;            getCommaConsumedMask = { commaConsumedMask },</b>
-<b class="nc">&nbsp;            setCommaConsumedMask = { commaConsumedMask = it },</b>
-<b class="fc">&nbsp;            internalSkip = { internalSkip(it) },</b>
-<b class="fc">&nbsp;            throwError = { throwError(it) },</b>
-&nbsp;        )
-&nbsp;    ) {
-<b class="fc">&nbsp;        return null</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val key = readQuotedString()</b>
-<b class="fc">&nbsp;    pathTracker.pushKey(key)</b>
-<b class="fc">&nbsp;    return key</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.consumeKeySeparator() {
-<b class="fc">&nbsp;    consumeKeySeparatorCore(</b>
-<b class="fc">&nbsp;        nextNonWhitespace = { nextNonWhitespace() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.consumeArraySeparator() {
-<b class="fc">&nbsp;    consumeArraySeparatorCore(</b>
-<b class="fc">&nbsp;        strictMode = strictMode,</b>
-<b class="fc">&nbsp;        depth = depth,</b>
-<b class="fc">&nbsp;        getNeedsCommaMask = { needsCommaMask },</b>
-<b class="nc">&nbsp;        setNeedsCommaMask = { needsCommaMask = it },</b>
-<b class="fc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
-<b class="nc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.nextBoolean(): Boolean {
-<b class="fc">&nbsp;    val value = nextBooleanCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        skipAndValidateLiteral = { skipAndValidateLiteral(it) },</b>
-<b class="fc">&nbsp;        coerceBooleans = coerceBooleans,</b>
-<b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
-<b class="fc">&nbsp;        matchCoerceBooleanBytes = { matchCoerceBooleanBytes() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return value</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.nextString(): String {
-<b class="fc">&nbsp;    val value = readQuotedString()</b>
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return value</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Reads a JSON string value that must contain exactly one [Char].
-&nbsp; */
-&nbsp;fun GhostJsonStringReader.nextChar(): Char {
-<b class="pc">&nbsp;    if (nextNonWhitespace() != C.QUOTE_INT) {</b>
-<b class="nc">&nbsp;        throwError(C.ERR_EXPECTED_QUOTE)</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    val start = position</b>
-<b class="fc">&nbsp;    val end = findClosingQuote(start, limit)</b>
-<b class="fc">&nbsp;    if (end != C.MATCH_END) {</b>
-<b class="fc">&nbsp;        val length = end - start</b>
-<b class="fc">&nbsp;        position = end + C.SINGLE_CHAR_SIZE</b>
-<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="pc">&nbsp;        when {</b>
-<b class="nc">&nbsp;            length == 0 -&gt; throwError(C.ERR_EXPECTED_SINGLE_CHAR_STRING)</b>
-&nbsp;            length == C.SINGLE_CHAR_JSON_LENGTH -&gt; {
-<b class="fc">&nbsp;                pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;                return rawData[start]</b>
-&nbsp;            }
-<b class="nc">&nbsp;            else -&gt; throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + length)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    position = start - 1</b>
-<b class="fc">&nbsp;    val decoded = readQuotedString()</b>
-<b class="pc">&nbsp;    if (decoded.length != C.SINGLE_CHAR_JSON_LENGTH) {</b>
-<b class="nc">&nbsp;        throwError(C.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return decoded[0]</b>
-&nbsp;}
-&nbsp;
-<b class="fc">&nbsp;fun GhostJsonStringReader.isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT</b>
-&nbsp;
-&nbsp;fun GhostJsonStringReader.consumeNull() {
-<b class="fc">&nbsp;    val cursor = position</b>
-<b class="fc">&nbsp;    val chars = rawChars</b>
-<b class="fc">&nbsp;    if (cursor + 4 &gt; limit ||</b>
-<b class="pc">&nbsp;        chars[cursor].code != C.NULL_CHAR_INT ||</b>
-<b class="pc">&nbsp;        chars[cursor + 1].code != C.U_BYTE_INT ||</b>
-<b class="pc">&nbsp;        chars[cursor + 2].code != C.L_BYTE_INT ||</b>
-<b class="fc">&nbsp;        chars[cursor + 3].code != C.L_BYTE_INT</b>
-&nbsp;    ) {
-<b class="fc">&nbsp;        throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    position = cursor + 4</b>
 <b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+&nbsp;
 <b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;    return if (isNegativeValue) -accumulatedValue else accumulatedValue</b>
 &nbsp;}
 &nbsp;
-&nbsp;/** Reads a JSON string, or `null` when the next token is the `null` literal. */
-&nbsp;fun GhostJsonStringReader.nextStringOrNull(): String? =
-<b class="fc">&nbsp;    nextOrNullCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        consumeNull = { consumeNull() },</b>
-<b class="fc">&nbsp;        readValue = { nextString() },</b>
-&nbsp;    )
+&nbsp;fun GhostJsonStringReader.nextLong(): Long {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
 &nbsp;
-&nbsp;/** Reads a JSON int, or `null` when the next token is the `null` literal. */
-&nbsp;fun GhostJsonStringReader.nextIntOrNull(): Int? =
-<b class="fc">&nbsp;    nextOrNullCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        consumeNull = { consumeNull() },</b>
-<b class="fc">&nbsp;        readValue = { nextInt() },</b>
-&nbsp;    )
+<b class="fc">&nbsp;    val startOfNumber = position</b>
+<b class="fc">&nbsp;    validateLeadingZero()</b>
 &nbsp;
-&nbsp;/** Reads a JSON long, or `null` when the next token is the `null` literal. */
-&nbsp;fun GhostJsonStringReader.nextLongOrNull(): Long? =
-<b class="fc">&nbsp;    nextOrNullCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        consumeNull = { consumeNull() },</b>
-<b class="fc">&nbsp;        readValue = { nextLong() },</b>
-&nbsp;    )
+<b class="fc">&nbsp;    val accumulatedValue = parseLongDigits(isNegativeValue, startOfNumber)</b>
 &nbsp;
-&nbsp;/** Reads a JSON unsigned long, or `null` when the next token is the `null` literal. */
-&nbsp;fun GhostJsonStringReader.nextULongOrNull(): ULong? =
-<b class="nc">&nbsp;    nextOrNullCore(</b>
-<b class="nc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="nc">&nbsp;        consumeNull = { consumeNull() },</b>
-<b class="nc">&nbsp;        readValue = { nextULong() },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;/** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
-&nbsp;fun GhostJsonStringReader.nextBooleanOrNull(): Boolean? =
-<b class="fc">&nbsp;    nextOrNullCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        consumeNull = { consumeNull() },</b>
-<b class="fc">&nbsp;        readValue = { nextBoolean() },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;internal inline fun GhostJsonStringReader.findClosingQuote(start: Int, limit: Int): Int {
-<b class="fc">&nbsp;    var currentPosition = start</b>
-<b class="fc">&nbsp;    val chars = rawChars</b>
-<b class="fc">&nbsp;    val escapeMasks = C.ESCAPE_MASKS</b>
-<b class="fc">&nbsp;    val unrollStep = 4</b>
-<b class="fc">&nbsp;    val indexOffset1 = 1</b>
-<b class="fc">&nbsp;    val indexOffset2 = 2</b>
-<b class="fc">&nbsp;    val indexOffset3 = 3</b>
-&nbsp;
-<b class="fc">&nbsp;    val localAsciiLimit = C.ASCII_LIMIT</b>
-<b class="fc">&nbsp;    val localBitmaskShift = C.BITMASK_SHIFT</b>
-<b class="fc">&nbsp;    val localBitmaskIndexMask = C.BITMASK_INDEX_MASK</b>
-<b class="fc">&nbsp;    val localBitmaskUnit = C.BITMASK_UNIT</b>
-<b class="fc">&nbsp;    val localResultNone = C.RESULT_NONE</b>
-<b class="fc">&nbsp;    val localQuoteInt = C.QUOTE_INT</b>
-<b class="fc">&nbsp;    val localMatchEnd = C.MATCH_END</b>
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition + indexOffset3 &lt; limit) {</b>
-<b class="fc">&nbsp;        val byte0 = chars[currentPosition].code</b>
-<b class="fc">&nbsp;        if (byte0 &lt; localAsciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte0 shr localBitmaskShift] shr</b>
-<b class="fc">&nbsp;                    (byte0 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte0 == localQuoteInt) return currentPosition</b>
-<b class="fc">&nbsp;            return localMatchEnd</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val byte1 = chars[currentPosition + indexOffset1].code</b>
-<b class="fc">&nbsp;        if (byte1 &lt; localAsciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte1 shr localBitmaskShift] shr</b>
-<b class="fc">&nbsp;                    (byte1 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte1 == localQuoteInt) return currentPosition + indexOffset1</b>
-<b class="fc">&nbsp;            return localMatchEnd</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val byte2 = chars[currentPosition + indexOffset2].code</b>
-<b class="fc">&nbsp;        if (byte2 &lt; localAsciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte2 shr localBitmaskShift] shr</b>
-<b class="fc">&nbsp;                    (byte2 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte2 == localQuoteInt) return currentPosition + indexOffset2</b>
-<b class="fc">&nbsp;            return localMatchEnd</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val byte3 = chars[currentPosition + indexOffset3].code</b>
-<b class="fc">&nbsp;        if (byte3 &lt; localAsciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[byte3 shr localBitmaskShift] shr</b>
-<b class="fc">&nbsp;                    (byte3 and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (byte3 == localQuoteInt) return currentPosition + indexOffset3</b>
-<b class="fc">&nbsp;            return localMatchEnd</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentPosition += unrollStep</b>
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    while (currentPosition &lt; limit) {</b>
-<b class="fc">&nbsp;        val singleByte = chars[currentPosition].code</b>
-<b class="fc">&nbsp;        if (singleByte &lt; localAsciiLimit &amp;&amp;</b>
-<b class="fc">&nbsp;            ((escapeMasks[singleByte shr localBitmaskShift] shr</b>
-<b class="fc">&nbsp;                    (singleByte and localBitmaskIndexMask)) and localBitmaskUnit != localResultNone)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            if (singleByte == localQuoteInt) {</b>
-<b class="fc">&nbsp;                return currentPosition</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return localMatchEnd</b>
-&nbsp;        }
-<b class="fc">&nbsp;        currentPosition++</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return localMatchEnd</b>
-&nbsp;}
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
-<b class="fc">&nbsp;    val chars = rawChars</b>
-<b class="fc">&nbsp;    val charLimit = limit</b>
-<b class="fc">&nbsp;    val contentStart = position + 1</b>
-<b class="fc">&nbsp;    val end = findClosingQuote(contentStart, charLimit)</b>
-<b class="pc">&nbsp;    if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)</b>
-<b class="fc">&nbsp;    val length = end - contentStart</b>
-<b class="fc">&nbsp;    position = end + 1</b>
 <b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;    return com.ghost.serialization.parser.common.matchCoerceBooleanBytes(</b>
-<b class="fc">&nbsp;        start = contentStart,</b>
-<b class="fc">&nbsp;        length = length,</b>
-<b class="nc">&nbsp;        onError = { throwError(C.ERR_EXPECTED_BOOLEAN) },</b>
-<b class="fc">&nbsp;        getByte = { chars[it].code },</b>
-&nbsp;    )
+&nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;    return if (isNegativeValue) -accumulatedValue else accumulatedValue</b>
 &nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.selectNameAndConsume(options: JsonReaderOptions): Int {
-<b class="fc">&nbsp;    val index = internalSelect(options, consumeSeparator = true)</b>
-<b class="fc">&nbsp;    if (index &gt;= 0) {</b>
-<b class="fc">&nbsp;        pathTracker.pushKey(options.rawStrings[index])</b>
+&nbsp;fun GhostJsonStringReader.nextULong(): ULong {
+<b class="pc">&nbsp;    if (peekNextToken() == C.QUOTE_INT) {</b>
+<b class="nc">&nbsp;        return nextString().toULong()</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return index</b>
+<b class="fc">&nbsp;    return nextLong().toULong()</b>
 &nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.selectString(options: JsonReaderOptions): Int =
-<b class="fc">&nbsp;    internalSelect(options, consumeSeparator = false)</b>
+&nbsp;fun GhostJsonStringReader.nextFloat(): Float {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
 &nbsp;
-&nbsp;private fun GhostJsonStringReader.internalSelect(
-&nbsp;    options: JsonReaderOptions,
-&nbsp;    consumeSeparator: Boolean
-&nbsp;): Int {
-<b class="fc">&nbsp;    var token = peekNextToken()</b>
-<b class="fc">&nbsp;    if (token == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;        return -1</b>
+<b class="fc">&nbsp;    validateLeadingZero()</b>
+&nbsp;
+<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;    val result = parseJsonFloatingBodyCore(</b>
+<b class="fc">&nbsp;        precisionLimit = C.FLOAT_PRECISION_LIMIT,</b>
+<b class="fc">&nbsp;        getPosition = { position },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+<b class="fc">&nbsp;        parseExponentValue = { parseExponentValue() },</b>
+<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    ) { mantissa, exponent -&gt;
+<b class="fc">&nbsp;        finalizeParsedFloat(mantissa, exponent, isNegativeValue) { throwError(it) }</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    token = selectValidateCommas(token, consumeSeparator)</b>
-&nbsp;
-<b class="fc">&nbsp;    if (token != C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;        throwExpectedKeyOrStringError(consumeSeparator)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val start = position + 1</b>
-<b class="fc">&nbsp;    val charLimit = limit</b>
-<b class="fc">&nbsp;    val chars = rawChars</b>
-&nbsp;
-&nbsp;    // Optimistic in-order field match: compare the key against the predicted candidate in one
-&nbsp;    // pass, skipping findClosingQuote + hash + verify on a hit.
-<b class="fc">&nbsp;    val predicted = predictedFieldIndex</b>
-<b class="fc">&nbsp;    val candidates = options.rawChars</b>
-<b class="fc">&nbsp;    if (predicted &lt; candidates.size) {</b>
-<b class="fc">&nbsp;        val candidate = candidates[predicted]</b>
-<b class="fc">&nbsp;        val candidateLength = candidate.size</b>
-<b class="fc">&nbsp;        val keyEnd = start + candidateLength</b>
-<b class="pc">&nbsp;        if (candidateLength &gt; 0 &amp;&amp; keyEnd &lt; charLimit &amp;&amp; chars[keyEnd].code == C.QUOTE_INT) {</b>
-<b class="fc">&nbsp;            var matchedOffset = 0</b>
-<b class="fc">&nbsp;            while (matchedOffset + 3 &lt; candidateLength &amp;&amp;</b>
-<b class="fc">&nbsp;                chars[start + matchedOffset] == candidate[matchedOffset] &amp;&amp;</b>
-<b class="fc">&nbsp;                chars[start + matchedOffset + 1] == candidate[matchedOffset + 1] &amp;&amp;</b>
-<b class="fc">&nbsp;                chars[start + matchedOffset + 2] == candidate[matchedOffset + 2] &amp;&amp;</b>
-<b class="fc">&nbsp;                chars[start + matchedOffset + 3] == candidate[matchedOffset + 3]</b>
-&nbsp;            ) {
-<b class="fc">&nbsp;                matchedOffset += 4</b>
-&nbsp;            }
-<b class="fc">&nbsp;            while (matchedOffset &lt; candidateLength &amp;&amp;</b>
-<b class="fc">&nbsp;                chars[start + matchedOffset] == candidate[matchedOffset]</b>
-&nbsp;            ) {
-<b class="fc">&nbsp;                matchedOffset++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            if (matchedOffset == candidateLength) {</b>
-<b class="fc">&nbsp;                predictedFieldIndex = predicted + 1</b>
-<b class="fc">&nbsp;                val newPos = keyEnd + 1</b>
-<b class="fc">&nbsp;                position = newPos</b>
-<b class="fc">&nbsp;                nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;                if (consumeSeparator) {</b>
-<b class="pc">&nbsp;                    if (newPos &lt; charLimit &amp;&amp; chars[newPos].code == C.COLON_INT) {</b>
-<b class="fc">&nbsp;                        position = newPos + 1</b>
-&nbsp;                    } else {
-<b class="fc">&nbsp;                        consumeKeySeparator()</b>
-&nbsp;                    }
-&nbsp;                }
-<b class="fc">&nbsp;                return predicted</b>
-&nbsp;            }
-&nbsp;        }
+<b class="pc">&nbsp;    if (isQuoted) {</b>
+<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    val end = findClosingQuote(start, charLimit)</b>
-&nbsp;
-<b class="fc">&nbsp;    if (end == -1) {</b>
-<b class="fc">&nbsp;        throwUnterminatedStringError()</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    val length = end - start</b>
-<b class="fc">&nbsp;    val key = computeKeyHash(start, length, options.hasCollisions)</b>
-&nbsp;
-<b class="fc">&nbsp;    val dispatchTable = options.stringDispatch</b>
-<b class="fc">&nbsp;    val hasIndex =</b>
-<b class="fc">&nbsp;        ((key * options.multiplier + length) shr options.shift) and (dispatchTable.size - 1)</b>
-<b class="fc">&nbsp;    val index = dispatchTable[hasIndex]</b>
-&nbsp;
-<b class="fc">&nbsp;    if (index != C.MATCH_END) {</b>
-<b class="fc">&nbsp;        if (verifyKeyMatch(start, length, options.rawChars[index], consumeSeparator)) {</b>
-<b class="fc">&nbsp;            predictedFieldIndex = index + 1</b>
-<b class="fc">&nbsp;            return index</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return handleSelectNoMatch(start, end, consumeSeparator)</b>
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;    return result</b>
 &nbsp;}
 &nbsp;
-&nbsp;private fun GhostJsonStringReader.selectValidateCommas(token: Int, consumeSeparator: Boolean): Int =
-<b class="fc">&nbsp;    selectValidateCommasCore(</b>
-<b class="fc">&nbsp;        token = token,</b>
-<b class="fc">&nbsp;        consumeSeparator = consumeSeparator,</b>
-<b class="fc">&nbsp;        strictMode = strictMode,</b>
-<b class="fc">&nbsp;        depth = depth,</b>
-<b class="fc">&nbsp;        getNeedsCommaMask = { needsCommaMask },</b>
-<b class="fc">&nbsp;        setNeedsCommaMask = { needsCommaMask = it },</b>
-<b class="fc">&nbsp;        getCommaConsumedMask = { commaConsumedMask },</b>
-<b class="nc">&nbsp;        setCommaConsumedMask = { commaConsumedMask = it },</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        internalSkip = { internalSkip(it) },</b>
+&nbsp;fun GhostJsonStringReader.nextDouble(): Double {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    validateLeadingZero()</b>
+&nbsp;
+<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;    val result = parseJsonFloatingBodyCore(</b>
+<b class="fc">&nbsp;        precisionLimit = C.DOUBLE_PRECISION_LIMIT,</b>
+<b class="fc">&nbsp;        getPosition = { position },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+<b class="fc">&nbsp;        parseExponentValue = { parseExponentValue() },</b>
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
+&nbsp;    ) { mantissa, exponent -&gt;
+<b class="fc">&nbsp;        finalizeParsedDouble(mantissa, exponent, isNegativeValue) { throwError(it) }</b>
+&nbsp;    }
 &nbsp;
-&nbsp;private fun GhostJsonStringReader.handleSelectNoMatch(
-&nbsp;    start: Int,
-&nbsp;    end: Int,
-&nbsp;    consumeSeparator: Boolean,
-&nbsp;): Int =
-<b class="fc">&nbsp;    handleSelectNoMatchCore(</b>
-<b class="fc">&nbsp;        start = start,</b>
-<b class="fc">&nbsp;        end = end,</b>
-<b class="fc">&nbsp;        consumeSeparator = consumeSeparator,</b>
-<b class="fc">&nbsp;        strictMode = strictMode,</b>
+<b class="fc">&nbsp;    if (isQuoted) {</b>
+<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
+<b class="fc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostJsonStringReader.parseExponentValue(): Int =
+<b class="fc">&nbsp;    parseExponentValueCore(</b>
+<b class="fc">&nbsp;        startPosition = position,</b>
 <b class="fc">&nbsp;        limit = limit,</b>
 <b class="fc">&nbsp;        getByte = { getByte(it) },</b>
 <b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    )
+&nbsp;
+&nbsp;private fun GhostJsonStringReader.prepareNumericHeader(): Int =
+<b class="fc">&nbsp;    prepareNumericHeaderCore(</b>
+<b class="fc">&nbsp;        getNextTokenByte = { nextTokenByte },</b>
 <b class="fc">&nbsp;        setNextTokenByte = { nextTokenByte = it },</b>
-<b class="fc">&nbsp;        consumeKeySeparator = { consumeKeySeparator() },</b>
-<b class="fc">&nbsp;        decodeUnknownKey = { s, e -&gt; rawData.substring(s, e) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
-<b class="fc">&nbsp;    throwError(if (consumeSeparator) C.ERR_EXPECTED_KEY else C.ERR_EXPECTED_STRING)</b>
-&nbsp;}
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.throwUnterminatedStringError() {
-<b class="fc">&nbsp;    throwError(C.UNTERMINATED_STRING_ERROR)</b>
-&nbsp;}
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.computeKeyHash(
-&nbsp;    start: Int,
-&nbsp;    length: Int,
-&nbsp;    hasCollisions: Boolean,
-&nbsp;): Int =
-<b class="fc">&nbsp;    computeKeyHashCore(start, length, hasCollisions) { getByte(it) }</b>
-&nbsp;
-&nbsp;private inline fun GhostJsonStringReader.verifyKeyMatch(
-&nbsp;    start: Int,
-&nbsp;    length: Int,
-&nbsp;    expected: CharArray,
-&nbsp;    consumeSeparator: Boolean
-&nbsp;): Boolean {
-<b class="fc">&nbsp;    if (expected.size == length) {</b>
-<b class="fc">&nbsp;        val chars = rawChars</b>
-<b class="fc">&nbsp;        var index = 0</b>
-<b class="fc">&nbsp;        while (index + 3 &lt; length) {</b>
-<b class="fc">&nbsp;            if (chars[start + index] != expected[index]) return false</b>
-<b class="fc">&nbsp;            if (chars[start + index + 1] != expected[index + 1]) return false</b>
-<b class="fc">&nbsp;            if (chars[start + index + 2] != expected[index + 2]) return false</b>
-<b class="fc">&nbsp;            if (chars[start + index + 3] != expected[index + 3]) return false</b>
-<b class="fc">&nbsp;            index += 4</b>
-&nbsp;        }
-<b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="fc">&nbsp;            if (chars[start + index] != expected[index]) return false</b>
-<b class="fc">&nbsp;            index++</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val endPos = start + length</b>
-<b class="fc">&nbsp;        val newPos = endPos + C.SINGLE_CHAR_SIZE</b>
-<b class="fc">&nbsp;        position = newPos</b>
-<b class="fc">&nbsp;        nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;        if (consumeSeparator) {</b>
-<b class="pc">&nbsp;            if (newPos &lt; limit) {</b>
-<b class="fc">&nbsp;                val colonToken = chars[newPos].code</b>
-<b class="fc">&nbsp;                if (colonToken == C.COLON_INT) {</b>
-<b class="fc">&nbsp;                    position = newPos + C.SINGLE_CHAR_SIZE</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    consumeKeySeparator()</b>
-&nbsp;                }
-&nbsp;            } else {
-<b class="nc">&nbsp;                consumeKeySeparator()</b>
-&nbsp;            }
-&nbsp;        }
-<b class="fc">&nbsp;        return true</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return false</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.peekStringField(name: String): String? {
-<b class="fc">&nbsp;    return GhostDiscriminatorPeeker.peekChars(</b>
-<b class="fc">&nbsp;        chars = rawChars,</b>
-<b class="fc">&nbsp;        rawData = rawData,</b>
-<b class="fc">&nbsp;        start = position,</b>
+<b class="fc">&nbsp;        getPosition = { position },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
 <b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        key = name,</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = coerceStringsToNumbers,</b>
+<b class="fc">&nbsp;        skipWhitespace = { skipWhitespace() },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
-&nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.skipValue() {
-<b class="fc">&nbsp;    skipValueCore(</b>
-<b class="fc">&nbsp;        peekNextToken = { peekNextToken() },</b>
-<b class="fc">&nbsp;        beginObject = { beginObject() },</b>
-<b class="fc">&nbsp;        endObject = { endObject() },</b>
-<b class="fc">&nbsp;        beginArray = { beginArray() },</b>
-<b class="fc">&nbsp;        endArray = { endArray() },</b>
-<b class="fc">&nbsp;        hasNext = { hasNext() },</b>
-<b class="fc">&nbsp;        skipQuotedString = { skipQuotedString() },</b>
-<b class="fc">&nbsp;        consumeKeySeparator = { consumeKeySeparator() },</b>
-<b class="fc">&nbsp;        skipValue = { skipValue() },</b>
-<b class="fc">&nbsp;        skipAndValidateLiteral = { skipAndValidateLiteral(it) },</b>
-<b class="fc">&nbsp;        skipNumber = { skipNumber() },</b>
+&nbsp;private fun GhostJsonStringReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
+<b class="fc">&nbsp;    return parseIntDigitsCore(</b>
+<b class="fc">&nbsp;        isNegative = isNegative,</b>
+<b class="fc">&nbsp;        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },</b>
+<b class="fc">&nbsp;        getPosition = { position },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+&nbsp;        onNumericSeparator = {
+<b class="fc">&nbsp;            position = startOfNumber</b>
+<b class="fc">&nbsp;            nextDouble().toInt()</b>
+&nbsp;        },
 <b class="fc">&nbsp;        throwError = { throwError(it) },</b>
 &nbsp;    )
 &nbsp;}
 &nbsp;
-&nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readList(crossinline itemParser: () -&gt; T): List&lt;T&gt; {
-<b class="fc">&nbsp;    beginArray()</b>
-<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;        endArray()</b>
-<b class="fc">&nbsp;        return emptyList()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val list = ArrayList&lt;T&gt;(initialCollectionCapacity)</b>
-<b class="fc">&nbsp;    val maxSize = maxCollectionSize</b>
-&nbsp;
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
-<b class="fc">&nbsp;        list.add(itemParser())</b>
-<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
-<b class="fc">&nbsp;        if (next == C.CLOSE_ARR_INT) {</b>
-<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;                depth--</b>
-&nbsp;            }
-<b class="fc">&nbsp;            pathTracker.finishArrayValue()</b>
-&nbsp;            break
-&nbsp;        }
-<b class="fc">&nbsp;        if (next != C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next&quot;)</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (list.size &gt; maxSize) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return list</b>
+&nbsp;private fun GhostJsonStringReader.parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
+<b class="fc">&nbsp;    return parseLongDigitsCore(</b>
+<b class="fc">&nbsp;        isNegative = isNegative,</b>
+<b class="fc">&nbsp;        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },</b>
+<b class="fc">&nbsp;        getPosition = { position },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+&nbsp;        onNumericSeparator = {
+<b class="nc">&nbsp;            position = startOfNumber</b>
+<b class="nc">&nbsp;            nextDouble().toLong()</b>
+&nbsp;        },
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    )
 &nbsp;}
 &nbsp;
-&nbsp;inline fun &lt;T&gt; GhostJsonStringReader.readSet(crossinline itemParser: () -&gt; T): Set&lt;T&gt; {
-<b class="fc">&nbsp;    beginArray()</b>
-<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_ARR_INT) {</b>
-<b class="fc">&nbsp;        endArray()</b>
-<b class="fc">&nbsp;        return emptySet()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val set = HashSet&lt;T&gt;(initialCollectionCapacity)</b>
-<b class="fc">&nbsp;    val maxSize = maxCollectionSize</b>
-&nbsp;
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;        pathTracker.enterArrayElement()</b>
-<b class="fc">&nbsp;        set.add(itemParser())</b>
-<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
-<b class="fc">&nbsp;        if (next == C.CLOSE_ARR_INT) {</b>
-<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;                depth--</b>
-&nbsp;            }
-<b class="fc">&nbsp;            pathTracker.finishArrayValue()</b>
-&nbsp;            break
-&nbsp;        }
-<b class="pc">&nbsp;        if (next != C.COMMA_INT) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next&quot;)</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (set.size &gt; maxSize) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return set</b>
+&nbsp;private inline fun GhostJsonStringReader.consumeNumericCoercionFooter() {
+<b class="fc">&nbsp;    consumeNumericCoercionFooterCore(</b>
+<b class="fc">&nbsp;        position = position,</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;        afterQuote = {
+<b class="fc">&nbsp;            internalSkip(1)</b>
+<b class="fc">&nbsp;            skipWhitespace()</b>
+<b class="fc">&nbsp;        },</b>
+&nbsp;    )
 &nbsp;}
 &nbsp;
-&nbsp;inline fun &lt;K, V&gt; GhostJsonStringReader.readMap(
-&nbsp;    crossinline keyParser: () -&gt; K,
-&nbsp;    crossinline valueParser: () -&gt; V
-&nbsp;): Map&lt;K, V&gt; {
-<b class="fc">&nbsp;    beginObject()</b>
-<b class="fc">&nbsp;    if (peekNextToken() == C.CLOSE_OBJ_INT) {</b>
-<b class="fc">&nbsp;        endObject()</b>
-<b class="fc">&nbsp;        return emptyMap()</b>
+&nbsp;private fun GhostJsonStringReader.validateLeadingZero() {
+<b class="fc">&nbsp;    validateLeadingZeroCore(</b>
+<b class="fc">&nbsp;        position = position,</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;fun GhostJsonStringReader.skipNumber() {
+<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
+<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
+&nbsp;
+<b class="fc">&nbsp;    skipNumberBodyCore(</b>
+<b class="fc">&nbsp;        getPosition = { position },</b>
+<b class="fc">&nbsp;        setPosition = { position = it },</b>
+<b class="fc">&nbsp;        limit = limit,</b>
+<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
+<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
+&nbsp;    )
+&nbsp;
+<b class="pc">&nbsp;    if (isQuoted) {</b>
+<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
 &nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    val map = HashMap&lt;K, V&gt;(initialCollectionCapacity)</b>
-<b class="fc">&nbsp;    val maxSize = maxCollectionSize</b>
-&nbsp;
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;        val key = keyParser()</b>
-<b class="fc">&nbsp;        consumeKeySeparator()</b>
-<b class="fc">&nbsp;        val value = valueParser()</b>
-<b class="fc">&nbsp;        map[key] = value</b>
-&nbsp;
-<b class="fc">&nbsp;        val next = nextNonWhitespace()</b>
-<b class="fc">&nbsp;        if (next == C.CLOSE_OBJ_INT) {</b>
-<b class="pc">&nbsp;            if (depth &gt; 0) {</b>
-<b class="fc">&nbsp;                depth--</b>
-&nbsp;            }
-<b class="fc">&nbsp;            pathTracker.finishObjectValue()</b>
-&nbsp;            break
-&nbsp;        }
-<b class="fc">&nbsp;        if (next != C.COMMA_INT) {</b>
-<b class="fc">&nbsp;            throwError(&quot;${C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ} but found $next&quot;)</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (depth &lt; C.MAX_BITMASK_DEPTH) {</b>
-<b class="fc">&nbsp;            val bit = C.BITMASK_UNIT shl depth</b>
-<b class="fc">&nbsp;            commaConsumedMask = commaConsumedMask and bit.inv()</b>
-<b class="fc">&nbsp;            needsCommaMask = needsCommaMask or bit</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (map.size &gt; maxSize) {</b>
-<b class="nc">&nbsp;            throwError(&quot;${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)&quot;)</b>
-&nbsp;        }
-&nbsp;    }
-<b class="fc">&nbsp;    return map</b>
+<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
 &nbsp;}
 </code>
 </pre>
@@ -765,7 +333,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

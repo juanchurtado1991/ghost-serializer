@@ -141,42 +141,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import kotlin.reflect.KClass
 &nbsp;
 &nbsp;/**
-&nbsp; * Registry interface for discovering and managing compiler-generated and custom serializers.
-&nbsp; *
-&nbsp; * Implementations are typically generated automatically as module-level registries
-&nbsp; * by the Ghost compiler plugin, allowing reflection-free lookup of serializers
-&nbsp; * across all targets in a Kotlin Multiplatform project.
+&nbsp; * Discovers compiler-generated and custom serializers. Implementations are generated
+&nbsp; * per-module by the Ghost compiler plugin for reflection-free lookup across KMP targets.
 &nbsp; */
 &nbsp;interface GhostRegistry {
-&nbsp;    /**
-&nbsp;     * Resolves a [GhostSerializer] instance for the given [clazz].
-&nbsp;     *
-&nbsp;     * @param clazz The [KClass] of the type to retrieve the serializer for.
-&nbsp;     * @return The [GhostSerializer] corresponding to [clazz], or `null` if not registered in this module.
-&nbsp;     */
+&nbsp;    /** Resolves the [GhostSerializer] for [clazz], or `null` if unregistered in this module. */
 &nbsp;    fun &lt;T : Any&gt; getSerializer(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;?
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Deep Prewarm Support: Returns all serializers registered in this module.
-&nbsp;     * Ghost uses this for eager loading and zero-latency first-runs.
-&nbsp;     *
-&nbsp;     * @return A map of [KClass] to its corresponding [GhostSerializer].
-&nbsp;     */
+&nbsp;    /** All serializers registered in this module, for eager loading / zero-latency first-runs. */
 <b class="pc">&nbsp;    fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = emptyMap()</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Eagerly initializes registry entries and prepares internal components to avoid
-&nbsp;     * first-use JIT/warm-up latency on critical paths.
-&nbsp;     */
+&nbsp;    /** Eagerly initializes registry entries to avoid first-use JIT warm-up latency. */
 <b class="nc">&nbsp;    fun prewarm() {</b>
 &nbsp;        // Default no-op.
 <b class="fc">&nbsp;    }</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Returns the total number of serializers registered in this registry.
-&nbsp;     *
-&nbsp;     * @return The count of registered serializers.
-&nbsp;     */
+&nbsp;    /** Total number of serializers registered in this registry. */
 <b class="nc">&nbsp;    fun registeredCount(): Int = 0</b>
 &nbsp;}
 </code>
@@ -202,7 +182,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

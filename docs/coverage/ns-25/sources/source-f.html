@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostIgnore</title>
+  <title>GhostSerialization Coverage Report > GhostName</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostIgnore (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostName (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostIgnore</td>
+  <td class="name">GhostName</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,14 +47,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Indicates that the annotated property should be ignored during serialization and deserialization.
+&nbsp; * Customizes the wire key for the annotated property, overriding the default Kotlin property
+&nbsp; * name on every generated path: **JSON**, **proto3 JSON** ([GhostProtoSerialization]), and
+&nbsp; * **YAML** ([GhostYamlSerialization]).
 &nbsp; *
-&nbsp; * Ignored properties are omitted on every generated path where the enclosing model is serialized:
-&nbsp; * **JSON**, **proto3 JSON** ([GhostProtoSerialization]), and **YAML** ([GhostYamlSerialization]).
+&nbsp; * @property name The custom key name on the wire.
 &nbsp; */
 &nbsp;@Target(AnnotationTarget.PROPERTY)
 &nbsp;@Retention(AnnotationRetention.SOURCE)
-&nbsp;annotation class GhostIgnore
+&nbsp;annotation class GhostName(val name: String)
 </code>
 </pre>
 </div>
@@ -78,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -49,34 +49,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">WideModelSerializer</td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    66.7%
   </span>
   <span class="absValue">
-    (18/24)
+    (14/21)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    37.2%
+    24.8%
   </span>
   <span class="absValue">
-    (204/549)
+    (136/549)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63.2%
+    50.9%
   </span>
   <span class="absValue">
-    (779/1233)
+    (596/1171)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    53.4%
+    42.2%
   </span>
   <span class="absValue">
-    (3647/6834)
+    (2733/6471)
   </span>
 </td>
 </tr>
@@ -112,34 +112,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    92.6%
+    91%
   </span>
   <span class="absValue">
-    (75/81)
+    (71/78)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    37.2%
+    24.8%
   </span>
   <span class="absValue">
-    (204/549)
+    (136/549)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    64.8%
+    53.2%
   </span>
   <span class="absValue">
-    (836/1290)
+    (653/1228)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    55.2%
+    44.6%
   </span>
   <span class="absValue">
-    (3929/7116)
+    (3015/6753)
   </span>
 </td>
 </tr>
@@ -170,7 +170,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.nextString
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import okio.ByteString
@@ -1015,166 +1014,166 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    ctx: DecodingContext,
 &nbsp;    index: Int,
 &nbsp;  ) {
-<b class="pc">&nbsp;    when (index) {</b>
+<b class="nc">&nbsp;    when (index) {</b>
 &nbsp;      0 -&gt; {
-<b class="fc">&nbsp;        ctx.f01 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F01</b>
+<b class="nc">&nbsp;        ctx.f01 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F01</b>
 &nbsp;      }
 &nbsp;      1 -&gt; {
-<b class="fc">&nbsp;        ctx.f02 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F02</b>
+<b class="nc">&nbsp;        ctx.f02 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F02</b>
 &nbsp;      }
 &nbsp;      2 -&gt; {
-<b class="fc">&nbsp;        ctx.f03 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F03</b>
+<b class="nc">&nbsp;        ctx.f03 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F03</b>
 &nbsp;      }
 &nbsp;      3 -&gt; {
-<b class="fc">&nbsp;        ctx.f04 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F04</b>
+<b class="nc">&nbsp;        ctx.f04 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F04</b>
 &nbsp;      }
 &nbsp;      4 -&gt; {
-<b class="fc">&nbsp;        ctx.f05 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F05</b>
+<b class="nc">&nbsp;        ctx.f05 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F05</b>
 &nbsp;      }
 &nbsp;      5 -&gt; {
-<b class="fc">&nbsp;        ctx.f06 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F06</b>
+<b class="nc">&nbsp;        ctx.f06 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F06</b>
 &nbsp;      }
 &nbsp;      6 -&gt; {
-<b class="fc">&nbsp;        ctx.f07 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F07</b>
+<b class="nc">&nbsp;        ctx.f07 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F07</b>
 &nbsp;      }
 &nbsp;      7 -&gt; {
-<b class="fc">&nbsp;        ctx.f08 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F08</b>
+<b class="nc">&nbsp;        ctx.f08 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F08</b>
 &nbsp;      }
 &nbsp;      8 -&gt; {
-<b class="fc">&nbsp;        ctx.f09 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F09</b>
+<b class="nc">&nbsp;        ctx.f09 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F09</b>
 &nbsp;      }
 &nbsp;      9 -&gt; {
-<b class="fc">&nbsp;        ctx.f10 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F10</b>
+<b class="nc">&nbsp;        ctx.f10 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F10</b>
 &nbsp;      }
 &nbsp;      10 -&gt; {
-<b class="fc">&nbsp;        ctx.f11 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F11</b>
+<b class="nc">&nbsp;        ctx.f11 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F11</b>
 &nbsp;      }
 &nbsp;      11 -&gt; {
-<b class="fc">&nbsp;        ctx.f12 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F12</b>
+<b class="nc">&nbsp;        ctx.f12 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F12</b>
 &nbsp;      }
 &nbsp;      12 -&gt; {
-<b class="fc">&nbsp;        ctx.f13 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F13</b>
+<b class="nc">&nbsp;        ctx.f13 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F13</b>
 &nbsp;      }
 &nbsp;      13 -&gt; {
-<b class="fc">&nbsp;        ctx.f14 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F14</b>
+<b class="nc">&nbsp;        ctx.f14 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F14</b>
 &nbsp;      }
 &nbsp;      14 -&gt; {
-<b class="fc">&nbsp;        ctx.f15 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F15</b>
+<b class="nc">&nbsp;        ctx.f15 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F15</b>
 &nbsp;      }
 &nbsp;      15 -&gt; {
-<b class="fc">&nbsp;        ctx.f16 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F16</b>
+<b class="nc">&nbsp;        ctx.f16 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F16</b>
 &nbsp;      }
 &nbsp;      16 -&gt; {
-<b class="fc">&nbsp;        ctx.f17 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F17</b>
+<b class="nc">&nbsp;        ctx.f17 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F17</b>
 &nbsp;      }
 &nbsp;      17 -&gt; {
-<b class="fc">&nbsp;        ctx.f18 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F18</b>
+<b class="nc">&nbsp;        ctx.f18 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F18</b>
 &nbsp;      }
 &nbsp;      18 -&gt; {
-<b class="fc">&nbsp;        ctx.f19 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F19</b>
+<b class="nc">&nbsp;        ctx.f19 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F19</b>
 &nbsp;      }
 &nbsp;      19 -&gt; {
-<b class="fc">&nbsp;        ctx.f20 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F20</b>
+<b class="nc">&nbsp;        ctx.f20 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F20</b>
 &nbsp;      }
 &nbsp;      20 -&gt; {
-<b class="fc">&nbsp;        ctx.f21 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F21</b>
+<b class="nc">&nbsp;        ctx.f21 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F21</b>
 &nbsp;      }
 &nbsp;      21 -&gt; {
-<b class="fc">&nbsp;        ctx.f22 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F22</b>
+<b class="nc">&nbsp;        ctx.f22 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F22</b>
 &nbsp;      }
 &nbsp;      22 -&gt; {
-<b class="fc">&nbsp;        ctx.f23 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F23</b>
+<b class="nc">&nbsp;        ctx.f23 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F23</b>
 &nbsp;      }
 &nbsp;      23 -&gt; {
-<b class="fc">&nbsp;        ctx.f24 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F24</b>
+<b class="nc">&nbsp;        ctx.f24 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F24</b>
 &nbsp;      }
 &nbsp;      24 -&gt; {
-<b class="fc">&nbsp;        ctx.f25 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F25</b>
+<b class="nc">&nbsp;        ctx.f25 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F25</b>
 &nbsp;      }
 &nbsp;      25 -&gt; {
-<b class="fc">&nbsp;        ctx.f26 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F26</b>
+<b class="nc">&nbsp;        ctx.f26 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F26</b>
 &nbsp;      }
 &nbsp;      26 -&gt; {
-<b class="fc">&nbsp;        ctx.f27 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F27</b>
+<b class="nc">&nbsp;        ctx.f27 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F27</b>
 &nbsp;      }
 &nbsp;      27 -&gt; {
-<b class="fc">&nbsp;        ctx.f28 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F28</b>
+<b class="nc">&nbsp;        ctx.f28 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F28</b>
 &nbsp;      }
 &nbsp;      28 -&gt; {
-<b class="fc">&nbsp;        ctx.f29 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F29</b>
+<b class="nc">&nbsp;        ctx.f29 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F29</b>
 &nbsp;      }
 &nbsp;      29 -&gt; {
-<b class="fc">&nbsp;        ctx.f30 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F30</b>
+<b class="nc">&nbsp;        ctx.f30 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F30</b>
 &nbsp;      }
 &nbsp;      30 -&gt; {
-<b class="fc">&nbsp;        ctx.f31 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F31</b>
+<b class="nc">&nbsp;        ctx.f31 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F31</b>
 &nbsp;      }
 &nbsp;      31 -&gt; {
-<b class="fc">&nbsp;        ctx.f32 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F32</b>
+<b class="nc">&nbsp;        ctx.f32 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F32</b>
 &nbsp;      }
 &nbsp;      32 -&gt; {
-<b class="fc">&nbsp;        ctx.f33 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F33</b>
+<b class="nc">&nbsp;        ctx.f33 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F33</b>
 &nbsp;      }
 &nbsp;      33 -&gt; {
-<b class="fc">&nbsp;        ctx.f34 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F34</b>
+<b class="nc">&nbsp;        ctx.f34 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F34</b>
 &nbsp;      }
 &nbsp;      34 -&gt; {
-<b class="fc">&nbsp;        ctx.f35 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F35</b>
+<b class="nc">&nbsp;        ctx.f35 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F35</b>
 &nbsp;      }
 &nbsp;      35 -&gt; {
-<b class="fc">&nbsp;        ctx.f36 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F36</b>
+<b class="nc">&nbsp;        ctx.f36 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F36</b>
 &nbsp;      }
 &nbsp;      36 -&gt; {
-<b class="fc">&nbsp;        ctx.f37 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F37</b>
+<b class="nc">&nbsp;        ctx.f37 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F37</b>
 &nbsp;      }
 &nbsp;      37 -&gt; {
-<b class="fc">&nbsp;        ctx.f38 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F38</b>
+<b class="nc">&nbsp;        ctx.f38 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F38</b>
 &nbsp;      }
 &nbsp;      38 -&gt; {
-<b class="fc">&nbsp;        ctx.f39 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F39</b>
+<b class="nc">&nbsp;        ctx.f39 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F39</b>
 &nbsp;      }
 &nbsp;      39 -&gt; {
-<b class="fc">&nbsp;        ctx.f40 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F40</b>
+<b class="nc">&nbsp;        ctx.f40 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F40</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
@@ -1184,72 +1183,72 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    ctx: DecodingContext,
 &nbsp;    index: Int,
 &nbsp;  ) {
-<b class="pc">&nbsp;    when (index) {</b>
+<b class="nc">&nbsp;    when (index) {</b>
 &nbsp;      40 -&gt; {
-<b class="fc">&nbsp;        ctx.f41 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F41</b>
+<b class="nc">&nbsp;        ctx.f41 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F41</b>
 &nbsp;      }
 &nbsp;      41 -&gt; {
-<b class="fc">&nbsp;        ctx.f42 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F42</b>
+<b class="nc">&nbsp;        ctx.f42 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F42</b>
 &nbsp;      }
 &nbsp;      42 -&gt; {
-<b class="fc">&nbsp;        ctx.f43 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F43</b>
+<b class="nc">&nbsp;        ctx.f43 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F43</b>
 &nbsp;      }
 &nbsp;      43 -&gt; {
-<b class="fc">&nbsp;        ctx.f44 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F44</b>
+<b class="nc">&nbsp;        ctx.f44 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F44</b>
 &nbsp;      }
 &nbsp;      44 -&gt; {
-<b class="fc">&nbsp;        ctx.f45 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F45</b>
+<b class="nc">&nbsp;        ctx.f45 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F45</b>
 &nbsp;      }
 &nbsp;      45 -&gt; {
-<b class="fc">&nbsp;        ctx.f46 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F46</b>
+<b class="nc">&nbsp;        ctx.f46 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F46</b>
 &nbsp;      }
 &nbsp;      46 -&gt; {
-<b class="fc">&nbsp;        ctx.f47 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F47</b>
+<b class="nc">&nbsp;        ctx.f47 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F47</b>
 &nbsp;      }
 &nbsp;      47 -&gt; {
-<b class="fc">&nbsp;        ctx.f48 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F48</b>
+<b class="nc">&nbsp;        ctx.f48 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F48</b>
 &nbsp;      }
 &nbsp;      48 -&gt; {
-<b class="fc">&nbsp;        ctx.f49 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F49</b>
+<b class="nc">&nbsp;        ctx.f49 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F49</b>
 &nbsp;      }
 &nbsp;      49 -&gt; {
-<b class="fc">&nbsp;        ctx.f50 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F50</b>
+<b class="nc">&nbsp;        ctx.f50 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F50</b>
 &nbsp;      }
 &nbsp;      50 -&gt; {
-<b class="fc">&nbsp;        ctx.f51 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F51</b>
+<b class="nc">&nbsp;        ctx.f51 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F51</b>
 &nbsp;      }
 &nbsp;      51 -&gt; {
-<b class="fc">&nbsp;        ctx.f52 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F52</b>
+<b class="nc">&nbsp;        ctx.f52 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F52</b>
 &nbsp;      }
 &nbsp;      52 -&gt; {
-<b class="fc">&nbsp;        ctx.f53 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F53</b>
+<b class="nc">&nbsp;        ctx.f53 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F53</b>
 &nbsp;      }
 &nbsp;      53 -&gt; {
-<b class="fc">&nbsp;        ctx.f54 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F54</b>
+<b class="nc">&nbsp;        ctx.f54 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F54</b>
 &nbsp;      }
 &nbsp;      54 -&gt; {
-<b class="fc">&nbsp;        ctx.f55 = reader.nextString()</b>
-<b class="fc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F55</b>
+<b class="nc">&nbsp;        ctx.f55 = reader.nextString()</b>
+<b class="nc">&nbsp;        ctx.mask0 = ctx.mask0 or MASK_F55</b>
 &nbsp;      }
 &nbsp;    }
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun validateRequiredFields(ctx: DecodingContext, reader: GhostJsonFlatReader) {
-<b class="pc">&nbsp;    if ((ctx.mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
+<b class="nc">&nbsp;    if ((ctx.mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0) {</b>
 <b class="nc">&nbsp;      if ((ctx.mask0 and MASK_F01) == 0L) {</b>
 <b class="nc">&nbsp;        reader.throwMissingRequiredField(&quot;f01&quot;)</b>
 <b class="nc">&nbsp;      } else if ((ctx.mask0 and MASK_F02) == 0L) {</b>
@@ -1368,79 +1367,79 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [WideModel].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): WideModel {
-<b class="fc">&nbsp;    val ctx = DecodingContext()</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="fc">&nbsp;      when (index) {</b>
-<b class="fc">&nbsp;        in 0..39 -&gt; decodeChunk0(reader, ctx, index)</b>
-<b class="pc">&nbsp;        in 40..54 -&gt; decodeChunk1(reader, ctx, index)</b>
-<b class="pc">&nbsp;        -1 -&gt; break</b>
+<b class="nc">&nbsp;    val ctx = DecodingContext()</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;        in 0..39 -&gt; decodeChunk0(reader, ctx, index)</b>
+<b class="nc">&nbsp;        in 40..54 -&gt; decodeChunk1(reader, ctx, index)</b>
+<b class="nc">&nbsp;        -1 -&gt; break</b>
 <b class="nc">&nbsp;        -2 -&gt; {</b>
 <b class="nc">&nbsp;          reader.skipValue()</b>
 &nbsp;        }
 &nbsp;      }
 &nbsp;    }
-<b class="fc">&nbsp;    validateRequiredFields(ctx, reader)</b>
-<b class="fc">&nbsp;    reader.endObject()</b>
-<b class="fc">&nbsp;    val result = WideModel(</b>
-<b class="fc">&nbsp;      f01 = ctx.f01!!,</b>
-<b class="fc">&nbsp;      f02 = ctx.f02!!,</b>
-<b class="fc">&nbsp;      f03 = ctx.f03!!,</b>
-<b class="fc">&nbsp;      f04 = ctx.f04!!,</b>
-<b class="fc">&nbsp;      f05 = ctx.f05!!,</b>
-<b class="fc">&nbsp;      f06 = ctx.f06!!,</b>
-<b class="fc">&nbsp;      f07 = ctx.f07!!,</b>
-<b class="fc">&nbsp;      f08 = ctx.f08!!,</b>
-<b class="fc">&nbsp;      f09 = ctx.f09!!,</b>
-<b class="fc">&nbsp;      f10 = ctx.f10!!,</b>
-<b class="fc">&nbsp;      f11 = ctx.f11!!,</b>
-<b class="fc">&nbsp;      f12 = ctx.f12!!,</b>
-<b class="fc">&nbsp;      f13 = ctx.f13!!,</b>
-<b class="fc">&nbsp;      f14 = ctx.f14!!,</b>
-<b class="fc">&nbsp;      f15 = ctx.f15!!,</b>
-<b class="fc">&nbsp;      f16 = ctx.f16!!,</b>
-<b class="fc">&nbsp;      f17 = ctx.f17!!,</b>
-<b class="fc">&nbsp;      f18 = ctx.f18!!,</b>
-<b class="fc">&nbsp;      f19 = ctx.f19!!,</b>
-<b class="fc">&nbsp;      f20 = ctx.f20!!,</b>
-<b class="fc">&nbsp;      f21 = ctx.f21!!,</b>
-<b class="fc">&nbsp;      f22 = ctx.f22!!,</b>
-<b class="fc">&nbsp;      f23 = ctx.f23!!,</b>
-<b class="fc">&nbsp;      f24 = ctx.f24!!,</b>
-<b class="fc">&nbsp;      f25 = ctx.f25!!,</b>
-<b class="fc">&nbsp;      f26 = ctx.f26!!,</b>
-<b class="fc">&nbsp;      f27 = ctx.f27!!,</b>
-<b class="fc">&nbsp;      f28 = ctx.f28!!,</b>
-<b class="fc">&nbsp;      f29 = ctx.f29!!,</b>
-<b class="fc">&nbsp;      f30 = ctx.f30!!,</b>
-<b class="fc">&nbsp;      f31 = ctx.f31!!,</b>
-<b class="fc">&nbsp;      f32 = ctx.f32!!,</b>
-<b class="fc">&nbsp;      f33 = ctx.f33!!,</b>
-<b class="fc">&nbsp;      f34 = ctx.f34!!,</b>
-<b class="fc">&nbsp;      f35 = ctx.f35!!,</b>
-<b class="fc">&nbsp;      f36 = ctx.f36!!,</b>
-<b class="fc">&nbsp;      f37 = ctx.f37!!,</b>
-<b class="fc">&nbsp;      f38 = ctx.f38!!,</b>
-<b class="fc">&nbsp;      f39 = ctx.f39!!,</b>
-<b class="fc">&nbsp;      f40 = ctx.f40!!,</b>
-<b class="fc">&nbsp;      f41 = ctx.f41!!,</b>
-<b class="fc">&nbsp;      f42 = ctx.f42!!,</b>
-<b class="fc">&nbsp;      f43 = ctx.f43!!,</b>
-<b class="fc">&nbsp;      f44 = ctx.f44!!,</b>
-<b class="fc">&nbsp;      f45 = ctx.f45!!,</b>
-<b class="fc">&nbsp;      f46 = ctx.f46!!,</b>
-<b class="fc">&nbsp;      f47 = ctx.f47!!,</b>
-<b class="fc">&nbsp;      f48 = ctx.f48!!,</b>
-<b class="fc">&nbsp;      f49 = ctx.f49!!,</b>
-<b class="fc">&nbsp;      f50 = ctx.f50!!,</b>
-<b class="fc">&nbsp;      f51 = ctx.f51!!,</b>
-<b class="fc">&nbsp;      f52 = ctx.f52!!,</b>
-<b class="fc">&nbsp;      f53 = ctx.f53!!,</b>
-<b class="fc">&nbsp;      f54 = ctx.f54!!,</b>
-<b class="fc">&nbsp;      f55 = ctx.f55!!,</b>
+<b class="nc">&nbsp;    validateRequiredFields(ctx, reader)</b>
+<b class="nc">&nbsp;    reader.endObject()</b>
+<b class="nc">&nbsp;    val result = WideModel(</b>
+<b class="nc">&nbsp;      f01 = ctx.f01!!,</b>
+<b class="nc">&nbsp;      f02 = ctx.f02!!,</b>
+<b class="nc">&nbsp;      f03 = ctx.f03!!,</b>
+<b class="nc">&nbsp;      f04 = ctx.f04!!,</b>
+<b class="nc">&nbsp;      f05 = ctx.f05!!,</b>
+<b class="nc">&nbsp;      f06 = ctx.f06!!,</b>
+<b class="nc">&nbsp;      f07 = ctx.f07!!,</b>
+<b class="nc">&nbsp;      f08 = ctx.f08!!,</b>
+<b class="nc">&nbsp;      f09 = ctx.f09!!,</b>
+<b class="nc">&nbsp;      f10 = ctx.f10!!,</b>
+<b class="nc">&nbsp;      f11 = ctx.f11!!,</b>
+<b class="nc">&nbsp;      f12 = ctx.f12!!,</b>
+<b class="nc">&nbsp;      f13 = ctx.f13!!,</b>
+<b class="nc">&nbsp;      f14 = ctx.f14!!,</b>
+<b class="nc">&nbsp;      f15 = ctx.f15!!,</b>
+<b class="nc">&nbsp;      f16 = ctx.f16!!,</b>
+<b class="nc">&nbsp;      f17 = ctx.f17!!,</b>
+<b class="nc">&nbsp;      f18 = ctx.f18!!,</b>
+<b class="nc">&nbsp;      f19 = ctx.f19!!,</b>
+<b class="nc">&nbsp;      f20 = ctx.f20!!,</b>
+<b class="nc">&nbsp;      f21 = ctx.f21!!,</b>
+<b class="nc">&nbsp;      f22 = ctx.f22!!,</b>
+<b class="nc">&nbsp;      f23 = ctx.f23!!,</b>
+<b class="nc">&nbsp;      f24 = ctx.f24!!,</b>
+<b class="nc">&nbsp;      f25 = ctx.f25!!,</b>
+<b class="nc">&nbsp;      f26 = ctx.f26!!,</b>
+<b class="nc">&nbsp;      f27 = ctx.f27!!,</b>
+<b class="nc">&nbsp;      f28 = ctx.f28!!,</b>
+<b class="nc">&nbsp;      f29 = ctx.f29!!,</b>
+<b class="nc">&nbsp;      f30 = ctx.f30!!,</b>
+<b class="nc">&nbsp;      f31 = ctx.f31!!,</b>
+<b class="nc">&nbsp;      f32 = ctx.f32!!,</b>
+<b class="nc">&nbsp;      f33 = ctx.f33!!,</b>
+<b class="nc">&nbsp;      f34 = ctx.f34!!,</b>
+<b class="nc">&nbsp;      f35 = ctx.f35!!,</b>
+<b class="nc">&nbsp;      f36 = ctx.f36!!,</b>
+<b class="nc">&nbsp;      f37 = ctx.f37!!,</b>
+<b class="nc">&nbsp;      f38 = ctx.f38!!,</b>
+<b class="nc">&nbsp;      f39 = ctx.f39!!,</b>
+<b class="nc">&nbsp;      f40 = ctx.f40!!,</b>
+<b class="nc">&nbsp;      f41 = ctx.f41!!,</b>
+<b class="nc">&nbsp;      f42 = ctx.f42!!,</b>
+<b class="nc">&nbsp;      f43 = ctx.f43!!,</b>
+<b class="nc">&nbsp;      f44 = ctx.f44!!,</b>
+<b class="nc">&nbsp;      f45 = ctx.f45!!,</b>
+<b class="nc">&nbsp;      f46 = ctx.f46!!,</b>
+<b class="nc">&nbsp;      f47 = ctx.f47!!,</b>
+<b class="nc">&nbsp;      f48 = ctx.f48!!,</b>
+<b class="nc">&nbsp;      f49 = ctx.f49!!,</b>
+<b class="nc">&nbsp;      f50 = ctx.f50!!,</b>
+<b class="nc">&nbsp;      f51 = ctx.f51!!,</b>
+<b class="nc">&nbsp;      f52 = ctx.f52!!,</b>
+<b class="nc">&nbsp;      f53 = ctx.f53!!,</b>
+<b class="nc">&nbsp;      f54 = ctx.f54!!,</b>
+<b class="nc">&nbsp;      f55 = ctx.f55!!,</b>
 &nbsp;    )
-<b class="fc">&nbsp;    return result</b>
+<b class="nc">&nbsp;    return result</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  private fun decodeChunk0(
@@ -1944,74 +1943,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  private fun serializeChunk0_GhostJsonFlatWriter(writer: GhostJsonFlatWriter, `value`: WideModel) {
-<b class="nc">&nbsp;    writer.writeField(H_F01, value.f01)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F02, value.f02)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F03, value.f03)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F04, value.f04)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F05, value.f05)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F06, value.f06)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F07, value.f07)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F08, value.f08)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F09, value.f09)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F10, value.f10)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F11, value.f11)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F12, value.f12)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F13, value.f13)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F14, value.f14)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F15, value.f15)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F16, value.f16)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F17, value.f17)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F18, value.f18)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F19, value.f19)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F20, value.f20)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F21, value.f21)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F22, value.f22)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F23, value.f23)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F24, value.f24)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F25, value.f25)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F26, value.f26)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F27, value.f27)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F28, value.f28)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F29, value.f29)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F30, value.f30)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F31, value.f31)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F32, value.f32)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F33, value.f33)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F34, value.f34)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F35, value.f35)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F36, value.f36)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F37, value.f37)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F38, value.f38)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F39, value.f39)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F40, value.f40)</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  private fun serializeChunk1_GhostJsonFlatWriter(writer: GhostJsonFlatWriter, `value`: WideModel) {
-<b class="nc">&nbsp;    writer.writeField(H_F41, value.f41)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F42, value.f42)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F43, value.f43)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F44, value.f44)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F45, value.f45)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F46, value.f46)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F47, value.f47)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F48, value.f48)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F49, value.f49)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F50, value.f50)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F51, value.f51)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F52, value.f52)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F53, value.f53)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F54, value.f54)</b>
-<b class="nc">&nbsp;    writer.writeField(H_F55, value.f55)</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: WideModel) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    serializeChunk0_GhostJsonFlatWriter(writer, value)</b>
-<b class="nc">&nbsp;    serializeChunk1_GhostJsonFlatWriter(writer, value)</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  private fun serializeChunk0_GhostJsonStringWriter(writer: GhostJsonStringWriter, `value`: WideModel) {
 <b class="fc">&nbsp;    writer.writeField(HS_F01, value.f01)</b>
 <b class="fc">&nbsp;    writer.writeField(HS_F02, value.f02)</b>
@@ -2086,13 +2017,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;f01\&quot;:\&quot;\&quot;,\&quot;f02\&quot;:\&quot;\&quot;,\&quot;f03\&quot;:\&quot;\&quot;,\&quot;f04\&quot;:\&quot;\&quot;,\&quot;f05\&quot;:\&quot;\&quot;,\&quot;f06\&quot;:\&quot;\&quot;,\&quot;f07\&quot;:\&quot;\&quot;,\&quot;f08\&quot;:\&quot;\&quot;,\&quot;f09\&quot;:\&quot;\&quot;,\&quot;f10\&quot;:\&quot;\&quot;,\&quot;f11\&quot;:\&quot;\&quot;,\&quot;f12\&quot;:\&quot;\&quot;,\&quot;f13\&quot;:\&quot;\&quot;,\&quot;f14\&quot;:\&quot;\&quot;,\&quot;f15\&quot;:\&quot;\&quot;,\&quot;f16\&quot;:\&quot;\&quot;,\&quot;f17\&quot;:\&quot;\&quot;,\&quot;f18\&quot;:\&quot;\&quot;,\&quot;f19\&quot;:\&quot;\&quot;,\&quot;f20\&quot;:\&quot;\&quot;,\&quot;f21\&quot;:\&quot;\&quot;,\&quot;f22\&quot;:\&quot;\&quot;,\&quot;f23\&quot;:\&quot;\&quot;,\&quot;f24\&quot;:\&quot;\&quot;,\&quot;f25\&quot;:\&quot;\&quot;,\&quot;f26\&quot;:\&quot;\&quot;,\&quot;f27\&quot;:\&quot;\&quot;,\&quot;f28\&quot;:\&quot;\&quot;,\&quot;f29\&quot;:\&quot;\&quot;,\&quot;f30\&quot;:\&quot;\&quot;,\&quot;f31\&quot;:\&quot;\&quot;,\&quot;f32\&quot;:\&quot;\&quot;,\&quot;f33\&quot;:\&quot;\&quot;,\&quot;f34\&quot;:\&quot;\&quot;,\&quot;f35\&quot;:\&quot;\&quot;,\&quot;f36\&quot;:\&quot;\&quot;,\&quot;f37\&quot;:\&quot;\&quot;,\&quot;f38\&quot;:\&quot;\&quot;,\&quot;f39\&quot;:\&quot;\&quot;,\&quot;f40\&quot;:\&quot;\&quot;,\&quot;f41\&quot;:\&quot;\&quot;,\&quot;f42\&quot;:\&quot;\&quot;,\&quot;f43\&quot;:\&quot;\&quot;,\&quot;f44\&quot;:\&quot;\&quot;,\&quot;f45\&quot;:\&quot;\&quot;,\&quot;f46\&quot;:\&quot;\&quot;,\&quot;f47\&quot;:\&quot;\&quot;,\&quot;f48\&quot;:\&quot;\&quot;,\&quot;f49\&quot;:\&quot;\&quot;,\&quot;f50\&quot;:\&quot;\&quot;,\&quot;f51\&quot;:\&quot;\&quot;,\&quot;f52\&quot;:\&quot;\&quot;,\&quot;f53\&quot;:\&quot;\&quot;,\&quot;f54\&quot;:\&quot;\&quot;,\&quot;f55\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;f01\&quot;:\&quot;\&quot;,\&quot;f02\&quot;:\&quot;\&quot;,\&quot;f03\&quot;:\&quot;\&quot;,\&quot;f04\&quot;:\&quot;\&quot;,\&quot;f05\&quot;:\&quot;\&quot;,\&quot;f06\&quot;:\&quot;\&quot;,\&quot;f07\&quot;:\&quot;\&quot;,\&quot;f08\&quot;:\&quot;\&quot;,\&quot;f09\&quot;:\&quot;\&quot;,\&quot;f10\&quot;:\&quot;\&quot;,\&quot;f11\&quot;:\&quot;\&quot;,\&quot;f12\&quot;:\&quot;\&quot;,\&quot;f13\&quot;:\&quot;\&quot;,\&quot;f14\&quot;:\&quot;\&quot;,\&quot;f15\&quot;:\&quot;\&quot;,\&quot;f16\&quot;:\&quot;\&quot;,\&quot;f17\&quot;:\&quot;\&quot;,\&quot;f18\&quot;:\&quot;\&quot;,\&quot;f19\&quot;:\&quot;\&quot;,\&quot;f20\&quot;:\&quot;\&quot;,\&quot;f21\&quot;:\&quot;\&quot;,\&quot;f22\&quot;:\&quot;\&quot;,\&quot;f23\&quot;:\&quot;\&quot;,\&quot;f24\&quot;:\&quot;\&quot;,\&quot;f25\&quot;:\&quot;\&quot;,\&quot;f26\&quot;:\&quot;\&quot;,\&quot;f27\&quot;:\&quot;\&quot;,\&quot;f28\&quot;:\&quot;\&quot;,\&quot;f29\&quot;:\&quot;\&quot;,\&quot;f30\&quot;:\&quot;\&quot;,\&quot;f31\&quot;:\&quot;\&quot;,\&quot;f32\&quot;:\&quot;\&quot;,\&quot;f33\&quot;:\&quot;\&quot;,\&quot;f34\&quot;:\&quot;\&quot;,\&quot;f35\&quot;:\&quot;\&quot;,\&quot;f36\&quot;:\&quot;\&quot;,\&quot;f37\&quot;:\&quot;\&quot;,\&quot;f38\&quot;:\&quot;\&quot;,\&quot;f39\&quot;:\&quot;\&quot;,\&quot;f40\&quot;:\&quot;\&quot;,\&quot;f41\&quot;:\&quot;\&quot;,\&quot;f42\&quot;:\&quot;\&quot;,\&quot;f43\&quot;:\&quot;\&quot;,\&quot;f44\&quot;:\&quot;\&quot;,\&quot;f45\&quot;:\&quot;\&quot;,\&quot;f46\&quot;:\&quot;\&quot;,\&quot;f47\&quot;:\&quot;\&quot;,\&quot;f48\&quot;:\&quot;\&quot;,\&quot;f49\&quot;:\&quot;\&quot;,\&quot;f50\&quot;:\&quot;\&quot;,\&quot;f51\&quot;:\&quot;\&quot;,\&quot;f52\&quot;:\&quot;\&quot;,\&quot;f53\&quot;:\&quot;\&quot;,\&quot;f54\&quot;:\&quot;\&quot;,\&quot;f55\&quot;:\&quot;\&quot;}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -2241,7 +2165,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

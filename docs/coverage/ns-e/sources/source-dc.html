@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.9%
+    100%
   </span>
   <span class="absValue">
-    (8/9)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    58.3%
+    59.3%
   </span>
   <span class="absValue">
-    (35/60)
+    (32/54)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74%
+    77.8%
   </span>
   <span class="absValue">
-    (111/150)
+    (105/135)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75.9%
+    81.9%
   </span>
   <span class="absValue">
-    (463/610)
+    (425/519)
   </span>
 </td>
 </tr>
@@ -129,7 +129,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
 &nbsp;import com.ghost.serialization.types.RawJson
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.collections.Map
@@ -266,23 +265,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;      }
 &nbsp;    }
 <b class="fc">&nbsp;    reader.endObject()</b>
-<b class="fc">&nbsp;    if ((mask0 and MASK_OPTS_DATA_VALUE) == MASK_OPTS_DATA_VALUE) {</b>
+<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_DATA_VALUE) == MASK_OPTS_DATA_VALUE) {</b>
 <b class="fc">&nbsp;      return RawJsonAttributeState(</b>
 <b class="fc">&nbsp;        `value` = valueValue,</b>
 <b class="fc">&nbsp;        `data` = dataValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_VALUE) == MASK_OPTS_VALUE) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_VALUE) == MASK_OPTS_VALUE) {</b>
 <b class="nc">&nbsp;      return RawJsonAttributeState(</b>
 <b class="nc">&nbsp;        `value` = valueValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_DATA) == MASK_OPTS_DATA) {</b>
+<b class="nc">&nbsp;    if ((mask0 and MASK_OPTS_DATA) == MASK_OPTS_DATA) {</b>
 <b class="nc">&nbsp;      return RawJsonAttributeState(</b>
 <b class="nc">&nbsp;        `data` = dataValue,</b>
 &nbsp;      )
 &nbsp;    }
-<b class="fc">&nbsp;    return RawJsonAttributeState(</b>
+<b class="nc">&nbsp;    return RawJsonAttributeState(</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
@@ -345,24 +344,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: RawJsonAttributeState) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    if (value.`value` != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_VALUE)</b>
-<b class="nc">&nbsp;      writer.rawValue(value.`value`.storage, value.`value`.storageOffset, value.`value`.storageLength)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.`data` != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_DATA)</b>
-<b class="nc">&nbsp;      writer.beginObject()</b>
-<b class="nc">&nbsp;      for ((mapKey0, mapVal0) in value.`data`) {</b>
-<b class="nc">&nbsp;        writer.name(mapKey0)</b>
-<b class="nc">&nbsp;        writer.rawValue(mapVal0.storage, mapVal0.storageOffset, mapVal0.storageLength)</b>
-&nbsp;      }
-<b class="nc">&nbsp;      writer.endObject()</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: RawJsonAttributeState) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="pc">&nbsp;    if (value.`value` != null) {</b>
 <b class="fc">&nbsp;      writer.writeNameRaw(H_VALUE)</b>
@@ -407,13 +388,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{}&quot;</b>
 &nbsp;          )
@@ -445,7 +419,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

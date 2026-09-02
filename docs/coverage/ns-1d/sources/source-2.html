@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonFlatWriter</title>
+  <title>GhostSerialization Coverage Report > FlatByteArrayWriter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.writer.bytes</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonFlatWriter (com.ghost.serialization.writer.bytes)</h1>
+<h1>Coverage Summary for Class: FlatByteArrayWriter (com.ghost.serialization.writer.bytes)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonFlatWriter</td>
+  <td class="name">FlatByteArrayWriter</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    89.1%
+    95.5%
   </span>
   <span class="absValue">
-    (41/46)
+    (21/22)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.8%
+    76.9%
   </span>
   <span class="absValue">
-    (103/116)
+    (40/52)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.7%
+    89.3%
   </span>
   <span class="absValue">
-    (222/242)
+    (159/178)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.5%
+    86.8%
   </span>
   <span class="absValue">
-    (947/1024)
+    (723/833)
   </span>
 </td>
 </tr>
@@ -99,638 +99,383 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
-&nbsp;
-&nbsp;package com.ghost.serialization.writer.bytes
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.bytes
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.acquireScratchBuffer
-&nbsp;import com.ghost.serialization.exception.GhostJsonException
-&nbsp;import com.ghost.serialization.types.RawJson
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_ARR_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CLOSE_OBJ_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_QUOTE_BS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COMMA_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_SAFE_INTEGER_DOUBLE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_INT_BS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_LONG_BS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_SAFE_INTEGER_DOUBLE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_ARR_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.OPEN_OBJ_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SPACE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.STRING_QUOTE_PAIR_BYTES
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WHOLE_NUMBER_CHECK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_DOUBLE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
-&nbsp;import com.ghost.serialization.writer.common.GhostDoubleFormatter
-&nbsp;import com.ghost.serialization.writer.common.GhostJsonEscapeHelpers
-&nbsp;import com.ghost.serialization.writer.common.GhostWriterLongDigits
+&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_END
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_START
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LOW_SURROGATE_END
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.LOW_SURROGATE_START
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_10
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_BASE
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_1BYTE_LIMIT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_2BYTE_LIMIT
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_2BYTE_PREFIX
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_3BYTE_PREFIX
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_4BYTE_PREFIX
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_CONT_MASK
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_CONT_PREFIX
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_MAX_BMP_BYTES
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_REPLACEMENT_CHAR
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_18
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_6
 &nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * In-memory specialization of [GhostJsonWriter] backed by a contiguous
-&nbsp; * [FlatByteArrayWriter] instead of the segmented `okio.Buffer` used by the
-&nbsp; * streaming path.
+&nbsp; * A growing flat-array byte buffer used as the in-memory output target for
+&nbsp; * [GhostJsonWriter] when constructed over a flat buffer. Every byte-write
+&nbsp; * made from within this class resolves as a monomorphic call the JIT
+&nbsp; * (HotSpot/ART) and Kotlin/Native AOT compiler can fully inline — the
+&nbsp; * [GhostByteSink] conformance only adds virtual dispatch at
+&nbsp; * [GhostJsonWriter]&#39;s call sites, not inside this class&#39;s own methods.
+&nbsp; *
+&nbsp; * Compared to the streaming path that writes through `okio.Buffer` segments,
+&nbsp; * this class trades the ability to incrementally drain bytes for ~2-3x
+&nbsp; * faster small-encode throughput. The full encoded payload is exposed at
+&nbsp; * the end of the encode via [toByteArray] / [toStringUtf8] (or accessed
+&nbsp; * directly via [array] + [size] for zero-copy fast paths).
 &nbsp; */
-<b class="fc">&nbsp;class GhostJsonFlatWriter @InternalGhostApi constructor(</b>
-<b class="fc">&nbsp;    @InternalGhostApi val buffer: FlatByteArrayWriter</b>
-&nbsp;) {
-&nbsp;
-&nbsp;    @PublishedApi
-<b class="fc">&nbsp;    internal var needsComma: Boolean = false</b>
-&nbsp;
-&nbsp;    private var depth: Int = 0
-&nbsp;
-<b class="nc">&nbsp;    internal var scratch: ByteArray? = null</b>
+<b class="fc">&nbsp;@InternalGhostApi</b>
+&nbsp;class FlatByteArrayWriter(
+<b class="fc">&nbsp;    private val initialCapacity: Int = INITIAL_WRITE_BUFFER_SIZE</b>
+&nbsp;) : GhostByteSink {
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Acquires the temporary scratch buffer for numeric/string conversions.
+&nbsp;     * Backing store. The slice `array[0 until size]` is the live encoded
+&nbsp;     * payload; everything past `size` is uninitialized / stale capacity.
 &nbsp;     */
-&nbsp;    internal fun acquireScratch(): ByteArray {
-<b class="fc">&nbsp;        val currentScratch = scratch</b>
-<b class="fc">&nbsp;        if (currentScratch != null) {</b>
-<b class="fc">&nbsp;            return currentScratch</b>
+<b class="fc">&nbsp;    var array: ByteArray = ByteArray(initialCapacity)</b>
+&nbsp;        private set
+&nbsp;
+&nbsp;    /** Number of bytes currently written into [array]. */
+<b class="fc">&nbsp;    var size: Int = 0</b>
+&nbsp;        private set
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Grows [array] until at least `extraBytes` more bytes can fit past
+&nbsp;     * the current [size]. Capacity grows geometrically by [BUFFER_SCALE_FACTOR]
+&nbsp;     * to amortize copy cost over many writes.
+&nbsp;     */
+&nbsp;    private fun ensureCapacity(extraBytes: Int) {
+<b class="fc">&nbsp;        val requiredCapacity = size + extraBytes</b>
+<b class="fc">&nbsp;        if (requiredCapacity &lt; 0) {</b>
+<b class="fc">&nbsp;            throw IllegalStateException(C.ERR_CAPACITY_OVERFLOW_PREFIX + &quot;size=$size, extraBytes=$extraBytes&quot;)</b>
 &nbsp;        }
-<b class="fc">&nbsp;        val newScratch = acquireScratchBuffer(WRITER_SCRATCH_SIZE)</b>
-<b class="fc">&nbsp;        scratch = newScratch</b>
-<b class="fc">&nbsp;        return newScratch</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Resets writer state for reuse from a pool while keeping the scratch
-&nbsp;     * buffer warm. Pair with a [FlatByteArrayWriter.reset] on the underlying
-&nbsp;     * [buffer] to start a fresh encode without re-allocating either.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun reset() {
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        depth = 0</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * No-op for the flat-array path.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    @Suppress(&quot;EmptyFunctionBlock&quot;)
-&nbsp;    fun flush() {
-&nbsp;        /* No Ops */
-<b class="nc">&nbsp;    }</b>
-&nbsp;
-&nbsp;    // ── Structural ────────────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Starts a new JSON object.
-&nbsp;     * Automatically handles comma insertion and depth tracking.
-&nbsp;     */
-&nbsp;    fun beginObject(): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        val currentDepth = depth</b>
-<b class="fc">&nbsp;        if (currentDepth &gt;= MAX_DEPTH) {</b>
-<b class="fc">&nbsp;            throwDepthError()</b>
-&nbsp;        }
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.writeByte(OPEN_OBJ_INT)</b>
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        depth = currentDepth + 1</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /** Ends the current JSON object. */
-&nbsp;    fun endObject(): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        buffer.writeByte(CLOSE_OBJ_INT)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        depth--</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Starts a new JSON array.
-&nbsp;     * Automatically handles comma insertion and depth tracking.
-&nbsp;     */
-&nbsp;    fun beginArray(): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        val currentDepth = depth</b>
-<b class="pc">&nbsp;        if (currentDepth &gt;= MAX_DEPTH) {</b>
-<b class="nc">&nbsp;            throwDepthError()</b>
-&nbsp;        }
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.writeByte(OPEN_ARR_INT)</b>
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        depth = currentDepth + 1</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Ends the current JSON array.
-&nbsp;     */
-&nbsp;    fun endArray(): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        buffer.writeByte(CLOSE_ARR_INT)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        depth--</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a field name as a string.
-&nbsp;     * Escapes the key and appends the colon separator.
-&nbsp;     */
-&nbsp;    fun name(key: String): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.writeByte(QUOTE_INT)</b>
-<b class="fc">&nbsp;        writeEscaped(key)</b>
-<b class="fc">&nbsp;        buffer.write(COLON_QUOTE_BS)</b>
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a pre-encoded field name [ByteString].
-&nbsp;     * This is the fastest way to write field names as it avoids runtime escaping.
-&nbsp;     */
-&nbsp;    fun name(key: ByteString): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(key)</b>
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a field name raw [ByteString] without validating or escaping.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeNameRaw(header: ByteString): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        return name(header)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Int): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(header)</b>
-<b class="fc">&nbsp;        writeIntValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Long): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(header)</b>
-<b class="fc">&nbsp;        writeLongValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: ULong): GhostJsonFlatWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        buffer.write(header)</b>
-<b class="nc">&nbsp;        writeULongValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: String): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(header)</b>
-<b class="fc">&nbsp;        writeStringValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Boolean): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(header)</b>
-<b class="fc">&nbsp;        writeBooleanValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Double): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(header)</b>
-<b class="fc">&nbsp;        writeDoubleValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Float): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(header)</b>
-<b class="fc">&nbsp;        writeFloatValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    // ── value() public API ────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a string value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(text: String): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeStringValueRaw(text)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes an integer value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Int): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeIntValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a long value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Long): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeLongValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    fun value(number: ULong): GhostJsonFlatWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        writeULongValueRaw(number)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a double value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Double): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeDoubleValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a float value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Float): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeFloatValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a boolean value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(value: Boolean): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        if (value) {</b>
-<b class="fc">&nbsp;            buffer.writeTrue()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            buffer.writeFalse()</b>
-&nbsp;        }
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
-&nbsp;     */
-&nbsp;    fun value(char: Char): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.writeQuotedBmpCodeUnit(char.code)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a null value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun nullValue(): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.writeNull()</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes raw JSON bytes directly into the stream without quoting or escaping.
-&nbsp;     * Use this to emit a pre-serialized JSON fragment (object, array, or primitive)
-&nbsp;     * captured via `captureRawJsonBytes`.
-&nbsp;     */
-&nbsp;    fun rawValue(bytes: ByteArray): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(bytes)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a slice of raw JSON bytes without quoting or escaping.
-&nbsp;     */
-&nbsp;    fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonFlatWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        buffer.write(bytes, offset, length)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes [raw] without copying when it aliases the parse input buffer.
-&nbsp;     */
-&nbsp;    fun rawValue(raw: RawJson): GhostJsonFlatWriter =
-<b class="fc">&nbsp;        rawValue(raw.storage, raw.storageOffset, raw.storageLength)</b>
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a boolean value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeBooleanValueRaw(value: Boolean) {
-<b class="fc">&nbsp;        if (value) {</b>
-<b class="fc">&nbsp;            buffer.writeTrue()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            buffer.writeFalse()</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes an integer value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeIntValueRaw(value: Int) {
-&nbsp;        // Fast-path: single digit positive (most common: IDs, counts, status codes)
-<b class="fc">&nbsp;        if (value in 0..9) {</b>
-<b class="fc">&nbsp;            buffer.writeByte(ZERO_INT + value)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        if (value in -9..-1) {</b>
-&nbsp;            // Single-digit negative: two bytes, one bounds-check
-<b class="fc">&nbsp;            buffer.write2Bytes(MINUS_INT, ZERO_INT - value)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        if (value == Int.MIN_VALUE) {</b>
-<b class="fc">&nbsp;            buffer.write(MIN_INT_BS)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        writeLongValueRawInternal(value.toLong())</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a long value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeLongValueRaw(value: Long) {
-&nbsp;        // Fast-path: single digit positive
-<b class="fc">&nbsp;        if (value in 0L..9L) {</b>
-<b class="fc">&nbsp;            val intVal = value.toInt()</b>
-<b class="fc">&nbsp;            buffer.writeByte(ZERO_INT + intVal)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="pc">&nbsp;        if (value in -9L..-1L) {</b>
-&nbsp;            // Single-digit negative: two bytes, one bounds-check
-<b class="nc">&nbsp;            val intVal = value.toInt()</b>
-<b class="nc">&nbsp;            buffer.write2Bytes(MINUS_INT, ZERO_INT - intVal)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        if (value == Int.MIN_VALUE.toLong()) {</b>
-<b class="fc">&nbsp;            buffer.write(MIN_INT_BS)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        if (value == Long.MIN_VALUE) {</b>
-<b class="fc">&nbsp;            buffer.write(MIN_LONG_BS)</b>
-&nbsp;            return
-&nbsp;        }
-<b class="fc">&nbsp;        writeLongValueRawInternal(value)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeULongValueRaw(value: ULong) {
-<b class="nc">&nbsp;        if (value &lt;= Long.MAX_VALUE.toULong()) {</b>
-<b class="nc">&nbsp;            writeLongValueRaw(value.toLong())</b>
-&nbsp;        } else {
-<b class="nc">&nbsp;            writeStringValueRaw(value.toString())</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Internal implementation for writing Long values into the scratch buffer.
-&nbsp;     */
-&nbsp;    private fun writeLongValueRawInternal(value: Long) {
-<b class="fc">&nbsp;        val scratchBuf = scratch ?: acquireScratch()</b>
-<b class="fc">&nbsp;        var localValue = value</b>
-<b class="fc">&nbsp;        val isNegative = localValue &lt; 0</b>
-<b class="fc">&nbsp;        if (isNegative) {</b>
-<b class="pc">&nbsp;            if (localValue == Long.MIN_VALUE) {</b>
-<b class="nc">&nbsp;                buffer.write(MIN_LONG_BS)</b>
-&nbsp;                return
+<b class="fc">&nbsp;        if (requiredCapacity &gt; array.size) {</b>
+<b class="fc">&nbsp;            var newCapacity = array.size</b>
+<b class="fc">&nbsp;            if (newCapacity == 0) {</b>
+<b class="fc">&nbsp;                newCapacity = INITIAL_WRITE_BUFFER_SIZE</b>
 &nbsp;            }
-<b class="fc">&nbsp;            localValue = -localValue</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val scratchEnd = LONG_SCRATCH_SIZE</b>
-<b class="fc">&nbsp;        val pos = GhostWriterLongDigits.writeDigitsBytes(</b>
-<b class="fc">&nbsp;            absoluteValue = localValue,</b>
-<b class="fc">&nbsp;            negative = isNegative,</b>
-<b class="fc">&nbsp;            scratch = scratchBuf,</b>
-<b class="fc">&nbsp;            scratchEnd = scratchEnd,</b>
-&nbsp;        )
-<b class="fc">&nbsp;        buffer.write(scratchBuf, pos, scratchEnd - pos)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a double value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeDoubleValueRaw(number: Double) {
-<b class="fc">&nbsp;        if (number in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &amp;&amp;</b>
-<b class="fc">&nbsp;            number % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &amp;&amp;</b>
-<b class="pc">&nbsp;            !(number == 0.0 &amp;&amp; number.toRawBits() &lt; 0)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            writeLongValueRawInternal(number.toLong())</b>
-<b class="fc">&nbsp;            buffer.writeDotZero()</b>
-&nbsp;            return
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val scratchBuf = acquireScratch()</b>
-<b class="fc">&nbsp;        val bytesWrittenLength = GhostDoubleFormatter.writeDoubleDirect(</b>
-<b class="fc">&nbsp;            value = number,</b>
-<b class="fc">&nbsp;            scratch = scratchBuf,</b>
-<b class="fc">&nbsp;            offset = 0,</b>
-&nbsp;        )
-<b class="fc">&nbsp;        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {</b>
-<b class="fc">&nbsp;            if (!number.isFinite()) {</b>
-<b class="fc">&nbsp;                throw GhostJsonException(ERR_NON_FINITE, 0, 0)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            buffer.writeUtf8(number.toString())</b>
-<b class="pc">&nbsp;        } else if (bytesWrittenLength &gt; 0) {</b>
-<b class="fc">&nbsp;            buffer.write(scratchBuf, 0, bytesWrittenLength)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeFloatValueRaw(number: Float) {
-<b class="fc">&nbsp;        val doubleVal = number.toDouble()</b>
-<b class="pc">&nbsp;        if (doubleVal in MIN_SAFE_INTEGER_DOUBLE..MAX_SAFE_INTEGER_DOUBLE &amp;&amp;</b>
-<b class="fc">&nbsp;            doubleVal % WHOLE_NUMBER_CHECK == ZERO_DOUBLE &amp;&amp;</b>
-<b class="pc">&nbsp;            !(number == 0.0f &amp;&amp; number.toRawBits() &lt; 0)</b>
-&nbsp;        ) {
-<b class="fc">&nbsp;            writeLongValueRawInternal(doubleVal.toLong())</b>
-<b class="fc">&nbsp;            buffer.writeDotZero()</b>
-&nbsp;            return
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val scratchBuf = acquireScratch()</b>
-<b class="fc">&nbsp;        val bytesWrittenLength = GhostDoubleFormatter.writeFloatDirect(</b>
-<b class="fc">&nbsp;            value = number,</b>
-<b class="fc">&nbsp;            scratch = scratchBuf,</b>
-<b class="fc">&nbsp;            offset = 0,</b>
-&nbsp;        )
-<b class="fc">&nbsp;        if (bytesWrittenLength == GhostDoubleFormatter.FALLBACK_REQUIRED) {</b>
-<b class="pc">&nbsp;            if (!number.isFinite()) {</b>
-<b class="fc">&nbsp;                throw GhostJsonException(ERR_NON_FINITE, 0, 0)</b>
-&nbsp;            }
-<b class="nc">&nbsp;            buffer.writeUtf8(number.toString())</b>
-<b class="pc">&nbsp;        } else if (bytesWrittenLength &gt; 0) {</b>
-<b class="fc">&nbsp;            buffer.write(scratchBuf, 0, bytesWrittenLength)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Appends a separator comma if a comma is needed before the next entry.
-&nbsp;     */
-&nbsp;    @PublishedApi
-&nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
-&nbsp;    internal inline fun appendSeparator() {
-<b class="fc">&nbsp;        if (needsComma) {</b>
-<b class="fc">&nbsp;            buffer.writeByte(COMMA_INT)</b>
-<b class="fc">&nbsp;            needsComma = false</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a string value with quotes and proper escaping.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeStringValueRaw(value: String) {
-<b class="fc">&nbsp;        val length = value.length</b>
-<b class="fc">&nbsp;        if (length == 0) {</b>
-&nbsp;            // Two quotes, one bounds-check
-<b class="fc">&nbsp;            buffer.write2Bytes(QUOTE_INT, QUOTE_INT)</b>
-&nbsp;            return
-&nbsp;        }
-&nbsp;
-&nbsp;        // Short strings: scan for the first char that needs escaping / UTF-8. All-plain →
-&nbsp;        // writeQuotedAscii. Mixed → keep the ASCII prefix (breakIndex) so the slow path does
-&nbsp;        // not re-scan it (same shape as GhostJsonStringWriter).
-<b class="fc">&nbsp;        var breakIndex = 0</b>
-<b class="fc">&nbsp;        if (length &lt;= PLAIN_ASCII_FAST_PATH_LIMIT) {</b>
-<b class="fc">&nbsp;            while (breakIndex &lt; length) {</b>
-<b class="fc">&nbsp;                val code = value[breakIndex].code</b>
-<b class="fc">&nbsp;                if (code !in SPACE_INT..&lt;ASCII_LIMIT || code == QUOTE_INT || code == BACKSLASH_INT) {</b>
+<b class="fc">&nbsp;            while (newCapacity &lt; requiredCapacity) {</b>
+<b class="fc">&nbsp;                val nextCapacity = newCapacity + (newCapacity shr CAPACITY_GROWTH_SHIFT)</b>
+<b class="pc">&nbsp;                if (nextCapacity &lt; newCapacity) {</b>
+<b class="nc">&nbsp;                    newCapacity = Int.MAX_VALUE</b>
 &nbsp;                    break
 &nbsp;                }
-<b class="fc">&nbsp;                breakIndex++</b>
+<b class="fc">&nbsp;                newCapacity = nextCapacity</b>
 &nbsp;            }
-<b class="fc">&nbsp;            if (breakIndex == length) {</b>
-<b class="fc">&nbsp;                buffer.writeQuotedAscii(value, length)</b>
-&nbsp;                return
+<b class="pc">&nbsp;            if (newCapacity &lt; requiredCapacity) {</b>
+<b class="nc">&nbsp;                newCapacity = requiredCapacity</b>
+&nbsp;            }
+<b class="fc">&nbsp;            array = array.copyOf(newCapacity)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends a single byte (low 8 bits of [byteAsInt]). Optimized for inlining. */
+&nbsp;    override fun writeByte(byteAsInt: Int) {
+<b class="fc">&nbsp;        val currentSize = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        if (currentSize &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;            backingArray[currentSize] = byteAsInt.toByte()</b>
+<b class="fc">&nbsp;            size = currentSize + 1</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            growAndWrite(byteAsInt)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun growAndWrite(byteAsInt: Int) {
+<b class="fc">&nbsp;        ensureCapacity(1)</b>
+<b class="fc">&nbsp;        array[size++] = byteAsInt.toByte()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Appends exactly two bytes in a single bounds-check.
+&nbsp;     * Use instead of two consecutive [writeByte] calls whenever both bytes
+&nbsp;     * are known at the call site (e.g. opening + closing quotes, escape pairs).
+&nbsp;     */
+&nbsp;    override fun write2Bytes(firstByte: Int, secondByte: Int) {
+<b class="fc">&nbsp;        val currentSize = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="pc">&nbsp;        if (currentSize + 1 &lt; backingArray.size) {</b>
+<b class="fc">&nbsp;            backingArray[currentSize] = firstByte.toByte()</b>
+<b class="fc">&nbsp;            backingArray[currentSize + 1] = secondByte.toByte()</b>
+<b class="fc">&nbsp;            size = currentSize + 2</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            ensureCapacity(2)</b>
+<b class="nc">&nbsp;            val updatedArray = array</b>
+<b class="nc">&nbsp;            updatedArray[currentSize] = firstByte.toByte()</b>
+<b class="nc">&nbsp;            updatedArray[currentSize + 1] = secondByte.toByte()</b>
+<b class="nc">&nbsp;            size = currentSize + 2</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Writes `&quot;text&quot;` directly into [array] for a caller-verified plain-ASCII
+&nbsp;     * string (all chars in [0x20, 0x7E] with no `&quot;` or `\`).
+&nbsp;     *
+&nbsp;     * Avoids the scratch-buffer accumulation used by the generic escape path,
+&nbsp;     * saving one intermediate copy + thread-local acquire for the common case.
+&nbsp;     */
+&nbsp;    override fun writeQuotedAscii(text: String, length: Int) {
+<b class="fc">&nbsp;        ensureCapacity(length + C.STRING_QUOTE_PAIR_BYTES)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.QUOTE_INT.toByte()</b>
+<b class="fc">&nbsp;        var charIndex = 0</b>
+&nbsp;        // Unrolled x4 for instruction-level parallelism
+<b class="fc">&nbsp;        while (charIndex + 3 &lt; length) {</b>
+<b class="fc">&nbsp;            backingArray[writeIndex] = text[charIndex].code.toByte()</b>
+<b class="fc">&nbsp;            backingArray[writeIndex + 1] = text[charIndex + 1].code.toByte()</b>
+<b class="fc">&nbsp;            backingArray[writeIndex + 2] = text[charIndex + 2].code.toByte()</b>
+<b class="fc">&nbsp;            backingArray[writeIndex + 3] = text[charIndex + 3].code.toByte()</b>
+<b class="fc">&nbsp;            writeIndex += 4</b>
+<b class="fc">&nbsp;            charIndex += 4</b>
+&nbsp;        }
+<b class="fc">&nbsp;        while (charIndex &lt; length) {</b>
+<b class="fc">&nbsp;            backingArray[writeIndex++] = text[charIndex].code.toByte()</b>
+<b class="fc">&nbsp;            charIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.QUOTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends every byte from [bytes] to the live payload. */
+&nbsp;    override fun write(bytes: ByteArray) {
+<b class="fc">&nbsp;        ensureCapacity(bytes.size)</b>
+<b class="fc">&nbsp;        bytes.copyInto(array, size)</b>
+<b class="fc">&nbsp;        size += bytes.size</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends `bytes[offset until offset + length]` to the live payload. */
+&nbsp;    override fun write(bytes: ByteArray, offset: Int, length: Int) {
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        bytes.copyInto(</b>
+<b class="fc">&nbsp;            array,</b>
+<b class="fc">&nbsp;            size,</b>
+<b class="fc">&nbsp;            offset,</b>
+<b class="fc">&nbsp;            offset + length</b>
+&nbsp;        )
+<b class="fc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Appends every byte of the immutable [byteString] to the live payload. */
+&nbsp;    override fun write(byteString: ByteString) {
+<b class="fc">&nbsp;        val length = byteString.size</b>
+<b class="fc">&nbsp;        ensureCapacity(length)</b>
+<b class="fc">&nbsp;        byteString.copyInto(</b>
+<b class="fc">&nbsp;            0,</b>
+<b class="fc">&nbsp;            array,</b>
+<b class="fc">&nbsp;            size,</b>
+<b class="fc">&nbsp;            length</b>
+&nbsp;        )
+<b class="fc">&nbsp;        size += length</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** UTF-8 encodes the entire string [text] directly into the payload. */
+&nbsp;    override fun writeUtf8(text: String) {
+<b class="fc">&nbsp;        writeUtf8(text, 0, text.length)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * UTF-8 encodes `text[beginIndex until endIndex)` directly into [array].
+&nbsp;     *
+&nbsp;     * Hand-rolled to avoid the intermediate `String.toByteArray()` copy that
+&nbsp;     * `okio.Buffer.writeUtf8` would otherwise allocate. The ASCII fast-path
+&nbsp;     * (BMP code points below [UTF8_1BYTE_LIMIT]) collapses to a single
+&nbsp;     * array store per character. Surrogate pairs are decoded into a 4-byte
+&nbsp;     * sequence; lone surrogates emit [UTF8_REPLACEMENT_CHAR].
+&nbsp;     */
+&nbsp;    override fun writeUtf8(text: String, beginIndex: Int, endIndex: Int) {
+<b class="fc">&nbsp;        val count = endIndex - beginIndex</b>
+<b class="fc">&nbsp;        ensureCapacity(count * UTF8_MAX_BMP_BYTES)</b>
+<b class="fc">&nbsp;        var sourceIndex = beginIndex</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+&nbsp;
+&nbsp;        // ASCII Fast-Path with unrolling
+<b class="fc">&nbsp;        while (sourceIndex + 3 &lt; endIndex) {</b>
+<b class="fc">&nbsp;            val charCode0 = text[sourceIndex].code</b>
+<b class="fc">&nbsp;            val charCode1 = text[sourceIndex + 1].code</b>
+<b class="fc">&nbsp;            val charCode2 = text[sourceIndex + 2].code</b>
+<b class="fc">&nbsp;            val charCode3 = text[sourceIndex + 3].code</b>
+&nbsp;
+<b class="fc">&nbsp;            if ((charCode0 or charCode1 or charCode2 or charCode3) &lt; UTF8_1BYTE_LIMIT) {</b>
+<b class="fc">&nbsp;                backingArray[writeIndex] = charCode0.toByte()</b>
+<b class="fc">&nbsp;                backingArray[writeIndex + 1] = charCode1.toByte()</b>
+<b class="fc">&nbsp;                backingArray[writeIndex + 2] = charCode2.toByte()</b>
+<b class="fc">&nbsp;                backingArray[writeIndex + 3] = charCode3.toByte()</b>
+<b class="fc">&nbsp;                sourceIndex += 4</b>
+<b class="fc">&nbsp;                writeIndex += 4</b>
+&nbsp;            } else {
+&nbsp;                break
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        writeStringValueRawSlow(value, length, breakIndex)</b>
-&nbsp;    }
+<b class="fc">&nbsp;        while (sourceIndex &lt; endIndex) {</b>
+<b class="fc">&nbsp;            val codePoint = text[sourceIndex].code</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                codePoint &lt; UTF8_1BYTE_LIMIT -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] = codePoint.toByte()</b>
+&nbsp;                }
 &nbsp;
-&nbsp;    private fun writeStringValueRawSlow(value: String, length: Int, breakIndex: Int) {
-<b class="fc">&nbsp;        val scratchBuf = acquireScratch()</b>
-<b class="fc">&nbsp;        if (breakIndex == 0 &amp;&amp; length + STRING_QUOTE_PAIR_BYTES &lt;= scratchBuf.size) {</b>
-<b class="fc">&nbsp;            scratchBuf[0] = QUOTE_BYTE</b>
-<b class="fc">&nbsp;            writeEscapedIntoScratch(value, length, scratchBuf)</b>
-&nbsp;            return
+<b class="fc">&nbsp;                codePoint &lt; UTF8_2BYTE_LIMIT -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6)).toByte()</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                codePoint !in HIGH_SURROGATE_START..LOW_SURROGATE_END -&gt; {</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12)).toByte()</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                    backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                        (UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                codePoint &lt;= HIGH_SURROGATE_END &amp;&amp; sourceIndex + 1 &lt; endIndex -&gt; {</b>
+<b class="fc">&nbsp;                    val lowSurrogate = text[sourceIndex + 1].code</b>
+<b class="pc">&nbsp;                    if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {</b>
+<b class="fc">&nbsp;                        val fullCodePoint = UNICODE_BASE +</b>
+<b class="fc">&nbsp;                                (((codePoint - HIGH_SURROGATE_START) shl SHIFT_10) or</b>
+<b class="fc">&nbsp;                                        (lowSurrogate - LOW_SURROGATE_START))</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_4BYTE_PREFIX or (fullCodePoint shr UTF8_SHIFT_18)).toByte()</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_CONT_PREFIX or ((fullCodePoint shr SHIFT_12) and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_CONT_PREFIX or ((fullCodePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        backingArray[writeIndex++] =</b>
+<b class="fc">&nbsp;                            (UTF8_CONT_PREFIX or (fullCodePoint and UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        sourceIndex++</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        UTF8_REPLACEMENT_CHAR.copyInto(backingArray, writeIndex)</b>
+<b class="nc">&nbsp;                        writeIndex += UTF8_REPLACEMENT_CHAR.size</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;
+&nbsp;                else -&gt; {
+<b class="nc">&nbsp;                    UTF8_REPLACEMENT_CHAR.copyInto(backingArray, writeIndex)</b>
+<b class="nc">&nbsp;                    writeIndex += UTF8_REPLACEMENT_CHAR.size</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            sourceIndex++</b>
 &nbsp;        }
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;        buffer.writeByte(QUOTE_INT)</b>
-<b class="fc">&nbsp;        if (breakIndex &gt; 0) {</b>
-&nbsp;            // Prefix already verified plain ASCII — writeUtf8 collapses to 1 byte/char.
-<b class="fc">&nbsp;            buffer.writeUtf8(value, 0, breakIndex)</b>
+&nbsp;    /**
+&nbsp;     * Writes a JSON string containing a single BMP code point, without allocating a [String].
+&nbsp;     */
+&nbsp;    override fun writeQuotedBmpCodeUnit(codePoint: Int) {
+<b class="fc">&nbsp;        ensureCapacity(C.STRING_QUOTE_PAIR_BYTES + C.UTF8_3BYTE_SIZE)</b>
+<b class="fc">&nbsp;        writeByte(C.QUOTE_INT)</b>
+<b class="fc">&nbsp;        writeBmpUtf8CodeUnit(codePoint)</b>
+<b class="fc">&nbsp;        writeByte(C.QUOTE_INT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun writeBmpUtf8CodeUnit(codePoint: Int) {
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            codePoint &lt; UTF8_1BYTE_LIMIT -&gt; writeByte(codePoint)</b>
+<b class="nc">&nbsp;            codePoint &lt; UTF8_2BYTE_LIMIT -&gt; {</b>
+<b class="nc">&nbsp;                writeByte(UTF8_2BYTE_PREFIX or (codePoint shr UTF8_SHIFT_6))</b>
+<b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                writeByte(UTF8_3BYTE_PREFIX or (codePoint shr SHIFT_12))</b>
+<b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or ((codePoint shr UTF8_SHIFT_6) and UTF8_CONT_MASK))</b>
+<b class="nc">&nbsp;                writeByte(UTF8_CONT_PREFIX or (codePoint and UTF8_CONT_MASK))</b>
+&nbsp;            }
 &nbsp;        }
-<b class="fc">&nbsp;        writeEscaped(value, start = breakIndex)</b>
-<b class="fc">&nbsp;        buffer.writeByte(QUOTE_INT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;true&quot; directly. */
+&nbsp;    override fun writeTrue() {
+<b class="fc">&nbsp;        ensureCapacity(4)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.T_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.R_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;false&quot; directly. */
+&nbsp;    override fun writeFalse() {
+<b class="fc">&nbsp;        ensureCapacity(5)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.F_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.A_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.S_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;null&quot; directly. */
+&nbsp;    override fun writeNull() {
+<b class="fc">&nbsp;        ensureCapacity(4)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.N_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Writes the literal &quot;.0&quot; directly. */
+&nbsp;    override fun writeDotZero() {
+<b class="fc">&nbsp;        ensureCapacity(2)</b>
+<b class="fc">&nbsp;        val backingArray = array</b>
+<b class="fc">&nbsp;        var writeIndex = size</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.DOT_INT.toByte()</b>
+<b class="fc">&nbsp;        backingArray[writeIndex++] = C.ZERO_INT.toByte()</b>
+<b class="fc">&nbsp;        size = writeIndex</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Utility method to write escaped strings when size exceeds the quick buffer.
+&nbsp;     * Marks the buffer as empty without releasing capacity, so the next
+&nbsp;     * encode reuses the already-grown [array].
 &nbsp;     */
-<b class="fc">&nbsp;    private fun writeEscaped(text: String, start: Int = 0) {</b>
-<b class="fc">&nbsp;        GhostJsonEscapeHelpers.writeEscapedBytes(</b>
-<b class="fc">&nbsp;            text = text,</b>
-<b class="fc">&nbsp;            start = start,</b>
-<b class="fc">&nbsp;            scratchBuf = acquireScratch(),</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, len -&gt; buffer.write(buf, offset, len) },</b>
-<b class="fc">&nbsp;            writeReplacement = { replacement -&gt; buffer.write(replacement) },</b>
-<b class="fc">&nbsp;            writeUtf8Range = { s, begin, end -&gt; buffer.writeUtf8(s, begin, end) },</b>
-&nbsp;        )
+&nbsp;    fun reset() {
+<b class="fc">&nbsp;        size = 0</b>
+<b class="pc">&nbsp;        if (array.size &gt; GhostHeuristics.maxWarmWriteBufferCapacity) {</b>
+<b class="nc">&nbsp;            array = ByteArray(initialCapacity)</b>
+&nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Escape strings directly into the scratch buffer.
-&nbsp;     */
-&nbsp;    private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: ByteArray) {
-<b class="fc">&nbsp;        GhostJsonEscapeHelpers.writeEscapedIntoByteScratch(</b>
-<b class="fc">&nbsp;            text = text,</b>
-<b class="fc">&nbsp;            length = length,</b>
-<b class="fc">&nbsp;            scratchBuf = scratchBuf,</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, len -&gt; buffer.write(buf, offset, len) },</b>
-<b class="fc">&nbsp;            writeReplacement = { replacement -&gt; buffer.write(replacement) },</b>
-<b class="fc">&nbsp;            writeUtf8Range = { s, begin, end -&gt; buffer.writeUtf8(s, begin, end) },</b>
-<b class="nc">&nbsp;            writeQuoteByte = { buffer.writeByte(QUOTE_INT) },</b>
-&nbsp;        )
-&nbsp;    }
+&nbsp;    /** Returns a fresh [ByteArray] containing exactly the encoded payload. */
+<b class="fc">&nbsp;    fun toByteArray(): ByteArray = array.copyOf(size)</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Throws an exception when max depth limits are exceeded.
-&nbsp;     */
-&nbsp;    private fun throwDepthError() {
-<b class="fc">&nbsp;        throw GhostJsonException(&quot;$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})&quot;, 0, 0)</b>
-&nbsp;    }
+&nbsp;    /** Decodes the encoded payload back into a [String] (UTF-8). */
+<b class="fc">&nbsp;    fun toStringUtf8(): String = array.decodeToString(0, size)</b>
+&nbsp;
+&nbsp;    /** No-op — the flat-array path has nothing to drain. */
+&nbsp;    override fun flush() {
+&nbsp;        /* No Ops */
+<b class="nc">&nbsp;    }</b>
 &nbsp;}
 </code>
 </pre>
@@ -755,7 +500,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

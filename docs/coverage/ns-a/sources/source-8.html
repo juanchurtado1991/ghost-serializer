@@ -101,15 +101,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;/**
 &nbsp; * One wire field emitted when unwrapping a `@GhostWrappedKeys` property during serialization.
 &nbsp; *
-&nbsp; * @property jsonName JSON key written at the parent object level.
-&nbsp; * @property kotlinPath Property accessor segments from the wrapper value (e.g. `[&quot;extras&quot;, &quot;extra1&quot;]`).
-&nbsp; * @property isNullable Whether the leaf property accepts JSON null / omission.
-&nbsp; * @property typeName Kotlin type of the leaf property for serialization dispatch.
 &nbsp; * @property sealedSubclassName Non-null when this field was resolved from a sealed subclass of
-&nbsp; *   the wrapped type rather than the wrapped type&#39;s own properties (proto3 `oneof` mapping: each
-&nbsp; *   wire key corresponds to one subclass&#39; field, e.g. `Text.text`/`Code.code` on a
-&nbsp; *   `sealed class Payload`). Emission must `is`-check/smart-cast to this subclass before
-&nbsp; *   accessing [kotlinPath] on it.
+&nbsp; *   the wrapped type rather than its own properties (proto3 `oneof` mapping: each wire key
+&nbsp; *   corresponds to one subclass&#39; field, e.g. `Text.text`/`Code.code` on a `sealed class Payload`).
+&nbsp; *   Emission must `is`-check/smart-cast to this subclass before accessing [kotlinPath] on it.
 &nbsp; */
 &nbsp;internal data class WrappedUnwrapFieldModel(
 <b class="fc">&nbsp;    val jsonName: String,</b>
@@ -142,7 +137,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

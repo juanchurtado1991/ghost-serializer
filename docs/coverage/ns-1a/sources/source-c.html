@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    64.5%
+    64.4%
   </span>
   <span class="absValue">
-    (160/248)
+    (159/247)
   </span>
 </td>
 </tr>
@@ -177,9 +177,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val serializer = resolveWriteSerializer(t, type)</b>
 &nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
 <b class="fc">&nbsp;        val yamlSerializer = serializer as GhostYamlSerializer&lt;Any&gt;</b>
-<b class="fc">&nbsp;        val bytes = ghostYamlInternalUseFlatWriter { writer -&gt;</b>
+<b class="fc">&nbsp;        val bytes = ghostYamlInternalUseFlatWriter { writer, buffer -&gt;</b>
 <b class="fc">&nbsp;            yamlSerializer.serialize(writer, t)</b>
-<b class="fc">&nbsp;            writer.buffer.toByteArray()</b>
+<b class="fc">&nbsp;            buffer.toByteArray()</b>
 &nbsp;        }
 <b class="fc">&nbsp;        outputMessage.body.write(bytes)</b>
 <b class="fc">&nbsp;        outputMessage.body.flush()</b>
@@ -243,7 +243,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    63.6%
   </span>
   <span class="absValue">
-    (8/12)
+    (7/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    22.2%
+    20.6%
   </span>
   <span class="absValue">
-    (8/36)
+    (7/34)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    53.7%
+    50.5%
   </span>
   <span class="absValue">
-    (66/123)
+    (55/109)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    46%
+    44.4%
   </span>
   <span class="absValue">
-    (231/502)
+    (194/437)
   </span>
 </td>
 </tr>
@@ -125,7 +125,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.readList
 &nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.collections.List
@@ -221,15 +220,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Robust deserialization for [GhostAdvancedProfile].
 &nbsp;   */
 &nbsp;  override fun deserialize(reader: GhostJsonFlatReader): GhostAdvancedProfile {
-<b class="fc">&nbsp;    var tokenValue: String? = null</b>
-<b class="fc">&nbsp;    var shapesValue: List&lt;GhostShape&gt;? = null</b>
-<b class="fc">&nbsp;    var mask0 = 0L</b>
-<b class="fc">&nbsp;    reader.beginObject()</b>
-<b class="fc">&nbsp;    while (true) {</b>
-<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
-<b class="pc">&nbsp;      when (index) {</b>
+<b class="nc">&nbsp;    var tokenValue: String? = null</b>
+<b class="nc">&nbsp;    var shapesValue: List&lt;GhostShape&gt;? = null</b>
+<b class="nc">&nbsp;    var mask0 = 0L</b>
+<b class="nc">&nbsp;    reader.beginObject()</b>
+<b class="nc">&nbsp;    while (true) {</b>
+<b class="nc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="nc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="fc">&nbsp;          tokenValue = reader.nextString()</b>
+<b class="nc">&nbsp;          tokenValue = reader.nextString()</b>
 <b class="nc">&nbsp;          mask0 = mask0 or MASK_TOKEN</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
@@ -312,21 +311,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: GhostAdvancedProfile) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_TOKEN)</b>
-<b class="nc">&nbsp;    writer.value(value.token.`value`)</b>
-<b class="nc">&nbsp;    writer.writeNameRaw(H_SHAPES)</b>
-<b class="nc">&nbsp;    writer.beginArray()</b>
-<b class="nc">&nbsp;    val size0 = value.shapes.size</b>
-<b class="nc">&nbsp;    for (i0 in 0 until size0) {</b>
-<b class="nc">&nbsp;      val item0 = value.shapes[i0]</b>
-<b class="nc">&nbsp;      GhostShapeSerializer.serialize(writer, item0)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endArray()</b>
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: GhostAdvancedProfile) {
 <b class="fc">&nbsp;    writer.beginObject()</b>
 <b class="fc">&nbsp;    writer.writeNameRaw(HS_TOKEN)</b>
@@ -348,13 +332,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            &quot;{\&quot;token\&quot;:{},\&quot;shapes\&quot;:[]}&quot;.encodeToByteArray()</b>
 &nbsp;          )
 <b class="fc">&nbsp;      deserialize(reader1)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{\&quot;token\&quot;:{},\&quot;shapes\&quot;:[]}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
@@ -389,7 +366,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

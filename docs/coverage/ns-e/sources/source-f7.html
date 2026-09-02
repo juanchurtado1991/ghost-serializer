@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    78.6%
+    84.6%
   </span>
   <span class="absValue">
-    (11/14)
+    (11/13)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    29.6%
+    38.5%
   </span>
   <span class="absValue">
-    (21/71)
+    (25/65)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    57.4%
+    64.4%
   </span>
   <span class="absValue">
-    (117/204)
+    (121/188)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    58.2%
   </span>
   <span class="absValue">
-    (379/758)
+    (385/662)
   </span>
 </td>
 </tr>
@@ -131,7 +131,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.strings.skipValue
 &nbsp;import com.ghost.serialization.types.RawJson
 &nbsp;import com.ghost.serialization.types.RawJsonDecode
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import kotlin.ByteArray
@@ -226,39 +225,39 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
 <b class="pc">&nbsp;      when (index) {</b>
 &nbsp;        0 -&gt; {
-<b class="nc">&nbsp;          eventTypeValue = reader.nextString()</b>
-<b class="nc">&nbsp;          mask0 = mask0 or MASK_EVENTTYPE</b>
+<b class="fc">&nbsp;          eventTypeValue = reader.nextString()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_EVENTTYPE</b>
 &nbsp;        }
 &nbsp;        1 -&gt; {
-<b class="nc">&nbsp;          timeMillisValue = reader.nextLong()</b>
-<b class="nc">&nbsp;          mask0 = mask0 or MASK_TIMEMILLIS</b>
+<b class="fc">&nbsp;          timeMillisValue = reader.nextLong()</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_TIMEMILLIS</b>
 &nbsp;        }
 &nbsp;        2 -&gt; {
-<b class="nc">&nbsp;          deviceEventValue = if (reader.isNextNullValue()) {</b>
+<b class="pc">&nbsp;          deviceEventValue = if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;                reader.consumeNull()</b>
 <b class="nc">&nbsp;                null</b>
 &nbsp;              } else {
-<b class="nc">&nbsp;                reader.captureRawJson()</b>
+<b class="fc">&nbsp;                reader.captureRawJson()</b>
 &nbsp;              }
-<b class="nc">&nbsp;          mask0 = mask0 or MASK_DEVICEEVENT</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_DEVICEEVENT</b>
 &nbsp;        }
 &nbsp;        3 -&gt; {
-<b class="nc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
+<b class="pc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;                reader.consumeNull()</b>
 <b class="nc">&nbsp;                null</b>
 &nbsp;              } else {
-<b class="nc">&nbsp;                reader.captureRawJson()</b>
+<b class="fc">&nbsp;                reader.captureRawJson()</b>
 &nbsp;              }
-<b class="nc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
 &nbsp;        }
 &nbsp;        4 -&gt; {
-<b class="nc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
+<b class="pc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;                reader.consumeNull()</b>
 <b class="nc">&nbsp;                null</b>
 &nbsp;              } else {
-<b class="nc">&nbsp;                reader.captureRawJson()</b>
+<b class="fc">&nbsp;                reader.captureRawJson()</b>
 &nbsp;              }
-<b class="nc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
 &nbsp;        }
 &nbsp;        -1 -&gt; break
 &nbsp;        -2 -&gt; {
@@ -309,22 +308,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;          mask0 = mask0 or MASK_DEVICEEVENT</b>
 &nbsp;        }
 &nbsp;        3 -&gt; {
-<b class="pc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;          modeEventValue = if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;                reader.consumeNull()</b>
 <b class="nc">&nbsp;                null</b>
 &nbsp;              } else {
-<b class="fc">&nbsp;                reader.captureRawJson()</b>
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
 &nbsp;              }
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_MODEEVENT</b>
 &nbsp;        }
 &nbsp;        4 -&gt; {
-<b class="pc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;          unknownEventValue = if (reader.isNextNullValue()) {</b>
 <b class="nc">&nbsp;                reader.consumeNull()</b>
 <b class="nc">&nbsp;                null</b>
 &nbsp;              } else {
-<b class="fc">&nbsp;                reader.captureRawJson()</b>
+<b class="nc">&nbsp;                reader.captureRawJson()</b>
 &nbsp;              }
-<b class="fc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_UNKNOWNEVENT</b>
 &nbsp;        }
 &nbsp;        -1 -&gt; break
 &nbsp;        -2 -&gt; {
@@ -422,7 +421,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Deserializes [SseEventEnvelope] from bytes and routes to payload (zero-copy RawJson slice on flat reader).
 &nbsp;   */
 &nbsp;  fun parsePayload(bytes: ByteArray): RawJson? {
-<b class="fc">&nbsp;    val envelope = deserialize(GhostJsonFlatReader(bytes))</b>
+<b class="fc">&nbsp;    val envelope = deserialize(GhostJsonReader(bytes))</b>
 <b class="fc">&nbsp;    return routePayload(envelope)</b>
 &nbsp;  }
 &nbsp;
@@ -439,30 +438,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;   * Deserializes [SseEventEnvelope] from bytes and returns typed payload when configured.
 &nbsp;   */
 &nbsp;  fun parseTyped(bytes: ByteArray): Any? {
-<b class="fc">&nbsp;    val envelope = deserialize(GhostJsonFlatReader(bytes))</b>
+<b class="fc">&nbsp;    val envelope = deserialize(GhostJsonReader(bytes))</b>
 <b class="fc">&nbsp;    return routeTyped(envelope)</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: SseEventEnvelope) {
-<b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.writeField(H_EVENTTYPE, value.eventType)</b>
-<b class="nc">&nbsp;    writer.writeField(H_EVENTTIME, value.timeMillis)</b>
-<b class="nc">&nbsp;    if (value.deviceEvent != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_DEVICEEVENT)</b>
-<b class="nc">&nbsp;      writer.rawValue(value.deviceEvent.storage, value.deviceEvent.storageOffset, value.deviceEvent.storageLength)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.modeEvent != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_MODEEVENT)</b>
-<b class="nc">&nbsp;      writer.rawValue(value.modeEvent.storage, value.modeEvent.storageOffset, value.modeEvent.storageLength)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    if (value.unknownEvent != null) {</b>
-<b class="nc">&nbsp;      writer.writeNameRaw(H_UNKNOWNEVENT)</b>
-<b class="nc">&nbsp;      writer.rawValue(value.unknownEvent.storage, value.unknownEvent.storageOffset, value.unknownEvent.storageLength)</b>
-&nbsp;    }
-<b class="nc">&nbsp;    writer.endObject()</b>
-&nbsp;  }
-&nbsp;
-&nbsp;  override fun serialize(writer: GhostJsonFlatWriter, `value`: SseEventEnvelope) {
 <b class="nc">&nbsp;    writer.beginObject()</b>
 <b class="nc">&nbsp;    writer.writeField(H_EVENTTYPE, value.eventType)</b>
 <b class="nc">&nbsp;    writer.writeField(H_EVENTTIME, value.timeMillis)</b>
@@ -509,13 +489,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    } catch (_: Exception) {
 &nbsp;    }
 &nbsp;    try {
-<b class="fc">&nbsp;      val reader2 = GhostJsonFlatReader(</b>
-<b class="fc">&nbsp;            &quot;{}&quot;.encodeToByteArray()</b>
-&nbsp;          )
-<b class="fc">&nbsp;      deserialize(reader2)</b>
-&nbsp;    } catch (_: Exception) {
-&nbsp;    }
-&nbsp;    try {
 <b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
 <b class="fc">&nbsp;            &quot;{}&quot;</b>
 &nbsp;          )
@@ -547,7 +520,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

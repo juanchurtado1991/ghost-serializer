@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    57.1%
+    66.7%
   </span>
   <span class="absValue">
-    (4/7)
+    (4/6)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    57.1%
+    66.7%
   </span>
   <span class="absValue">
-    (4/7)
+    (4/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    56%
+    70%
   </span>
   <span class="absValue">
-    (14/25)
+    (14/20)
   </span>
 </td>
 </tr>
@@ -103,7 +103,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.nextLong
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextLong
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
@@ -120,10 +119,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;object ProtoInt64ValueSerializer : GhostSerializer&lt;ProtoInt64Value&gt; {
 <b class="fc">&nbsp;    override val typeName: String get() = C.WKT_INT64_VALUE_TYPE</b>
 &nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoInt64Value) {
-<b class="nc">&nbsp;        writer.value(formatLong(value.value))</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonFlatWriter, value: ProtoInt64Value) {
 <b class="fc">&nbsp;        writer.value(formatLong(value.value))</b>
 &nbsp;    }
 &nbsp;
@@ -196,7 +191,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

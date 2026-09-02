@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonStringReaderNumbersKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonStringReaderCaptureKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.strings</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonStringReaderNumbersKt (com.ghost.serialization.parser.strings)</h1>
+<h1>Coverage Summary for Class: GhostJsonStringReaderCaptureKt (com.ghost.serialization.parser.strings)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonStringReaderNumbersKt</td>
+  <td class="name">GhostJsonStringReaderCaptureKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,24 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    81.2%
+    100%
   </span>
   <span class="absValue">
-    (13/16)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    92.5%
-  </span>
-  <span class="absValue">
-    (111/120)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    92.3%
-  </span>
-  <span class="absValue">
-    (646/700)
+    (53/53)
   </span>
 </td>
 </tr>
@@ -99,216 +92,40 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
-&nbsp;@file:OptIn(InternalGhostApi::class)
-&nbsp;
-&nbsp;package com.ghost.serialization.parser.strings
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.strings
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
-&nbsp;import com.ghost.serialization.parser.common.finalizeParsedDouble
-&nbsp;import com.ghost.serialization.parser.common.finalizeParsedFloat
-&nbsp;import com.ghost.serialization.parser.common.parseExponentValueCore
-&nbsp;import com.ghost.serialization.parser.common.parseIntDigitsCore
-&nbsp;import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
-&nbsp;import com.ghost.serialization.parser.common.parseLongDigitsCore
-&nbsp;import com.ghost.serialization.parser.common.prepareNumericHeaderCore
-&nbsp;import com.ghost.serialization.parser.common.skipNumberBodyCore
-&nbsp;import com.ghost.serialization.parser.common.validateLeadingZeroCore
+&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;import com.ghost.serialization.parser.common.captureJsonValueScan
 &nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
 &nbsp;
-&nbsp;fun GhostJsonStringReader.nextInt(): Int {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
 &nbsp;
-<b class="fc">&nbsp;    val startOfNumber = position</b>
-<b class="fc">&nbsp;    validateLeadingZero()</b>
+&nbsp;/**
+&nbsp; * Captures the next complete JSON value as owned [RawJson] (UTF-16 source requires encoding).
+&nbsp; */
+&nbsp;fun GhostJsonStringReader.captureRawJson(): RawJson =
+<b class="fc">&nbsp;    RawJson.fromUtf8Bytes(captureRawJsonBytes())</b>
 &nbsp;
-<b class="fc">&nbsp;    val accumulatedValue = parseIntDigits(isNegativeValue, startOfNumber)</b>
-&nbsp;
-<b class="fc">&nbsp;    if (isQuoted) {</b>
-<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
+&nbsp;/**
+&nbsp; * Captures the next complete JSON value as a raw [ByteArray] without decoding the value tree.
+&nbsp; *
+&nbsp; * Since [GhostJsonStringReader] operates on a UTF-16 [String], the captured char range is
+&nbsp; * converted to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes]: a range copy of the cached
+&nbsp; * UTF-8 view when present, otherwise an encode of that range only. Prefer
+&nbsp; * `parser.bytes.captureRawJsonBytes` when starting from a [ByteArray] source.
+&nbsp; */
+&nbsp;@OptIn(InternalGhostApi::class)
+&nbsp;fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
+<b class="fc">&nbsp;    skipWhitespace()</b>
+<b class="fc">&nbsp;    val start = position</b>
+<b class="fc">&nbsp;    captureStringReaderValueBytes()</b>
 <b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-&nbsp;
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return if (isNegativeValue) -accumulatedValue else accumulatedValue</b>
+<b class="fc">&nbsp;    return sliceUtf8Bytes(start, position)</b>
 &nbsp;}
 &nbsp;
-&nbsp;fun GhostJsonStringReader.nextLong(): Long {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    val startOfNumber = position</b>
-<b class="fc">&nbsp;    validateLeadingZero()</b>
-&nbsp;
-<b class="fc">&nbsp;    val accumulatedValue = parseLongDigits(isNegativeValue, startOfNumber)</b>
-&nbsp;
-<b class="fc">&nbsp;    if (isQuoted) {</b>
-<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-&nbsp;
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return if (isNegativeValue) -accumulatedValue else accumulatedValue</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.nextULong(): ULong {
-<b class="pc">&nbsp;    if (peekNextToken() == C.QUOTE_INT) {</b>
-<b class="nc">&nbsp;        return nextString().toULong()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return nextLong().toULong()</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.nextFloat(): Float {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    validateLeadingZero()</b>
-&nbsp;
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;    val result = parseJsonFloatingBodyCore(</b>
-<b class="fc">&nbsp;        precisionLimit = C.FLOAT_PRECISION_LIMIT,</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="nc">&nbsp;        parseExponentValue = { parseExponentValue() },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    ) { mantissa, exponent -&gt;
-<b class="fc">&nbsp;        finalizeParsedFloat(mantissa, exponent, isNegativeValue) { throwError(it) }</b>
-&nbsp;    }
-&nbsp;
-<b class="pc">&nbsp;    if (isQuoted) {</b>
-<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.nextDouble(): Double {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    validateLeadingZero()</b>
-&nbsp;
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;    val result = parseJsonFloatingBodyCore(</b>
-<b class="fc">&nbsp;        precisionLimit = C.DOUBLE_PRECISION_LIMIT,</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        parseExponentValue = { parseExponentValue() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    ) { mantissa, exponent -&gt;
-<b class="fc">&nbsp;        finalizeParsedDouble(mantissa, exponent, isNegativeValue) { throwError(it) }</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (isQuoted) {</b>
-<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.parseExponentValue(): Int =
-<b class="fc">&nbsp;    parseExponentValueCore(</b>
-<b class="fc">&nbsp;        startPosition = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.prepareNumericHeader(): Int =
-<b class="fc">&nbsp;    prepareNumericHeaderCore(</b>
-<b class="fc">&nbsp;        getNextTokenByte = { nextTokenByte },</b>
-<b class="fc">&nbsp;        setNextTokenByte = { nextTokenByte = it },</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        coerceStringsToNumbers = coerceStringsToNumbers,</b>
-<b class="fc">&nbsp;        skipWhitespace = { skipWhitespace() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.parseIntDigits(isNegative: Boolean, startOfNumber: Int): Int {
-<b class="fc">&nbsp;    return parseIntDigitsCore(</b>
-<b class="fc">&nbsp;        isNegative = isNegative,</b>
-<b class="fc">&nbsp;        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-&nbsp;        onNumericSeparator = {
-<b class="fc">&nbsp;            position = startOfNumber</b>
-<b class="fc">&nbsp;            nextDouble().toInt()</b>
-&nbsp;        },
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.parseLongDigits(isNegative: Boolean, startOfNumber: Int): Long {
-<b class="fc">&nbsp;    return parseLongDigitsCore(</b>
-<b class="fc">&nbsp;        isNegative = isNegative,</b>
-<b class="fc">&nbsp;        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-&nbsp;        onNumericSeparator = {
-<b class="nc">&nbsp;            position = startOfNumber</b>
-<b class="nc">&nbsp;            nextDouble().toLong()</b>
-&nbsp;        },
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;private inline fun GhostJsonStringReader.consumeNumericCoercionFooter() {
-<b class="fc">&nbsp;    consumeNumericCoercionFooterCore(</b>
-<b class="fc">&nbsp;        position = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;        afterQuote = {
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="fc">&nbsp;            skipWhitespace()</b>
-<b class="fc">&nbsp;        },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;private fun GhostJsonStringReader.validateLeadingZero() {
-<b class="fc">&nbsp;    validateLeadingZeroCore(</b>
-<b class="fc">&nbsp;        position = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;fun GhostJsonStringReader.skipNumber() {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    skipNumberBodyCore(</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-<b class="pc">&nbsp;    if (isQuoted) {</b>
-<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+&nbsp;private fun GhostJsonStringReader.captureStringReaderValueBytes() {
+<b class="fc">&nbsp;    val chars = rawChars</b>
+<b class="fc">&nbsp;    position = captureJsonValueScan(position, limit) { index -&gt; chars[index].code }</b>
 &nbsp;}
 </code>
 </pre>
@@ -333,7 +150,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

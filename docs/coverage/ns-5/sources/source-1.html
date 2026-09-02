@@ -170,11 +170,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    /**
 &nbsp;     * Collects and triggers recursive generation of nested perfect hash lookup options
 &nbsp;     * for flattened properties structures.
-&nbsp;     *
-&nbsp;     * @param typeSpecBuilder The target class builder to inject the options properties into.
-&nbsp;     * @param properties The list of target properties.
-&nbsp;     * @param fullPaths The pre-extracted paths for each property.
-&nbsp;     * @param textChannel Whether generated OPTIONS tables target the string channel.
 &nbsp;     */
 &nbsp;    fun generateNestedOptions(
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
@@ -213,13 +208,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;    /**
 &nbsp;     * Recursively traverses nodes and emits private nested perfect hash options properties.
-&nbsp;     *
-&nbsp;     * @param typeSpecBuilder The target class builder to inject the options property into.
-&nbsp;     * @param properties The list of target properties.
-&nbsp;     * @param fullPaths The pre-extracted paths for each property.
-&nbsp;     * @param node The current flattened node.
-&nbsp;     * @param parentPrefix Prefix derived from parent segments.
-&nbsp;     * @param currentPath Path segments list up to this node.
 &nbsp;     */
 &nbsp;    private fun emitNestedOptionsRecursive(
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
@@ -315,7 +303,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>

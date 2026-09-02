@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (3/4)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    25%
+    50%
   </span>
   <span class="absValue">
-    (1/4)
+    (1/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    100%
   </span>
   <span class="absValue">
-    (3/4)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.5%
+    93.8%
   </span>
   <span class="absValue">
-    (15/24)
+    (15/16)
   </span>
 </td>
 </tr>
@@ -104,7 +104,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
 &nbsp;import com.ghost.serialization.parser.strings.nextString
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonFlatWriter
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;
 &nbsp;
@@ -124,12 +123,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return reader.nextString() == LEGACY_TRUE</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun encodeLegacyBool(writer: GhostJsonFlatWriter, value: Boolean) {
-<b class="pc">&nbsp;        writer.value(if (value) LEGACY_TRUE else LEGACY_FALSE)</b>
-&nbsp;    }
-&nbsp;
 &nbsp;    fun encodeLegacyBool(writer: GhostJsonWriter, value: Boolean) {
-<b class="nc">&nbsp;        writer.value(if (value) LEGACY_TRUE else LEGACY_FALSE)</b>
+<b class="pc">&nbsp;        writer.value(if (value) LEGACY_TRUE else LEGACY_FALSE)</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -155,7 +150,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-08-22 09:25</div>
+    <div style="float:right;">generated on 2026-09-02 17:08</div>
 </div>
 </body>
 </html>
