@@ -165,7 +165,7 @@ internal object DefaultExpressionExtractor {
         while (index < source.length) {
             index = skipTrivia(source, index)
             if (index >= source.length) return null
-            when (val ch = source[index]) {
+            when (source[index]) {
                 CHAR_DOUBLE_QUOTE, CHAR_SINGLE_QUOTE -> index = skipLiteral(source, index)
                 CHAR_ANGLE_OPEN -> {
                     angle++; index++

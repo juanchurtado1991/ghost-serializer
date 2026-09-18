@@ -1,6 +1,8 @@
 package com.ghost.serialization.writer.common
 
 import com.ghost.serialization.parser.common.GhostFormatUtils
+import com.ghost.serialization.parser.common.finalizeParsedDouble
+import com.ghost.serialization.parser.common.finalizeParsedFloat
 import kotlin.math.roundToInt
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
@@ -11,8 +13,26 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * Handles up to [MAX_DECIMALS] (9) decimal places for values in `[1e-9, 1e9]`; anything outside
  * that range, non-finite, or microscopic returns [FALLBACK_REQUIRED] so the caller falls back to
  * a platform `toString()` without allocating a lambda on the hot path.
+ *
+ * Writing a *fixed* number of decimals is not, on its own, round-trip-safe: the fractional part
+ * is scaled by [PRECISION_MULTIPLIER] and rounded to the nearest integer, which can land on a
+ * decimal string that reads back to a different `Double`/`Float` than the one written (e.g.
+ * `0.1 + 0.2` is `0.30000000000000004`, but the fixed-9-decimal path used to print `"0.3"` —
+ * correctly rounded to 9 places, but not the value that was actually there). Both
+ * [writeDoubleDirect] and [writeFloatDirect] now verify the digits they're about to emit against
+ * [finalizeParsedDouble]/[finalizeParsedFloat] (the same, already-correctly-rounded parser used to
+ * read numbers back in) before committing to them, falling back to [FALLBACK_REQUIRED] — same as
+ * the existing massive/microscopic fallback — on the rare mismatch. This makes correctness
+ * self-consistent with the reader rather than dependent on trusting the fixed-decimal rounding to
+ * always coincide with it.
  */
 internal object GhostDoubleFormatter {
+
+    /** `10^n` for `n` in `0..9`, used to fold the written int+fraction digits back into one mantissa. */
+    private val POW10_LONG = longArrayOf(
+        1L, 10L, 100L, 1_000L, 10_000L, 100_000L,
+        1_000_000L, 10_000_000L, 100_000_000L, 1_000_000_000L,
+    )
 
     /** Maximum value below which a whole Double is formatted directly as a Long + ".0" */
     private const val SMALL_WHOLE_THRESHOLD = 1_000_000_000.0
@@ -46,6 +66,43 @@ internal object GhostDoubleFormatter {
      * Negative so call sites can keep `bytesWritten > 0` as the success check.
      */
     const val FALLBACK_REQUIRED = -1
+
+    /**
+     * True if the digits about to be written (`intPart` followed by `decimalsToPrint` digits of
+     * `fracInt`, i.e. `intPart.fracInt` with `fracInt` zero-padded to `decimalsToPrint` places)
+     * parse back to exactly [expected] via Ghost's own correctly-rounded double parser.
+     */
+    /** Digits of `intPart` that count toward a reader's `precisionLimit` (a sole "0" counts as 0 — see parser). */
+    private fun significantIntDigits(intPart: Long): Int {
+        if (intPart == 0L) return 0
+        var n = intPart
+        var count = 0
+        while (n > 0) {
+            count++
+            n /= 10
+        }
+        return count
+    }
+
+    private fun doubleRoundTrips(intPart: Long, fracInt: Int, decimalsToPrint: Int, expected: Double): Boolean {
+        // If the reader would truncate this many total digits, don't trust an idealized
+        // reconstruction that skips that cap — bail out (a real reader's Double/Float.toString()
+        // fallback never needs more than DOUBLE_PRECISION_LIMIT/FLOAT_PRECISION_LIMIT significant
+        // digits to round-trip, so this only rejects cases the fixed-decimal fast path shouldn't
+        // have tried to force into a fixed digit count anyway).
+        if (significantIntDigits(intPart) + decimalsToPrint > C.DOUBLE_PRECISION_LIMIT) return false
+        val mantissa = intPart * POW10_LONG[decimalsToPrint] + fracInt
+        val reconstructed = finalizeParsedDouble(mantissa, -decimalsToPrint, isNegative = false) { error(it) }
+        return reconstructed.toRawBits() == expected.toRawBits()
+    }
+
+    /** Same check as [doubleRoundTrips], against [finalizeParsedFloat] for the `Float` overload. */
+    private fun floatRoundTrips(intPart: Long, fracInt: Int, decimalsToPrint: Int, expected: Float): Boolean {
+        if (significantIntDigits(intPart) + decimalsToPrint > C.FLOAT_PRECISION_LIMIT) return false
+        val mantissa = intPart * POW10_LONG[decimalsToPrint] + fracInt
+        val reconstructed = finalizeParsedFloat(mantissa, -decimalsToPrint, isNegative = false) { error(it) }
+        return reconstructed.toRawBits() == expected.toRawBits()
+    }
 
     /**
      * Formats and writes [value] directly into [scratch] starting at [offset].
@@ -125,6 +182,10 @@ internal object GhostDoubleFormatter {
         while (decimalsToPrint > 1 && fracInt % 10 == 0) {
             fracInt /= 10
             decimalsToPrint--
+        }
+
+        if (!doubleRoundTrips(intPart, fracInt, decimalsToPrint, localValue)) {
+            return FALLBACK_REQUIRED
         }
 
         position += decimalsToPrint
@@ -229,6 +290,10 @@ internal object GhostDoubleFormatter {
         while (decimalsToPrint > 1 && fracInt % 10 == 0) {
             fracInt /= 10
             decimalsToPrint--
+        }
+
+        if (!floatRoundTrips(intPart, fracInt, decimalsToPrint, localValue)) {
+            return FALLBACK_REQUIRED
         }
 
         pos += decimalsToPrint

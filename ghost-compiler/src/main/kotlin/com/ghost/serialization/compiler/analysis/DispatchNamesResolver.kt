@@ -7,17 +7,13 @@ import com.ghost.serialization.compiler.model.GhostPropertyModel
  */
 internal object DispatchNamesResolver {
 
-    fun topLevelNames(properties: List<GhostPropertyModel>): List<String> {
-        return properties.flatMap { prop ->
-            if (prop.wrappedSourceKeys != null) {
-                prop.wrappedSourceKeys
-            } else {
-                listOf(
-                    prop.flattenPath?.firstOrNull()
-                        ?: prop.wrapPath?.firstOrNull()
-                        ?: prop.jsonName,
-                )
-            }
-        }.distinct()
-    }
+    fun topLevelNames(
+        properties: List<GhostPropertyModel>
+    ): List<String> = properties.flatMap { prop ->
+        prop.wrappedSourceKeys ?: listOf(
+            prop.flattenPath?.firstOrNull()
+                ?: prop.wrapPath?.firstOrNull()
+                ?: prop.jsonName,
+        )
+    }.distinct()
 }

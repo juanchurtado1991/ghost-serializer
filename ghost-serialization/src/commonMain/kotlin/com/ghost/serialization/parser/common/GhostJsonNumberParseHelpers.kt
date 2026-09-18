@@ -262,12 +262,24 @@ internal inline fun <R> parseJsonFloatingBodyCore(
     var mantissa = 0L
     var exponent = 0
     var digitCount = 0
+    var sawIntDigit = false
     var position = getPosition()
 
     while (position < limit) {
         val byte = getByte(position)
         if (!isDigit(byte)) break
         val digit = byte - C.ZERO_INT
+        sawIntDigit = true
+        // A sole leading "0" (the only way a '0' can start the integer part — validateLeadingZero
+        // already rejects "0" followed by another digit here) carries no significant precision:
+        // e.g. "0.30000000000000004" has 17 significant *fraction* digits, not 16. Don't let this
+        // placeholder consume a slot of `precisionLimit`, or a legitimate max-precision fraction
+        // (exactly what Double/Float.toString() emits for values needing every digit) gets its
+        // last digit silently dropped on read.
+        if (digitCount == 0 && digit == 0) {
+            position++
+            continue
+        }
         if (digitCount < precisionLimit) {
             mantissa = mantissa * C.BASE_TEN + digit
             digitCount++
@@ -277,7 +289,7 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         position++
     }
 
-    if (digitCount == 0) {
+    if (!sawIntDigit) {
         setPosition(position)
         throwError(C.ERR_EXPECTED_INT_PART)
     }
