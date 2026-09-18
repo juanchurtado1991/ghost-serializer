@@ -92,26 +92,6 @@ internal inline fun getFloatPowerOfTen(exponent: Int): Float {
 }
 
 /**
- * Returns 10.0 raised to the power of exponent using a lookup table or pow fallback.
- */
-internal inline fun getDoublePowerOfTen(exponent: Int): Double {
-    return if (exponent > 0) {
-        if (exponent < C.POWERS_OF_TEN.size) {
-            C.POWERS_OF_TEN[exponent]
-        } else {
-            10.0.pow(exponent.toDouble())
-        }
-    } else {
-        val absExp = -exponent
-        if (absExp < C.INVERSE_POWERS_OF_TEN.size) {
-            C.INVERSE_POWERS_OF_TEN[absExp]
-        } else {
-            10.0.pow(exponent.toDouble())
-        }
-    }
-}
-
-/**
  * Pure, reader-agnostic boolean coercion matcher: compares raw bytes at [start] against known
  * truthy ("true","yes","on","y","1") / falsy ("false","no","off","n","0") strings, case-insensitive
  * via `or CASE_INSENSITIVE_MASK`, without allocating a String.

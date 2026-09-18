@@ -192,6 +192,16 @@ internal inline fun finalizeParsedFloat(
 
 /**
  * Scales a parsed mantissa/exponent into a finite [Double].
+ *
+ * Exact for `|exponent| <= 22` (the only range where `10^n` is itself an exactly-representable
+ * Double) and, beyond that, for any exponent whose extra digits can still be folded into the
+ * mantissa without exceeding 2^53 (e.g. "1e30" with a small mantissa) — both cases are a single
+ * correctly-rounded FP operation, same cost as before. Outside that — a mantissa already at the
+ * 2^53 boundary, or a large exponent paired with a high-precision mantissa — falls back to
+ * string parsing: correctly rounded on every target, but allocates. That fallback is rare for
+ * everyday JSON (prices, coordinates, timestamps all stay well inside the exact range), and
+ * benchmarking against real documents (Twitter macro dataset, `benchmarkTwitter`) showed no
+ * measurable throughput regression from adding it.
  */
 internal inline fun finalizeParsedDouble(
     mantissa: Long,
@@ -199,13 +209,31 @@ internal inline fun finalizeParsedDouble(
     isNegative: Boolean,
     throwError: (String) -> Nothing,
 ): Double {
-    var result = mantissa.toDouble()
-    if (exponent > 0) {
-        result *= getDoublePowerOfTen(exponent)
-    } else if (exponent < 0) {
-        // See finalizeParsedFloat: divide by the exact positive power rather than
-        // multiplying by the precomputed (inexact) reciprocal.
-        result /= getDoublePowerOfTen(-exponent)
+    var result = Double.NaN
+    if (mantissa <= C.MAX_EXACT_DOUBLE_MANTISSA) {
+        if (exponent in 0..C.MAX_EXACT_DOUBLE_POWER_OF_TEN) {
+            result = mantissa.toDouble() * C.POWERS_OF_TEN[exponent]
+        } else if (exponent in -C.MAX_EXACT_DOUBLE_POWER_OF_TEN..-1) {
+            result = mantissa.toDouble() / C.POWERS_OF_TEN[-exponent]
+        } else if (exponent > C.MAX_EXACT_DOUBLE_POWER_OF_TEN) {
+            var shift = exponent - C.MAX_EXACT_DOUBLE_POWER_OF_TEN
+            var shiftedMantissa = mantissa
+            while (shift > 0) {
+                val next = shiftedMantissa * 10
+                if (next / 10 != shiftedMantissa || next > C.MAX_EXACT_DOUBLE_MANTISSA) {
+                    shiftedMantissa = -1L
+                    break
+                }
+                shiftedMantissa = next
+                shift--
+            }
+            if (shiftedMantissa >= 0) {
+                result = shiftedMantissa.toDouble() * C.POWERS_OF_TEN[C.MAX_EXACT_DOUBLE_POWER_OF_TEN]
+            }
+        }
+    }
+    if (result.isNaN()) {
+        result = "${mantissa}e$exponent".toDouble()
     }
     if (isNegative) {
         result = -result

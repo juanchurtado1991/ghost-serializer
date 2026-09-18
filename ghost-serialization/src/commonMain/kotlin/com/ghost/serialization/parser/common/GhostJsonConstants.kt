@@ -311,6 +311,16 @@ object GhostJsonConstants {
 
     const val DEFAULT_DISCRIMINATOR_KEY = "type"
 
+    /**
+     * Largest exponent for which `10^n` is exactly representable as a [Double] — beyond this,
+     * [POWERS_OF_TEN] entries are themselves rounded, so scaling by them is no longer
+     * correctly-rounded. See `finalizeParsedDouble`.
+     */
+    const val MAX_EXACT_DOUBLE_POWER_OF_TEN = 22
+
+    /** Largest [Long] mantissa exactly representable as a [Double] (2^53). */
+    const val MAX_EXACT_DOUBLE_MANTISSA = 1L shl 53
+
     // --- Mathematical Tables ---
     /** Pre-calculated powers of ten to avoid expensive Math.pow calls. */
     val POWERS_OF_TEN = DoubleArray(309).apply {
