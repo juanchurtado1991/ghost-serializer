@@ -154,9 +154,6 @@ fun GhostJsonStringReader.nextString(): String {
     return value
 }
 
-/**
- * Reads a JSON string value that must contain exactly one [Char].
- */
 fun GhostJsonStringReader.nextChar(): Char {
     if (nextNonWhitespace() != C.QUOTE_INT) {
         throwError(C.ERR_EXPECTED_QUOTE)

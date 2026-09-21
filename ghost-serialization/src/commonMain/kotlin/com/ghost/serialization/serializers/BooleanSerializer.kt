@@ -13,9 +13,6 @@ import com.ghost.serialization.parser.strings.nextBoolean
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [Boolean] type.
- */
 object BooleanSerializer : GhostSerializer<Boolean> {
     override val typeName: String get() = C.TYPE_NAME_BOOLEAN
 

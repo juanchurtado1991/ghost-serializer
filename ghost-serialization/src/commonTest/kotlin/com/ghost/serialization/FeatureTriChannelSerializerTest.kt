@@ -28,9 +28,7 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
 
-/**
- * Unit-level tri-channel tests for built-in serializers (pending 1.2.5 release).
- */
+/** Tri-channel coverage for built-in serializers, pending the 1.2.5 release. */
 class FeatureTriChannelSerializerTest {
 
     @Test

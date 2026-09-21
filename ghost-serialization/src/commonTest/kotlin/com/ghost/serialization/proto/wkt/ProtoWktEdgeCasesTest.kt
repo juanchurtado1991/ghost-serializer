@@ -10,30 +10,26 @@ class ProtoWktEdgeCasesTest {
 
     @Test
     fun testTimestampPrecisionAndMath() {
-        // Positive timezone offset
         val ts1 = parseTimestamp("2026-07-07T20:00:00+02:00")
-        // Expected epoch seconds for 2026-07-07 18:00:00 UTC
+        // 1783447200L = 2026-07-07 18:00:00 UTC
         assertEquals(1783447200L, ts1.seconds)
 
-        // Date formatting round-trip
         val formatted = formatTimestamp(ProtoTimestamp(1783447200L, 125000000))
         assertEquals("2026-07-07T18:00:00.125Z", formatted)
     }
 
     @Test
     fun testDurationSignCoherence() {
-        // Positive ok
         val d1 = parseDuration("10.500s")
         assertEquals(10L, d1.seconds)
         assertEquals(500000000, d1.nanos)
 
-        // Negative ok
         val d2 = parseDuration("-10.500s")
         assertEquals(-10L, d2.seconds)
         assertEquals(-500000000, d2.nanos)
 
-        // Mismatched sign -> fails
-        assertFails { parseDuration("-10.500s").copy(nanos = 500000000) } // sign rule check inside serializer
+        // seconds/nanos must carry the same sign; the serializer enforces this.
+        assertFails { parseDuration("-10.500s").copy(nanos = 500000000) }
     }
 
     @Test

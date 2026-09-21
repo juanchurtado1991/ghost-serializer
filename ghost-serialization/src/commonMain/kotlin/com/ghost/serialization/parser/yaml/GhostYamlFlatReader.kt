@@ -30,20 +30,19 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     internal var currentIndent: Int = 0
 
     /**
-     * Whether a tab appears in the current line's leading whitespace between the counted
-     * [currentIndent] spaces and the first non-whitespace byte. Tabs have no fixed column width,
-     * so YAML forbids them in indentation that opens/extends a block mapping/sequence, but
-     * they're harmless once a scalar's content has started.
+     * Whether a tab appears in the current line's leading whitespace after [currentIndent]
+     * spaces. Tabs have no fixed column width, so YAML forbids them in indentation that
+     * opens/extends a block mapping/sequence, but they're harmless once content has started.
      */
     internal var indentHasTab: Boolean = false
 
-    /** Depth counter — guards against stack overflow on extreme nesting. */
+    /** Guards against stack overflow on extreme nesting. */
     internal var depth: Int = 0
 
-    /** Table of defined anchors for the current document. */
+    /** Anchors defined in the current document. */
     internal val anchorTable = HashMap<String, Any?>()
 
-    /** Table of defined tag directives for the current document. */
+    /** Tag directives defined in the current document. */
     internal val tagDirectives = HashMap<String, String>()
 
     /** Resets the reader's state to process a new byte payload. */
@@ -74,10 +73,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
-    /**
-     * Reads a single YAML document from the current position.
-     * Returns the parsed value: Map, List, String, Long, Double, Boolean, or null.
-     */
+    /** Reads a single YAML document; returns a Map, List, String, Long, Double, Boolean, or null. */
     fun readDocument(): Any? {
         anchorTable.clear()
         tagDirectives.clear()
@@ -221,11 +217,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Reads a quoted scalar via [readQuoted], then checks whether a `:` follows — a quoted
-     * string can be a mapping key, not just a value (e.g. `"400":`). [readPlainScalarOrMapping]
-     * already does this colon-scan for *bare* keys, but readValue's dispatch never reaches it
-     * for quoted content. Without this check a quoted key's value would be misread as the
-     * quoted string itself, dropping everything nested under it.
+     * Reads a quoted scalar, then checks whether a `:` follows — a quoted string can be a
+     * mapping key too (e.g. `"400":`), a case [readPlainScalarOrMapping]'s colon-scan already
+     * handles for bare keys but readValue's dispatch never reaches for quoted content.
      */
     private inline fun readQuotedScalarOrMappingKey(indent: Int, inFlow: Boolean, readQuoted: () -> String): Any? {
         val startPosition = position
@@ -247,10 +241,8 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     /**
-     * Reads a flow collection ([readCollection]), then — mirroring
-     * [readQuotedScalarOrMappingKey] — checks whether a `:` follows: a flow collection can
-     * itself be a block-mapping key (e.g. `[flow]: block`), not just a value. Without this,
-     * `[flow]: block` would read `[flow]` as a complete document value and choke on `: block`.
+     * Like [readQuotedScalarOrMappingKey] but for flow collections: a flow collection can itself
+     * be a block-mapping key (e.g. `[flow]: block`), not just a value.
      */
     private inline fun readFlowCollectionOrMappingKey(indent: Int, inFlow: Boolean, readCollection: () -> Any?): Any? {
         val startPosition = position
@@ -560,10 +552,7 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
 
     // ── Key reading ────────────────────────────────────────────────────────────
 
-    /**
-     * Reads a mapping key. Keys are plain scalars ending at ':'.
-     * Quoted keys are supported.
-     */
+    /** Reads a mapping key: a plain scalar ending at ':', or a quoted string. */
     internal fun readKey(inFlow: Boolean): String? {
         skipInlineWhitespace()
         val localLimit = limit

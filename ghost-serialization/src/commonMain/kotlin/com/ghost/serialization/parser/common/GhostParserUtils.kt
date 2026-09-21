@@ -7,31 +7,19 @@ import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import kotlin.math.pow
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-
-/**
- * Checks if the byte code matches dot, lower 'e', or upper 'E'.
- */
 internal inline fun isNumericSeparator(byteCode: Int): Boolean {
     return byteCode == C.DOT_INT || byteCode == C.EXP_LOWER_INT || byteCode == C.EXP_UPPER_INT
 }
 
-/**
- * Checks if the byte code matches lowercase or uppercase 'e'.
- */
 internal inline fun isExponentMarker(markerByte: Int): Boolean {
     return (markerByte or C.CASE_INSENSITIVE_MASK) == C.EXP_LOWER_INT
 }
 
-/**
- * Helper to verify if the given byte is a valid JSON numeric digit.
- */
 internal inline fun isDigit(byteCode: Int): Boolean {
     return (byteCode xor C.ZERO_INT) < C.BASE_TEN
 }
 
-/**
- * Accumulates one decimal digit into an Int, throwing via [onOverflow] past JVM Int bounds.
- */
+/** Accumulates one decimal digit into an Int, throwing via [onOverflow] past [Int] bounds. */
 internal inline fun accumulateIntWithOverflowCheck(
     current: Int,
     digitValue: Int,
@@ -71,9 +59,6 @@ internal inline fun accumulateLongWithOverflowCheck(
     return current * C.BASE_TEN + digitValue
 }
 
-/**
- * Returns 10.0f raised to the power of exponent using a lookup table or pow fallback.
- */
 internal inline fun getFloatPowerOfTen(exponent: Int): Float {
     return if (exponent > 0) {
         if (exponent < C.POWERS_OF_TEN_FLOAT.size) {
@@ -232,32 +217,32 @@ fun charToBytePosition(s: String, charPos: Int): Int {
 @InternalGhostApi
 fun byteToCharPosition(s: String, targetBytePos: Int): Int {
     var bytePos = 0
-    var i = 0
-    while (bytePos < targetBytePos && i < s.length) {
-        val code = s[i].code
+    var index = 0
+    while (bytePos < targetBytePos && index < s.length) {
+        val code = s[index].code
         when {
             code <= C.UTF8_1BYTE_MAX -> {
                 bytePos += C.UTF8_1BYTE_SIZE
-                i++
+                index++
             }
 
             code <= C.UTF8_2BYTE_MAX -> {
                 bytePos += C.UTF8_2BYTE_SIZE
-                i++
+                index++
             }
 
             code in C.HIGH_SURROGATE_START..C.HIGH_SURROGATE_END &&
-                    i + 1 < s.length &&
-                    s[i + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
+                    index + 1 < s.length &&
+                    s[index + 1].code in C.LOW_SURROGATE_START..C.LOW_SURROGATE_END -> {
                 bytePos += C.UTF8_4BYTE_SIZE
-                i += 2
+                index += 2
             }
 
             else -> {
                 bytePos += C.UTF8_3BYTE_SIZE
-                i++
+                index++
             }
         }
     }
-    return i
+    return index
 }

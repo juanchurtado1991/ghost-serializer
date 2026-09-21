@@ -3,10 +3,6 @@ package com.ghost.serialization.parser.yaml
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
- * Subsystem for parsing YAML block-style mappings and sequences.
- */
-
-/**
  * Reads a block mapping starting at the current position ("key: value" on a new line).
  *
  * @param blockIndent The indentation of the first key in this mapping.

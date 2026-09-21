@@ -22,9 +22,9 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Emitter for standard deserialization logic: classes within standard JVM limits (typically
- * under 40 properties). Declares local tracking variables, emits the parsing loop and
- * validation bitmasks, then instantiates the target class.
+ * Deserialization for classes within standard JVM limits (typically under 40 properties):
+ * declares local tracking variables, emits the parse loop and validation bitmasks, then
+ * instantiates the target class.
  */
 internal class StandardEmitter(
     properties: List<GhostPropertyModel>,
@@ -33,10 +33,6 @@ internal class StandardEmitter(
     private val supportsResilience: Boolean = true,
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    /**
-     * Emits all standard deserialization code: variable declarations, parsing loop, field
-     * validation, and DTO construction.
-     */
     fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredPropCount = properties.count { !it.isNullable && !it.hasDefaultValue }
         // Single-required validation uses MASK_<PROP> only; skip unused MASK_REQUIRED_N.
@@ -55,8 +51,7 @@ internal class StandardEmitter(
             propertyIndices,
             readerClass,
         )
-        // Validate before endObject so JSONPath still includes the current object frame
-        // (and throwMissingRequiredField can append the missing key).
+        // Validate before endObject so JSONPath still includes the current frame for the error.
         emitFieldValidationCall(body)
         body.addStatement(C.STR_END_OBJECT)
         emitReturnStatement(body, typeSpecBuilder)
@@ -64,9 +59,6 @@ internal class StandardEmitter(
         emitValidationHelper(typeSpecBuilder)
     }
 
-    /**
-     * Emits the local placeholder variable declarations for tracking property values.
-     */
     private fun emitLocalVariables(body: CodeBlock.Builder) {
         properties.forEach {
             val varType = it.getVariableType()
@@ -80,19 +72,13 @@ internal class StandardEmitter(
         }
     }
 
-    /**
-     * Emits the initialization declarations of bitmasks to track parsed properties.
-     */
     private fun emitMaskVariables(body: CodeBlock.Builder) {
         for (i in C.VAL_ZERO until maskCount) {
             body.addStatement(C.STR_MASK_INIT, i)
         }
     }
 
-    /**
-     * Generates the main field parsing loop using the perfect-hash options table. Handles
-     * single-depth fields directly and delegates multi-depth fields to [emitFlattenedGroup].
-     */
+    /** Main field parse loop via the perfect-hash options table; multi-depth fields go to [emitFlattenedGroup]. */
     private fun emitParseLoop(body: CodeBlock.Builder) {
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
@@ -145,13 +131,10 @@ internal class StandardEmitter(
         body.endControlFlow()
         body.endControlFlow()
         body.endControlFlow()
-        // endObject is emitted after required-field validation (see emit)
+        // endObject is emitted after validation, in emit().
     }
 
-    /**
-     * Recursively generates nested parsing loops for `@GhostFlatten` properties, nesting
-     * `beginObject()` loops to match the structured key hierarchy in the JSON source.
-     */
+    /** Recursive nested parse loops for `@GhostFlatten` properties, matching the JSON's key hierarchy. */
     private fun emitFlattenedGroup(
         body: CodeBlock.Builder,
         name: String,
@@ -236,9 +219,6 @@ internal class StandardEmitter(
         body.addStatement(C.STR_END_OBJECT)
     }
 
-    /**
-     * Emits the property value assignment statement and its bitwise mask update.
-     */
     private fun emitPropertyAssignment(
         body: CodeBlock.Builder,
         prop: GhostPropertyModel,
@@ -260,9 +240,6 @@ internal class StandardEmitter(
         }
     }
 
-    /**
-     * Emits a call to the private helper that validates all required properties were present.
-     */
     private fun emitFieldValidationCall(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
         if (requiredProps.isNotEmpty()) {
@@ -275,10 +252,7 @@ internal class StandardEmitter(
         }
     }
 
-    /**
-     * Generates a private helper validating that all required properties were present in the
-     * bitmask, throwing a GhostJsonException for a missing field.
-     */
+    /** Private helper that throws `GhostJsonException` for any required field missing from the bitmask. */
     private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
         if (requiredProps.isEmpty()) {
@@ -330,10 +304,7 @@ internal class StandardEmitter(
         typeSpecBuilder.addFunction(funBuilder.build())
     }
 
-    /**
-     * Emits a private `createInstance` helper when default-property count exceeds
-     * `MAX_DEFAULT_BRANCH_COUNT`; its body is built via [emitCopyReturn].
-     */
+    /** Private `createInstance` helper, used when default-property count exceeds `MAX_DEFAULT_BRANCH_COUNT`. */
     private fun emitCreateInstanceHelper(typeSpecBuilder: TypeSpec.Builder) {
         val hasCreateInstance =
             typeSpecBuilder.funSpecs.any { it.name == C.STR_FUN_CREATE_INSTANCE }
@@ -408,9 +379,8 @@ internal class StandardEmitter(
     }
 
     /**
-     * Generates 2^N if-branches, each calling the primary constructor exactly once for a
-     * subset of default values present in the input, ordered from most bits set to fewest,
-     * falling back to Kotlin's own defaults when none are present.
+     * Generates 2^N if-branches, one primary-constructor call per subset of present default
+     * values, ordered most-bits-set to fewest, falling back to Kotlin's own defaults when none apply.
      */
     private fun emitMultiBranchReturn(
         body: CodeBlock.Builder,
@@ -454,10 +424,7 @@ internal class StandardEmitter(
         body.addStatement(C.STR_PAREN)
     }
 
-    /**
-     * Builds the condition string for a subset bitmask of default props, grouping properties
-     * by mask index and checking that all subset bits are active in the target mask.
-     */
+    /** Condition string for a subset bitmask of default props: checks all its bits are set in the mask. */
     private fun buildSubsetCondition(
         subsetBits: Int,
         defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>,
@@ -513,12 +480,9 @@ internal class StandardEmitter(
     }
 
     /**
-     * Single primary-constructor allocation. Each default arg is
-     * `if ((maskN and BIT) != 0L) parsed else <sourceDefault>`.
-     *
-     * Uses `val result = Type(...); return result` because KotlinPoet cannot nest
-     * named-arg [com.squareup.kotlinpoet.CodeBlock.Builder.addStatement] calls under an open
-     * `return %T(` call.
+     * Single constructor call; each default arg is `if (maskN and BIT != 0L) parsed else default`.
+     * Uses `val result = Type(...); return result` since KotlinPoet can't nest named-arg
+     * `addStatement` calls under an open `return %T(` call.
      */
     private fun emitSingleShotReturn(
         body: CodeBlock.Builder,

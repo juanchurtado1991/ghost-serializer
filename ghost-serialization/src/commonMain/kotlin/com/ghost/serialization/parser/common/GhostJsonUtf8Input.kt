@@ -289,16 +289,12 @@ private fun utf8MaxSizeFromUtf16(utf16ByteLength: Int): Int {
 /** Sentinel for a byte position that is past `length` during BOM probing. */
 private const val ABSENT_BYTE = -1
 
-/** Numeric value of the NUL byte (0x00). */
 private const val NUL_BYTE = 0
 
 /** BOM size to report when no byte-order mark is present. */
 private const val NO_BOM = 0
 
-/** Bytes per UTF-16 code unit. */
 private const val UTF16_UNIT_SIZE = 2
-
-/** Bytes per UTF-32 code unit. */
 private const val UTF32_UNIT_SIZE = 4
 
 /** Minimum bytes to request before probing for a BOM. */

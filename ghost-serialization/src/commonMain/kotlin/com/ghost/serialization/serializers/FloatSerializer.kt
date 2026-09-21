@@ -13,9 +13,6 @@ import com.ghost.serialization.parser.strings.nextFloat
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [Float] type.
- */
 object FloatSerializer : GhostSerializer<Float> {
     override val typeName: String get() = C.TYPE_NAME_FLOAT
 

@@ -26,8 +26,7 @@ import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
 /**
- * Entry-point and tri-channel parity tests for YAML serializers.
- * Aligns with `FeatureTriChannelSerializerTest` and
+ * Tri-channel parity for YAML entry points; aligns with `FeatureTriChannelSerializerTest` and
  * `GhostProtoEntryPointsTest`.
  */
 class GhostYamlEntryPointTest {
@@ -206,8 +205,6 @@ class GhostYamlEntryPointTest {
 
     @Test
     fun flatAndStreamingWritersAgreeOnEmptyNestedCollections() {
-        // Confirm the Buffer-backed and FlatByteArrayWriter-backed sinks stay byte-identical
-        // for the empty-collection case.
         val flatBytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             writer.beginObject()
             writer.name("meta")

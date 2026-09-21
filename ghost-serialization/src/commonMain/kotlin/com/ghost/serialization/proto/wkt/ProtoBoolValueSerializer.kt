@@ -14,14 +14,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Wrapper message for `bool`.
- *
- * The JSON representation for `BoolValue` is JSON boolean.
- */
-/**
- * Serializer for [ProtoBoolValue].
- */
 object ProtoBoolValueSerializer : GhostSerializer<ProtoBoolValue> {
     override val typeName: String get() = C.WKT_BOOL_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoBoolValue) {

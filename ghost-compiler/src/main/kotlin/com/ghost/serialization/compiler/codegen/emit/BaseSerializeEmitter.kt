@@ -19,9 +19,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Abstract base class for all serialization emitters within the Ghost compiler. Manages shared
- * state (contextual serializers) and provides code generation utilities for properties,
- * collections, primitives, value/inline classes, and custom-encoded fields.
+ * Base class for serialization emitters; manages contextual serializers and generates code for
+ * properties, collections, primitives, value/inline classes, and custom-encoded fields.
  */
 internal abstract class BaseSerializeEmitter(
     protected val properties: List<GhostPropertyModel>,
@@ -31,24 +30,19 @@ internal abstract class BaseSerializeEmitter(
     private val contextualSerializerRegistry = ContextualSerializerRegistry()
 
     /**
-     * Counter for unique loop variable names (`sizeN`, `iN`, `keyN`, `valN`) within a single
-     * serialization function. Nesting depth alone isn't enough — sibling list/map fields at the
-     * same depth would otherwise collide on `size0`, `i0`, etc.
+     * Counter for unique loop variable names (`sizeN`, `iN`, `keyN`, `valN`). Nesting depth alone
+     * isn't enough — sibling list/map fields at the same depth would collide on `size0`, `i0`, etc.
      */
     private var loopCounter = 0
 
-    /**
-     * Whether the property is a primitive/basic type that can be written with a fused
-     * fast-path writer method directly, skipping [emitValue].
-     */
+    /** Whether the property can be written with a fused fast-path writer method, skipping [emitValue]. */
     protected fun isFusedType(prop: GhostPropertyModel): Boolean {
         if (prop.customEncoder != null) {
             return false
         }
         val type = prop.type.declaration.qualifiedName?.asString()
-        // Proto3 JSON mapping requires int64 fields on the wire as quoted decimal strings —
-        // route Long through emitValue()'s dedicated proto branch instead of the fused
-        // writer.writeField(header, Long) fast path, which always writes a bare number.
+        // Proto3 requires int64 on the wire as a quoted string, so route Long through emitValue's
+        // proto branch instead of the fused fast path, which always writes a bare number.
         if (prop.isProto && (type == C.K_LONG || type == C.K_ULONG)) {
             return false
         }
@@ -70,9 +64,8 @@ internal abstract class BaseSerializeEmitter(
     }
 
     /**
-     * proto3 canonical JSON mapping omits scalar fields holding their type's zero value
-     * (`0`, `""`, `false`, an empty collection) on non-nullable properties of a
-     * `@GhostProtoSerialization` class. Nested Ghost/enum/RawJson/contextual types are left
+     * proto3 canonical JSON omits non-nullable scalar/collection fields holding their zero value
+     * (`0`, `""`, `false`, empty). Nested Ghost/enum/RawJson/contextual types are left
      * unconditional since there's no reliable "is this the default instance" check.
      *
      * @return The guard condition, or `null` if this property isn't subject to omission.
@@ -112,10 +105,7 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
-    /**
-     * Generates a single property serialization step: writes the key name, resolves nullable
-     * checks and proto3 default-omission, and delegates value writing to [emitValue].
-     */
+    /** Writes a property's key, applies nullable/proto3-omission checks, then delegates to [emitValue]. */
     fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
         if (prop.wrappedSourceKeys != null) {
             emitWrappedKeysProperty(code, prop)
@@ -152,10 +142,7 @@ internal abstract class BaseSerializeEmitter(
         emitNonNullProperty(code, prop, headerName, accessor)
     }
 
-    /**
-     * Unwraps a `@GhostWrappedKeys`
-     * property by writing each wire field at the current JSON object level.
-     */
+    /** Unwraps a `@GhostWrappedKeys` property, writing each wire field at the current JSON object level. */
     private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
         val accessorRoot = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)
         val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
@@ -173,9 +160,8 @@ internal abstract class BaseSerializeEmitter(
             val headerName =
                 prefix + field.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
 
-            // proto3 oneof: this wire key lives on one sealed subclass of the wrapped type, not
-            // on the wrapped (sealed parent) type itself — guard with an `is` smart-cast instead
-            // of a plain path accessor.
+            // proto3 oneof: this wire key lives on one sealed subclass, not the parent — guard
+            // with an `is` smart-cast instead of a plain path accessor.
             if (field.sealedSubclassName != null) {
                 val accessor = buildSealedSubclassFieldAccessor(
                     prop.kotlinName,
@@ -230,9 +216,6 @@ internal abstract class BaseSerializeEmitter(
         return expr
     }
 
-    /**
-     * Helper to serialize a nullable property.
-     */
     private fun emitNullableProperty(
         code: CodeBlock.Builder,
         prop: GhostPropertyModel,
@@ -267,9 +250,6 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
-    /**
-     * Helper to serialize a non-nullable property.
-     */
     private fun emitNonNullProperty(
         code: CodeBlock.Builder,
         prop: GhostPropertyModel,
@@ -285,10 +265,7 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
-    /**
-     * Emits the value serialization statement for a property — value classes, sealed classes,
-     * custom encoders, contextual serializers, and primitives.
-     */
+    /** Emits the value-write statement for a property, dispatching by kind (custom encoder, value class, sealed, etc). */
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
             if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {
@@ -392,9 +369,8 @@ internal abstract class BaseSerializeEmitter(
      * Recursively resolves the serialization call for a [KSType].
      *
      * @param skipNullCheck True if the outer check has already guaranteed a non-null value.
-     * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
-     *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
-     *   proto3 quoting/Base64 treatment.
+     * @param isProto Propagated into collection element recursion so nested `Long`/`ByteArray`
+     *   elements also get proto3 quoting/Base64 treatment.
      */
     protected fun emitTypeValue(
         code: CodeBlock.Builder,
@@ -540,10 +516,7 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
-    /**
-     * Emits list collection serialization statements, using [loopCounter] to name loop
-     * variables uniquely (e.g. `size2`, `i2`, `item2`).
-     */
+    /** Emits list serialization, using [loopCounter] to name loop variables uniquely. */
     private fun emitList(
         code: CodeBlock.Builder,
         type: KSType,
@@ -569,9 +542,7 @@ internal abstract class BaseSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_ARR)
     }
 
-    /**
-     * Emits set collection serialization — iterates elements without materializing a [List].
-     */
+    /** Emits set serialization, iterating elements without materializing a [List]. */
     private fun emitSet(
         code: CodeBlock.Builder,
         type: KSType,
@@ -593,10 +564,7 @@ internal abstract class BaseSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_ARR)
     }
 
-    /**
-     * Emits map collection serialization statements, using [loopCounter] to name loop
-     * variables uniquely (e.g. `key2`, `val2`).
-     */
+    /** Emits map serialization, using [loopCounter] to name loop variables uniquely. */
     private fun emitMap(
         code: CodeBlock.Builder,
         type: KSType,
@@ -619,15 +587,10 @@ internal abstract class BaseSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_OBJ)
     }
 
-    /**
-     * Registers and caches the contextual serializer for the target type.
-     */
     protected fun getContextualSerializerName(type: KSType): String =
         contextualSerializerRegistry.nameFor(type)
 
-    /**
-     * Injects the required private fields for all resolved contextual serializers.
-     */
+    /** Injects private fields for all resolved contextual serializers. */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) =
         contextualSerializerRegistry.injectInto(typeSpecBuilder)
 }

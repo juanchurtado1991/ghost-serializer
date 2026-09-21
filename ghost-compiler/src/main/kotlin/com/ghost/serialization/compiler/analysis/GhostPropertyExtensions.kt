@@ -57,9 +57,8 @@ internal fun GhostPropertyModel.getInitialValue(): String {
 }
 
 /**
- * Generates the expression string used to pass this property to the constructor
- * in the standard deserializer return statement. Appends a null-assertion operator `!!`
- * if the parameter is non-nullable but tracked as a nullable local variable.
+ * Constructor-arg expression for the standard deserializer return statement; appends `!!`
+ * when the parameter is non-nullable but tracked as a nullable local variable.
  */
 internal fun GhostPropertyModel.getReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
@@ -88,11 +87,11 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
 }
 
 /**
- * Fallback return expression for standard deserialization: the parsed variable when the mask
- * bit is set, otherwise the copy-based result field value.
+ * Fallback return expression: the parsed variable when the mask bit is set, otherwise the
+ * copy-based result field value.
  *
  * @param maskIdx Index of the tracking bitmask variable (e.g. `_mask0`).
- * @param bitMaskStr String representation of the bitmask representing this property.
+ * @param bitMaskStr Bitmask literal for this property.
  */
 internal fun GhostPropertyModel.getDefaultValueReturnExpression(
     maskIdx: Int,
@@ -197,8 +196,7 @@ internal fun GhostPropertyModel.getFragmentedSingleShotDefaultArgExpression(
 }
 
 /**
- * Generates the return expression string pointing to the generated `DecodingContext`
- * during fragmented deserialization. Handles boxing/unboxing for value classes and nullability.
+ * Fragmented (`DecodingContext`) variant of [getReturnExpression].
  */
 internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     val isPrimitive = type.isPrimitive() && !isNullable
@@ -228,11 +226,10 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
 }
 
 /**
- * Fragmented variant of [getDefaultValueReturnExpression]: maps tracking mask checks directly
- * to fields on the `DecodingContext` instance.
+ * Fragmented variant of [getDefaultValueReturnExpression].
  *
  * @param maskIdx Index of the tracking bitmask inside `DecodingContext`.
- * @param bitMaskStr String representation of the bitmask representing this property.
+ * @param bitMaskStr Bitmask literal for this property.
  */
 internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
     maskIdx: Int,

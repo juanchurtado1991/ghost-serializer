@@ -4,14 +4,9 @@ import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
 
 /**
- * Thread-safe map for Kotlin/Native (iOS).
- *
- * All mutations and reads are guarded by [objc_sync_enter]/[objc_sync_exit] — the same
- * Objective-C @synchronized primitive used by [runSynchronized]. This guarantees
- * correct visibility under K/N's new memory model where objects are shareable across threads.
- *
- * [entries], [keys] and [values] return **snapshots** (copies) so that callers iterating
- * outside the lock cannot observe concurrent structural modifications.
+ * Thread-safe map for Kotlin/Native (iOS), guarded by [objc_sync_enter]/[objc_sync_exit] —
+ * the same primitive as [runSynchronized] — for correct visibility under K/N's shared-object
+ * memory model.
  */
 internal class IosConcurrentMap<K, V> : MutableMap<K, V> {
     private val delegate = mutableMapOf<K, V>()

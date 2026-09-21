@@ -27,9 +27,7 @@ class GhostWrappedKeysCapture(
     private val values = arrayOfNulls<RawJson>(slotCount)
     private var presentMask = 0
 
-    /**
-     * Records a captured JSON value for [index] (position in the annotation `keys` array).
-     */
+    /** Records a captured JSON value for [index] (position in the annotation `keys` array). */
     fun put(index: Int, value: RawJson) {
         values[index] = value
         presentMask = presentMask or (1 shl index)

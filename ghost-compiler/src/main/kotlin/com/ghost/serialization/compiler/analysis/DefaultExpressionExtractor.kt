@@ -7,10 +7,10 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Extracts constructor-parameter default expressions from Kotlin source text, since KSP only
- * exposes [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the expression
- * itself. Reads the declaring file and accepts the parameter's RHS only when it matches a
- * strict literal whitelist; anything unrecognized returns `null` so callers fall back to `.copy()`.
+ * Extracts constructor-parameter default expressions from source text, since KSP only exposes
+ * [com.google.devtools.ksp.symbol.KSValueParameter.hasDefault], never the expression itself.
+ * Accepts the RHS only when it matches a strict literal whitelist; anything else returns `null`
+ * so callers fall back to `.copy()`.
  */
 internal object DefaultExpressionExtractor {
 

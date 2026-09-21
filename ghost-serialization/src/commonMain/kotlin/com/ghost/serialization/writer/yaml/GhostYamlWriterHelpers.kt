@@ -9,14 +9,11 @@ import okio.ByteString
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
- * Shared YAML writer kernels used by [GhostYamlWriter], regardless of whether it's
- * constructed over an okio `BufferedSink` or a `FlatByteArrayWriter`.
- *
- * Sink flushes stay at call sites via inlined lambdas. [keyNeedsQuoting] is pure
- * (no I/O), so it's called directly instead of duplicated — it used to live only on
- * the (now-merged) flat writer, which left the streaming path writing every mapping
- * key bare/unescaped (found by fuzzing: `GhostYamlWriter.name("a: b")` produced YAML
- * `GhostYamlFlatReader` itself couldn't parse back).
+ * Shared YAML writer kernels used by [GhostYamlWriter], whether backed by an okio
+ * `BufferedSink` or a `FlatByteArrayWriter`. Sink flushes stay at call sites via inlined lambdas.
+ * [keyNeedsQuoting] used to live only on the (now-merged) flat writer, which left the streaming
+ * path writing every mapping key bare/unescaped — found by fuzzing: `GhostYamlWriter.name("a: b")`
+ * produced YAML `GhostYamlFlatReader` itself couldn't parse back.
  */
 @OptIn(InternalGhostApi::class)
 internal object GhostYamlWriterHelpers {
@@ -252,26 +249,16 @@ internal object GhostYamlWriterHelpers {
     }
 
     /**
-     * True if [key] can't safely be written as bare plain-scalar text: it would either redirect
-     * into a nested mapping when re-read (an embedded ": " indistinguishable from the key/value
-     * separator), get silently truncated (an embedded newline — a bare implicit key's own scan
-     * stops at the first one), or be misread as something else entirely by the reader's own
-     * prefix dispatch. A leading '&'/'!'/'*' looks like an anchor/tag/alias to `readKey`, a
-     * leading '"'/'\'' looks like the start of a quoted key, and a bare '?' — or '?' followed by
-     * whitespace — looks like an explicit-key indicator. A leading '['/'{' is a different hazard:
-     * a *stringified complex key* (Ghost collapses a non-scalar key to its `toString()`, e.g.
-     * `"[a, b]"` or `"{k=v}"`) starting with one of these can end up read back through
-     * `readValue`'s full structural flow-collection dispatch instead of `readKey`'s plain-text
-     * scan — e.g. as a redirected implicit key or a block-sequence item's value — misparsing the
-     * stringified text as a real (and likely invalid, since it uses `=` not `:`) flow collection
-     * instead of treating it as opaque text. An empty key is fine bare: a lone ':' with nothing
-     * before it already round-trips to the empty string correctly. A leading or trailing space/tab
-     * is also unsafe bare: a plain scalar's surrounding whitespace is not part of its content, so
-     * the reader silently trims it — found by fuzzing (`GhostYamlWriterFuzzTest`): `" ?xup"` wrote
-     * bare as `" ?xup: 1"` and re-read as key `"?xup"`, silently dropping the leading space. A
-     * leading '%' is also unsafe: reserved for `%YAML`/`%TAG` directives, so a key like `"%foo"`
-     * landing as the document's first line is read as an (invalid, unterminated) directive
-     * instead of a mapping key — also found by fuzzing (`GhostYamlStreamingWriterFuzzTest`).
+     * True if [key] can't safely be written as bare plain-scalar text, i.e. it would round-trip
+     * wrong when re-read: a leading '&'/'!'/'*' looks like an anchor/tag/alias, '"'/'\'' looks
+     * like a quoted key, a bare '?' looks like an explicit-key indicator, and '['/'{' can send a
+     * stringified complex key (Ghost collapses a non-scalar key via `toString()`, e.g. `"[a, b]"`)
+     * through the flow-collection dispatch instead of being read as opaque text. An embedded
+     * ": " gets misread as the key/value separator; an embedded newline truncates the key.
+     * A leading/trailing space or tab is silently trimmed by the reader — found by fuzzing
+     * (`GhostYamlWriterFuzzTest`): `" ?xup"` wrote bare and re-read as `"?xup"`. A leading '%' is
+     * read as a `%YAML`/`%TAG` directive instead of a key — also found by fuzzing
+     * (`GhostYamlStreamingWriterFuzzTest`). An empty key is fine bare (round-trips as `""`).
      */
     fun keyNeedsQuoting(key: String): Boolean {
         val length = key.length

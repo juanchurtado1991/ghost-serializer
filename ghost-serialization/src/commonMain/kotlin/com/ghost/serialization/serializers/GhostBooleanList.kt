@@ -2,10 +2,7 @@ package com.ghost.serialization.serializers
 
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-/**
- * Highly optimized, zero-allocation internal list implementation for [Boolean] primitives.
- * Avoids boxing overhead and memory allocation pressure.
- */
+/** Growable [Boolean] buffer that avoids boxing. */
 internal class GhostBooleanList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {
     private var buffer = BooleanArray(initialCapacity)
     private var currentSize = 0

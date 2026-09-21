@@ -10,14 +10,11 @@ interface GhostRegistry {
     /** Resolves the [GhostSerializer] for [clazz], or `null` if unregistered in this module. */
     fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>?
 
-    /** All serializers registered in this module, for eager loading / zero-latency first-runs. */
+    /** For eager loading / zero-latency first-runs. */
     fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = emptyMap()
 
     /** Eagerly initializes registry entries to avoid first-use JIT warm-up latency. */
-    fun prewarm() {
-        // Default no-op.
-    }
+    fun prewarm() { }
 
-    /** Total number of serializers registered in this registry. */
     fun registeredCount(): Int = 0
 }

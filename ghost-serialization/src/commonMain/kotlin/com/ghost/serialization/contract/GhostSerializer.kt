@@ -65,18 +65,10 @@ interface GhostSerializer<T> {
         }
     }
 
-    /**
-     * Serializes [value] using [writer] — the single unified in-memory /
-     * streaming writer (bytes and Okio streaming share one implementation via
-     * [com.ghost.serialization.writer.bytes.GhostByteSink]).
-     */
+    /** Serializes [value] using [writer] (see class doc for the reader/writer design). */
     fun serialize(writer: GhostJsonWriter, value: T)
 
-    /**
-     * Serializes [value] using the in-memory text [writer] (contiguous
-     * `FlatCharArrayWriter` under the hood).
-     * Used by `Ghost.encodeToString` to write characters directly.
-     */
+    /** Serializes [value] as text via [writer] (a contiguous `FlatCharArrayWriter`); used by `Ghost.encodeToString`. */
     fun serialize(writer: GhostJsonStringWriter, value: T) {
         val bytes = ghostInternalEncodeWithWriter { flatWriter ->
             serialize(flatWriter, value)
@@ -102,7 +94,7 @@ interface GhostSerializer<T> {
      *
      * **Compatibility bridge:** the default wraps [reader] in a streaming [GhostJsonReader]
      * (allocates, loses flat monomorphy). KSP-generated serializers always override this.
-     * Hand-written serializers on the hot path must override it too.
+     * Handwritten serializers on the hot path must override it too.
      */
     fun deserialize(reader: GhostJsonFlatReader): T {
         val delegatedReader = GhostJsonReader(reader.rawData).also {
@@ -146,9 +138,6 @@ interface GhostSerializer<T> {
     }
 
 
-    /**
-     * Optional warm-up cycle to trigger JIT (Just-In-Time) or ART optimization
-     * for critical parsing paths.
-     */
-    fun warmUp() {}
+    /** Optional warm-up cycle to trigger JIT/ART optimization for hot parsing paths. */
+    fun warmUp() { }
 }

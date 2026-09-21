@@ -9,21 +9,13 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
-/**
- * Emitter for fragmented serialization logic.
- *
- * Used for large classes to avoid JVM method size limits by splitting
- * the writing logic into multiple private "chunk" functions.
- */
+/** Serializes large classes as multiple private "chunk" functions to avoid JVM method size limits. */
 internal class FragmentedSerializeEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
     writerClass: ClassName
 ) : BaseSerializeEmitter(properties, originalClassName, writerClass) {
 
-    /**
-     * Emits the fragmented chunk-based serialization logic.
-     */
     fun emit(
         code: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder,
@@ -55,9 +47,6 @@ internal class FragmentedSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_OBJ)
     }
 
-    /**
-     * Generates a private chunk serialization method.
-     */
     private fun emitChunkFunction(
         index: Int,
         chunkProps: List<GhostPropertyModel>,

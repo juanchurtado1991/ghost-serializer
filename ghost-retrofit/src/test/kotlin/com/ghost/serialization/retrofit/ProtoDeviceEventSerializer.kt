@@ -16,13 +16,9 @@ import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 /**
- * Hand-written stand-in for what
- * `@GhostProtoSerialization` + KSP
- * would generate for `data class ProtoDeviceEvent(val deviceId: Long, val label: String)` —
- * `deviceId` is written as a quoted decimal string (proto3 int64 mapping) and must be readable
- * back as a bare-or-quoted number, exercising exactly what [GhostProtoConverterFactory] depends
- * on (`GhostProtoJsonFlatReader.nextLong` polymorphism via
- * `reader.nextLong()`).
+ * Hand-written stand-in for `@GhostProtoSerialization` + KSP codegen: writes `deviceId` as a
+ * quoted decimal string (proto3 int64 mapping) that must read back as bare-or-quoted, exercising
+ * [GhostProtoConverterFactory]'s reliance on `GhostProtoJsonFlatReader.nextLong` polymorphism.
  */
 @InternalGhostApi
 object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
@@ -55,10 +51,9 @@ object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
     }
 
     /**
-     * Explicit flat-reader override (not the default interface bridge) so a
-     * `GhostProtoJsonFlatReader` passed in by [GhostProtoConverterFactory] dispatches
-     * `nextLong` to its proto3-lenient implementation via virtual dispatch — the default bridge
-     * would construct a plain `GhostJsonReader` internally and lose that leniency.
+     * Explicit override (not the default interface bridge) so a `GhostProtoJsonFlatReader`
+     * dispatches `nextLong` to its proto3-lenient implementation; the default bridge would
+     * construct a plain `GhostJsonReader` and lose that leniency.
      */
     override fun deserialize(reader: GhostJsonFlatReader): ProtoDeviceEvent {
         var deviceId = 0L

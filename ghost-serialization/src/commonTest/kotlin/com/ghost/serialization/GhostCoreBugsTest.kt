@@ -23,17 +23,15 @@ class GhostCoreBugsTest {
 
     @Test
     fun testScientificNotationExponentOverflow() {
-        // Test with massive exponent that would overflow Int without clamping
+        // Exponent this large would overflow Int without clamping.
         val json = "2e10000000000"
         val bytes = json.encodeToByteArray()
 
-        // 1. Test GhostJsonReader
         val reader1 = GhostJsonReader(createByteArraySource(bytes))
         assertFails {
             reader1.nextDouble()
         }
 
-        // 2. Test GhostJsonReader
         val reader2 = GhostJsonReader(bytes)
         assertFails {
             reader2.nextDouble()
@@ -45,7 +43,7 @@ class GhostCoreBugsTest {
         val writer = FlatByteArrayWriter()
         writer.writeByte(0)
         assertFails {
-            // A non-zero size plus Int.MAX_VALUE must overflow before attempting allocation.
+            // Non-zero size + Int.MAX_VALUE must overflow before allocation is attempted.
             writer.write(ByteArray(0), 0, Int.MAX_VALUE)
         }
     }
@@ -55,8 +53,8 @@ class GhostCoreBugsTest {
         val scratch = ByteArray(128)
         val value = 123456789012345.67
 
-        // Ensure that double formatting above 1e9 falls back safely to JVM/Platform standard formatter
-        // which guarantees shortest representation instead of printing trailing scale artifacts.
+        // Above 1e9, formatting falls back to the platform formatter for shortest representation
+        // instead of printing trailing scale artifacts.
         val length = GhostDoubleFormatter.writeDoubleDirect(value, scratch, 0)
         val formattedStr = if (length == GhostDoubleFormatter.FALLBACK_REQUIRED) {
             value.toString()
@@ -68,23 +66,24 @@ class GhostCoreBugsTest {
 
     @Test
     fun testKeyCollisionPrevention() {
+        // "user_id" and "user_ip" collide under this hash/length combo.
         val options = JsonReaderOptions.of(3, 19, "user_id", "user_ip")
-        assertTrue(options.hasCollisions) // Must be true due to "user_id" and "user_ip" collision
+        assertTrue(options.hasCollisions)
 
         val safeOptions = JsonReaderOptions.of("id", "name", "price")
-        assertTrue(!safeOptions.hasCollisions) // Must be false since there are no collisions
+        assertTrue(!safeOptions.hasCollisions)
 
         val json = "{\"user_id\":1,\"user_ip\":2}"
 
         val r1 = GhostJsonReader(json.encodeToByteArray())
         r1.beginObject()
         val match1 = r1.selectString(options)
-        assertEquals(0, match1) // user_id index is 0
+        assertEquals(0, match1)
         r1.consumeKeySeparator()
         r1.nextInt()
 
         val match2 = r1.selectString(options)
-        assertEquals(1, match2) // user_ip index is 1
+        assertEquals(1, match2)
         r1.consumeKeySeparator()
         r1.nextInt()
 
@@ -96,13 +95,12 @@ class GhostCoreBugsTest {
         val jsonBytes = "}".encodeToByteArray()
         val reader = GhostJsonReader(jsonBytes)
 
-        // Depth starts at 0
         assertEquals(0, reader.depth)
         reader.endObject()
-        // Decrementing past 0 should stay at 0
+        // Decrementing past 0 must clamp at 0, not go negative.
         assertEquals(0, reader.depth)
 
-        // Verify depth is clamped at 0 for streaming reader
+        // Same clamp applies to the streaming reader.
         val reader2 = GhostJsonReader(createByteArraySource(jsonBytes))
         assertEquals(0, reader2.depth)
         reader2.endObject()
@@ -111,18 +109,16 @@ class GhostCoreBugsTest {
 
     @Test
     fun testTruncatedUnicodeSurrogateError() {
-        // Truncated string ending in a high surrogate escape block, missing the low surrogate.
-        // It must throw a structured GhostJsonException instead of IndexOutOfBoundsException.
+        // High surrogate escape with no low surrogate must throw a structured
+        // GhostJsonException, not an IndexOutOfBoundsException.
         val json = "\"\\uD83D\""
         val bytes = json.encodeToByteArray()
 
-        // 1. Test GhostJsonReader
         val flatReader = GhostJsonReader(bytes)
         assertFails {
             flatReader.readQuotedString()
         }
 
-        // 2. Test GhostJsonReader
         val streamingReader = GhostJsonReader(createByteArraySource(bytes))
         assertFails {
             streamingReader.readQuotedString()
@@ -131,7 +127,7 @@ class GhostCoreBugsTest {
 
     @Test
     fun testPrimitiveListZeroCapacity() {
-        // GhostIntList with 0 capacity should dynamically expand without ArrayIndexOutOfBoundsException
+        // Zero-capacity lists must grow on add rather than throwing ArrayIndexOutOfBoundsException.
         val intList = GhostIntList(0)
         assertTrue(intList.isEmpty())
         intList.add(10)
@@ -140,7 +136,6 @@ class GhostCoreBugsTest {
         assertEquals(10, intList.toArray()[0])
         assertEquals(20, intList.toArray()[1])
 
-        // GhostLongList with 0 capacity should dynamically expand without ArrayIndexOutOfBoundsException
         val longList = GhostLongList(0)
         assertTrue(longList.isEmpty())
         longList.add(100L)
@@ -152,7 +147,7 @@ class GhostCoreBugsTest {
 
     @Test
     fun testStrictCommaValidation() {
-        // Missing comma in array should trigger assertion failures when strictMode is enabled
+        // strictMode rejects a missing comma between array elements.
         val missingCommaArray = "[1 2]".encodeToByteArray()
         assertFails {
             Ghost.deserialize<IntArray>(missingCommaArray) {
@@ -160,7 +155,7 @@ class GhostCoreBugsTest {
             }
         }
 
-        // Duplicate commas in array should trigger failure when strictMode is enabled
+        // strictMode also rejects duplicate commas.
         val duplicateCommaArray = "[1,, 2]".encodeToByteArray()
         assertFails {
             Ghost.deserialize<IntArray>(duplicateCommaArray) {

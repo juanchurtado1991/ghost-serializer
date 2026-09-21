@@ -14,14 +14,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Wrapper message for `double`.
- *
- * The JSON representation for `DoubleValue` is JSON number.
- */
-/**
- * Serializer for [ProtoDoubleValue].
- */
 object ProtoDoubleValueSerializer : GhostSerializer<ProtoDoubleValue> {
     override val typeName: String get() = C.WKT_DOUBLE_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoDoubleValue) {

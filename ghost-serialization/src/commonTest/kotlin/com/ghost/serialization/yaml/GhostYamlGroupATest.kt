@@ -362,8 +362,6 @@ class GhostYamlGroupATest {
         assertEquals(30L, result["age"])
     }
 
-    // ── Spring Boot benchmark dataset validation ──────────────────────────────
-
     // ── Whitespace edge cases ─────────────────────────────────────────────────
 
     @Test

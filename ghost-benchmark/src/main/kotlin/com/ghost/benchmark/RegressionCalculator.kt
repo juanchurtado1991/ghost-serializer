@@ -13,10 +13,10 @@ import java.time.Instant
 /**
  * Engine-relative regression detector.
  *
- * Absolute ops/s and latency scale with the machine, so this compares the **current
- * Ghost÷KSER advantage ratio** against the **README baseline ratio** instead: Ghost and
- * KSER run back-to-back in the same JVM process on the same payload, so their ratio cancels
- * machine/JIT variance — a regression is flagged only when that ratio degrades beyond
+ * Absolute ops/s and latency scale with the machine, so this compares the current
+ * Ghost÷KSER advantage ratio against the README baseline ratio instead: since Ghost and KSER
+ * run back-to-back in the same JVM process on the same payload, their ratio cancels out
+ * machine/JIT variance. Regression is flagged only when that ratio degrades beyond
  * [DEFAULT_TOLERANCE]. Memory (KB/op) is normalized the same way (`KSER ÷ Ghost` leanness).
  */
 object RegressionCalculator {
@@ -25,10 +25,9 @@ object RegressionCalculator {
     const val DEFAULT_TOLERANCE: Double = 0.10
 
     /**
-     * Where [report] writes its machine-readable JSON snapshot, relative to the JVM's working
-     * directory (`ghost-benchmark/` when launched via a Gradle `JavaExec` task). Not read by CI —
-     * this is local, pre-PR best-practice tooling, not a CI gate (regression checks stay opt-in,
-     * on purpose: they take 1–9 minutes and would make every PR pay for full-machine JIT warmup).
+     * Where [report] writes its JSON snapshot, relative to the JVM working directory
+     * (`ghost-benchmark/` under Gradle `JavaExec`). Not read by CI: regression checks are opt-in
+     * pre-PR tooling, since a full run takes 1-9 minutes for JIT warmup.
      */
     const val REPORT_JSON_PATH = "build/reports/regression/regression-report.json"
 
@@ -91,10 +90,10 @@ object RegressionCalculator {
     )
 
     /**
-     * README baseline snapshot captured with [BenchmarkStandard] under the full profile
-     * (10k global warmup, 500 local warmup, 500 synthetic sessions × 50 batched samples,
-     * Ghost+KSER measured back-to-back per mode, median ratio). Twitter stores raw ops/s.
-     * Split Gradle tasks: `benchmarkSynthetic` / `benchmarkTwitter`.
+     * README baseline snapshot from [BenchmarkStandard]'s full profile (10k global warmup, 500
+     * local warmup, 500 synthetic sessions x 50 batched samples, Ghost+KSER measured back-to-back
+     * per mode, median ratio). Twitter stores raw ops/s. Gradle tasks: `benchmarkSynthetic` /
+     * `benchmarkTwitter`.
      */
     private val BASELINES: List<Baseline> = listOf(
         Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1829.3, 1090.9, 361.2, 1337.6),

@@ -46,7 +46,6 @@ class HugeJsonTest {
         writer.flush()
         val json = buffer.readUtf8()
 
-        // Verify syntax by parsing it back with a standard parser (or our reader)
         println("JSON: $json")
         val reader = GhostJsonReader(json.encodeToByteArray())
         reader.beginArray()

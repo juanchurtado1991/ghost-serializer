@@ -88,10 +88,8 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
         }
     }
 
-    // Skip inline space after tag
     skipInlineWhitespace()
 
-    // If value is on next line, advance and use next line's indentation
     val valueIndent =
         if (position < localLimit && (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
             advanceLine()
@@ -125,7 +123,6 @@ internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): 
         }
     }
 
-    // Inject tag into the Map if it's a custom tag and value is a Map
     if (resolvedTag != null && value is MutableMap<*, *>) {
         @Suppress("UNCHECKED_CAST")
         val map = value as MutableMap<String, Any?>

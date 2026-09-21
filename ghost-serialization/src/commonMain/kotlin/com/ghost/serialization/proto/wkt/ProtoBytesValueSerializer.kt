@@ -17,14 +17,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Wrapper message for `bytes`.
- *
- * The JSON representation for `BytesValue` is JSON string.
- */
-/**
- * Serializer for [ProtoBytesValue].
- */
 object ProtoBytesValueSerializer : GhostSerializer<ProtoBytesValue> {
     override val typeName: String get() = C.WKT_BYTES_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
@@ -38,8 +30,7 @@ object ProtoBytesValueSerializer : GhostSerializer<ProtoBytesValue> {
     override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
         ProtoBytesValue(decodeBase64String(reader.nextString()))
 
-    // Uses the pooled-scratch-buffer fast path when [reader] is specifically a
-    // GhostProtoJsonFlatReader; falls back to the shared decoder for any other reader flavor.
+    // Fast path for GhostProtoJsonFlatReader (pooled scratch buffer); else shared decoder.
     override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
         if (reader is GhostProtoJsonFlatReader) {
             return ProtoBytesValue(reader.nextProtoBytes())

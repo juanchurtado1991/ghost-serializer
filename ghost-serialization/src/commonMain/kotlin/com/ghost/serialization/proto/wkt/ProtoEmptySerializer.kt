@@ -22,9 +22,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Serializer for [ProtoEmpty].
- */
 object ProtoEmptySerializer : GhostSerializer<ProtoEmpty> {
     override val typeName: String get() = C.WKT_EMPTY_TYPE
 

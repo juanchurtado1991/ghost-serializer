@@ -9,16 +9,9 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
-/**
- * Generator that handles recursive emission of nested perfect hash lookup options
- * for flattened properties structures in a serializer type builder.
- */
+/** Emits nested perfect-hash lookup options for `@GhostFlatten` property structures. */
 internal object FlattenOptionsGenerator {
 
-    /**
-     * Collects and triggers recursive generation of nested perfect hash lookup options
-     * for flattened properties structures.
-     */
     fun generateNestedOptions(
         typeSpecBuilder: TypeSpec.Builder,
         properties: List<GhostPropertyModel>,
@@ -54,9 +47,6 @@ internal object FlattenOptionsGenerator {
         }
     }
 
-    /**
-     * Recursively traverses nodes and emits private nested perfect hash options properties.
-     */
     private fun emitNestedOptionsRecursive(
         typeSpecBuilder: TypeSpec.Builder,
         properties: List<GhostPropertyModel>,
@@ -120,9 +110,6 @@ internal object FlattenOptionsGenerator {
         }
     }
 
-    /**
-     * Node descriptor representing a segment in a flattened path hierarchy tree.
-     */
     private class FlattenNode(val segment: String) {
         val children = mutableMapOf<String, FlattenNode>()
         val properties = mutableListOf<GhostPropertyModel>()

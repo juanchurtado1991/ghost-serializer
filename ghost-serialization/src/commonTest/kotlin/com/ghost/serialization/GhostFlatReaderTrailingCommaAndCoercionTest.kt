@@ -64,7 +64,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
     @Test
     fun lenientModeRejectsTrailingCommaInObjectToo() {
         // Trailing-comma rejection isn't strict-mode-only -- nextKey()'s non-strict branch
-        // (line ~377-382) throws ERR_TRAILING_COMMA unconditionally too.
+        // throws ERR_TRAILING_COMMA unconditionally too.
         val reader = readerOf("""{"a":1,}""")
         reader.beginObject()
         assertFailsWith<GhostJsonException> {
@@ -96,11 +96,9 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
 
     @Test
     fun strictModeHasNextInteractsWithConsumeArraySeparator() {
-        // hasNext() and consumeArraySeparator() share the same per-depth "comma already
-        // consumed" bit. Real usage (CollectionSerializers.kt): hasNext() drives the loop and
-        // consumes the separator itself when required=true from the prior iteration;
-        // consumeArraySeparator() then just has to honor that without re-consuming or
-        // re-requiring it.
+        // hasNext() and consumeArraySeparator() share a per-depth "comma already consumed" bit:
+        // hasNext() consumes it when required from the prior iteration, so
+        // consumeArraySeparator() must honor that without re-consuming or re-requiring it.
         val reader = readerOf("""[1,2,3]""")
         reader.strictMode = true
         reader.beginArray()

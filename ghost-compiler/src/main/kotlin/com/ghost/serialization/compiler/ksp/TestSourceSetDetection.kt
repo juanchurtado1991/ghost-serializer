@@ -3,16 +3,14 @@ package com.ghost.serialization.compiler.ksp
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
- * Heuristics for whether annotated sources belong to a test compilation, so the default
- * module registry can take a `_Test` suffix.
+ * Heuristics for whether sources belong to a test compilation, so the default module registry
+ * can take a `_Test` suffix. KSP exposes no stable `isTest`/source-set API on
+ * [com.google.devtools.ksp.symbol.KSFile] — without this, main and test compilations with
+ * [C.OPTION_MODULE_NAME] unset would both emit `GhostModuleRegistry_Default`.
  *
- * KSP exposes no stable `isTest` / source-set API on [com.google.devtools.ksp.symbol.KSFile], so
- * without this, main and test compilations with [C.OPTION_MODULE_NAME] unset would both emit
- * `GhostModuleRegistry_Default` with no distinguishing suffix.
- *
- * Preference order: explicit [C.OPTION_IS_TEST] first, then path sniffing for common Gradle
- * layouts (`src/test`, `src/androidTest`, `src/testKsp`). Sniffing is narrow — custom source-set
- * names won't match; pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) instead.
+ * Prefers explicit [C.OPTION_IS_TEST], then falls back to path sniffing for common Gradle
+ * layouts (`src/test`, `src/androidTest`, `src/testKsp`) — narrow, so custom source-set names
+ * won't match; pass [C.OPTION_IS_TEST] instead in that case.
  */
 internal object TestSourceSetDetection {
 

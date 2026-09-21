@@ -14,14 +14,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Wrapper message for `int32`.
- *
- * The JSON representation for `Int32Value` is JSON number.
- */
-/**
- * Serializer for [ProtoInt32Value].
- */
 object ProtoInt32ValueSerializer : GhostSerializer<ProtoInt32Value> {
     override val typeName: String get() = C.WKT_INT32_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoInt32Value) {

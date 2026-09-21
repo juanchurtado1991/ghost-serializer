@@ -285,7 +285,7 @@ class GhostReaderAdvancedTest {
             reader.selectString(JsonReaderOptions.of("v"))
             reader.consumeKeySeparator()
             reader.nextInt()
-            reader.endObject() // This MUST fail
+            reader.endObject()
         }
         assertTrue(ex.line > 1, "Line should be > 1. Found: ${ex.line}")
     }

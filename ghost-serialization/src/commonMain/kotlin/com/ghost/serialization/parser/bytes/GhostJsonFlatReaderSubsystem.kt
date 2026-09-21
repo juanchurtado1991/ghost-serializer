@@ -12,13 +12,8 @@ import com.ghost.serialization.parser.common.selectValidateCommasCore
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * Low-level select parser helper that hashes and matches against [JsonReaderOptions] fields.
- *
- * Mechanics:
- * 1. Checks for trailing comma conditions and finds the start of the quoted string/key.
- * 2. Optimistic in-order predicted-key compare via [ghostReadLong8] (byte-flat fast path).
- * 3. Falls back to closing-quote scan + perfect-hash dispatch + [verifyKeyMatch].
- * 4. Consumes the trailing colon `:` if [consumeSeparator] is enabled.
+ * Perfect-hash field matcher against [JsonReaderOptions]. Tries the in-order predicted key via
+ * [ghostReadLong8] first, then falls back to closing-quote scan + hash dispatch + [verifyKeyMatch].
  *
  * @return The matched options index, `-1` on object closing, or [C.MATCH_NONE] if not found.
  */

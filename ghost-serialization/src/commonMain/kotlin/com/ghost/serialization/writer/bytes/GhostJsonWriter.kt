@@ -91,10 +91,6 @@ class GhostJsonWriter private constructor(
 
     // ── Structural ────────────────────────────────────────────────────────────
 
-    /**
-     * Starts a new JSON object.
-     * Automatically handles comma insertion and indentation tracking.
-     */
     fun beginObject(): GhostJsonWriter {
         GhostJsonWriterHelpers.beginObjectCore(
             depth = depth,
@@ -108,9 +104,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Ends the current JSON object.
-     */
     fun endObject(): GhostJsonWriter {
         GhostJsonWriterHelpers.endObjectCore(
             depth = depth,
@@ -121,9 +114,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Starts a new JSON array.
-     */
     fun beginArray(): GhostJsonWriter {
         GhostJsonWriterHelpers.beginArrayCore(
             depth = depth,
@@ -137,9 +127,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Ends the current JSON array.
-     */
     fun endArray(): GhostJsonWriter {
         GhostJsonWriterHelpers.endArrayCore(
             depth = depth,
@@ -150,10 +137,7 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a field name as a string.
-     * Escapes the key and appends the colon separator.
-     */
+    /** Writes an escaped field name followed by the colon separator. */
     fun name(key: String): GhostJsonWriter {
         appendSeparator()
         sink.writeByte(QUOTE_INT)
@@ -163,10 +147,7 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a pre-encoded field name [ByteString].
-     * This is the fastest way to write field names as it avoids runtime escaping.
-     */
+    /** Writes a pre-encoded field name, avoiding runtime escaping — the fastest way to write names. */
     fun name(key: ByteString): GhostJsonWriter {
         appendSeparator()
         sink.write(key)
@@ -174,18 +155,12 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a field name raw [ByteString] without validating or escaping.
-     */
     @InternalGhostApi
     fun writeNameRaw(header: ByteString): GhostJsonWriter {
         return name(header)
     }
 
-    /**
-     * Fused name + value with automatic comma handling.
-     * Used by KSP-generated serializers for subsequent object fields.
-     */
+    /** Fused name + value with automatic comma handling; used by KSP-generated serializers. */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Int): GhostJsonWriter {
         appendSeparator()
@@ -195,10 +170,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Fused name + value with automatic comma handling.
-     * Used by KSP-generated serializers for subsequent object fields.
-     */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Long): GhostJsonWriter {
         appendSeparator()
@@ -217,10 +188,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Fused name + value with automatic comma handling.
-     * Used by KSP-generated serializers for subsequent object fields.
-     */
     @InternalGhostApi
     fun writeField(header: ByteString, value: String): GhostJsonWriter {
         appendSeparator()
@@ -230,10 +197,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Fused name + value with automatic comma handling.
-     * Used by KSP-generated serializers for subsequent object fields.
-     */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Boolean): GhostJsonWriter {
         appendSeparator()
@@ -243,10 +206,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Fused name + value with automatic comma handling.
-     * Used by KSP-generated serializers for subsequent object fields.
-     */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Double): GhostJsonWriter {
         appendSeparator()
@@ -256,10 +215,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Fused name + value with automatic comma handling.
-     * Used by KSP-generated serializers for subsequent object fields.
-     */
     @InternalGhostApi
     fun writeField(header: ByteString, value: Float): GhostJsonWriter {
         appendSeparator()
@@ -271,9 +226,6 @@ class GhostJsonWriter private constructor(
 
     // ── value() public API ────────────────────────────────────────────────────
 
-    /**
-     * Writes a string value into the JSON stream.
-     */
     fun value(text: String): GhostJsonWriter {
         appendSeparator()
         writeStringValueRaw(text)
@@ -281,9 +233,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes an integer value into the JSON stream.
-     */
     fun value(number: Int): GhostJsonWriter {
         appendSeparator()
         writeIntValueRaw(number)
@@ -291,9 +240,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a long value into the JSON stream.
-     */
     fun value(number: Long): GhostJsonWriter {
         appendSeparator()
         writeLongValueRaw(number)
@@ -308,9 +254,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a double value into the JSON stream.
-     */
     fun value(number: Double): GhostJsonWriter {
         appendSeparator()
         writeDoubleValueRaw(number)
@@ -318,9 +261,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a float value into the JSON stream.
-     */
     fun value(number: Float): GhostJsonWriter {
         appendSeparator()
         writeFloatValueRaw(number)
@@ -328,9 +268,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a boolean value into the JSON stream.
-     */
     fun value(value: Boolean): GhostJsonWriter {
         appendSeparator()
         if (value) {
@@ -342,9 +279,7 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
-     */
+    /** Writes a single [Char] as a JSON string without allocating an intermediate [String]. */
     fun value(char: Char): GhostJsonWriter {
         appendSeparator()
         sink.writeQuotedBmpCodeUnit(char.code)
@@ -352,9 +287,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a null value into the JSON stream.
-     */
     fun nullValue(): GhostJsonWriter {
         appendSeparator()
         sink.writeNull()
@@ -362,11 +294,7 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes raw JSON bytes directly into the stream without quoting or escaping.
-     * Use this to emit a pre-serialized JSON fragment captured via
-     * `captureRawJsonBytes`.
-     */
+    /** Writes raw JSON bytes directly, without quoting or escaping — for a pre-serialized fragment. */
     fun rawValue(bytes: ByteArray): GhostJsonWriter {
         appendSeparator()
         sink.write(bytes)
@@ -374,9 +302,6 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /**
-     * Writes a slice of raw JSON bytes directly into the stream without quoting or escaping.
-     */
     fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonWriter {
         appendSeparator()
         sink.write(bytes, offset, length)
@@ -388,9 +313,6 @@ class GhostJsonWriter private constructor(
     fun rawValue(raw: RawJson): GhostJsonWriter =
         rawValue(raw.storage, raw.storageOffset, raw.storageLength)
 
-    /**
-     * Writes a boolean value without a field name or separator.
-     */
     @InternalGhostApi
     fun writeBooleanValueRaw(value: Boolean) {
         if (value) {
@@ -400,9 +322,6 @@ class GhostJsonWriter private constructor(
         }
     }
 
-    /**
-     * Writes an integer value without a field name or separator.
-     */
     @InternalGhostApi
     fun writeIntValueRaw(value: Int) {
         GhostJsonWriterHelpers.writeIntValueRawCore(
@@ -414,9 +333,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Writes a long value without a field name or separator.
-     */
     @InternalGhostApi
     fun writeLongValueRaw(value: Long) {
         GhostJsonWriterHelpers.writeLongValueRawCore(
@@ -438,9 +354,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Internal implementation for writing Long values into the scratch buffer.
-     */
     private fun writeLongValueRawInternal(value: Long) {
         GhostJsonWriterHelpers.writeLongValueRawInternalCore(
             value = value,
@@ -451,9 +364,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Writes a double value without a field name or separator.
-     */
     @InternalGhostApi
     fun writeDoubleValueRaw(number: Double) {
         GhostJsonWriterHelpers.writeDoubleValueRawCore(
@@ -480,9 +390,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Appends the separator comma if needsComma is true.
-     */
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun appendSeparator() {
         if (needsComma) {
@@ -491,9 +398,6 @@ class GhostJsonWriter private constructor(
         }
     }
 
-    /**
-     * Writes a string value with quotes and proper escaping.
-     */
     @InternalGhostApi
     fun writeStringValueRaw(value: String) {
         val length = value.length
@@ -535,9 +439,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Helper to write escaped character bytes into the destination sink.
-     */
     private fun writeEscaped(text: String, start: Int = 0) {
         GhostJsonEscapeHelpers.writeEscapedBytes(
             text = text,
@@ -549,9 +450,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Helper to write escaped character bytes directly into the scratch buffer.
-     */
     private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: ByteArray) {
         GhostJsonEscapeHelpers.writeEscapedIntoByteScratch(
             text = text,
@@ -564,9 +462,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    /**
-     * Throws an exception when max depth limits are exceeded.
-     */
     private fun throwDepthError(): Nothing =
         throw GhostJsonException(
             "$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})",

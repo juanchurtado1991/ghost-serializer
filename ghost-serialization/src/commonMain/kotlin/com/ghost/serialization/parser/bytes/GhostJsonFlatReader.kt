@@ -3,7 +3,6 @@
 
 package com.ghost.serialization.parser.bytes
 
-
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
@@ -107,17 +106,13 @@ open class GhostJsonFlatReader(
     @PublishedApi
     internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
 
-    /**
-     * Gets the byte at the specified index, masking it to a positive integer.
-     */
+    /** Byte at [index], masked to a positive int (Kotlin's [Byte] is signed). */
     @Suppress("NOTHING_TO_INLINE")
     inline fun getByte(index: Int): Int {
         return rawData[index].toInt() and C.BYTE_MASK
     }
 
-    /**
-     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
-     */
+    /** Throws a [GhostJsonException] with exact position, line, column, and JSONPath. */
     fun throwError(message: String): Nothing {
         val errorPosition = position
         val errorEnd = if (errorPosition > limit) {
@@ -159,17 +154,12 @@ open class GhostJsonFlatReader(
         throwError("${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}")
     }
 
-    /**
-     * Skips forward in the byte array by [byteCount] bytes and resets [nextTokenByte].
-     */
     fun internalSkip(byteCount: Int) {
         position += byteCount
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
-    /**
-     * Advances the position past any whitespace and caches the next non-whitespace token byte.
-     */
+    /** Advances past whitespace and caches the next non-whitespace token byte. */
     fun skipWhitespace() {
         val data = rawData
         val byteLimit = limit
@@ -204,9 +194,7 @@ open class GhostJsonFlatReader(
         }
     }
 
-    /**
-     * Peeks at the next key to see if it matches the discriminator name without consuming it.
-     */
+    /** Peeks whether the next key matches the discriminator [key], without consuming it. */
     fun peekDiscriminator(key: String = C.DEFAULT_DISCRIMINATOR_KEY): String? {
         if (key == C.DEFAULT_DISCRIMINATOR_KEY) {
             return peekDiscriminator(C.TYPE_BS)
@@ -214,9 +202,7 @@ open class GhostJsonFlatReader(
         return peekDiscriminator(key.encodeUtf8())
     }
 
-    /**
-     * Peeks at the next key to see if it matches the discriminator byte string without consuming it.
-     */
+    /** Peeks whether the next key matches the discriminator [key], without consuming it. */
     fun peekDiscriminator(key: ByteString): String? {
         return GhostDiscriminatorPeeker.peek(
             source,
@@ -228,9 +214,7 @@ open class GhostJsonFlatReader(
         )
     }
 
-    /**
-     * Peeks and returns the next token byte in the stream, skipping preceding whitespaces.
-     */
+    /** Returns the next token byte, skipping whitespace; cached until consumed. */
     fun peekNextToken(): Int {
         val cached = nextTokenByte
         if (cached != -1) {
@@ -240,9 +224,6 @@ open class GhostJsonFlatReader(
         return nextTokenByte
     }
 
-    /**
-     * Peeks and returns the next token byte as a [Byte].
-     */
     fun peekByte(): Byte = peekNextToken().toByte()
 
     fun nextNonWhitespace(): Int {
@@ -254,9 +235,6 @@ open class GhostJsonFlatReader(
         return nextToken
     }
 
-    /**
-     * Skips and validates that the next characters in the stream match the [expected] byte sequence.
-     */
     @InternalGhostApi
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
@@ -309,16 +287,11 @@ open class GhostJsonFlatReader(
         return nextULong()
     }
 
-    /**
-     * Resets the reader's state to process a new byte payload.
-     */
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
         resetSlice(newData, offset = 0, length = newLimit)
     }
 
-    /**
-     * Resets the reader to parse a sub-range of [buffer] without copying (zero-copy slice decode).
-     */
+    /** Resets the reader to parse a sub-range of [buffer] without copying (zero-copy slice decode). */
     fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
         rawData = buffer
         source.data = buffer
@@ -337,9 +310,7 @@ open class GhostJsonFlatReader(
         pathTracker.reset()
     }
 
-    /**
-     * Begins consumption of a JSON object '{'. Increments validation depth.
-     */
+    /** Starts parsing a JSON object, enforcing [maxDepth] to guard against stack overflow. */
     fun beginObject() {
         if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
             throwError(C.ERR_EXPECTED_BEGIN_OBJ)
@@ -357,9 +328,6 @@ open class GhostJsonFlatReader(
         pathTracker.pushObject()
     }
 
-    /**
-     * Ends consumption of a JSON object '}'. Decrements validation depth.
-     */
     fun endObject() {
         if (nextNonWhitespace() != C.CLOSE_OBJ_INT) {
             throwError(C.ERR_EXPECTED_END_OBJ)
@@ -370,9 +338,7 @@ open class GhostJsonFlatReader(
         pathTracker.finishObjectValue()
     }
 
-    /**
-     * Begins consumption of a JSON array '['. Increments validation depth.
-     */
+    /** Starts parsing a JSON array, enforcing [maxDepth] to guard against stack exhaustion. */
     fun beginArray() {
         if (nextNonWhitespace() != C.OPEN_ARR_INT) {
             throwError(C.ERR_EXPECTED_BEGIN_ARR)
@@ -389,9 +355,6 @@ open class GhostJsonFlatReader(
         pathTracker.pushArray()
     }
 
-    /**
-     * Ends consumption of a JSON array ']'. Decrements validation depth.
-     */
     fun endArray() {
         if (nextNonWhitespace() != C.CLOSE_ARR_INT) {
             throwError(C.ERR_EXPECTED_END_ARR)
@@ -402,9 +365,7 @@ open class GhostJsonFlatReader(
         pathTracker.finishArrayValue()
     }
 
-    /**
-     * Checks if there are more elements in the current JSON container.
-     */
+    /** Returns whether the current container has more elements; rejects trailing commas. */
     fun hasNext(): Boolean {
         val token = peekNextToken()
         if (
@@ -456,9 +417,7 @@ open class GhostJsonFlatReader(
         return true
     }
 
-    /**
-     * Consumes any comma separator and returns the next object key string. Returns null if object ends.
-     */
+    /** Consumes any comma separator and returns the next key, or `null` if the object has ended. */
     fun nextKey(): String? {
         val token = peekNextToken()
         if (token == C.CLOSE_OBJ_INT) {
@@ -501,18 +460,12 @@ open class GhostJsonFlatReader(
         return key
     }
 
-    /**
-     * Consumes the ':' key-value separator character.
-     */
     fun consumeKeySeparator() {
         if (nextNonWhitespace() != C.COLON_INT) {
             throwError(C.ERR_EXPECTED_COLON)
         }
     }
 
-    /**
-     * Consumes the array element separating comma if present.
-     */
     fun consumeArraySeparator() {
         if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
             val bit = C.BITMASK_UNIT shl depth
@@ -556,9 +509,7 @@ open class GhostJsonFlatReader(
         }
     }
 
-    /**
-     * Parses and returns the next [Boolean] value.
-     */
+    /** Parses the next boolean; if [coerceBooleans], also accepts `0`/`1` and matching strings. */
     fun nextBoolean(): Boolean {
         val token = peekNextToken()
         if (token == C.TRUE_CHAR_INT) {
@@ -592,18 +543,12 @@ open class GhostJsonFlatReader(
         throwError(C.ERR_EXPECTED_BOOLEAN)
     }
 
-    /**
-     * Parses and returns the next string literal.
-     */
     fun nextString(): String {
         val value = readQuotedString()
         pathTracker.finishScalarValue()
         return value
     }
 
-    /**
-     * Peeks whether the next JSON token is the null value token.
-     */
     fun isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
     /**
@@ -664,10 +609,7 @@ open class GhostJsonFlatReader(
         return nextBoolean()
     }
 
-    /**
-     * Zero-copy boolean coercion matcher. Delegates byte comparison to
-     * [matchCoerceBooleanBytes] in GhostParserUtils — single source of truth.
-     */
+    /** Zero-copy boolean coercion matcher; delegates byte comparison to the shared helper in GhostParserUtils. */
     private fun matchCoerceBooleanBytes(): Boolean {
         val localData = rawData
         val byteLimit = limit
@@ -687,9 +629,7 @@ open class GhostJsonFlatReader(
         )
     }
 
-    /**
-     * Selects name and consumes the key separator.
-     */
+    /** Identifies the next field name via [options]'s perfect hash, consuming the following `:`. */
     fun selectNameAndConsume(options: JsonReaderOptions): Int {
         val index = internalSelect(options, consumeSeparator = true)
         if (index >= 0) {
@@ -698,22 +638,16 @@ open class GhostJsonFlatReader(
         return index
     }
 
-    /**
-     * Selects matching string options.
-     */
+    /** Matches a string token (e.g. an enum value) against [options], without consuming a `:` separator. */
     fun selectString(options: JsonReaderOptions): Int =
         internalSelect(options, consumeSeparator = false)
 
-    /**
-     * Peeks at a key name and returns it if it is a string match.
-     */
+    /** Peeks a key's string value without advancing the cursor; used for sealed class discriminators. */
     fun peekStringField(name: String): String? {
         return peekDiscriminator(name)
     }
 
-    /**
-     * Skips the next complete value token (object, array, string, number, boolean, null) from the stream.
-     */
+    /** Skips the next complete JSON value (object, array, string, number, boolean, null), balancing nesting. */
     fun skipValue() {
         skipValueCore(
             peekNextToken = { peekNextToken() },
@@ -731,9 +665,7 @@ open class GhostJsonFlatReader(
         )
     }
 
-    /**
-     * Reads a list of items using the provided [itemParser].
-     */
+    /** Decodes a JSON array into a [List] using [itemParser]. Enforces [maxCollectionSize]. */
     inline fun <T> readList(crossinline itemParser: () -> T): List<T> {
         beginArray()
         if (peekNextToken() == C.CLOSE_ARR_INT) {
@@ -764,10 +696,7 @@ open class GhostJsonFlatReader(
         return list
     }
 
-    /**
-     * Reads a set of items using the provided [itemParser].
-     * Builds a [HashSet] directly — no intermediate [List] allocation.
-     */
+    /** Reads a JSON array into a [Set] without an intermediate [List] allocation. */
     inline fun <T> readSet(crossinline itemParser: () -> T): Set<T> {
         beginArray()
         if (peekNextToken() == C.CLOSE_ARR_INT) {
@@ -798,9 +727,7 @@ open class GhostJsonFlatReader(
         return set
     }
 
-    /**
-     * Reads a map of keys and values using the provided [keyParser] and [valueParser].
-     */
+    /** Decodes a JSON object into a [Map] using [keyParser]/[valueParser]. Enforces [maxCollectionSize]. */
     inline fun <K, V> readMap(
         crossinline keyParser: () -> K,
         crossinline valueParser: () -> V
@@ -844,9 +771,7 @@ open class GhostJsonFlatReader(
         return map
     }
 
-    /**
-     * Resiliently decodes a value. If an error occurs, skips the value and returns null.
-     */
+    /** Runs [block]; on [GhostJsonException] rolls back state and skips the invalid value, returning `null`. */
     @InternalGhostApi
     inline fun <T> decodeResilient(crossinline block: () -> T): T? {
         val savedPos = position

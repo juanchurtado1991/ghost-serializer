@@ -24,11 +24,9 @@ class GhostMemoryAuditTest {
 
     @Test
     fun testStringPoolingReusesMemoryReference() {
-        // Given
         val json = """{"status": "success", "level": "success", "key": "success"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
 
-        // When
         reader.beginObject()
         val key1 = reader.nextKey()
         reader.consumeKeySeparator()
@@ -44,7 +42,6 @@ class GhostMemoryAuditTest {
 
         reader.endObject()
 
-        // Then
         assertEquals("status", key1)
         assertEquals("success", val1)
         assertEquals("level", key2)
@@ -52,8 +49,8 @@ class GhostMemoryAuditTest {
         assertEquals("key", key3)
         assertEquals("success", val3)
 
-        // MEMORY AUDIT: Only check reference equality on platforms that guarantee it (JVM/Android)
-        // JS engine often interns strings automatically, making this check pass even without pooling.
+        // Reference equality only holds where pooling is guaranteed (JVM/Android); JS interns
+        // strings on its own, so this check would pass there even without pooling.
         if (isJvm) {
             assertSame(
                 val1,
@@ -70,12 +67,10 @@ class GhostMemoryAuditTest {
 
     @Test
     fun testPoolCorrectlyFallsBackForLongStrings() {
-        // Given
-        val longString = "A".repeat(1000) // greater than max pool limit (512 on JVM, 64 on Web)
+        val longString = "A".repeat(1000) // exceeds max pool limit (512 on JVM, 64 on Web)
         val json = """{"key1": "$longString", "key2": "$longString"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
 
-        // When
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -84,12 +79,11 @@ class GhostMemoryAuditTest {
         reader.consumeKeySeparator()
         val val2 = reader.nextString()
 
-        // Then
         assertEquals(longString, val1)
         assertEquals(longString, val2)
 
-        // MEMORY AUDIT: Overly long strings should bypass the pool entirely.
-        // On JS, we skip this check because identical strings are often the same object in memory.
+        // Strings past the pool limit should bypass it entirely; skipped on JS since identical
+        // strings are often the same object there regardless of pooling.
         if (isJvm) {
             assertNotSame(val1, val2)
         }
@@ -97,19 +91,17 @@ class GhostMemoryAuditTest {
 
     @Test
     fun testVeryLongStringsWithEscapes() {
-        // Given: 2000 chars with a newline in the middle to force StringBuilder usage
+        // Newline in the middle forces StringBuilder usage instead of a direct slice.
         val part1 = "B".repeat(1000)
         val part2 = "C".repeat(1000)
         val json = """{"big": "$part1\n$part2"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
 
-        // When
         reader.beginObject()
         assertEquals("big", reader.nextKey())
         reader.consumeKeySeparator()
         val result = reader.nextString()
 
-        // Then
         assertEquals(2001, result.length)
         assertTrue(result.contains("\n"))
         assertEquals(part1, result.substring(0, 1000))
@@ -123,6 +115,7 @@ class GhostMemoryAuditTest {
             launch(Dispatchers.Default) {
                 val json = """{"id": $i, "name": "Thread-$i", "tag": "shared"}"""
                 val reader = GhostJsonReader(json.encodeToByteArray())
+
                 reader.beginObject()
 
                 assertEquals("id", reader.nextKey())

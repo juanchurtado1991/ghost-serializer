@@ -11,10 +11,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
-/**
- * Resolves `@GhostJsonEnvelope` metadata
- * and validates payload field conventions.
- */
+/** Resolves `@GhostJsonEnvelope` metadata and validates payload field conventions. */
 internal class EnvelopeAnalyzer(private val logger: KSPLogger) {
 
     fun analyze(

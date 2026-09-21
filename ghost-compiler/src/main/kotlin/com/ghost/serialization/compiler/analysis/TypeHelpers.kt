@@ -16,19 +16,12 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
-/**
- * Resolves the generated serializer companion object's [ClassName] for this [KSType].
- * For example: maps type `User` to `com.example.User_Serializer`.
- */
+/** Generated serializer companion object's [ClassName], e.g. `User` -> `User_Serializer`. */
 internal fun KSType.serializerClassName(): ClassName {
     val classDeclaration = declaration as KSClassDeclaration
     return classDeclaration.toClassName().serializerClassName()
 }
 
-/**
- * Resolves the generated serializer companion object's [ClassName] for this [ClassName].
- * For example: maps `User` to `User_Serializer`.
- */
 internal fun ClassName.serializerClassName(): ClassName {
     return ClassName(
         packageName,
@@ -36,28 +29,16 @@ internal fun ClassName.serializerClassName(): ClassName {
     )
 }
 
-/**
- * Resolves a non-nullable representation of this [KSType]'s KotlinPoet TypeName.
- */
 private fun KSType.nonNullTypeName() = toTypeName().copy(nullable = false)
 
-/**
- * Checks whether this type matches the standard primitive [Int] type.
- */
 internal fun KSType.isPrimitiveInt(): Boolean {
     return nonNullTypeName() == INT
 }
 
-/**
- * Checks whether this type matches the standard primitive [Boolean] type.
- */
 internal fun KSType.isPrimitiveBoolean(): Boolean {
     return nonNullTypeName() == BOOLEAN
 }
 
-/**
- * Checks whether this type matches the standard primitive [Long] type.
- */
 internal fun KSType.isPrimitiveLong(): Boolean {
     return nonNullTypeName() == LONG
 }

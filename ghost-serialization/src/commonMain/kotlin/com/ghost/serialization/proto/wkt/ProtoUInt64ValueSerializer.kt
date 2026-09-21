@@ -14,17 +14,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Full `uint64` range (0 to [ULong.MAX_VALUE], `18446744073709551615`) — [Long] cannot represent
- * values above `Long.MAX_VALUE` (`9223372036854775807`), which is only half of uint64's range.
- *
- * Wrapper message for `uint64`.
- *
- * The JSON representation for `UInt64Value` is JSON string.
- */
-/**
- * Serializer for [ProtoUInt64Value].
- */
 object ProtoUInt64ValueSerializer : GhostSerializer<ProtoUInt64Value> {
     override val typeName: String get() = C.WKT_UINT64_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoUInt64Value) {
@@ -35,10 +24,9 @@ object ProtoUInt64ValueSerializer : GhostSerializer<ProtoUInt64Value> {
         writer.value(value.value.toString())
     }
 
-    // Reader-agnostic: the canonical proto3 JSON form for uint64 is always a quoted decimal
-    // string (unlike int64, which many producers also emit unquoted within the safe Long
-    // range), so nextString().toULong() is correct on every reader flavor without needing
-    // GhostProtoJsonFlatReader-specific numeric coercion.
+    // Canonical proto3 JSON form for uint64 is always a quoted decimal string (unlike int64,
+    // which many producers emit unquoted within the safe Long range), so this needs no
+    // reader-specific numeric coercion.
     override fun deserialize(reader: GhostJsonReader): ProtoUInt64Value =
         ProtoUInt64Value(reader.nextString().toULong())
 

@@ -24,11 +24,10 @@ import kotlin.test.assertTrue
 
 
 /**
- * Correctness guards for the hot-path shortcuts shared by every reader: optimistic
- * in-order field prediction, SWAR whitespace skipping, and SWAR string scanning with a
- * deferred pool hash. These are pure speed optimizations that fail silently (wrong field
- * index, truncated string) instead of loudly, so each test drives all four reader
- * flavours through the same payload and checks the results match.
+ * Correctness guards for hot-path shortcuts shared by every reader: in-order field
+ * prediction, SWAR whitespace skipping, and SWAR string scanning with a deferred pool
+ * hash. These optimizations fail silently instead of throwing, so each test runs all
+ * four reader flavours over the same payload and compares results.
  */
 class HotPathOptimizationsTest {
 

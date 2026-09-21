@@ -13,9 +13,6 @@ import com.ghost.serialization.parser.strings.nextLong
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [Long] type.
- */
 object LongSerializer : GhostSerializer<Long> {
     override val typeName: String get() = C.TYPE_NAME_LONG
 

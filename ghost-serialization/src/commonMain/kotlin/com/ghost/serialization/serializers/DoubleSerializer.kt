@@ -13,9 +13,6 @@ import com.ghost.serialization.parser.strings.nextDouble
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [Double] type.
- */
 object DoubleSerializer : GhostSerializer<Double> {
     override val typeName: String get() = C.TYPE_NAME_DOUBLE
 

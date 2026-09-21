@@ -23,16 +23,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 
-/**
- * Hyper-Performance Stress Audit.
- * Designed to break the parser/writer at physical boundaries and extreme conditions.
- */
+/** Pushes the parser/writer to physical boundaries and extreme conditions. */
 @OptIn(InternalGhostApi::class)
 class GhostStressAuditTest {
 
     @Test
     fun testSegmentBoundarySplitting() {
-        // Okio segments are 8192 bytes. We want to test tokens crossing this boundary.
+        // Okio segments are 8192 bytes; tests tokens that cross this boundary.
         val segmentSize = 8192
 
         // 1. Split a String

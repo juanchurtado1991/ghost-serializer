@@ -8,20 +8,18 @@ import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 
 /**
- * Fuzzes the *typed* decode path via a real KSP-generated serializer ([ComplexObjectSerializer],
- * same fixture as [GhostRobustnessTest]) — unlike `ghost-serialization`'s own fuzz tests, which
- * only exercise the generic untyped skipValue()/readDocument() traversal, since no module there
- * has KSP wired over its test source sets.
+ * Fuzzes the *typed* decode path via a real KSP-generated serializer ([ComplexObjectSerializer]),
+ * unlike `ghost-serialization`'s own fuzz tests, which only reach the generic untyped
+ * skipValue()/readDocument() traversal since no module there has KSP wired over test sources.
  *
- * Goal is crash-safety, not correctness ([GhostRobustnessTest] covers that). Malformed input can
- * legitimately throw more than [GhostJsonException] (e.g. a null on a non-nullable field surfaces
- * as the constructor's own null-check), so any [Exception] is accepted here.
+ * Goal is crash-safety, not correctness ([GhostRobustnessTest] covers that) — malformed input can
+ * legitimately throw more than [GhostJsonException] (e.g. a non-nullable field's constructor
+ * null-check), so any [Exception] is accepted.
  *
  * `fuzzComplexObjectDeserializeStringChannel` covers the third, independent `textChannel = true`
- * overload, which walks a `CharArray` instead of a `ByteArray` — a different bug class (see
- * `GhostJsonStringChannelFuzzTest`'s `ArrayIndexOutOfBoundsException` finding in that channel).
+ * overload (`CharArray` instead of `ByteArray`) — a different bug class from the other two.
  *
- * Runs in regression mode (fixed corpus) as part of `ciTestJvm`. For real fuzzing locally:
+ * Runs in regression mode (fixed corpus) via `ciTestJvm`. For real fuzzing locally:
  * `JAZZER_FUZZ=1 ./gradlew :ghost-integration-test:test --tests
  * "com.ghost.serialization.integration.GhostComplexObjectFuzzTest"`.
  */
@@ -39,8 +37,7 @@ class GhostComplexObjectFuzzTest {
 
     @FuzzTest
     fun fuzzComplexObjectDeserializeUtf8Text(data: FuzzedDataProvider) {
-        // Biases the corpus toward well-formed UTF-8 with garbage JSON structure, complementing
-        // the raw-bytes entry point above.
+        // Biases the corpus toward well-formed UTF-8 with garbage JSON structure.
         val text = data.consumeRemainingAsString()
         try {
             ComplexObjectSerializer.deserialize(GhostJsonReader(text.encodeToByteArray()))

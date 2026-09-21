@@ -66,9 +66,6 @@ internal class SerializeCodeEmitter(
 
     private var activeEmitter: BaseSerializeEmitter? = null
 
-    /**
-     * Builds the `FunSpec` of the serialize function.
-     */
     fun build(
         writerClass: ClassName,
         typeSpecBuilder: TypeSpec.Builder
@@ -126,16 +123,10 @@ internal class SerializeCodeEmitter(
             .build()
     }
 
-    /**
-     * Forwards the contextual serializers injection call to the active delegated emitter.
-     */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
         activeEmitter?.injectContextualSerializers(typeSpecBuilder)
     }
 
-    /**
-     * Emits enum serialization statements.
-     */
     private fun emitEnumSerialization(code: CodeBlock.Builder) {
         val enumValues = properties.firstOrNull()?.enumValues
         if (enumValues != null) {
@@ -154,9 +145,6 @@ internal class SerializeCodeEmitter(
         }
     }
 
-    /**
-     * Emits polymorphic sealed class type-matching dispatch blocks.
-     */
     private fun emitSealedDispatch(code: CodeBlock.Builder) {
         code.beginControlFlow(C.STR_WHEN_VALUE)
         sealedSubclasses.forEach { subclass ->
@@ -171,9 +159,6 @@ internal class SerializeCodeEmitter(
         code.endControlFlow()
     }
 
-    /**
-     * Emits value class unboxing statement.
-     */
     private fun emitValueUnboxing(code: CodeBlock.Builder, writerClass: ClassName) {
         val prop = properties.firstOrNull() ?: return
         val accessor = CodeBlock.of(

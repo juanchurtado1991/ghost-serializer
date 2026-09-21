@@ -14,9 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Chaos and stress scenarios for YAML parser/writer.
- * Covers the same failure modes as `GhostChaosTest` and
- * `GhostStressAuditTest`.
+ * Mirrors the failure modes covered by `GhostChaosTest` and `GhostStressAuditTest`, for YAML.
  */
 class GhostYamlChaosTest {
 
@@ -95,8 +93,8 @@ class GhostYamlChaosTest {
 
     @Test
     fun flowMappingWithDuplicateCommaIsRejected() {
-        // A double comma is an empty entry, which YAML's flow mapping grammar disallows
-        // (yaml-test-suite CTN5). Ghost used to silently skip it instead of rejecting it.
+        // A double comma is an empty entry, which the flow-mapping grammar disallows
+        // (yaml-test-suite CTN5); Ghost used to silently skip it instead of rejecting it.
         assertFailsWith<GhostYamlException> {
             GhostYamlFlatReader("{a: 1,, b: 2}".encodeToByteArray()).readDocument()
         }

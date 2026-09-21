@@ -61,7 +61,6 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         }
     }
 
-    /** Appends a single character. */
     fun writeChar(charAsInt: Int) {
         val currentSize = size
         val backingArray = array
@@ -78,7 +77,6 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         array[size++] = charAsInt.toChar()
     }
 
-    /** Appends exactly two characters. */
     fun write2Chars(firstChar: Int, secondChar: Int) {
         val currentSize = size
         val backingArray = array
@@ -210,7 +208,6 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         size += length
     }
 
-    /** Writes the literal "true". */
     fun writeTrue() {
         ensureCapacity(4)
         val backingArray = array
@@ -222,7 +219,6 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         size = writeIndex
     }
 
-    /** Writes the literal "false". */
     fun writeFalse() {
         ensureCapacity(5)
         val backingArray = array
@@ -235,7 +231,6 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         size = writeIndex
     }
 
-    /** Writes the literal "null". */
     fun writeNull() {
         ensureCapacity(4)
         val backingArray = array
@@ -247,7 +242,6 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
         size = writeIndex
     }
 
-    /** Writes the literal ".0". */
     fun writeDotZero() {
         ensureCapacity(2)
         val backingArray = array

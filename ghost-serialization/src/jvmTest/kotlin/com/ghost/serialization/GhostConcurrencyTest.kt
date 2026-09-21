@@ -65,7 +65,7 @@ class GhostConcurrencyTest {
             val jobs = (0 until numCoroutines).map { i ->
                 launch {
                     try {
-                        // Mix of reads and writes to stress the internal lock
+                        // Mix reads and writes to stress the internal lock
                         if (i % 5 == 0) {
                             Ghost.addRegistry(ThreadSafeMockRegistry(i))
                         } else {
@@ -75,7 +75,6 @@ class GhostConcurrencyTest {
                             }
                         }
 
-                        // Concurrent serialization/deserialization calls
                         val json = "123"
                         val result = Ghost.deserialize<Int>(json)
                         if (result == 123) {

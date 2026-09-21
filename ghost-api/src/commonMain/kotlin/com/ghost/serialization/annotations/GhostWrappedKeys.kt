@@ -2,13 +2,12 @@ package com.ghost.serialization.annotations
 
 /**
  * Collapses sibling JSON keys at the current object level into a single Kotlin property.
- * This is the inverse of [GhostWrap]: wire payloads expose flat keys (`type`, `dth`, …) while the
- * model groups them under one property.
+ * Inverse of [GhostWrap]: wire payloads expose flat keys (`type`, `dth`, …) while the model
+ * groups them under one property.
  *
- * On deserialize, each listed [keys] entry is captured from the parent object (zero-copy
- * `RawJson` slices) and assembled into a synthetic wrapper object before the property type is
- * parsed. On serialize, the wrapper property is unwrapped back into sibling keys at the same
- * JSON depth.
+ * Deserialize captures each [keys] entry as a zero-copy `RawJson` slice and assembles a synthetic
+ * wrapper object before parsing the property type; serialize unwraps it back to sibling keys at
+ * the same JSON depth.
  *
  * @param keys JSON field names at the current object level that belong to the wrapper property.
  * @param omitIfEmpty When `true`, if every captured key is absent or JSON `null`, the wrapper

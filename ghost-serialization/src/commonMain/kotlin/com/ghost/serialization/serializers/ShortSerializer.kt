@@ -13,9 +13,6 @@ import com.ghost.serialization.parser.strings.nextInt
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [Short] type (JSON number).
- */
 object ShortSerializer : GhostSerializer<Short> {
     override val typeName: String get() = C.TYPE_NAME_SHORT
 

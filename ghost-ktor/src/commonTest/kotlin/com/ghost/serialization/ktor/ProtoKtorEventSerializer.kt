@@ -15,7 +15,6 @@ import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
-// --- Mock proto-flavored model & hand-written stand-in for @GhostProtoSerialization codegen ---
 object ProtoKtorEventSerializer : GhostSerializer<ProtoKtorEvent> {
     override val typeName: String = "com.ghost.serialization.ktor.ProtoKtorEvent"
 

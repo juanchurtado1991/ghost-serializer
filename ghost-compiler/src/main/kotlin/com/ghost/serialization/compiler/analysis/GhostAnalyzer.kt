@@ -26,15 +26,11 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Analyzes a Kotlin class declaration during KSP processing, validating it against the
- * framework's serialization rules (supported class kind, no private properties, string map
- * keys, unique JSON names) and converting its properties into [GhostPropertyModel]s.
+ * Validates a class declaration against Ghost's serialization rules (class kind, property
+ * visibility, map key type, unique JSON names) and converts its properties into [GhostPropertyModel]s.
  */
 internal class GhostAnalyzer(private val logger: KSPLogger) {
 
-    /**
-     * Analyzes the given class declaration and resolves its properties to a list of models.
-     */
     fun analyze(classDeclaration: KSClassDeclaration): List<GhostPropertyModel> {
         val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
         val isData = classDeclaration.modifiers.contains(Modifier.DATA)
@@ -70,9 +66,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return finalModels
     }
 
-    /**
-     * Validates that the class kind is supported by the Ghost framework.
-     */
     private fun validateClassKind(
         classDeclaration: KSClassDeclaration,
         isData: Boolean,
@@ -93,9 +86,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
-    /**
-     * Validates that none of the serialization properties are declared as private.
-     */
+    /** Rejects properties declared private. */
     private fun validatePropertyVisibility(
         classDeclaration: KSClassDeclaration,
         properties: List<KSPropertyDeclaration>
@@ -116,9 +107,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
-    /**
-     * Resolves the list of property models for standard or enum DTO classes.
-     */
+    /** For enums, returns a single synthetic `name` property model; otherwise maps declared properties. */
     private fun resolvePropertyModels(
         classDeclaration: KSClassDeclaration,
         properties: List<KSPropertyDeclaration>,
@@ -147,7 +136,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     }
 
     /**
-     * Inspects the sealed subclass hierarchies and recursively builds inferred subclass metadata.
+     * Attaches inferred subclass metadata for sealed classes; falls back to a placeholder
+     * property model when the class has none of its own.
      */
     private fun resolveSealedSubclasses(
         classDeclaration: KSClassDeclaration,
@@ -430,9 +420,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
-    /**
-     * Determines whether the property or its parent class is annotated as resilient.
-     */
+    /** True if the property or its declaring class is annotated `@GhostResilient`. */
     private fun isResilientProperty(prop: KSPropertyDeclaration): Boolean {
         return prop.hasAnnotation(C.GHOST_RESILIENT) || prop.parentDeclaration
             ?.let {
@@ -449,9 +437,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
-    /**
-     * Resolves the custom decoder or encoder helper config model if declared.
-     */
     private fun resolveCustomCoder(
         prop: KSPropertyDeclaration,
         annotationName: String
@@ -695,9 +680,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return null
     }
 
-    /**
-     * Resolves the flatten/wrap key paths from annotations.
-     */
     private fun resolvePathAnnotation(
         prop: KSPropertyDeclaration,
         annotationName: String
@@ -710,9 +692,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
-    /**
-     * Validates that map keys are Strings.
-     */
     private fun validateMapKey(
         prop: KSPropertyDeclaration,
         isMap: Boolean,
@@ -808,9 +787,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return annotations.any { it.shortName.asString() == name }
     }
 
-    /**
-     * Resolves the serialized name for an annotated element, checking GhostName or kotlinx SerialName.
-     */
+    /** Resolves the serialized name, preferring `@GhostName` then kotlinx `@SerialName`. */
     private fun getSerialName(declaration: KSAnnotated): String {
         val annotations = declaration.annotations.toList()
 
@@ -845,9 +822,6 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     private fun isEnumType(type: KSType): Boolean =
         (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
 
-    /**
-     * Checks if the type is annotated with @GhostSerialization.
-     */
     private fun isGhostType(type: KSType): Boolean =
         type.declaration.annotations.any {
             val name = it.shortName.asString()

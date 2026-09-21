@@ -2,8 +2,6 @@ package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
-/** Parses YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]). */
-
 /** Parses flow-style mappings (`{key: value}`). */
 internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     position++ // consume '{'

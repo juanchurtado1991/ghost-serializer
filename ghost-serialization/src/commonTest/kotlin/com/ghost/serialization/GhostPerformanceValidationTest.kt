@@ -41,15 +41,10 @@ class GhostPerformanceValidationTest {
 
     @Test
     fun testDeepPrewarmLogic() {
-        // Reset cache for pure test
         Ghost.serializerCache.clear()
 
         val ghost = Ghost
         ghost.addRegistry(MockRegistry())
-
-        // Before prewarm, cache for String::class should be null
-        // (Assuming no other test populated it)
-        // Actually, let's just test that after prewarm it IS populated.
 
         ghost.prewarm()
 
@@ -67,14 +62,12 @@ class GhostPerformanceValidationTest {
 
         reader.beginObject()
 
-        // Search for 'email'
         val index = reader.selectString(options)
         assertEquals(2, index, "Trie must match 'email' with priority index 2")
 
         reader.consumeKeySeparator()
         reader.nextString()
 
-        // Search for 'id'
         val index2 = reader.selectString(options)
         assertEquals<Int>(0, index2, "Trie must match 'id' with index 0")
     }

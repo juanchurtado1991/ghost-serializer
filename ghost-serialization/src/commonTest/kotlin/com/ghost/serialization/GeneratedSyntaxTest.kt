@@ -10,7 +10,7 @@ class GeneratedSyntaxTest {
 
     @Test
     fun testGeneratedSyntax() {
-        // Simulates SerializeCodeEmitter output directly, since KSP may not have run for this module yet.
+        // Replicates SerializeCodeEmitter output directly since KSP may not have run for this module.
 
         val model = SyntaxModel(1, "test", listOf("a", "b"), intArrayOf(10, 20))
         val buffer = Buffer()

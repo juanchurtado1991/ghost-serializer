@@ -14,14 +14,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Wrapper message for `float`.
- *
- * The JSON representation for `FloatValue` is JSON number.
- */
-/**
- * Serializer for [ProtoFloatValue].
- */
 object ProtoFloatValueSerializer : GhostSerializer<ProtoFloatValue> {
     override val typeName: String get() = C.WKT_FLOAT_VALUE_TYPE
     override fun serialize(writer: GhostJsonWriter, value: ProtoFloatValue) {

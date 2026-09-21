@@ -35,9 +35,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Abstract base class for all deserialization emitters within the Ghost compiler.
- * Manages shared state (property masks, flattened paths, contextual serializers) and
- * provides helper methods to transform KSP symbols into [CodeBlock] instructions via KotlinPoet.
+ * Base class for deserialization emitters; manages shared property masks, flattened paths,
+ * and contextual serializers, and turns KSP symbols into [CodeBlock] reader calls.
  */
 internal abstract class BaseDeserializeEmitter(
     protected val properties: List<GhostPropertyModel>,
@@ -50,27 +49,22 @@ internal abstract class BaseDeserializeEmitter(
     protected val maskCount = (properties.size + C.MASK_SIZE_BITS_MINUS_ONE) /
             C.MASK_SIZE_BITS.toInt()
 
-    /**
-     * The flattened path for each property, allowing deeply nested JSON structures
-     * (e.g. "user.profile.id") to map directly to a flat DTO field.
-     */
+    /** Flattened JSON path per property, e.g. `["user", "profile", "id"]` for a flat DTO field. */
     protected val fullPaths = properties.map {
         it.flattenPath ?: (it.wrapPath?.let { path ->
             path + it.jsonName
         } ?: listOf(it.jsonName))
     }
 
-    /**
-     * Maps each property to its zero-based index, used to compute maskIdx/bitIdx for bitmasks.
-     */
+    /** Zero-based index per property, used to compute maskIdx/bitIdx for bitmasks. */
     protected val propertyIndices = properties
         .mapIndexed { index, prop -> prop to index }
         .toMap()
 
     /**
-     * Bitmask of fields that are mandatory (non-nullable, no default). Split across a [LongArray]
-     * to support schemas with more than 64 properties; the generated code validates presence with
-     * a single `mask & requiredMask == requiredMask` check.
+     * Bitmask of mandatory fields (non-nullable, no default), split across a [LongArray] to
+     * support >64 properties. Generated code validates presence with one
+     * `mask & requiredMask == requiredMask` check.
      */
     protected val requiredMasks: LongArray by lazy {
         val masks = LongArray(maskCount)
@@ -85,9 +79,8 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Bitmask of fields with a default value. When a field is missing and its bit is set here,
-     * the generated deserializer omits the constructor argument instead of throwing, letting
-     * Kotlin's default parameter logic take over.
+     * Bitmask of fields with a default value. When missing and its bit is set, the generated
+     * deserializer omits the constructor argument so Kotlin's default parameter applies.
      */
     protected val defaultMasks: LongArray by lazy {
         val masks = LongArray(maskCount)
@@ -101,10 +94,7 @@ internal abstract class BaseDeserializeEmitter(
         masks
     }
 
-    /**
-     * Formats a bitmask into a constant string literal for code generation.
-     * Handles edge cases like [Long.MIN_VALUE] which requires specific formatting.
-     */
+    /** Formats a bitmask as a literal; [Long.MIN_VALUE] can't be written as `-9223...L`, so it's special-cased. */
     protected fun formatMaskString(mask: Long): String {
         return if (mask == Long.MIN_VALUE) {
             C.STR_BIT_MASK_MIN_LONG
@@ -113,11 +103,7 @@ internal abstract class BaseDeserializeEmitter(
         }
     }
 
-    /**
-     * The main entry point for generating the reader call for a specific property.
-     * Handles dispatching to specialized logic based on property attributes
-     * (e.g., custom decoders, nullability, sealed classes).
-     */
+    /** Builds the reader call for a property, dispatching on decoder/nullability/type. */
     protected fun buildCall(prop: GhostPropertyModel): CodeBlock {
         if (prop.customDecoder != null) {
             return buildCustomDecoderCall(prop)
@@ -166,10 +152,7 @@ internal abstract class BaseDeserializeEmitter(
         }
     }
 
-    /**
-     * Generates the code block for a nullable property.
-     * It handles null-safety by wrapping the reader call in a null check template.
-     */
+    /** Reader call for a nullable property, wrapped in a null check. */
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
         // customDecoder is handled in buildCall before nullability — never reaches here.
         if (prop.isPrimitiveArray) {
@@ -207,10 +190,7 @@ internal abstract class BaseDeserializeEmitter(
         return buildTypeReaderCall(prop.type, prop.isProto)
     }
 
-    /**
-     * Generates code for custom decoder implementations.
-     * Handles the transition between standard reader and the custom decoding logic.
-     */
+    /** Reader call that bridges to a property's custom decoder. */
     protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
         val coder = prop.customDecoder!!
         if (usesDirectCustomDecoderCall(coder)) {
@@ -256,13 +236,11 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Recursive entry point that dispatches the correct [CodeBlock] to read a given [KSType]:
-     * delegates to an existing serializer for Ghost/enum types, maps primitives to optimized
-     * reader methods, and recurses into collection element types.
+     * Recursively builds the reader call for a [KSType]: delegates to an existing serializer for
+     * Ghost/enum types, maps primitives to optimized reader methods, recurses into collections.
      *
-     * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
-     *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
-     *   proto3 quoted-int64/Base64 decoding.
+     * @param isProto Propagated into collection element recursion so nested `Long`/`ByteArray`
+     *   elements also get proto3 quoted-int64/Base64 decoding.
      */
     protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {
         return when {
@@ -428,9 +406,8 @@ internal abstract class BaseDeserializeEmitter(
     }
 
     /**
-     * Emits a fused `nextXOrNull()` when the property is nullable; otherwise the non-null
-     * `nextX()` call.
-     * Avoids the generated `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
+     * Emits a fused `nextXOrNull()`/`nextX()` call, avoiding a separate
+     * `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
      */
     private fun scalarReaderCall(
         nonNullCall: String,
@@ -439,19 +416,16 @@ internal abstract class BaseDeserializeEmitter(
     ): CodeBlock =
         CodeBlock.of(if (nullable) orNullCall else nonNullCall)
 
-    /**
-     * Generates a unique variable name for a contextual serializer.
-     * Example: "User" -> "contextualUserSerializer".
-     */
+    /** Unique variable name for a contextual serializer, e.g. "User" -> "contextualUserSerializer". */
     private fun getContextualSerializerName(type: KSType): String =
         contextualSerializerRegistry.nameFor(type)
 
     /**
-     * Registers named private bitmask constants on the companion/object builder for every
-     * property and all validation/defaults masks, avoiding magic numbers in generated code.
+     * Registers named private bitmask constants for every property, avoiding magic numbers in
+     * generated code.
      *
      * @param emitRequiredAggregateMasks When false, skip aggregate `MASK_REQUIRED_N` constants
-     * (e.g. StandardEmitter with a single required field validates via the property mask only).
+     * (e.g. a single required field validates via the property mask alone).
      */
     protected fun emitPropertyMaskConstants(
         typeSpecBuilder: TypeSpec.Builder,
@@ -494,9 +468,7 @@ internal abstract class BaseDeserializeEmitter(
         }
     }
 
-    /**
-     * Registers a `MASK_DEFAULTS_N` constant when the copy-based default-value return path needs it.
-     */
+    /** Registers a `MASK_DEFAULTS_N` constant for the copy-based default-value return path. */
     protected fun emitDefaultMaskConstant(
         typeSpecBuilder: TypeSpec.Builder,
         maskIndex: Int,
@@ -516,16 +488,11 @@ internal abstract class BaseDeserializeEmitter(
         return constName
     }
 
-    /**
-     * Injects private fields for contextual serializers, pre-resolved at compile time instead
-     * of looked up via reflection at runtime.
-     */
+    /** Injects private fields for contextual serializers, resolved at compile time instead of via reflection. */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) =
         contextualSerializerRegistry.injectInto(typeSpecBuilder)
 
-    /**
-     * Wraps a reader instruction with a null-check: `if (reader.isNextNullValue()) { ... } else { ... }`.
-     */
+    /** Wraps a reader call in `if (reader.isNextNullValue()) null else ...`. */
     protected fun nullGuarded(inner: CodeBlock): CodeBlock =
         CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)
 }

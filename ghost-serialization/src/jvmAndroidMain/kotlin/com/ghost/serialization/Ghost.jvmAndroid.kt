@@ -14,7 +14,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import okio.BufferedSource
 import java.util.concurrent.ConcurrentHashMap
 
-
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 private val stringReaderPool = ThreadLocal<GhostJsonStringReader>()
 private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
@@ -26,11 +25,8 @@ actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock
 
 actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
 
-/**
- * Acquires the per-thread [WriterSinkPair], resets it for a fresh encode,
- * and returns it. The pair survives across calls so the underlying
- * `FlatByteArrayWriter` grows once and stays warm.
- */
+/** Per-thread [WriterSinkPair], reset for a fresh encode
+ *  the buffer survives across calls so it only grows once and stays warm. */
 @PublishedApi
 internal fun acquireFlatWriterPair(): WriterSinkPair {
     val pair = writerPool.get() ?: WriterSinkPair()
@@ -129,14 +125,10 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    // Separate pool from flatReaderPool/stringReaderPool to prevent re-entrancy corruption if
-    // the same thread nests a flat/string read inside a streaming read.
     val reader = sourceReaderPool.get()
         ?: GhostJsonReader(source)
             .also { sourceReaderPool.set(it) }
 
-    // reset(BufferedSource) wraps source in a StreamingGhostSource — Okio pulls
-    // data in 8 KB segments on demand instead of loading the entire payload.
     reader.reset(prepareUtf8JsonSource(source))
     return block(reader)
 }

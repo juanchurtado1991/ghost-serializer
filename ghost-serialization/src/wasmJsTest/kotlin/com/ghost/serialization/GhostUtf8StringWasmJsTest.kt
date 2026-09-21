@@ -6,15 +6,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * [ghostUtf8BytesToString]'s Wasm `actual` (`GhostUtf8String.wasmJs.kt`) is raw `js(...)`
- * interop with a browser `TextDecoder` over a cached, growable `Uint8Array` view — added for the
- * Safari encode-cliff fix (#16) and, being Wasm-only, untested on every other target/by every
- * other test in the suite (`commonTest` can't reach an `actual` that only exists here).
+ * Covers the Wasm-only `ghostUtf8BytesToString` actual (raw `TextDecoder` js interop over a
+ * cached, growable `Uint8Array`, added for the Safari encode-cliff fix #16) — no other
+ * target/test can reach it.
  *
- * The cache (`acquireUtf8View`) is the sharp edge: it's reused and grown across calls, and
- * `textDecodeUtf8` only decodes `[0, length)` of it via `subarray`. A wrong offset/length or a
- * stale-buffer bug after shrinking back down from a larger call would silently decode leftover
- * bytes from a *previous* call instead of throwing.
+ * Sharp edge: the cache is reused and grown across calls, and decoding only reads
+ * `[0, length)` via `subarray`. A stale-buffer or length bug would silently return leftover
+ * bytes from a previous call instead of throwing.
  */
 class GhostUtf8StringWasmJsTest {
 
@@ -39,8 +37,7 @@ class GhostUtf8StringWasmJsTest {
 
     @Test
     fun decodesNonZeroOffsetSubrange() {
-        // Real callers always pass offset=0, but the actual implementation's Uint8Array view +
-        // subarray slicing supports arbitrary ranges — exercise that directly.
+        // Real callers always pass offset=0; this exercises the arbitrary-range slicing path directly.
         val prefix = "IGNORE:".encodeToByteArray()
         val payload = "漢字テスト".encodeToByteArray()
         val suffix = ":IGNORE".encodeToByteArray()
@@ -51,9 +48,8 @@ class GhostUtf8StringWasmJsTest {
 
     @Test
     fun cachedViewShrinksCorrectlyAfterLargerCall() {
-        // Force the internal Uint8Array cache to grow past its 4096-byte floor, then immediately
-        // decode a much shorter string. If the cache's length bookkeeping were wrong, the second
-        // call could return leftover bytes from the first (large) call instead of just "hi".
+        // Grows the cache past its 4096-byte floor, then decodes something short — wrong length
+        // bookkeeping would return leftover bytes from the prior call instead of "hi".
         val large = "x".repeat(10_000).encodeToByteArray()
         assertEquals("x".repeat(10_000), ghostUtf8BytesToString(large, 0, large.size))
 

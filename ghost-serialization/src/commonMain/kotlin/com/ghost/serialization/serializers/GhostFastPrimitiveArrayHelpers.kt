@@ -15,29 +15,24 @@ internal inline fun matchesLiteral(getByte: (Int) -> Int, pos: Int, limit: Int, 
 }
 
 /**
- * Writes [size] array elements via [writeAt] (comma/separator bookkeeping is already handled
- * by each `writer.value(...)` overload internally, so this is pure iteration) — shared by every
- * primitive array serializer's write path instead of each hand-rolling the same `for` loop.
+ * Writes [size] elements via [writeAt]; separator bookkeeping is handled inside each
+ * `writer.value(...)` overload, so this is pure iteration shared by every primitive array
+ * serializer's write path.
  */
 internal inline fun writeArrayElements(size: Int, writeAt: (Int) -> Unit) {
     for (i in 0 until size) writeAt(i)
 }
 
 /**
- * Fast path for a compact (no embedded whitespace), comma-separated run of bare integers
- * inside `[...]` — the common shape for encoder-produced JSON, and the dominant cost in
- * large numeric arrays (e.g. a 1000-element history/metrics array). Falls back to `null`
- * (reader position reset to [startPosition]) on the first byte that doesn't fit that exact
- * shape — embedded whitespace, a decimal point/exponent, or digit overflow — so the caller
- * retries with the fully general element-by-element loop, which remains the single source of
- * truth for overflow, decimal-coercion, and error-message correctness. Matches the general
- * loop's own (lack of) `maxCollectionSize` enforcement for primitive arrays — neither path
- * bounds element count here, unlike the `List<T>`/`readList` path.
+ * Fast path for a compact, comma-separated run of bare integers inside `[...]` (the common,
+ * dominant-cost shape for large numeric arrays). Falls back to `null` (position reset to
+ * [startPosition]) on anything that doesn't fit — whitespace, decimal point/exponent, digit
+ * overflow — so the general element-by-element loop remains the source of truth for overflow
+ * and error messages. Like that loop, it does not enforce `maxCollectionSize`.
  *
- * Precondition: called right after `beginArray()` confirms the array is non-empty (the next
- * byte is not `]`), with [startPosition] pointing at that first byte. On success, the reader
- * position is left pointing AT the closing `]` (not past it) — callers must still call
- * `endArray()` themselves so depth-tracking and path-tracking bookkeeping stay correct.
+ * Precondition: called right after `beginArray()` confirms a non-empty array, with
+ * [startPosition] at that first byte. On success, position is left AT the closing `]` —
+ * callers must still call `endArray()` themselves.
  */
 internal inline fun tryFastIntArrayCore(
     startPosition: Int,
@@ -90,11 +85,7 @@ internal inline fun tryFastIntArrayCore(
     }
 }
 
-/**
- * Same fast path as [tryFastIntArrayCore], for a run of bare `Long`s.
- *
- * @see tryFastIntArrayCore
- */
+/** Same fast path as [tryFastIntArrayCore], for a run of bare `Long`s. */
 internal inline fun tryFastLongArrayCore(
     startPosition: Int,
     limit: Int,
@@ -147,17 +138,14 @@ internal inline fun tryFastLongArrayCore(
 }
 
 /**
- * Fast path for a compact, comma-separated run of bare `Double`/`Float` numbers inside
- * `[...]`. Unlike [tryFastIntArrayCore], this does not reimplement number parsing (decimal
- * points and exponents make that considerably more error-prone) — it only bypasses the
- * per-element `hasNext()`/comma-bookkeeping dispatch by peeking that the next byte is a
- * plausible number start (digit or `-`) and delegating the actual scan to [parseNext] (the
- * reader's own `nextDouble()`/`nextFloat()`), which remains the single source of truth for
- * the numeric grammar. Falls back to `false` (reader position reset to [startPosition]) the
- * moment anything doesn't fit the compact comma-separated shape.
+ * Fast path for a compact, comma-separated run of bare `Double`/`Float` numbers. Unlike
+ * [tryFastIntArrayCore], it doesn't reimplement number parsing — it just peeks that the next
+ * byte plausibly starts a number and delegates the scan to [parseNext] (`nextDouble`/`nextFloat`),
+ * the single source of truth for numeric grammar. Falls back to `false` (position reset to
+ * [startPosition]) the moment the shape doesn't fit.
  *
- * Precondition: same as [tryFastIntArrayCore]. [parseNext] must read from — and leave the
- * reader positioned immediately after — whatever [getPosition] currently reports.
+ * Precondition: same as [tryFastIntArrayCore]; [parseNext] must read from, and leave the reader
+ * positioned right after, whatever [getPosition] reports.
  */
 internal inline fun <T> tryFastDecimalArrayCore(
     startPosition: Int,
@@ -195,10 +183,9 @@ internal inline fun <T> tryFastDecimalArrayCore(
 }
 
 /**
- * Fast path for a compact, comma-separated run of bare `true`/`false` literals inside
- * `[...]` — bypasses the per-element `hasNext()`/comma-bookkeeping dispatch. Does not
- * activate for coerced boolean values (`1`/`0`, quoted strings) — those fall back to the
- * general loop, which already handles `coerceBooleans` correctly.
+ * Fast path for a compact, comma-separated run of bare `true`/`false` literals — bypasses the
+ * per-element `hasNext()`/comma-bookkeeping dispatch. Does not activate for coerced boolean
+ * values (`1`/`0`, quoted strings); those fall back to the general loop.
  *
  * Precondition: same as [tryFastIntArrayCore].
  */

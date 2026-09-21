@@ -22,11 +22,9 @@ class DecimalAndBooleanArrayFastPathTest {
     @Test
     fun testDoubleArrayFastPathAllChannelsAgree() {
         val json = "[1.5,-2.25,0.0,42,-999999.999,1.5e10,-2E-5]"
-        // Compare against the general loop's own parsing (forced via a leading-space element
-        // that the fast path can't match) rather than a hardcoded literal — the fast path
-        // delegates numeric conversion to the exact same nextDouble(), so this only needs to
-        // prove the two code paths agree with each other, not with an independently-rounded
-        // Kotlin double literal.
+        // Compared against the general loop's parsing (forced via a leading space the fast
+        // path can't match) rather than a hardcoded literal: both paths use the same
+        // nextDouble(), so this only needs to show they agree with each other.
         val slowPathJson = "[1.5, -2.25, 0.0, 42, -999999.999, 1.5e10, -2E-5]"
         val expected = DoubleArraySerializer.deserialize(GhostJsonFlatReader(slowPathJson.encodeToByteArray()))
         assertContentEquals(expected, DoubleArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray())))

@@ -2,10 +2,7 @@ package com.ghost.serialization.serializers
 
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-/**
- * Highly optimized, zero-allocation internal list implementation for [Long] primitives.
- * Avoids boxing overhead and memory allocation pressure.
- */
+/** Growable [Long] buffer that avoids boxing. */
 internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {
     private var buffer = LongArray(initialCapacity)
     private var currentSize = 0

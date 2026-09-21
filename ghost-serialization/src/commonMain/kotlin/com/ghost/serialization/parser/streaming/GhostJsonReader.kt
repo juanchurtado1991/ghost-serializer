@@ -95,8 +95,7 @@ class GhostJsonReader(
      */
     internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
 
-    /** Current nesting depth (object/array).
-     * Incremented on begin*, decremented on end*. */
+    /** Current nesting depth; incremented on begin*, decremented on end*. */
     var depth: Int = 0
 
     @PublishedApi
@@ -108,8 +107,7 @@ class GhostJsonReader(
     @PublishedApi
     internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
 
-    /** Convenience constructor for ByteArray —
-     * used by KSP-generated serializers and tests. */
+    /** Convenience constructor for [ByteArray] — used by KSP-generated serializers and tests. */
     constructor(
         bytes: ByteArray,
         maxDepth: Int = C.MAX_DEPTH,
@@ -127,7 +125,7 @@ class GhostJsonReader(
         maxCollectionSize
     )
 
-    /** New Streaming Constructor for Okio Source */
+    /** Streaming constructor for an Okio [BufferedSource]. */
     constructor(
         okioSource: BufferedSource,
         maxDepth: Int = C.MAX_DEPTH,
@@ -145,11 +143,7 @@ class GhostJsonReader(
         maxCollectionSize
     )
 
-    /**
-     * Optimized byte access.
-     * Uses hardware-level zero-extension if [rawData] is available,
-     * bypassing interface overhead.
-     */
+    /** Byte access; reads [rawData] directly when available, bypassing [source] interface dispatch. */
     @PublishedApi
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun getByte(index: Int): Int {
@@ -159,9 +153,7 @@ class GhostJsonReader(
         return rawData[index].toInt() and C.BYTE_MASK
     }
 
-    /**
-     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
-     */
+    /** Throws a [GhostJsonException] with exact position, line, column, and JSONPath. */
     fun throwError(message: String): Nothing {
         val errorPosition = position
         val sourceRef = source
@@ -203,10 +195,7 @@ class GhostJsonReader(
         throwError("${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}")
     }
 
-    /**
-     * Consumes the next non-whitespace byte and validates it against [expected].
-     * Primarily used for manual parsing and testing.
-     */
+    /** Consumes the next non-whitespace byte and validates it against [expected]; for manual parsing/tests. */
     fun expectByte(expected: Int) {
         if (peekNextToken() != expected) {
             throwError(
@@ -223,17 +212,12 @@ class GhostJsonReader(
         internalSkip(1)
     }
 
-    /**
-     * Skips [byteCount] bytes and resets the cached [nextTokenByte].
-     */
     fun internalSkip(byteCount: Int) {
         position += byteCount
         nextTokenByte = C.RESET_TOKEN_BYTE
     }
 
-    /**
-     * Advances the position past any whitespace and caches the next non-whitespace token byte.
-     */
+    /** Advances past whitespace and caches the next non-whitespace token byte. */
     fun skipWhitespace() {
         val nextPos = if (isStreaming) {
             source.findNextNonWhitespace(position, limit)
@@ -266,10 +250,9 @@ class GhostJsonReader(
     }
 
     /**
-     * Attempts to peek at the discriminator value (e.g. "type") of the current object.
-     * Does not advance the reader's position.
-     * Returns null if not found or if the current token is not an object start.
-     * Used by KSP-generated serializers for polymorphic deserialization.
+     * Peeks the discriminator value (e.g. `"type"`) of the current object without advancing;
+     * `null` if not found or the current token isn't an object start. Used for polymorphic
+     * deserialization in KSP-generated serializers.
      */
     fun peekDiscriminator(key: String = C.DEFAULT_DISCRIMINATOR_KEY): String? {
         if (key == C.DEFAULT_DISCRIMINATOR_KEY) {
@@ -278,10 +261,7 @@ class GhostJsonReader(
         return peekDiscriminator(key.encodeUtf8())
     }
 
-    /**
-     * Internal version that takes a [ByteString] for maximum performance.
-     * Used by KSP-generated serializers for polymorphic deserialization.
-     */
+    /** [ByteString]-keyed overload of [peekDiscriminator], for maximum performance. */
     fun peekDiscriminator(key: ByteString): String? {
         return GhostDiscriminatorPeeker.peek(
             source,
@@ -293,9 +273,7 @@ class GhostJsonReader(
         )
     }
 
-    /**
-     * Peeks and returns the next token byte in the stream, skipping preceding whitespaces.
-     */
+    /** Returns the next token byte, skipping whitespace; cached until consumed. */
     fun peekNextToken(): Int {
         val cached = nextTokenByte
         if (cached != -1) return cached
@@ -303,14 +281,8 @@ class GhostJsonReader(
         return nextTokenByte
     }
 
-    /**
-     * Peeks and returns the next token byte as a [Byte].
-     */
     fun peekByte(): Byte = peekNextToken().toByte()
 
-    /**
-     * Consumes and returns the next non-whitespace token byte in the stream.
-     */
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
         if (nextToken == -1) {
@@ -320,9 +292,6 @@ class GhostJsonReader(
         return nextToken
     }
 
-    /**
-     * Skips and validates that the next characters in the stream match the [expected] byte sequence.
-     */
     @InternalGhostApi
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
@@ -340,12 +309,8 @@ class GhostJsonReader(
     }
 
     /**
-     * Reads a quoted JSON string.
-     *
-     * This implementation features:
-     * 1. **Fast-path**: Direct decoding if no escapes are present.
-     * 2. **String Pooling**: Checks [stringPool] to reuse existing String instances.
-     * 3. **Slow-path**: StringBuilder-like approach using a pooled char buffer for escapes.
+     * Reads a quoted JSON string: fast-path direct decode when unescaped, reusing instances
+     * via [stringPool]; falls back to a pooled-char-buffer slow path when escapes are present.
      */
     fun readQuotedString(): String {
         if (nextNonWhitespace() != C.QUOTE_INT) {
@@ -501,9 +466,6 @@ class GhostJsonReader(
                 digitValue3
     }
 
-    /**
-     * Resets the reader's state to process a new flat byte array payload.
-     */
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
         val currentSource = this.source
         if (currentSource is ByteArrayGhostSource) {
@@ -514,17 +476,11 @@ class GhostJsonReader(
         }
     }
 
-    /**
-     * Resets the reader's state to process a new streaming Okio [BufferedSource] payload.
-     */
     fun reset(okioSource: BufferedSource) {
         reset(createSourceBridge(okioSource), Int.MAX_VALUE)
     }
 
-    /**
-     * Resets the reader state with a new [GhostSource].
-     * Clears cached tokens, positions, and depth for reuse.
-     */
+    /** Resets the reader state with a new [GhostSource] for reuse. */
     fun reset(newSource: GhostSource, newLimit: Int = newSource.size) {
         this.source = newSource
         this.rawData = newSource.rawSourceData

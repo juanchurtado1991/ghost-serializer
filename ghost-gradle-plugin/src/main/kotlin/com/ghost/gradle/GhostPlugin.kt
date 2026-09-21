@@ -13,9 +13,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
  */
 class GhostPlugin : Plugin<Project> {
 
-    /**
-     * Applies Ghost Serialization dependencies and KSP wiring to [project].
-     */
     override fun apply(project: Project) {
         val extension = createExtension(project)
         val ghostVersion = extension.version

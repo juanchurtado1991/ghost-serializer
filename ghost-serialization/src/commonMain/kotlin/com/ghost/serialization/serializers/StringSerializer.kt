@@ -12,9 +12,6 @@ import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [String] type.
- */
 object StringSerializer : GhostSerializer<String> {
     override val typeName: String get() = C.TYPE_NAME_STRING
 

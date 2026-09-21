@@ -8,17 +8,13 @@ import com.ghost.serialization.yaml.exception.GhostYamlException
 /**
  * Entry point for [GhostYamlFlatReader.readValue]'s `&` dispatch. A block-context anchor is
  * ambiguous on sight: it may anchor a *value* (`key: &a value`) or the *key* of an implicit
- * mapping entry (`&a a: &b b` — the anchor belongs to bare key "a", not the whole mapping).
- * [readAnchoredValue] alone only handles the value shape: if the text after the anchor looks
- * like a key, it recurses into [GhostYamlFlatReader.readBlockMapping], which greedily consumes
- * every sibling entry at that indent, binding the anchor to the whole resulting map instead of
- * just the key.
+ * mapping entry (`&a a: &b b` — the anchor belongs to bare key "a", not the whole mapping), and
+ * [readAnchoredValue] alone only handles the value shape.
  *
- * This speculatively re-parses the anchor + following text with [GhostYamlFlatReader.readKey]
- * (reusing its anchor-on-key binding — commit 9812d08c / case SU74), checks for a following `:`,
- * then rewinds and re-dispatches for real: [GhostYamlFlatReader.readBlockMapping] if it looked
- * like a key line, else [readAnchoredValue]. Flow context has no such ambiguity (a flow mapping
- * key is delimited by `{`/`,`/`}`, not indentation), so it's untouched here.
+ * Resolved by speculatively re-parsing with [GhostYamlFlatReader.readKey] (commit 9812d08c /
+ * case SU74) to check for a following `:`, then rewinding and re-dispatching for real:
+ * [GhostYamlFlatReader.readBlockMapping] if it looked like a key line, else [readAnchoredValue].
+ * Flow context has no such ambiguity (a flow key is delimited by `{`/`,`/`}`, not indentation).
  */
 internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(indent: Int, inFlow: Boolean, strictDedent: Boolean): Any? {
     if (inFlow) return readAnchoredValue(indent, inFlow, strictDedent)
@@ -135,11 +131,8 @@ internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean,
 }
 
 /**
- * Reads an alias via [readAlias], then checks whether a `:` follows: an alias can itself be a
- * block-mapping key (e.g. `top3: &node3\n  *alias1 : scalar3`, where `*alias1`'s resolved value
- * becomes the key), not just a value. Without this, [GhostYamlFlatReader.readValue]'s `*`
- * dispatch would read only the alias as a complete value and mishandle the trailing
- * `: scalar3` instead of nesting it under this key.
+ * Reads an alias, then checks whether a `:` follows: an alias's resolved value can itself be a
+ * block-mapping key (e.g. `top3: &node3\n  *alias1 : scalar3`), not just a value.
  */
 internal fun GhostYamlFlatReader.readAliasOrMappingKey(indent: Int, inFlow: Boolean): Any? {
     val startPosition = position

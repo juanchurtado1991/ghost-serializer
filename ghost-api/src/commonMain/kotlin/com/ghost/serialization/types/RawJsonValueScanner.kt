@@ -182,9 +182,7 @@ internal object RawJsonValueScanner {
         return index == storageLength
     }
 
-    /**
-     * Single-pass integer parse: rejects fraction/exponent without rescanning the token.
-     */
+    /** Single-pass integer parse: rejects fraction/exponent without rescanning the token. */
     private fun RawJson.parseIntegerOrNull(): Long? {
         if (storageLength <= 0) return null
         var index = 0

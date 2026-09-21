@@ -29,21 +29,19 @@ class GhostResilienceTest {
 
         val reader = GhostJsonReader(json.encodeToByteArray())
 
-        // This simulates a generated serializer failing at a specific point
+        // Simulates a generated serializer's missing-field check failing at a specific point
         val exception = assertFailsWith<GhostJsonException> {
             reader.beginObject()
             reader.selectString(JsonReaderOptions.of("name"))
             reader.consumeKeySeparator()
             reader.nextString() // name
 
-            // Now we are at the end, simulate a missing field check
             reader.throwError("Required field 'info' missing")
         }
 
         // After the fix, this was -1. Now it must be the current reader position.
         // The reader passed "Ghost", so it is currently on line 1 (at the comma).
         assertEquals(1, exception.line, "Line must be precisely tracked")
-        // Column should also be > 0
         assertTrue(exception.column > 0, "Column should be positive: ${exception.column}")
     }
 
@@ -59,7 +57,7 @@ class GhostResilienceTest {
                 reader.consumeKeySeparator()
                 when (index) {
                     0 -> reader.nextInt()
-                    1 -> reader.nextString() // This will fail due to terminal quote missing
+                    1 -> reader.nextString() // missing closing quote triggers the failure
                 }
             }
         }
@@ -80,13 +78,12 @@ class GhostResilienceTest {
             reader.consumeKeySeparator()
             reader.nextInt()
 
-            // Next one is 'unknown_field', in strict mode it should throw
+            // strict mode should throw on the unknown field next
             reader.selectString(opts)
         }
 
         assertTrue(exception.message.contains("unknown_field"))
         assertEquals(0, exception.line)
-        // Position should be near the start of the unknown field
-        assertTrue(exception.column > 10)
+        assertTrue(exception.column > 10) // past the start of "unknown_field"
     }
 }

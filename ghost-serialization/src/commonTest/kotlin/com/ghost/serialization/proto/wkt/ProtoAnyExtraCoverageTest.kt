@@ -9,10 +9,9 @@ import kotlin.test.assertEquals
 
 
 /**
- * Fills gaps [ProtoAnyTest] doesn't cover: the unrecognized-key `skipValue()` branch, key
- * order independence, and the streaming (`GhostJsonWriter`/`GhostJsonReader`) overloads --
- * `ProtoAnyTest` only ever exercises the flat path (`GhostProto.deserialize<T>(String)`
- * always builds a `GhostProtoJsonFlatReader`).
+ * Fills gaps [ProtoAnyTest] doesn't cover: the unrecognized-key skip branch, key-order
+ * independence, and the streaming reader/writer overloads (`ProtoAnyTest` only exercises
+ * the flat path, since `GhostProto.deserialize<T>(String)` always builds a flat reader).
  */
 class ProtoAnyExtraCoverageTest {
 

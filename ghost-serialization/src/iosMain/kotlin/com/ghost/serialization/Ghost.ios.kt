@@ -16,7 +16,6 @@ import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
 import kotlin.native.concurrent.ThreadLocal
 
-
 @ThreadLocal
 private var cachedFlatReader: GhostJsonFlatReader? = null
 
@@ -33,8 +32,8 @@ internal var cachedWriterPair: WriterSinkPair? = null
 @ThreadLocal
 @PublishedApi
 internal var cachedStringWriterPair: WriterStringPair? = null
-actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
+actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
 actual fun <K, V> createAtomicMap(): MutableMap<K, V> = IosConcurrentMap()
 
@@ -64,14 +63,10 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    // Separate pool from cachedFlatReader/cachedStringReader to prevent re-entrancy corruption
-    // if the same thread nests a flat/string read inside a streaming read.
     val reader = cachedSourceReader
         ?: GhostJsonReader(source)
             .also { cachedSourceReader = it }
-
-    // reset(BufferedSource) wraps source in a StreamingGhostSource — Okio pulls
-    // data in 8 KB segments on demand instead of loading the entire payload.
+    
     reader.reset(prepareUtf8JsonSource(source))
     return block(reader)
 }

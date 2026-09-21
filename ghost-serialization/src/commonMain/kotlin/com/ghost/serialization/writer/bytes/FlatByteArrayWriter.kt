@@ -307,7 +307,6 @@ class FlatByteArrayWriter(
         }
     }
 
-    /** Writes the literal "true" directly. */
     override fun writeTrue() {
         ensureCapacity(4)
         val backingArray = array
@@ -319,7 +318,6 @@ class FlatByteArrayWriter(
         size = writeIndex
     }
 
-    /** Writes the literal "false" directly. */
     override fun writeFalse() {
         ensureCapacity(5)
         val backingArray = array
@@ -332,7 +330,6 @@ class FlatByteArrayWriter(
         size = writeIndex
     }
 
-    /** Writes the literal "null" directly. */
     override fun writeNull() {
         ensureCapacity(4)
         val backingArray = array
@@ -344,7 +341,6 @@ class FlatByteArrayWriter(
         size = writeIndex
     }
 
-    /** Writes the literal ".0" directly. */
     override fun writeDotZero() {
         ensureCapacity(2)
         val backingArray = array

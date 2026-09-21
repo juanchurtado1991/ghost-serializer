@@ -30,10 +30,7 @@ internal class FragmentedEmitter(
     private val supportsResilience: Boolean = true,
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    /**
-     * Emits the fragmented deserialization logic: builds the `DecodingContext`, chunk
-     * functions, and the main parsing loop, then validates and instantiates the target DTO.
-     */
+    /** Builds the `DecodingContext`, chunk functions, and parse loop, then validates and instantiates the DTO. */
     fun emit(
         body: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder,
@@ -68,9 +65,7 @@ internal class FragmentedEmitter(
         emitValidationHelper(typeSpecBuilder, contextClassName)
     }
 
-    /**
-     * Builds and registers the private `DecodingContext` class to track properties and masks.
-     */
+    /** Registers the private `DecodingContext` class tracking properties and masks. */
     private fun buildDecodingContext(
         typeSpecBuilder: TypeSpec.Builder,
         contextClassName: ClassName,
@@ -110,9 +105,7 @@ internal class FragmentedEmitter(
         }
     }
 
-    /**
-     * Emits the main parse loop mapping selector indexes to fragmented chunk calls.
-     */
+    /** Maps selector indexes to their fragmented chunk-function calls. */
     private fun emitMainParseLoop(
         body: CodeBlock.Builder,
         chunks: List<List<GhostPropertyModel>>,
@@ -148,10 +141,7 @@ internal class FragmentedEmitter(
         // endObject emitted after validation (see emit)
     }
 
-    /**
-     * Emits a private chunk decoding helper that maps index selections to field assignments
-     * and tracking masks in `DecodingContext`, keeping each generated method small.
-     */
+    /** Chunk decoding helper mapping index selections to field/mask assignments, keeping methods small. */
     private fun emitChunkFunction(
         chunkIdx: Int,
         chunkProps: List<GhostPropertyModel>,
@@ -194,9 +184,6 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(chunkFun.build())
     }
 
-    /**
-     * Emits a call to validate required properties against the tracking masks in `DecodingContext`.
-     */
     private fun emitValidation(body: CodeBlock.Builder) {
         val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
         if (hasRequired) {
@@ -209,10 +196,7 @@ internal class FragmentedEmitter(
         }
     }
 
-    /**
-     * Generates a private helper validating that all required properties were present in the
-     * bitmask, throwing a GhostJsonException for a missing field.
-     */
+    /** Private helper that throws `GhostJsonException` for any required field missing from the bitmask. */
     private fun emitValidationHelper(
         typeSpecBuilder: TypeSpec.Builder,
         contextClassName: ClassName
@@ -281,10 +265,7 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(funBuilder.build())
     }
 
-    /**
-     * Emits the target class instantiation return statement, resolving variables from
-     * `DecodingContext` and using copy-based updates for default properties.
-     */
+    /** Instantiates the target class from `DecodingContext` variables, using `.copy()` for default properties. */
     private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
         val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
         val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->

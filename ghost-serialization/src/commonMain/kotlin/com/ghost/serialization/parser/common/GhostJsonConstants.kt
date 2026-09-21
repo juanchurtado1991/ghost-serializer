@@ -184,19 +184,13 @@ object GhostJsonConstants {
     val EMPTY_BYTES = ByteArray(0)
 
     // --- Bitwise Optimization Constants ---
-    /** The unit bit (1L) used for flag shifting. */
     const val BYTE_SHIFT_UNIT = 1L
-
-    /** Result of a bitwise check when no flags match. */
     const val RESULT_NONE = 0L
 
     /** Bitmask for JSON whitespace: Space (32), LF (10), CR (13), HT (9). */
     const val WHITESPACE_MASK = (1L shl 32) or (1L shl 10) or (1L shl 13) or (1L shl 9)
 
-    /** Standard mask for unsigned byte access. */
     const val BYTE_MASK = 0xFF
-
-    /** Standard mask for unsigned Long byte access. */
     const val LONG_BYTE_MASK = 0xFFL
 
     // --- ASCII Token Codes (Integers) ---
@@ -235,8 +229,6 @@ object GhostJsonConstants {
     // --- Dispatch Table Defaults ---
     /** Default shift for JsonReaderOptions when no perfect-hash search has been run. */
     const val DEFAULT_DISPATCH_SHIFT = 0
-
-    /** Default multiplier for JsonReaderOptions factory methods. */
     const val DEFAULT_DISPATCH_MULTIPLIER = 31
 
     /** Default dispatch table size. Must be a power of two. */
@@ -248,11 +240,7 @@ object GhostJsonConstants {
     // --- Pooling & Cache Metrics ---
     /** Number of buckets in the string reuse pool. Must be power of two. */
     const val STR_POOL_SIZE = 4096
-
-    /** Multiplier for string pool hashing. */
     const val STR_POOL_HASH_MULTIPLIER = 31
-
-    /** Bit shift used for rolling hash calculation. */
     const val HASH_SHIFT = 5
 
     /** Bitmask to normalize ASCII uppercase to lowercase (e.g. 'E' or 32 == 'e'). */
@@ -272,7 +260,6 @@ object GhostJsonConstants {
     /** Shift factor when growing buffer capacity by 1.5. */
     const val CAPACITY_GROWTH_SHIFT = 1
 
-    /** Byte sizes for common UTF/JSON sequences. */
     const val SINGLE_CHAR_SIZE = 1
 
     /** Expected UTF-16 code-unit count when decoding a JSON [Char] field. */
@@ -284,7 +271,6 @@ object GhostJsonConstants {
     const val NUMERIC_HEADER_QUOTED = 1
     const val NUMERIC_HEADER_NEGATIVE = 2
 
-    /** Max depth for nested objects and arrays. */
     const val MAX_DEPTH = 255
 
     /** Size of the scratch buffer for numeric itoa/dtoa. */
@@ -337,10 +323,7 @@ object GhostJsonConstants {
     }
 
     // --- Lookup Tables (LUTs) ---
-    /** Hexadecimal character bytes. */
     val HEX_CHARS = "0123456789abcdef".encodeToByteArray()
-
-    /** Hexadecimal characters. */
     val HEX_CHARS_CHARS = CharArray(16) { i -> "0123456789abcdef"[i] }
 
     /** Maps ASCII bytes (0-255) to their hex numeric value (-1 if invalid). */
@@ -373,10 +356,7 @@ object GhostJsonConstants {
     /** Shift to get the index in the LongArray bitmask (index = charCode shr 6). */
     const val BITMASK_SHIFT = 6
 
-    /** Unit long for bitwise comparisons. */
     const val BITMASK_UNIT = 1L
-
-    /** Maximum ASCII value (0-127). */
     const val ASCII_LIMIT = 128
 
     /** Bitmask for ASCII characters 0-63 that require escaping (Controls + Quote). */

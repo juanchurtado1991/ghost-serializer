@@ -16,10 +16,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 
-/**
- * Chaos and stress scenarios for the JSON parser/writer.
- * Targets undetected crashes and spec violations.
- */
+/** Chaos/stress scenarios targeting undetected parser/writer crashes and spec violations. */
 class GhostChaosTest {
 
     private fun readerOf(json: String): GhostJsonReader {
@@ -65,15 +62,13 @@ class GhostChaosTest {
 
     @Test
     fun skipBalancedRespectsMaxDepth() {
-        // Test DoS protection on unknown fields
+        // DoS protection: nesting depth is checked even for an unknown/skipped field.
         val deepJson = "{\"unknown\": " + "[".repeat(120) + "]" + "}".repeat(120)
-        // Explicitly set maxDepth to 100 to trigger failure
         val reader =
             GhostJsonReader(createByteArraySource(deepJson.encodeToByteArray()), maxDepth = 100)
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        // Should fail because total depth (1 from current object + 120 from skip) > 100
         assertFailsWith<GhostJsonException> {
             reader.skipValue()
         }

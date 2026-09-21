@@ -13,9 +13,6 @@ import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-/**
- * Serializer for [ProtoFieldMask].
- */
 object ProtoFieldMaskSerializer : GhostSerializer<ProtoFieldMask> {
     override val typeName: String get() = C.WKT_FIELDMASK_TYPE
 

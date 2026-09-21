@@ -1,11 +1,8 @@
 package com.ghost.serialization.yaml
 
 /**
- * Byte-level constants for YAML control characters.
- *
- * Every control byte used by the YAML parser is declared here with a descriptive name.
- * Call sites should use these named constants instead of raw byte literals, and compare
- * bytes directly (Byte to Byte) rather than converting to [Char].
+ * Byte-level constants for YAML control characters. Compare bytes directly (Byte to Byte)
+ * rather than converting to [Char].
  */
 @PublishedApi
 internal object GhostYamlConstants {
@@ -94,11 +91,6 @@ internal object GhostYamlConstants {
 
     /** '<' — opening bracket in verbose tags !<TypeName> */
     const val LT_BYTE: Byte = 0x3C
-
-    // ── Document markers ──────────────────────────────────────────────────────
-
-    /** '—' first byte of document-start marker '---' */
-    // Same as DASH_BYTE. Marker is detected by checking 3 consecutive DASH_BYTE at column 0.
 
     // ── Numeric helpers ───────────────────────────────────────────────────────
 

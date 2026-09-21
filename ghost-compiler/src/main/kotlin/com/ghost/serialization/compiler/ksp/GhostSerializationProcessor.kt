@@ -38,9 +38,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main KSP processor for Ghost Serialization: analyzes `@GhostSerialization`-annotated classes,
- * generates their serializers, and builds a per-module registry mapping classes to serializers
- * to avoid reflection at runtime.
+ * KSP processor for Ghost Serialization: analyzes `@GhostSerialization`-annotated classes,
+ * generates their serializers, and builds a per-module registry to avoid reflection at runtime.
  */
 class GhostSerializationProcessor(
     private val codeGenerator: CodeGenerator,
@@ -48,35 +47,24 @@ class GhostSerializationProcessor(
     private val options: Map<String, String> = emptyMap()
 ) : SymbolProcessor {
 
-    /**
-     * Map tracking class names to their generated companion serializers for the module registry.
-     */
     private val classToSerializer = mutableMapOf<ClassName, ClassName>()
 
-    /**
-     * Origin files corresponding to processed declarations, used to define KSP incremental compilation dependencies.
-     */
+    /** Origin files of processed declarations, for KSP incremental compilation dependencies. */
     private val originatingFiles = mutableSetOf<KSFile>()
 
-    /**
-     * Tracks processed file names to avoid double-processing declarations.
-     */
     private val processedFiles = mutableSetOf<String>()
 
     private val analyzer = GhostAnalyzer(logger)
     private val envelopeAnalyzer = EnvelopeAnalyzer(logger)
 
-    /**
-     * Lazily resolves the output name of the module-level registry class (e.g. `GhostRegistry_module_name`).
-     */
+    /** Output name of the module-level registry class, e.g. `GhostRegistry_module_name`. */
     private val registryClassName: String by lazy {
-        // Use the module name provided by KSP or fallback to a stable suffix
         var moduleName = options[C.OPTION_MODULE_NAME]
             ?.replace(C.STR_DASH, C.STR_UNDERSCORE)
             ?.replace(C.STR_DOT, C.STR_UNDERSCORE)
             ?: C.STR_DEFAULT_NAME
 
-        // Append _Test if we are in a test source set to avoid collisions
+        // Append _Test when in a test source set, to avoid colliding with the main registry.
         if (moduleName == C.STR_DEFAULT_NAME) {
             val isTest = TestSourceSetDetection.isTestCompilation(
                 options = options,
@@ -90,12 +78,7 @@ class GhostSerializationProcessor(
         C.STR_REGISTRY_PREFIX + C.STR_UNDERSCORE + moduleName
     }
 
-    /**
-     * Entry point of the processor phase. Searches for `@GhostSerialization`-annotated classes,
-     * generates their serializers, and compiles the module registry.
-     *
-     * @return Symbols that could not be processed in this round (deferred to KSP's next round).
-     */
+    /** @return Symbols that could not be processed in this round (deferred to KSP's next round). */
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val symbols = (resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_SERIALIZATION) +
                 resolver.getSymbolsWithAnnotation(C.STR_ANNOTATION_PROTO_SERIALIZATION)).toSet()
@@ -148,9 +131,6 @@ class GhostSerializationProcessor(
         return unableToProcess.toList()
     }
 
-    /**
-     * Compiles and writes the serializer companion file for a target class.
-     */
     private fun processClass(
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>,
@@ -183,11 +163,7 @@ class GhostSerializationProcessor(
         }
     }
 
-    /**
-     * Generates and writes the serializer class file for the target class declaration.
-     *
-     * @return The generated serializer's [ClassName], or null if this file was already processed.
-     */
+    /** @return The generated serializer's [ClassName], or null if this file was already processed. */
     private fun generateSerializer(
         classDeclaration: KSClassDeclaration,
         propertiesModel: List<GhostPropertyModel>,
@@ -371,11 +347,7 @@ class GhostSerializationProcessor(
         return false
     }
 
-    /**
-     * Registers the generated serializer for [classDeclaration], also mapping any sealed
-     * subclasses to the same serializer, and records the originating file for incremental
-     * compilation.
-     */
+    /** Registers the serializer for [classDeclaration] and its sealed subclasses, if any. */
     private fun registerSerializer(
         classDeclaration: KSClassDeclaration,
         serializerClassName: ClassName
@@ -390,10 +362,7 @@ class GhostSerializationProcessor(
         classDeclaration.containingFile?.let { originatingFiles.add(it) }
     }
 
-    /**
-     * Generates a registry containing a mapping of serializable classes to their generated serializers.
-     * Splitting the structure into chunks if there are many models to avoid JVM method limits.
-     */
+    /** Generates the class-to-serializer registry, sharded into chunks to avoid JVM method limits when large. */
     private fun generateModuleRegistry() {
         val serializerType = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
         val kClassType = ClassName(C.STR_REFLECT_PKG, C.STR_KCLASS)
@@ -419,9 +388,6 @@ class GhostSerializationProcessor(
         writeRegistryFile(registrySpec.build())
     }
 
-    /**
-     * Generates the lazily-initialized full serializers map property for the registry.
-     */
     private fun generateSerializersMapProperty(
         registrySpec: TypeSpec.Builder,
         chunks: List<List<Map.Entry<ClassName, ClassName>>>,
@@ -453,9 +419,6 @@ class GhostSerializationProcessor(
         )
     }
 
-    /**
-     * Generates the polymorphic `getSerializer` method routing requests to matches or shards.
-     */
     private fun generateGetSerializerMethod(
         registrySpec: TypeSpec.Builder,
         chunks: List<List<Map.Entry<ClassName, ClassName>>>,
@@ -494,9 +457,6 @@ class GhostSerializationProcessor(
         registrySpec.addFunction(getMethodBuilder.build())
     }
 
-    /**
-     * Generates private helper lookup/mapping shard methods if the registry size warrants fragmentation.
-     */
     private fun generateShardMethods(
         registrySpec: TypeSpec.Builder,
         chunks: List<List<Map.Entry<ClassName, ClassName>>>,
@@ -513,7 +473,6 @@ class GhostSerializationProcessor(
                         .build()
                 )
 
-                // Shard Lookup
                 registrySpec.addFunction(
                     FunSpec.builder(C.TEMPLATE_SHARD_NAME.format(i))
                         .addModifiers(KModifier.PRIVATE)
@@ -529,9 +488,6 @@ class GhostSerializationProcessor(
         }
     }
 
-    /**
-     * Generates metadata info methods (prewarm, registry size count, and global companion instance).
-     */
     private fun generateMetadataMethodsAndCompanion(
         registrySpec: TypeSpec.Builder,
         entriesCount: Int,
@@ -575,9 +531,6 @@ class GhostSerializationProcessor(
         )
     }
 
-    /**
-     * Writes the completed registry type specification to a file.
-     */
     private fun writeRegistryFile(registrySpec: TypeSpec) {
         GeneratedSourceTrimmer.write(
             fileSpec = FileSpec.builder(C.STR_GENERATED_PKG, registryClassName)
@@ -588,9 +541,6 @@ class GhostSerializationProcessor(
         )
     }
 
-    /**
-     * Generates a KotlinPoet [CodeBlock] mapping class types to their serializer instances.
-     */
     private fun buildMapBlock(
         entries: List<Map.Entry<ClassName, ClassName>>
     ): CodeBlock {
@@ -609,9 +559,6 @@ class GhostSerializationProcessor(
         return builder.build()
     }
 
-    /**
-     * Generates a `when (clazz)` lookup expression mapping classes to serializer instances.
-     */
     private fun buildWhenBlock(
         entries: List<Map.Entry<ClassName, ClassName>>,
         serializerType: ClassName,
@@ -639,10 +586,7 @@ class GhostSerializationProcessor(
         return builder.build()
     }
 
-    /**
-     * Generates ProGuard/R8 keep rules to ensure the Registry and Serializers
-     * are not obfuscated or removed during the shrinking phase.
-     */
+    /** Generates ProGuard/R8 keep rules so the registry and serializers survive shrinking. */
     private fun generateProGuardRules() {
         val rules = C.TEMPLATE_PROGUARD_KEEP
             .trimIndent()
@@ -668,10 +612,7 @@ class GhostSerializationProcessor(
         }
     }
 
-    /**
-     * Generates a ServiceLoader entry so the Core module can automatically
-     * discover this registry at runtime.
-     */
+    /** Generates a ServiceLoader entry so the core module can discover this registry at runtime. */
     private fun generateServiceFile() {
         val serviceName = C.STR_SERVICE_REGISTRY
         val implementationName = "${

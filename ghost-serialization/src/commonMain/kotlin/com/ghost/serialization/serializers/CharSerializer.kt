@@ -14,9 +14,7 @@ import com.ghost.serialization.parser.strings.nextChar
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 
-/**
- * Built-in serializer for Kotlin [Char] type (JSON string of length 1).
- */
+/** Serializer for [Char], encoded as a length-1 JSON string (not a number). */
 object CharSerializer : GhostSerializer<Char> {
     override val typeName: String get() = C.TYPE_NAME_CHAR
 

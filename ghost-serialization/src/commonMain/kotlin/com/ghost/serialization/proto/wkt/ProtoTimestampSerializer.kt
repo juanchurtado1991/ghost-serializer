@@ -15,9 +15,6 @@ import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Serializer for [ProtoTimestamp].
- */
 object ProtoTimestampSerializer : GhostSerializer<ProtoTimestamp> {
     override val typeName: String get() = C.WKT_TIMESTAMP_TYPE
 
@@ -54,7 +51,6 @@ internal inline fun String.parseDecimalAt(start: Int, end: Int): Int {
     return result
 }
 
-// Writes `value` zero-padded to `width` digits directly into the ByteArray.
 internal fun writePaddedInt(buffer: ByteArray, startOffset: Int, value: Int, width: Int): Int {
     var position = startOffset
     var digitCount = 1
@@ -90,8 +86,8 @@ internal fun writePaddedInt(buffer: ByteArray, startOffset: Int, value: Int, wid
     return position
 }
 
-// Appends nanos as fractional digits. Proto3 JSON mandates exactly 0, 3, 6, or 9 fractional
-// digits (never an arbitrary trim) — e.g. 450_000_000 ns must render as ".450", not ".45".
+// Proto3 JSON mandates exactly 0, 3, 6, or 9 fractional digits, never an arbitrary trim
+// (e.g. 450_000_000 ns must render as ".450", not ".45").
 internal fun writeNanosFraction(buffer: ByteArray, startOffset: Int, nanos: Int): Int {
     val width: Int
     val scale: Int

@@ -6,24 +6,12 @@ import org.gradle.api.provider.Property
  * Gradle extension for configuring the Ghost Serialization plugin, registered under the `ghost` block when [GhostPlugin] is applied.
  */
 interface GhostExtension {
-    /**
-     * When `true`, adds `ghost-ktor` if a Ktor client dependency is detected on the classpath.
-     *
-     * Defaults to `true`.
-     */
+    /** Adds `ghost-ktor` when a Ktor client dependency is detected on the classpath. Default `true`. */
     val autoInjectKtor: Property<Boolean>
 
-    /**
-     * When `true`, adds `ghost-retrofit` if Retrofit is detected on the classpath.
-     *
-     * Defaults to `true`.
-     */
+    /** Adds `ghost-retrofit` when Retrofit is detected on the classpath. Default `true`. */
     val autoInjectRetrofit: Property<Boolean>
 
-    /**
-     * Ghost Serialization artifact version used for runtime, API, compiler, and adapter dependencies.
-     *
-     * Defaults to the plugin release version.
-     */
+    /** Ghost artifact version for runtime, API, compiler, and adapter dependencies. Defaults to the plugin release version. */
     val version: Property<String>
 }

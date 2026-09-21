@@ -214,9 +214,8 @@ internal class SerializerImportResolver(
         val hasRawJson = allTypes.any { it.isRawJson() }
         val needsNextString = needsNextStringImport() ||
                 byteArrayClassifications.contains(ByteArrayCoverage.COVERED)
-        // GhostJsonReader.deserialize: nextInt/nextLong/nextFloat/nextDouble/nextULong/
-        // nextString/nextChar/nextBoolean are all top-level extensions on the streaming
-        // reader package and need an explicit import.
+        // nextInt/nextLong/nextFloat/nextDouble/nextULong/nextString/nextChar/nextBoolean are
+        // top-level extensions on the streaming reader package, so need an explicit import.
         if (needsNextIntImport()) {
             fileBuilder.addImport(C.PKG_PARSER_STREAMING, C.STR_NEXT_INT_NAME)
         }
@@ -316,13 +315,10 @@ internal class SerializerImportResolver(
     private enum class ByteArrayCoverage { COVERED, UNCOVERED }
 
     /**
-     * Classifies every `ByteArray` occurrence reachable from this class's properties (directly,
-     * through `List`/`Set`/`Map` elements, through a value-class wrapper, or through an inferred
-     * sealed subclass) as `ByteArrayCoverage.COVERED` by the proto3 Base64 codegen path (needs
-     * `decodeBase64String`/`encodeBase64String`), or `ByteArrayCoverage.UNCOVERED` (still needs
-     * the raw-JSON-passthrough `captureRawJsonBytes` import). Coverage mirrors exactly what
-     * `BaseSerializeEmitter`/`BaseDeserializeEmitter` do: `isProto` propagates unchanged through
-     * `List`/`Set`/`Map` recursion, but inferred sealed subclass properties are never proto-aware.
+     * Classifies every reachable `ByteArray` occurrence as `COVERED` (proto3 Base64 codegen path;
+     * needs `decodeBase64String`/`encodeBase64String`) or `UNCOVERED` (needs the raw-JSON-passthrough
+     * `captureRawJsonBytes` import instead). Must mirror `BaseSerializeEmitter`/`BaseDeserializeEmitter`
+     * exactly: `isProto` propagates through `List`/`Set`/`Map`, but never for inferred subclasses.
      */
     private fun classifyAllByteArrayUsages(): List<ByteArrayCoverage> {
         fun classify(type: KSType, isProto: Boolean): ByteArrayCoverage? {

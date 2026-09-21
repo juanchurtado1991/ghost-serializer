@@ -38,7 +38,7 @@ class GhostFlatReaderEdgeCaseTest {
     fun readsLongMaxValue() {
         val reader = readerOf("{\"v\":${Long.MAX_VALUE}}")
         reader.beginObject()
-        reader.skipWhitespace() // or nextNonWhitespace
+        reader.skipWhitespace()
         reader.readQuotedString()
         reader.consumeKeySeparator()
         assertEquals(Long.MAX_VALUE, reader.nextLong())
@@ -368,7 +368,6 @@ class GhostFlatReaderEdgeCaseTest {
         val initialJson = "{\"short\":1}"
         val reader = GhostJsonReader(initialJson.encodeToByteArray())
 
-        // 1. Verify first parse works
         reader.beginObject()
         reader.skipWhitespace()
         assertEquals("short", reader.readQuotedString())
@@ -376,7 +375,7 @@ class GhostFlatReaderEdgeCaseTest {
         assertEquals(1, reader.nextInt())
         reader.endObject()
 
-        // 2. Reset with a much longer JSON string to verify limit and rawData updates
+        // Reset with a much longer JSON string to verify limit and rawData updates
         val longerJson = "{\"very_long_field_name_indeed\":1234567890123}"
         reader.reset(longerJson.encodeToByteArray())
 
@@ -387,7 +386,7 @@ class GhostFlatReaderEdgeCaseTest {
         assertEquals(1234567890123L, reader.nextLong())
         reader.endObject()
 
-        // 3. Reset with a very short JSON string to verify bounds
+        // Reset with a very short JSON string to verify bounds
         val shortJson = "{\"a\":true}"
         reader.reset(shortJson.encodeToByteArray())
 
@@ -409,7 +408,7 @@ class GhostFlatReaderEdgeCaseTest {
         reader.consumeKeySeparator()
         assertEquals(1, reader.depth)
 
-        // Try parsing nested object's int value as a string (throws non-structural exception)
+        // Parsing the nested int as a string throws a non-structural exception
         val result = reader.decodeResilient {
             reader.beginObject()
             reader.skipWhitespace()

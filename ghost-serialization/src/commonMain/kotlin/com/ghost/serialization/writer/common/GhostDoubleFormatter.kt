@@ -7,24 +7,15 @@ import kotlin.math.roundToInt
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 /**
- * Zero-allocation ASCII formatter for [Double] values, writing directly into a pre-allocated
- * [ByteArray] to bypass the GC overhead of `Double.toString()` on the hot serialization path.
+ * Zero-allocation ASCII formatter for [Double]/[Float], writing directly into a pre-allocated
+ * [ByteArray] to bypass `Double.toString()` GC overhead. Handles up to [MAX_DECIMALS] decimal
+ * places for values in `[1e-9, 1e9]`; anything outside that, non-finite, or too small returns
+ * [FALLBACK_REQUIRED] so the caller falls back to a platform `toString()`.
  *
- * Handles up to [MAX_DECIMALS] (9) decimal places for values in `[1e-9, 1e9]`; anything outside
- * that range, non-finite, or microscopic returns [FALLBACK_REQUIRED] so the caller falls back to
- * a platform `toString()` without allocating a lambda on the hot path.
- *
- * Writing a *fixed* number of decimals is not, on its own, round-trip-safe: the fractional part
- * is scaled by [PRECISION_MULTIPLIER] and rounded to the nearest integer, which can land on a
- * decimal string that reads back to a different `Double`/`Float` than the one written (e.g.
- * `0.1 + 0.2` is `0.30000000000000004`, but the fixed-9-decimal path used to print `"0.3"` —
- * correctly rounded to 9 places, but not the value that was actually there). Both
- * [writeDoubleDirect] and [writeFloatDirect] now verify the digits they're about to emit against
- * [finalizeParsedDouble]/[finalizeParsedFloat] (the same, already-correctly-rounded parser used to
- * read numbers back in) before committing to them, falling back to [FALLBACK_REQUIRED] — same as
- * the existing massive/microscopic fallback — on the rare mismatch. This makes correctness
- * self-consistent with the reader rather than dependent on trusting the fixed-decimal rounding to
- * always coincide with it.
+ * A fixed decimal count isn't inherently round-trip-safe (e.g. `0.1 + 0.2` prints as `"0.3"` at
+ * 9 places, which reads back to a different Double). [writeDoubleDirect]/[writeFloatDirect] verify
+ * the digits against [finalizeParsedDouble]/[finalizeParsedFloat] before committing, falling back
+ * on mismatch.
  */
 internal object GhostDoubleFormatter {
 
@@ -34,45 +25,23 @@ internal object GhostDoubleFormatter {
         1_000_000L, 10_000_000L, 100_000_000L, 1_000_000_000L,
     )
 
-    /** Maximum value below which a whole Double is formatted directly as a Long + ".0" */
     private const val SMALL_WHOLE_THRESHOLD = 1_000_000_000.0
-
-    /** Multiplier to scale up 9 fractional decimal digits to a Long integer space */
     private const val PRECISION_MULTIPLIER = 1_000_000_000.0
-
-    /** The lowest positive Double value processed by the fast-path without fallback */
     private const val MICROSCOPIC_DOUBLE_THRESHOLD = 1e-9
-
-    /** The maximum Double value processed by the fast-path without fallback */
     private const val MASSIVE_DOUBLE_THRESHOLD = 1e9
-
-    /** The carry-over boundary for fractional scaling (10^9) */
     private const val FRAC_LIMIT = 1_000_000_000L
-
-    /** Maximum decimal precision supported (9 decimal places) */
     private const val MAX_DECIMALS = 9
 
-    /**
-     * Bytes reserved past position for [writeLongDirect] scratch (always within FAST_BUF_SCRATCH_ZONE).
-     */
+    /** Scratch span for [writeLongDirect], within FAST_BUF_SCRATCH_ZONE. */
     private const val LONG_DIRECT_SCRATCH_SPAN = 32
 
-    /** Scale applied to the base-100 remainder when indexing [C.DOUBLE_DIGIT_LUT] (2 ASCII digits). */
     private const val DIGIT_PAIR_LUT_STRIDE = 2
     private const val DIGIT_PAIR_WIDTH = 2
 
-    /**
-     * Returned when the fast-path cannot format the value; the caller must use a platform formatter.
-     * Negative so call sites can keep `bytesWritten > 0` as the success check.
-     */
+    /** Negative so call sites can keep `bytesWritten > 0` as the success check. */
     const val FALLBACK_REQUIRED = -1
 
-    /**
-     * True if the digits about to be written (`intPart` followed by `decimalsToPrint` digits of
-     * `fracInt`, i.e. `intPart.fracInt` with `fracInt` zero-padded to `decimalsToPrint` places)
-     * parse back to exactly [expected] via Ghost's own correctly-rounded double parser.
-     */
-    /** Digits of `intPart` that count toward a reader's `precisionLimit` (a sole "0" counts as 0 — see parser). */
+    /** Digits of `intPart` counting toward a reader's `precisionLimit` (a sole "0" counts as 0). */
     private fun significantIntDigits(intPart: Long): Int {
         if (intPart == 0L) return 0
         var n = intPart
@@ -211,12 +180,7 @@ internal object GhostDoubleFormatter {
         return position - offset
     }
 
-    /**
-     * Formats and writes the given [Float] value directly into the [scratch] buffer starting at [offset].
-     * Uses 7 decimal places of precision suitable for the single-precision Float type to avoid representation noise.
-     *
-     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
-     */
+    /** Same as [writeDoubleDirect], with 7 decimal places (Float's precision). */
     fun writeFloatDirect(
         value: Float,
         scratch: ByteArray,

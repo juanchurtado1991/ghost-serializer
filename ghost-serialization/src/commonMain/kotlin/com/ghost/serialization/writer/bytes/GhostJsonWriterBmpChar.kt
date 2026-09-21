@@ -7,9 +7,6 @@ import okio.Buffer
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Writes a JSON string containing a single BMP code point into an Okio [Buffer].
- */
 internal fun Buffer.writeQuotedBmpCodeUnit(codePoint: Int) {
     writeByte(C.QUOTE_INT)
     when {

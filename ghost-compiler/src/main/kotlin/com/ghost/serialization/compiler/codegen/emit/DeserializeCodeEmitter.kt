@@ -16,13 +16,11 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main coordinator for deserialization code generation. Selects a strategy from DTO metadata
- * (sealed hierarchy, enum, size, structural complexity) and delegates to specialized emitters:
- * direct dispatch for sealed/enum types, [FragmentedEmitter] for DTOs above `PROPERTY_MAX_SIZE`
- * (to stay under the JVM 64KB method limit), and [StandardEmitter] otherwise.
+ * Coordinates deserialization codegen: picks a strategy from DTO metadata and delegates to
+ * [FragmentedEmitter] for DTOs above `PROPERTY_MAX_SIZE` (to stay under the JVM 64KB method
+ * limit), [StandardEmitter] otherwise, or direct dispatch for sealed/enum types.
  *
- * @param isInferred Handles polymorphic types where the discriminator is absent, relying on
- * property presence to identify the subclass.
+ * @param isInferred Polymorphic types with no discriminator, identified by property presence instead.
  */
 internal class DeserializeCodeEmitter(
     properties: List<GhostPropertyModel>,
@@ -40,10 +38,7 @@ internal class DeserializeCodeEmitter(
     private val supportsResilience: Boolean = true,
 ) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
 
-    /**
-     * Entry point for the code generation pipeline: picks the generation strategy, injects
-     * contextual serializers, and propagates resilience metadata when the class is resilient.
-     */
+    /** Picks the generation strategy, injects contextual serializers, and propagates resilience metadata. */
     fun build(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean = false
@@ -84,9 +79,6 @@ internal class DeserializeCodeEmitter(
         injectResilienceProperty(typeSpecBuilder, isFlatPath)
     }
 
-    /**
-     * Instantiates and delegates code generation to [FragmentedEmitter].
-     */
     private fun emitFragmented(
         body: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder,
@@ -104,9 +96,6 @@ internal class DeserializeCodeEmitter(
         }
     }
 
-    /**
-     * Instantiates and delegates code generation to [StandardEmitter].
-     */
     private fun emitStandard(
         body: CodeBlock.Builder,
         typeSpecBuilder: TypeSpec.Builder,
@@ -124,10 +113,7 @@ internal class DeserializeCodeEmitter(
         }
     }
 
-    /**
-     * Emits deserialization logic for object types (singletons). Consumes the JSON object
-     * body and returns the singleton instance.
-     */
+    /** Consumes the JSON object body and returns the singleton instance. */
     private fun emitObjectReturn(body: CodeBlock.Builder) {
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
@@ -143,9 +129,7 @@ internal class DeserializeCodeEmitter(
         body.addStatement("return %T", originalClassName)
     }
 
-    /**
-     * Reads @GhostSerialization(name) from a class declaration, falling back to simple class name.
-     */
+    /** Reads `@GhostSerialization(name)`, falling back to the simple class name. */
     private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
         val customName = subclass.annotations
             .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
@@ -153,10 +137,7 @@ internal class DeserializeCodeEmitter(
         return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()
     }
 
-    /**
-     * Conditionally injects the `isResilient` property
-     * if the class is resilient and not flat.
-     */
+    /** Injects the `isResilient` property when the class is resilient and not flat. */
     private fun injectResilienceProperty(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean
@@ -174,10 +155,7 @@ internal class DeserializeCodeEmitter(
         }
     }
 
-    /**
-     * Adds the final deserialize function to the generated serializer.
-     * This method fulfills the contract of GhostSerializer.
-     */
+    /** Adds the `deserialize` override fulfilling the `GhostSerializer` contract. */
     private fun addDeserializeFunction(
         typeSpecBuilder: TypeSpec.Builder,
         body: CodeBlock
@@ -194,10 +172,8 @@ internal class DeserializeCodeEmitter(
     }
 
     /**
-     * Emits deserialization logic for sealed hierarchies via discriminator key checks.
-     * It generates a `when` expression that inspects the JSON discriminator field to
-     * decide which specialized serializer to invoke. Includes support for fallback
-     * subclasses when a discriminator value doesn't match known types.
+     * Generates a `when` on the JSON discriminator field to dispatch to each subclass's
+     * serializer, with support for a fallback subclass when the value is unrecognized.
      */
     private fun emitSealed(body: CodeBlock.Builder) {
         val fallbackSubclass = sealedSubclasses.find { subclass ->
@@ -249,11 +225,9 @@ internal class DeserializeCodeEmitter(
     }
 
     /**
-     * Emits deserialization logic for Inferred Polymorphism.
-     *
-     * This is an advanced strategy where the subclass is determined by the presence
-     * of specific fields in the JSON. It uses a **Property-to-Class bitmask** to identify
-     * candidate subclasses and resolves them using a voting-like logic on the eligibility bitmask.
+     * Inferred polymorphism: the subclass is determined by which fields are present in the JSON.
+     * Uses a property-to-class bitmask to narrow candidate subclasses as fields are seen, then
+     * resolves the match against each subclass's required-field mask.
      */
     private fun emitInferredSealed(body: CodeBlock.Builder) {
         val context = createInferredSealedContext(properties)
@@ -268,10 +242,7 @@ internal class DeserializeCodeEmitter(
         emitInferredSealedDecisionBlock(body, context)
     }
 
-    /**
-     * Context data holder containing all analyzed property and subclass metadata
-     * needed for inferred sealed class deserialization code generation.
-     */
+    /** Analyzed property/subclass metadata for inferred-sealed codegen. */
     private class InferredSealedContext(
         val inferredInfo: List<InferredSubclassModel>,
         val names: List<String>,
@@ -280,10 +251,7 @@ internal class DeserializeCodeEmitter(
         val propertyToClassMask: Map<String, Long>
     )
 
-    /**
-     * Resolves and builds the inferred-sealed dispatch context from the property models.
-     * Returns null if no inferred subclasses are declared.
-     */
+    /** Builds the inferred-sealed dispatch context, or null if no inferred subclasses are declared. */
     private fun createInferredSealedContext(properties: List<GhostPropertyModel>): InferredSealedContext? {
         val inferredInfo = properties.firstOrNull()?.inferredSubclasses ?: emptyList()
         if (inferredInfo.isEmpty()) {
@@ -316,10 +284,7 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    /**
-     * Emits the local variable declarations for tracking property values and
-     * managing the seen and eligibility bitmasks.
-     */
+    /** Declares tracking variables for property values plus the seen/eligibility bitmasks. */
     private fun emitInferredSealedLocalVariables(
         body: CodeBlock.Builder,
         context: InferredSealedContext
@@ -349,11 +314,7 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    /**
-     * Emits the main loops for parsing and consuming JSON field names.
-     * When a field matches a known subclass signature, its value is parsed,
-     * the eligibility mask is updated, and the seen mask is updated.
-     */
+    /** Parses each JSON field, updating the parsed value plus the eligibility and seen masks. */
     private fun emitInferredSealedMainLoop(
         body: CodeBlock.Builder,
         context: InferredSealedContext
@@ -405,10 +366,7 @@ internal class DeserializeCodeEmitter(
         body.addStatement(C.STR_END_OBJECT)
     }
 
-    /**
-     * Precomputes and emits the required property masks
-     * for each subclass candidate.
-     */
+    /** Emits the required-property mask constant for each subclass candidate. */
     private fun emitInferredSealedRequiredMasks(
         body: CodeBlock.Builder,
         context: InferredSealedContext
@@ -432,9 +390,8 @@ internal class DeserializeCodeEmitter(
     }
 
     /**
-     * Emits the decision block logic to determine the matched subclass and
-     * instantiate it using the parsed arguments. Throws a GhostJsonException if no
-     * unique matching subclass can be resolved.
+     * Resolves the matched subclass and instantiates it from the parsed arguments; throws
+     * `GhostJsonException` if no unique match is found.
      */
     private fun emitInferredSealedDecisionBlock(
         body: CodeBlock.Builder,
@@ -528,9 +485,6 @@ internal class DeserializeCodeEmitter(
         body.addStatement(C.STR_RETURN_RESULT)
     }
 
-    /**
-     * Emits deserialization logic for value class types.
-     */
     private fun emitValue(body: CodeBlock.Builder) {
         val prop = properties.firstOrNull() ?: return
         val call = buildCall(prop)
@@ -541,9 +495,7 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    /**
-     * Emits deserialization logic for enum types using integer lookups.
-     */
+    /** Emits enum deserialization via integer index lookup. */
     private fun emitEnum(body: CodeBlock.Builder) {
         body.addStatement(C.STR_ENUM_SELECT_OPTIONS)
         body.beginControlFlow(C.STR_ENUM_WHEN)

@@ -23,11 +23,11 @@ import kotlin.test.assertTrue
 /**
  * Regression suite for the collision disambiguation algorithm.
  *
- * Background: field dispatch uses a 4-byte prefix hash. When two fields share the
- * same first 4 bytes AND the same length, hasCollisions=true and a polynomial
- * accumulation over bytes 4..N is applied to distinguish them. This suite pins
- * every edge case so a change to the algorithm (PerfectHashFinder, JsonReaderOptions.init,
- * buildStringDispatchTable, or any computeKeyHash) fails loudly here first.
+ * Field dispatch uses a 4-byte prefix hash. When two fields share the same
+ * first 4 bytes AND length, hasCollisions=true and a polynomial accumulation
+ * over bytes 4..N distinguishes them. Pins every edge case so a change to
+ * PerfectHashFinder, JsonReaderOptions.init, buildStringDispatchTable, or
+ * computeKeyHash fails loudly here first.
  *
  * Cases covered:
  *  1.  No collisions — hasCollisions stays false
@@ -221,9 +221,8 @@ class CollisionHashAlgorithmTest {
 
     @Test
     fun collision_withShortFields_polynomialNotAppliedToShortOnes() {
-        // "id" (2 bytes), "ip" (2 bytes): same prefix `id`? No, different.
-        // "at" and "to" have different first bytes — no collision
-        // user_id/user_ip still trigger hasCollisions=true for the whole options
+        // "id"/"name" are short and don't collide with each other or with user_id/user_ip,
+        // but user_id/user_ip still trigger hasCollisions=true for the whole options block
         val options = optionsOf("id", "name", "user_id", "user_ip")
         assertTrue(options.hasCollisions)
         assertAllThreeReadersDispatch(options, listOf("id", "name", "user_id", "user_ip"))
@@ -283,9 +282,9 @@ class CollisionHashAlgorithmTest {
     @Test
     fun hasCollisions_trueOnlyWhenBothPrefixAndLengthMatch() {
         // Adding a field that shares prefix AND length with an existing one
-        val withoutCollision =
-            optionsOf("deviceEvent", "deviceGroup")  // 11 vs 11? No: deviceGroup=11 chars too
-        // deviceEvent = 11, deviceGroup = 11 — both share `devi` and length 11 → collision!
+        // Despite the name, this does collide: deviceEvent and deviceGroup are both
+        // 11 chars and share prefix `devi`.
+        val withoutCollision = optionsOf("deviceEvent", "deviceGroup")
         assertTrue(withoutCollision.hasCollisions)
     }
 
@@ -399,13 +398,10 @@ class CollisionHashAlgorithmTest {
             { streaming.consumeKeySeparator() },
             { streaming.endObject() }
         )
-        // index 0 = eventType, its JSON value is 0
+        // Indices follow options array order: eventType, eventTime, user_id, user_ip
         assertEquals(0, sResult[0])
-        // index 1 = eventTime, its JSON value is 1
         assertEquals(1, sResult[1])
-        // index 2 = user_id, its JSON value is 2
         assertEquals(2, sResult[2])
-        // index 3 = user_ip, its JSON value is 3
         assertEquals(3, sResult[3])
     }
 

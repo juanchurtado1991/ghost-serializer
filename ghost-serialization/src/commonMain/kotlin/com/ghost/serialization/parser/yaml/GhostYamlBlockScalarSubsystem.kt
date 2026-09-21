@@ -3,10 +3,6 @@ package com.ghost.serialization.parser.yaml
 import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /**
- * Subsystem for parsing YAML Block Scalars (Literal | and Folded > styles).
- */
-
-/**
  * Parses block scalar values (literal `|` and folded `>` styles).
  *
  * @param indent The enclosing context's indentation; `GhostYamlConstants.INDENT_UNSET` means

@@ -13,15 +13,7 @@ import com.ghost.serialization.parser.common.scanStringSwarNoHash
 import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
-/**
- * Reads a double-quoted JSON string from the raw byte array, parsing escape sequences
- * and caching string instances in the stringPool when appropriate to save memory.
- *
- * @return The decoded string value.
- * @throws com.ghost.serialization.exception.GhostJsonException
- * if the string is malformed, unescaped control character is found,
- * or it is unterminated.
- */
+/** Reads a double-quoted JSON string, decoding escapes and caching short instances in the string pool. */
 fun GhostJsonFlatReader.readQuotedString(): String {
     if (nextNonWhitespace() != C.QUOTE_INT) {
         throwError(C.ERR_EXPECTED_QUOTE)
@@ -92,12 +84,7 @@ private fun GhostJsonFlatReader.readQuotedStringSlow(start: Int): String =
         throwError = { throwError(it) },
     )
 
-/**
- * Skips a double-quoted JSON string in the raw byte array without decoding its content.
- *
- * @throws com.ghost.serialization.exception.GhostJsonException
- * if the string is malformed or unterminated.
- */
+/** Skips a double-quoted JSON string without decoding its content. */
 fun GhostJsonFlatReader.skipQuotedString() {
     if (nextNonWhitespace() != C.QUOTE_INT) {
         throwError(C.ERR_EXPECTED_QUOTE)
@@ -144,9 +131,6 @@ fun GhostJsonFlatReader.skipQuotedString() {
     throwError(C.UNTERMINATED_STRING_ERROR)
 }
 
-/**
- * Parses 4 hex digits from the byte array at the given position and returns the resulting code point.
- */
 private fun GhostJsonFlatReader.parseUnicodeHex(currentPosition: Int): Int {
     val hexByte0 = getByte(currentPosition)
     val hexByte1 = getByte(currentPosition + 1)

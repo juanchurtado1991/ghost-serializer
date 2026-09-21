@@ -7,8 +7,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Standard serializer code generator for standard-sized DTOs (typically < 40 properties).
- * Handles structured opening and closing of nested JSON brackets for flattened or wrapped properties.
+ * Serializer for standard-sized DTOs (typically < 40 properties); handles opening/closing
+ * nested JSON brackets for flattened or wrapped properties.
  */
 internal class StandardSerializeEmitter(
     properties: List<GhostPropertyModel>,
@@ -16,9 +16,6 @@ internal class StandardSerializeEmitter(
     writerClass: ClassName
 ) : BaseSerializeEmitter(properties, originalClassName, writerClass) {
 
-    /**
-     * Emits the standard object serialization instructions.
-     */
     fun emit(
         code: CodeBlock.Builder,
         discriminator: String?,
@@ -74,9 +71,6 @@ internal class StandardSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_OBJ)
     }
 
-    /**
-     * Checks if a path prefix is a subset of the full path.
-     */
     private fun isPrefix(prefix: List<String>, full: List<String>): Boolean {
         if (prefix.size > full.size) {
             return false

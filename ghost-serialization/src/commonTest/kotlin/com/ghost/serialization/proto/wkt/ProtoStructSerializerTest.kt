@@ -9,11 +9,10 @@ import kotlin.test.assertEquals
 
 
 /**
- * [ProtoStructSerializer] (the top-level `ProtoStruct = Map<String, ProtoValue>` entry point,
- * distinct from [ProtoValue.Struct]'s nested variant) had no test anywhere in the module.
- * Calls the serializer directly rather than through `GhostProto.deserialize<ProtoStruct>()`,
- * since `ProtoStruct` is a type alias -- `ProtoStruct::class` erases to `Map::class` at
- * runtime, which doesn't reliably dispatch through the `KClass`-keyed registry.
+ * Covers [ProtoStructSerializer] (the top-level `ProtoStruct = Map<String, ProtoValue>`
+ * entry point, distinct from [ProtoValue.Struct]'s nested variant) directly, since
+ * `ProtoStruct` is a type alias whose `::class` erases to `Map::class` and won't dispatch
+ * through the `KClass`-keyed registry via `GhostProto.deserialize<ProtoStruct>()`.
  */
 class ProtoStructSerializerTest {
 

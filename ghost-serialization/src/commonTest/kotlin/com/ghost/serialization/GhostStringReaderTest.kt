@@ -40,11 +40,8 @@ import kotlin.test.assertTrue
 
 
 /**
- * Comprehensive unit tests for [GhostJsonStringReader].
- *
- * Coverage comparable to [GhostFlatReaderEdgeCaseTest], [GhostCrashProofTest], and
- * [GhostReaderAdvancedTest] so the string reader meets the same contract as its
- * byte-based siblings. See the numbered section banners below for topic breakdown.
+ * Mirrors [GhostFlatReaderEdgeCaseTest], [GhostCrashProofTest], and [GhostReaderAdvancedTest]
+ * so [GhostJsonStringReader] meets the same contract as its byte-based siblings.
  */
 @OptIn(InternalGhostApi::class)
 class GhostStringReaderTest {

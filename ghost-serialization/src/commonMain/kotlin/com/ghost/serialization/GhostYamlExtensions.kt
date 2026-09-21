@@ -28,9 +28,6 @@ internal fun <T : Any> Ghost.resolveYamlSerializer(clazz: KClass<T>): GhostYamlS
     return serializer as GhostYamlSerializer<T>
 }
 
-/**
- * Decodes the YAML [yaml] string into an instance of type [T] using its registered companion serializer.
- */
 inline fun <reified T : Any> Ghost.decodeFromYaml(yaml: String): T {
     val yamlSerializer = resolveYamlSerializer(T::class)
     val bytes = yaml.encodeToByteArray()
@@ -39,9 +36,6 @@ inline fun <reified T : Any> Ghost.decodeFromYaml(yaml: String): T {
     }
 }
 
-/**
- * Decodes the YAML UTF-8 [bytes] into an instance of type [T] using its registered companion serializer.
- */
 inline fun <reified T : Any> Ghost.decodeFromYaml(bytes: ByteArray): T {
     val yamlSerializer = resolveYamlSerializer(T::class)
     return ghostYamlInternalUseFlatReader(bytes) { reader ->
@@ -49,9 +43,7 @@ inline fun <reified T : Any> Ghost.decodeFromYaml(bytes: ByteArray): T {
     }
 }
 
-/**
- * Decodes every YAML document in [yaml] (separated by `---`) into instances of [T].
- */
+/** Decodes every YAML document in [yaml] (separated by `---`) into instances of [T]. */
 inline fun <reified T : Any> Ghost.decodeAllFromYaml(yaml: String): List<T> {
     val yamlSerializer = resolveYamlSerializer(T::class)
     return ghostYamlInternalUseFlatReader(yaml.encodeToByteArray()) { reader ->
@@ -59,9 +51,7 @@ inline fun <reified T : Any> Ghost.decodeAllFromYaml(yaml: String): List<T> {
     }
 }
 
-/**
- * Decodes every YAML document in [bytes] (separated by `---`) into instances of [T].
- */
+/** Decodes every YAML document in [bytes] (separated by `---`) into instances of [T]. */
 inline fun <reified T : Any> Ghost.decodeAllFromYaml(bytes: ByteArray): List<T> {
     val yamlSerializer = resolveYamlSerializer(T::class)
     return ghostYamlInternalUseFlatReader(bytes) { reader ->
@@ -69,9 +59,6 @@ inline fun <reified T : Any> Ghost.decodeAllFromYaml(bytes: ByteArray): List<T> 
     }
 }
 
-/**
- * Serializes [value] into a YAML string representation.
- */
 inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
     val yamlSerializer = resolveYamlSerializer(T::class)
     return ghostYamlInternalUseFlatWriter { writer, buffer ->
@@ -80,9 +67,6 @@ inline fun <reified T : Any> Ghost.encodeToYaml(value: T): String {
     }
 }
 
-/**
- * Serializes [value] into a YAML UTF-8 byte array representation.
- */
 inline fun <reified T : Any> Ghost.encodeToYamlBytes(value: T): ByteArray {
     val yamlSerializer = resolveYamlSerializer(T::class)
     return ghostYamlInternalUseFlatWriter { writer, buffer ->
@@ -91,9 +75,7 @@ inline fun <reified T : Any> Ghost.encodeToYamlBytes(value: T): ByteArray {
     }
 }
 
-/**
- * Serializes [values] as a multi-document YAML stream (`---` between documents).
- */
+/** Serializes [values] as a multi-document YAML stream (`---` between documents). */
 inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
     if (values.isEmpty()) return ""
     val yamlSerializer = resolveYamlSerializer(T::class)
@@ -105,10 +87,7 @@ inline fun <reified T : Any> Ghost.encodeAllToYaml(values: List<T>): String {
     }
 }
 
-/**
- * Serializes [values] as a multi-document YAML UTF-8 byte stream (`---` between documents).
- * Public API for frameworks that prefer byte payloads over [String].
- */
+/** Serializes [values] as a multi-document YAML UTF-8 byte stream, for callers that prefer bytes over [String]. */
 inline fun <reified T : Any> Ghost.encodeAllToYamlBytes(values: List<T>): ByteArray {
     if (values.isEmpty()) return ByteArray(0)
     val yamlSerializer = resolveYamlSerializer(T::class)

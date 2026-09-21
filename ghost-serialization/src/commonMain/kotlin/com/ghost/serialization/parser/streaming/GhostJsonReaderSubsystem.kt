@@ -31,12 +31,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
 
 /**
- * Starts parsing a JSON object.
- *
- * Concept and Safety:
- * 1. Verifies that the next non-whitespace byte is the opening brace `{` ([GhostJsonConstants.OPEN_OBJ_INT]).
- * 2. Increments the recursion tracking [GhostJsonReader.depth].
- * 3. Enforces the security limit [GhostJsonReader.maxDepth] to prevent nesting overflow StackOverflowErrors.
+ * Starts parsing a JSON object, enforcing [GhostJsonReader.maxDepth] to guard against stack overflow.
  *
  * @throws GhostJsonException if the token is invalid or [GhostJsonReader.maxDepth] is exceeded.
  */
@@ -59,10 +54,6 @@ fun GhostJsonReader.beginObject() {
 /**
  * Finishes parsing a JSON object.
  *
- * Concept:
- * 1. Verifies that the next non-whitespace byte is the closing brace `}` ([GhostJsonConstants.CLOSE_OBJ_INT]).
- * 2. Decrements the recursion tracking [GhostJsonReader.depth].
- *
  * @throws GhostJsonException if the token is not `}`.
  */
 fun GhostJsonReader.endObject() {
@@ -76,12 +67,7 @@ fun GhostJsonReader.endObject() {
 }
 
 /**
- * Starts parsing a JSON array.
- *
- * Concept and Safety:
- * 1. Verifies that the next non-whitespace byte is the opening bracket `[` ([GhostJsonConstants.OPEN_ARR_INT]).
- * 2. Increments the recursion tracking [GhostJsonReader.depth].
- * 3. Enforces the security limit [GhostJsonReader.maxDepth] to prevent stack exhaustion from nested payloads.
+ * Starts parsing a JSON array, enforcing [GhostJsonReader.maxDepth] to guard against stack exhaustion.
  *
  * @throws GhostJsonException if the token is invalid or [GhostJsonReader.maxDepth] is exceeded.
  */
@@ -103,10 +89,6 @@ fun GhostJsonReader.beginArray() {
 /**
  * Finishes parsing a JSON array.
  *
- * Concept:
- * 1. Verifies that the next non-whitespace byte is the closing bracket `]` ([GhostJsonConstants.CLOSE_ARR_INT]).
- * 2. Decrements the recursion tracking [GhostJsonReader.depth].
- *
  * @throws GhostJsonException if the token is not `]`.
  */
 fun GhostJsonReader.endArray() {
@@ -120,15 +102,9 @@ fun GhostJsonReader.endArray() {
 }
 
 /**
- * Determines whether the current JSON object or array has more elements to process.
+ * Returns whether the current object or array has more elements. Rejects trailing commas
+ * (a comma immediately followed by `]` or `}`) rather than silently accepting them.
  *
- * Mechanics:
- * 1. Peeks at the next token byte without consuming it.
- * 2. Returns `false` if it encounters a closing brace `}`, closing bracket `]`, or the end of input.
- * 3. Comma separator handling: if a comma `,` ([GhostJsonConstants.COMMA_INT]) is encountered, it skips it and peeks the following token.
- * 4. Rejection of trailing commas: if the character following a comma is a closing bracket `]` or closing brace `}`, it throws a trailing comma syntax exception.
- *
- * @return `true` if there are more elements/properties, `false` otherwise.
  * @throws GhostJsonException if a trailing comma is detected or input is invalid.
  */
 fun GhostJsonReader.hasNext(): Boolean {
@@ -152,12 +128,7 @@ fun GhostJsonReader.hasNext(): Boolean {
 /**
  * Consumes the optional separator comma and decodes the next JSON key name.
  *
- * Mechanics:
- * 1. Peeks the next token. If object closing `}` is encountered, returns `null` to signal completion.
- * 2. If a comma `,` is found, skips it and validates that it does not precede a closing `}` (no trailing commas).
- * 3. Decodes the quoted string representing the key name.
- *
- * @return The decoded string representing the key, or `null` if the object has ended.
+ * @return The decoded key, or `null` if the object has ended.
  * @throws GhostJsonException if a trailing comma is detected or the key string is malformed.
  */
 fun GhostJsonReader.nextKey(): String? {
@@ -180,13 +151,7 @@ fun GhostJsonReader.nextKey(): String? {
     return key
 }
 
-/**
- * Consumes the key-value separator character `:` ([GhostJsonConstants.COLON_INT]) from the JSON stream.
- *
- * Advances the reader past the colon character.
- *
- * @throws GhostJsonException if the next non-whitespace character is not a colon `:`.
- */
+/** Consumes the `:` key-value separator. @throws GhostJsonException if not found. */
 fun GhostJsonReader.consumeKeySeparator() {
     consumeKeySeparatorCore(
         nextNonWhitespace = { nextNonWhitespace() },
@@ -194,11 +159,7 @@ fun GhostJsonReader.consumeKeySeparator() {
     )
 }
 
-/**
- * Consumes the array item separator `,` ([GhostJsonConstants.COMMA_INT]) if it is next in the stream.
- *
- * Advances the cursor by 1 byte if the comma is matched.
- */
+/** Consumes the `,` array item separator if it is next in the stream. */
 fun GhostJsonReader.consumeArraySeparator() {
     consumeArraySeparatorCore(
         strictMode = strictMode,
@@ -214,14 +175,9 @@ fun GhostJsonReader.consumeArraySeparator() {
 }
 
 /**
- * Parses and returns the next boolean value.
+ * Parses the next boolean. If [GhostJsonReader.coerceBooleans] is set, also accepts `0`/`1` and the
+ * strings `"true"/"yes"/"on"/"1"/"y"` and `"false"/"no"/"off"/"0"/"n"`.
  *
- * Features:
- * 1. Checks literal values: consumes `true` ([GhostJsonConstants.TRUE_BS]) or `false` ([GhostJsonConstants.FALSE_BS]) bytes.
- * 2. Coercion: if [GhostJsonReader.coerceBooleans] is active, translates `1`/`0` integers or string equivalents
- *    (`"true"`, `"yes"`, `"on"`, `"1"`, `"y"` / `"false"`, `"no"`, `"off"`, `"0"`, `"n"`) into their corresponding boolean states.
- *
- * @return The parsed or coerced boolean value.
  * @throws GhostJsonException if the token is not a boolean or fails to be coerced.
  */
 fun GhostJsonReader.nextBoolean(): Boolean {
@@ -237,14 +193,7 @@ fun GhostJsonReader.nextBoolean(): Boolean {
     return value
 }
 
-/**
- * Decodes and returns the next JSON string value.
- *
- * Delegates to the zero-allocation string decoder, processing Unicode and control characters.
- *
- * @return The decoded string value.
- * @throws GhostJsonException if the next token is not a string.
- */
+/** Decodes the next JSON string value. @throws GhostJsonException if the next token is not a string. */
 fun GhostJsonReader.nextString(): String {
     val value = readQuotedString()
     pathTracker.finishScalarValue()
@@ -300,23 +249,11 @@ fun GhostJsonReader.nextChar(): Char {
     return decoded[0]
 }
 
-/**
- * Peeks the stream to determine if the next value is a JSON `null`.
- *
- * Does not advance the reading position, useful for parsing optional/nullable fields.
- *
- * @return `true` if the next non-whitespace character is `n` (indicating `null`), `false` otherwise.
- */
+/** Peeks (without advancing) whether the next value is JSON `null`. */
 fun GhostJsonReader.isNextNullValue(): Boolean =
     peekNextToken() == C.NULL_CHAR_INT
 
-/**
- * Validates and consumes the JSON `null` literal bytes from the stream.
- *
- * Verifies that the next 4 bytes are exactly `n-u-l-l`.
- *
- * @throws GhostJsonException if the token sequence does not match `null`.
- */
+/** Consumes the JSON `null` literal. @throws GhostJsonException if the bytes don't match `null`. */
 fun GhostJsonReader.consumeNull() {
     if (isStreaming) {
         skipAndValidateLiteral(C.NULL_BS)
@@ -378,10 +315,7 @@ fun GhostJsonReader.nextBooleanOrNull(): Boolean? =
         readValue = { nextBoolean() },
     )
 
-/**
- * Zero-copy boolean coercion matcher for [GhostJsonReader]. Delegates byte
- * comparison to [matchCoerceBooleanBytes] in GhostParserUtils — single source of truth.
- */
+/** Zero-copy boolean coercion matcher; delegates byte comparison to the shared helper in GhostParserUtils. */
 private fun GhostJsonReader.matchCoerceBooleanBytes(): Boolean {
     val byteLimit = limit
     val contentStart = position + 1 // skip opening '"'
@@ -403,14 +337,9 @@ private fun GhostJsonReader.matchCoerceBooleanBytes(): Boolean {
 }
 
 /**
- * High-performance field identification using pre-calculated [JsonReaderOptions] perfect hash mappings.
+ * Identifies the next field name via [options]'s perfect hash (no HashMap lookup or String allocation)
+ * and consumes the following `:` separator.
  *
- * Optimization:
- * - Eliminates HashMap lookups and String instantiation overhead.
- * - Hashes raw bytes directly from the stream and maps them to a candidate field index using perfect hash O(1) math.
- * - Automatically verifies matches and consumes the following colon `:` separator to minimize parser steps.
- *
- * @param options Compile-time built Perfect Hash settings for the target class.
  * @return The 0-based field index, [GhostJsonConstants.MATCH_NONE] if unknown key, or `-1` if object ends.
  */
 fun GhostJsonReader.selectNameAndConsume(options: JsonReaderOptions): Int {
@@ -422,26 +351,16 @@ fun GhostJsonReader.selectNameAndConsume(options: JsonReaderOptions): Int {
 }
 
 /**
- * Matches a string token from the stream against the given [options].
+ * Matches a string token (e.g. an enum value) against [options], without consuming a `:` separator.
  *
- * Unlike [selectNameAndConsume], this method does not consume the colon `:` separator, as it is
- * designed to match standard string options (e.g. enum values or type descriptors) instead of keys.
- *
- * @param options The choices to match against.
  * @return The index of the matched option, or [GhostJsonConstants.MATCH_NONE] if no match.
  */
 fun GhostJsonReader.selectString(options: JsonReaderOptions): Int =
     internalSelect(options, consumeSeparator = false)
 
 /**
- * Low-level select parser helper that hashes and matches against [JsonReaderOptions] fields.
- *
- * Mechanics:
- * 1. Checks for trailing comma conditions and finds the start of the quoted string/key.
- * 2. Scans for the closing quote. Performs direct buffer reads to avoid allocations.
- * 3. Applies the Perfect Hash mathematical formula using option multiplier/shift to find the candidate index.
- * 4. Verifies candidate correctness byte-by-byte using unrolled loop checks to guard against hash collisions.
- * 5. Consumes the trailing colon `:` if [consumeSeparator] is enabled.
+ * Shared perfect-hash matcher backing [selectNameAndConsume] and [selectString]. Tries the
+ * in-order predicted field first, then falls back to the hash/dispatch table.
  *
  * @return The matched options index, `-1` on object closing, or [GhostJsonConstants.MATCH_NONE] if not found.
  */
@@ -609,18 +528,9 @@ private fun GhostJsonReader.computeKeyHash(start: Int, length: Int, hasCollision
     computeKeyHashCore(start, length, hasCollisions) { getByte(it) }
 
 /**
- * Verifies that the candidate key matched in the dispatch table corresponds exactly to the expected key bytes.
- *
- * Optimization:
- * - Compares bytes directly in blocks of 4 using loop unrolling for hardware efficiency.
- * - Prevents hash collision false-positives without allocating a String.
- * - If verified, consumes the key and advances the cursor, optionally consuming the colon separator `:`.
- *
- * @param start The absolute starting position of the candidate key bytes in the buffer.
- * @param length The length of the candidate key.
- * @param expected The pre-cached UTF-8 byte array of the expected field name constant.
- * @param consumeSeparator Whether to consume the colon `:` separator after verification.
- * @return `true` if bytes match exactly, `false` otherwise.
+ * Confirms the dispatch-table candidate matches the actual key bytes (guards against hash collisions),
+ * comparing in 4-byte blocks without allocating a String. On success, advances past the key and,
+ * if [consumeSeparator], the `:`.
  */
 private fun GhostJsonReader.verifyKeyMatch(
     start: Int,
@@ -680,24 +590,14 @@ private fun GhostJsonReader.verifyKeyMatch(
 }
 
 /**
- * Peeks ahead in the JSON stream to look for a specific key's string value without advancing the reader cursor permanently.
- *
- * Primarily used to retrieve sealed class type discriminators (e.g. `"type"`) so that the proper subclass deserializer
- * can be dynamically selected before fully parsing the object.
- *
- * @param name The target key name to look for.
- * @return The string value of the key if found, or `null` otherwise.
+ * Peeks a key's string value without permanently advancing the cursor. Used to read sealed class
+ * type discriminators (e.g. `"type"`) before choosing the subclass deserializer.
  */
 fun GhostJsonReader.peekStringField(name: String): String? {
     return peekDiscriminator(name)
 }
 
-/**
- * Skips the next complete JSON value (object, array, string, number, boolean, null) from the source.
- *
- * Properly balances nested opening/closing brackets and braces.
- * This is used to bypass unknown properties, maintaining reader alignment.
- */
+/** Skips the next complete JSON value (object, array, string, number, boolean, null), balancing nesting. */
 fun GhostJsonReader.skipValue() {
     skipValueCore(
         peekNextToken = { peekNextToken() },
@@ -716,16 +616,8 @@ fun GhostJsonReader.skipValue() {
 }
 
 /**
- * Decodes a JSON array into a [List] of elements, utilizing the provided [itemParser] lambda.
- *
- * Mechanics and Safety:
- * - Inline function to eliminate call overhead and lambda allocations.
- * - Instantiates the list using [GhostHeuristics.initialCollectionCapacity] to optimize allocations.
- * - Enforces [maxCollectionSize] constraints to defend against heap exhaustion attacks.
- *
- * @param T The item type.
- * @param itemParser The parsing lambda to invoke for each array element.
- * @return A [List] containing the parsed items.
+ * Decodes a JSON array into a [List] using [itemParser]. Enforces [maxCollectionSize] to defend
+ * against heap-exhaustion attacks from a maliciously large array.
  */
 inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T> {
     beginArray()
@@ -757,9 +649,7 @@ inline fun <T> GhostJsonReader.readList(crossinline itemParser: () -> T): List<T
     return list
 }
 
-/**
- * Reads a JSON array into a [Set] without an intermediate [List] allocation.
- */
+/** Reads a JSON array into a [Set] without an intermediate [List] allocation. */
 inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> {
     beginArray()
     if (peekNextToken() == C.CLOSE_ARR_INT) {
@@ -790,20 +680,7 @@ inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> 
     return set
 }
 
-/**
- * Decodes a JSON object into a [Map] of key-value pairs, using the provided [keyParser] and [valueParser] lambdas.
- *
- * Mechanics and Safety:
- * - Inline function to eliminate function call and closure allocations.
- * - Allocates using [GhostHeuristics.initialCollectionCapacity] to optimize allocations.
- * - Enforces [maxCollectionSize] constraints.
- *
- * @param K The key type.
- * @param V The value type.
- * @param keyParser The parsing lambda for keys.
- * @param valueParser The parsing lambda for values.
- * @return A [Map] containing the parsed key-value pairs.
- */
+/** Decodes a JSON object into a [Map] using [keyParser]/[valueParser]. Enforces [maxCollectionSize]. */
 inline fun <K, V> GhostJsonReader.readMap(
     crossinline keyParser: () -> K,
     crossinline valueParser: () -> V
@@ -846,16 +723,8 @@ inline fun <K, V> GhostJsonReader.readMap(
 }
 
 /**
- * Safely parses a block, returning `null` and skipping the JSON value if a [GhostJsonException] is encountered.
- *
- * Resiliency Mechanics:
- * - Saves current parser state (position, token cache).
- * - Attempts to execute [block].
- * - If [GhostJsonException] occurs, rolls back to saved state and skips the invalid value using [skipValue].
- *
- * @param T The expected parsed type.
- * @param block The parsing block to attempt.
- * @return The result of [block], or `null` if parsing fails.
+ * Runs [block]; on [GhostJsonException] rolls back parser state and skips the invalid value instead
+ * of propagating, returning `null`.
  */
 @InternalGhostApi
 inline fun <T> GhostJsonReader.decodeResilient(
