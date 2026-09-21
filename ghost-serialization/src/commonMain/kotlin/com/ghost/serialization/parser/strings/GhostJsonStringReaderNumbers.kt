@@ -71,6 +71,7 @@ fun GhostJsonStringReader.nextFloat(): Float {
     nextTokenByte = C.RESET_TOKEN_BYTE
     val result = parseJsonFloatingBodyCore(
         precisionLimit = C.FLOAT_PRECISION_LIMIT,
+        allowBulkDigitRead = true,
         getPosition = { position },
         setPosition = { position = it },
         limit = limit,
@@ -99,6 +100,7 @@ fun GhostJsonStringReader.nextDouble(): Double {
     nextTokenByte = C.RESET_TOKEN_BYTE
     val result = parseJsonFloatingBodyCore(
         precisionLimit = C.DOUBLE_PRECISION_LIMIT,
+        allowBulkDigitRead = true,
         getPosition = { position },
         setPosition = { position = it },
         limit = limit,

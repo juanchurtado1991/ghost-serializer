@@ -193,15 +193,10 @@ internal inline fun finalizeParsedFloat(
 /**
  * Scales a parsed mantissa/exponent into a finite [Double].
  *
- * Exact for `|exponent| <= 22` (the only range where `10^n` is itself an exactly-representable
- * Double) and, beyond that, for any exponent whose extra digits can still be folded into the
- * mantissa without exceeding 2^53 (e.g. "1e30" with a small mantissa) — both cases are a single
- * correctly-rounded FP operation, same cost as before. Outside that — a mantissa already at the
- * 2^53 boundary, or a large exponent paired with a high-precision mantissa — falls back to
- * string parsing: correctly rounded on every target, but allocates. That fallback is rare for
- * everyday JSON (prices, coordinates, timestamps all stay well inside the exact range), and
- * benchmarking against real documents (Twitter macro dataset, `benchmarkTwitter`) showed no
- * measurable throughput regression from adding it.
+ * Exact for `|exponent| <= 22` (the only range where `10^n` is an exactly-representable Double)
+ * or when extra exponent can be folded into the mantissa without exceeding 2^53. Otherwise falls
+ * back to string parsing — correctly rounded but allocates; rare in practice, no measurable
+ * throughput cost in `benchmarkTwitter`.
  */
 internal inline fun finalizeParsedDouble(
     mantissa: Long,
@@ -244,10 +239,9 @@ internal inline fun finalizeParsedDouble(
     return result
 }
 
-// Constants quoted verbatim from fast_float's ascii_number.h (parse_eight_digits_unrolled /
-// is_made_of_eight_digits_fast) — not hand-derived, to avoid a transcription error in a bit
-// trick that's easy to get subtly wrong. Exhaustively verified (all 100,000,000 possible 8-digit
-// inputs, plus 4,000,000 non-digit-byte-in-each-position cases) before use here.
+// Quoted verbatim from fast_float's ascii_number.h (parse_eight_digits_unrolled /
+// is_made_of_eight_digits_fast) rather than hand-derived. Exhaustively verified against all
+// 100,000,000 possible 8-digit inputs before use.
 private const val EIGHT_DIGITS_MASK = 0x000000FF000000FFL
 private const val EIGHT_DIGITS_MUL1 = 0x000F424000000064L
 private const val EIGHT_DIGITS_MUL2 = 0x0000271000000001L
@@ -259,11 +253,9 @@ private val EIGHT_DIGITS_HIGH_BIT = 0x8080808080808080UL.toLong()
 private const val HUNDRED_MILLION = 100_000_000L
 
 /**
- * Attempts to read and combine 8 consecutive ASCII digit bytes at [position] into a single
- * 0..99999999 [Int] in one pass — the SWAR technique from fast_float/simdjson
- * (`parse_eight_digits_unrolled`), replacing 8 separate `mantissa*10+digit` steps with a handful
- * of 64-bit bitwise/arithmetic ops. Returns -1 (never a valid result) if fewer than 8 bytes remain
- * or any of them isn't an ASCII digit — callers must fall back to the byte-at-a-time loop.
+ * Reads 8 consecutive ASCII digit bytes at [position] into a 0..99999999 [Int] in one pass
+ * (fast_float/simdjson's `parse_eight_digits_unrolled`). Returns -1 if fewer than 8 bytes remain
+ * or any isn't a digit — caller falls back to byte-at-a-time.
  */
 internal inline fun tryParseEightDigitsAt(position: Int, limit: Int, getByte: (Int) -> Int): Int {
     if (position + 8 > limit) return -1
@@ -283,14 +275,14 @@ internal inline fun tryParseEightDigitsAt(position: Int, limit: Int, getByte: (I
 
 /**
  * Parses a JSON float body (int digits, optional fraction, optional exponent) after the
- * header/leading-zero check. Digit runs walk via [getByte]/[setPosition] (same allocation-safe
- * shape as [parseIntDigitsCore]) — don't pass nested `readDigitRun` callbacks. Both digit runs
- * try [tryParseEightDigitsAt] first when there's room in `precisionLimit` for a full 8-digit
- * chunk (real gain on long numbers — epoch millis, big IDs, high-precision decimals — negligible
- * cost when there isn't, since it's a single bounds+digit check before falling back).
+ * header/leading-zero check. Both digit runs try [tryParseEightDigitsAt] first when
+ * `precisionLimit` has room for a full chunk and [allowBulkDigitRead] is set — the streaming
+ * channel passes `false` because its Okio-backed source releases consumed segments, so an
+ * 8-byte-ahead speculative read can run past the retained window near the end of the document.
  */
 internal inline fun <R> parseJsonFloatingBodyCore(
     precisionLimit: Int,
+    allowBulkDigitRead: Boolean,
     getPosition: () -> Int,
     setPosition: (Int) -> Unit,
     limit: Int,
@@ -306,11 +298,9 @@ internal inline fun <R> parseJsonFloatingBodyCore(
     var position = getPosition()
 
     while (position < limit) {
-        // SWAR fast path: only once past the leading-zero special case below (digitCount > 0)
-        // and only when a full 8-digit chunk still fits the precision budget — the byte-by-byte
-        // loop already correctly handles the near-the-limit tail (bumping `exponent` for digits
-        // beyond precisionLimit), so this only ever short-circuits work the loop would redo anyway.
-        if (digitCount > 0 && digitCount + 8 <= precisionLimit) {
+        // Only past the leading-zero case below (digitCount > 0), and only when a full 8-digit
+        // chunk fits the precision budget — the byte-by-byte loop already handles the tail.
+        if (allowBulkDigitRead && digitCount > 0 && digitCount + 8 <= precisionLimit) {
             val eight = tryParseEightDigitsAt(position, limit, getByte)
             if (eight >= 0) {
                 mantissa = mantissa * HUNDRED_MILLION + eight
@@ -323,12 +313,9 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         if (!isDigit(byte)) break
         val digit = byte - C.ZERO_INT
         sawIntDigit = true
-        // A sole leading "0" (the only way a '0' can start the integer part — validateLeadingZero
-        // already rejects "0" followed by another digit here) carries no significant precision:
-        // e.g. "0.30000000000000004" has 17 significant *fraction* digits, not 16. Don't let this
-        // placeholder consume a slot of `precisionLimit`, or a legitimate max-precision fraction
-        // (exactly what Double/Float.toString() emits for values needing every digit) gets its
-        // last digit silently dropped on read.
+        // A sole leading "0" (validateLeadingZero rejects "0" + another digit) carries no
+        // precision — don't let it consume a `precisionLimit` slot, or max-precision fractions
+        // lose their last digit (e.g. "0.30000000000000004" needs all 17 fraction digits).
         if (digitCount == 0 && digit == 0) {
             position++
             continue
@@ -351,7 +338,7 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         position++
         val fractionStart = position
         while (position < limit) {
-            if (digitCount + 8 <= precisionLimit) {
+            if (allowBulkDigitRead && digitCount + 8 <= precisionLimit) {
                 val eight = tryParseEightDigitsAt(position, limit, getByte)
                 if (eight >= 0) {
                     mantissa = mantissa * HUNDRED_MILLION + eight
