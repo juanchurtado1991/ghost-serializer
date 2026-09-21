@@ -34,8 +34,7 @@ actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
  */
 @PublishedApi
 internal fun acquireFlatWriterPair(): WriterSinkPair {
-    val pair = writerPool.get()
-        ?: WriterSinkPair()
+    val pair = writerPool.get() ?: WriterSinkPair()
             .also { writerPool.set(it) }
 
     pair.writer.reset()
@@ -54,8 +53,9 @@ internal val stringWriterPool = ThreadLocal<WriterStringPair>()
 
 @PublishedApi
 internal fun acquireStringWriterPair(): WriterStringPair {
-    val pair = stringWriterPool.get()
-        ?: WriterStringPair().also { stringWriterPool.set(it) }
+    val pair = stringWriterPool.get() ?: WriterStringPair()
+        .also { stringWriterPool.set(it) }
+
     pair.writer.reset()
     pair.charWriter.reset()
     return pair

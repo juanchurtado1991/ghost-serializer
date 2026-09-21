@@ -11,5 +11,10 @@ internal actual fun String.copyRangeToCharArray(
     startIndex: Int,
     endIndex: Int
 ) {
-    toCharArray(dest, destOffset, startIndex, endIndex)
+    toCharArray(
+        destination = dest,
+        destinationOffset = destOffset,
+        startIndex = startIndex,
+        endIndex = endIndex
+    )
 }

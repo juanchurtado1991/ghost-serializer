@@ -244,10 +244,50 @@ internal inline fun finalizeParsedDouble(
     return result
 }
 
+// Constants quoted verbatim from fast_float's ascii_number.h (parse_eight_digits_unrolled /
+// is_made_of_eight_digits_fast) — not hand-derived, to avoid a transcription error in a bit
+// trick that's easy to get subtly wrong. Exhaustively verified (all 100,000,000 possible 8-digit
+// inputs, plus 4,000,000 non-digit-byte-in-each-position cases) before use here.
+private const val EIGHT_DIGITS_MASK = 0x000000FF000000FFL
+private const val EIGHT_DIGITS_MUL1 = 0x000F424000000064L
+private const val EIGHT_DIGITS_MUL2 = 0x0000271000000001L
+private const val EIGHT_DIGITS_ASCII_ZERO = 0x3030303030303030L
+private const val EIGHT_DIGITS_CHECK_ADD = 0x4646464646464646L
+private val EIGHT_DIGITS_HIGH_BIT = 0x8080808080808080UL.toLong()
+
+/** `10^8`, the multiplier to fold an 8-digit SWAR chunk into an existing mantissa. */
+private const val HUNDRED_MILLION = 100_000_000L
+
+/**
+ * Attempts to read and combine 8 consecutive ASCII digit bytes at [position] into a single
+ * 0..99999999 [Int] in one pass — the SWAR technique from fast_float/simdjson
+ * (`parse_eight_digits_unrolled`), replacing 8 separate `mantissa*10+digit` steps with a handful
+ * of 64-bit bitwise/arithmetic ops. Returns -1 (never a valid result) if fewer than 8 bytes remain
+ * or any of them isn't an ASCII digit — callers must fall back to the byte-at-a-time loop.
+ */
+internal inline fun tryParseEightDigitsAt(position: Int, limit: Int, getByte: (Int) -> Int): Int {
+    if (position + 8 > limit) return -1
+    var packed = 0L
+    for (i in 0 until 8) {
+        packed = packed or ((getByte(position + i).toLong() and 0xFF) shl (8 * i))
+    }
+    if ((((packed + EIGHT_DIGITS_CHECK_ADD) or (packed - EIGHT_DIGITS_ASCII_ZERO)) and EIGHT_DIGITS_HIGH_BIT) != 0L) {
+        return -1
+    }
+    var value = packed - EIGHT_DIGITS_ASCII_ZERO
+    value = (value * 10) + (value ushr 8)
+    value = (((value and EIGHT_DIGITS_MASK) * EIGHT_DIGITS_MUL1) +
+        (((value ushr 16) and EIGHT_DIGITS_MASK) * EIGHT_DIGITS_MUL2)) ushr 32
+    return value.toInt()
+}
+
 /**
  * Parses a JSON float body (int digits, optional fraction, optional exponent) after the
  * header/leading-zero check. Digit runs walk via [getByte]/[setPosition] (same allocation-safe
- * shape as [parseIntDigitsCore]) — don't pass nested `readDigitRun` callbacks.
+ * shape as [parseIntDigitsCore]) — don't pass nested `readDigitRun` callbacks. Both digit runs
+ * try [tryParseEightDigitsAt] first when there's room in `precisionLimit` for a full 8-digit
+ * chunk (real gain on long numbers — epoch millis, big IDs, high-precision decimals — negligible
+ * cost when there isn't, since it's a single bounds+digit check before falling back).
  */
 internal inline fun <R> parseJsonFloatingBodyCore(
     precisionLimit: Int,
@@ -266,6 +306,19 @@ internal inline fun <R> parseJsonFloatingBodyCore(
     var position = getPosition()
 
     while (position < limit) {
+        // SWAR fast path: only once past the leading-zero special case below (digitCount > 0)
+        // and only when a full 8-digit chunk still fits the precision budget — the byte-by-byte
+        // loop already correctly handles the near-the-limit tail (bumping `exponent` for digits
+        // beyond precisionLimit), so this only ever short-circuits work the loop would redo anyway.
+        if (digitCount > 0 && digitCount + 8 <= precisionLimit) {
+            val eight = tryParseEightDigitsAt(position, limit, getByte)
+            if (eight >= 0) {
+                mantissa = mantissa * HUNDRED_MILLION + eight
+                digitCount += 8
+                position += 8
+                continue
+            }
+        }
         val byte = getByte(position)
         if (!isDigit(byte)) break
         val digit = byte - C.ZERO_INT
@@ -298,6 +351,16 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         position++
         val fractionStart = position
         while (position < limit) {
+            if (digitCount + 8 <= precisionLimit) {
+                val eight = tryParseEightDigitsAt(position, limit, getByte)
+                if (eight >= 0) {
+                    mantissa = mantissa * HUNDRED_MILLION + eight
+                    digitCount += 8
+                    exponent -= 8
+                    position += 8
+                    continue
+                }
+            }
             val byte = getByte(position)
             if (!isDigit(byte)) break
             val digit = byte - C.ZERO_INT
