@@ -18,9 +18,6 @@ import kotlin.native.concurrent.ThreadLocal
 
 
 @ThreadLocal
-private var cachedReader: GhostJsonReader? = null
-
-@ThreadLocal
 private var cachedFlatReader: GhostJsonFlatReader? = null
 
 @ThreadLocal
@@ -48,22 +45,6 @@ actual fun <T> runSynchronized(lock: Any, block: () -> T): T = try {
     objc_sync_exit(lock)
 }
 
-actual fun <T> ghostInternalUseReader(
-    bytes: ByteArray,
-    block: (GhostJsonReader) -> T
-): T {
-    return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
-        val view = if (offset == 0) data else data.copyOfRange(offset, offset + length)
-        val viewLimit = if (offset == 0) length else view.size
-        val reader = cachedReader
-            ?: GhostJsonReader(view)
-                .also { cachedReader = it }
-
-        reader.reset(view, viewLimit)
-        block(reader)
-    }
-}
-
 actual fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
     limit: Int,
@@ -83,8 +64,8 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    // Separate pool from cachedReader to prevent re-entrancy corruption if the
-    // same thread nests a ByteArray read inside a streaming read.
+    // Separate pool from cachedFlatReader/cachedStringReader to prevent re-entrancy corruption
+    // if the same thread nests a flat/string read inside a streaming read.
     val reader = cachedSourceReader
         ?: GhostJsonReader(source)
             .also { cachedSourceReader = it }

@@ -15,7 +15,6 @@ import okio.BufferedSource
 import java.util.concurrent.ConcurrentHashMap
 
 
-private val readerPool = ThreadLocal<GhostJsonReader>()
 private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 private val stringReaderPool = ThreadLocal<GhostJsonStringReader>()
 private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
@@ -111,22 +110,6 @@ actual inline fun ghostInternalEncodeAndDrainTo(
     pair.byteWriter.reset()
 }
 
-actual fun <T> ghostInternalUseReader(
-    bytes: ByteArray,
-    block: (GhostJsonReader) -> T
-): T {
-    return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
-        val view = if (offset == 0) data else data.copyOfRange(offset, offset + length)
-        val viewLimit = if (offset == 0) length else view.size
-        val reader = readerPool.get()
-            ?: GhostJsonReader(view)
-                .also { readerPool.set(it) }
-
-        reader.reset(view, viewLimit)
-        block(reader)
-    }
-}
-
 actual fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
     limit: Int,
@@ -146,8 +129,8 @@ actual fun <T> ghostInternalUseSource(
     source: BufferedSource,
     block: (GhostJsonReader) -> T
 ): T {
-    // Separate pool from readerPool to prevent re-entrancy corruption if the
-    // same thread nests a ByteArray read inside a streaming read.
+    // Separate pool from flatReaderPool/stringReaderPool to prevent re-entrancy corruption if
+    // the same thread nests a flat/string read inside a streaming read.
     val reader = sourceReaderPool.get()
         ?: GhostJsonReader(source)
             .also { sourceReaderPool.set(it) }

@@ -92,11 +92,6 @@ expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 expect fun discoverRegistries(): Iterable<GhostRegistry>
 
 /**
- * Runs a block of operations using a pooled [GhostJsonReader] instance.
- */
-expect fun <T> ghostInternalUseReader(bytes: ByteArray, block: (GhostJsonReader) -> T): T
-
-/**
  * Runs a block of operations using a pooled [GhostJsonStringReader] instance.
  */
 expect fun <T> ghostInternalUseStringReader(json: String, block: (GhostJsonStringReader) -> T): T

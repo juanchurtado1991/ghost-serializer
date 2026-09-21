@@ -18,7 +18,6 @@ import okio.BufferedSource
 // Kotlin/Wasm browser runtime is single-threaded — plain caches are correct and cheaper
 // than ThreadLocal / native @ThreadLocal.
 
-private var cachedReader: GhostJsonReader? = null
 private var cachedFlatReader: GhostJsonFlatReader? = null
 private var cachedStringReader: GhostJsonStringReader? = null
 private var cachedSourceReader: GhostJsonReader? = null
@@ -40,22 +39,6 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 actual fun <K, V> createAtomicMap(): MutableMap<K, V> = mutableMapOf()
 
 actual fun <T> runSynchronized(lock: Any, block: () -> T): T = block()
-
-actual fun <T> ghostInternalUseReader(
-    bytes: ByteArray,
-    block: (GhostJsonReader) -> T
-): T {
-    return withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
-        val view = if (offset == 0) data else data.copyOfRange(offset, offset + length)
-        val viewLimit = if (offset == 0) length else view.size
-        val reader = cachedReader
-            ?: GhostJsonReader(view)
-                .also { cachedReader = it }
-
-        reader.reset(view, viewLimit)
-        block(reader)
-    }
-}
 
 actual fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
