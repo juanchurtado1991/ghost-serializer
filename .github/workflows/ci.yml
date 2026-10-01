@@ -121,6 +121,45 @@ jobs:
           fi
           echo "iosSimulatorArm64Test completed (BUILD SUCCESSFUL)"
 
+  consumer-compat:
+    name: Consumer compatibility (Kotlin 2.2.21)
+    # Publishes Ghost to mavenLocal and builds compat-tests/kotlin-consumer, a standalone KMP project on the
+    # minimum supported Kotlin (2.2.21), proving the published klibs/metadata and the KSP-generated code work
+    # for consumers — including a round-trip test on the iOS simulator.
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Publish Ghost to mavenLocal
+        run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-ktor:publishToMavenLocal --console=plain
+
+      - name: Build and test the Kotlin 2.2.21 consumer (JVM, Android, iOS simulator)
+        run: |
+          set -euo pipefail
+          log="$(mktemp)"
+          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain iosSimulatorArm64Test --console=plain 2>&1 | tee "$log"
+          gradle_exit="${PIPESTATUS[0]}"
+          if [[ "$gradle_exit" -ne 0 ]]; then
+            echo "::error::Gradle exited with $gradle_exit"
+            exit "$gradle_exit"
+          fi
+          if grep -q "> Task :iosSimulatorArm64Test SKIPPED" "$log"; then
+            echo "::error::consumer iosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + Apple Silicon)"
+            exit 1
+          fi
+
   test-wasm:
     name: Tests (WasmJs)
     runs-on: ubuntu-latest
