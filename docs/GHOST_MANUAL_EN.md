@@ -1,8 +1,8 @@
-# Ghost Serialization 1.3.1 {#titulo}
+# Ghost Serialization 1.4.0 {#titulo}
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
-> Monorepo ghost-serializer · version 1.3.1 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
+> Monorepo ghost-serializer · version 1.4.0 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
 
 ### How to read this manual
 
@@ -367,7 +367,7 @@ KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost reg
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.ghostserializer.ghost") version "1.4.0"
 }
 
 // Optional but recommended with several modules containing models:
@@ -900,13 +900,13 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 ```kotlin
 ghost {
-    version.set("1.3.1")
+    version.set("1.4.0")
     autoInjectKtor.set(true)
     autoInjectRetrofit.set(true)
 }
 ```
 
-Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.1.
+Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.4.0.
 
 ---
 
@@ -916,7 +916,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.1.
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-retrofit:1.3.1")
+    implementation("com.ghostserializer:ghost-retrofit:1.4.0")
 }
 
 interface ApiService {
@@ -957,7 +957,7 @@ If you add `GhostConverterFactory` **before** `GsonConverterFactory`, Retrofit t
 ```kotlin
 val client = HttpClient {
     install(ContentNegotiation) {
-        ghost() // Ktor 3.5.x
+        ghost() // Ktor 3.3.x+
     }
 }
 ```
@@ -972,10 +972,10 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.ghostserializer.ghost") version "1.4.0"
 }
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.1")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.4.0")
 }
 ```
 
@@ -1060,7 +1060,7 @@ Publishable (publish.gradle.kts): ghost-* except benchmark, integration-test, pl
 
 Uploads a deployment bundle to Central Portal in `USER_MANAGED` mode (staged, not released). Review and publish it manually at [central.sonatype.com](https://central.sonatype.com/publishing/deployments). To publish and release automatically instead, run `./gradlew publishAndReleaseToMavenCentral`.
 
-Coordinates: `com.ghostserializer:*:1.3.1`
+Coordinates: `com.ghostserializer:*:1.4.0`
 
 From Linux: iOS variants may be missing on Central.
 
@@ -1123,7 +1123,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 | ghost-spring-boot-test-app | Jackson vs Ghost WebFlux, benchmark.py |
 | ghost-ios-test-app | XCFramework + GhostBridge + Codable |
 
-All use **1.3.1 Maven Central** (no mavenLocal in final config).
+All use **1.4.0 Maven Central** (no mavenLocal in final config).
 
 ---
 
@@ -1132,7 +1132,7 @@ All use **1.3.1 Maven Central** (no mavenLocal in final config).
 ### Step by step (from scratch)
 
 1. **settings.gradle.kts** — `pluginManagement { gradlePluginPortal() }`
-2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.1"`
+2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.4.0"`
 3. Create `data class` with `@GhostSerialization` in the network package
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
@@ -1229,7 +1229,7 @@ List or map in JSON exceeded platform limit (50k on Android). May be legitimate 
 
 ### Plugin com.ghostserializer.ghost not found
 
-Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.1 on Maven Central, and sync again.
+Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.4.0 on Maven Central, and sync again.
 
 ### iOS: works in debug, fails in release
 
@@ -1642,7 +1642,7 @@ All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
 
 ```kotlin
 ghost {
-    version.set("1.3.1") // or omit if plugin brings DEFAULT_VERSION
+    version.set("1.4.0") // or omit if plugin brings DEFAULT_VERSION
 }
 ```
 
@@ -1687,7 +1687,7 @@ Without this (or with KSP disabled on a module): `NOT_FOUND` in release even if 
 .venv-pdf/bin/python scripts/build_ghost_manual_pdf.py
 ```
 
-PDF output: `docs/Ghost-Serialization-Manual-1.3.1.pdf` (A5 format).
+PDF output: `docs/Ghost-Serialization-Manual-1.4.0.pdf` (A5 format).
 
 ---
 
@@ -2124,7 +2124,7 @@ ls ghost-integration-test/build/generated/ksp/main/kotlin/com/ghost/serializatio
 
 ---
 
-## 51. Maven artifacts table 1.3.1 {#cap-51--tabla-de-artefactos-maven-1-1-17}
+## 51. Maven artifacts table 1.4.0 {#cap-51--tabla-de-artefactos-maven-1-1-17}
 
 ```
 com.ghostserializer:ghost-api
@@ -2140,7 +2140,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.3.1) {#verificacion-factual}
+## Factual verification (aligned with code 1.4.0) {#verificacion-factual}
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2156,7 +2156,7 @@ This manual was cross-checked against the `ghost-serializer` repository on the l
 | 642 tests `./gradlew ciTest` on Linux | 416 + 226 Android `testDebugUnitTest` |
 | ~874 with iOS on macOS | README: 642 + `iosSimulatorArm64Test` (~232) |
 | Spring Boot 3.4.5 in tests | `gradle/libs.versions.toml` `spring-boot = "3.4.5"` |
-| Ktor 3.5.1 | `gradle/libs.versions.toml` `ktor = "3.5.1"` |
+| Ktor 3.3.3 | `gradle/libs.versions.toml` `ktor = "3.3.3"` |
 | iOS without ServiceLoader | `Ghost.ios.kt` → `discoverRegistries() = emptyList()` |
 | JVM registry fast-path | `Ghost.jvm.kt` → `Class.forName` + `ServiceLoader` |
 | List/Map/Set at runtime | `Ghost.kt` → `ListSerializer`, `MapSerializer`, `SetSerializer` |
@@ -2170,7 +2170,7 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 # Appendix: API Reference {#appendix-api}
 
 This section documents the public API of Ghost Serialization, derived from the
-KDoc comments in the source code (version 1.3.1).
+KDoc comments in the source code (version 1.4.0).
 
 ---
 

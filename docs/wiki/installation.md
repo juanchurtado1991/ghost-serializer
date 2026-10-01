@@ -13,11 +13,11 @@ The recommended Gradle plugin setup is designed for incremental adoption: it add
 
 | Requirement | Version |
 |:---|:---|
-| Kotlin | **2.4.0** |
-| KSP | **2.3.10** |
+| Kotlin | **2.2.21+** (minimum; built and tested with 2.2.21) |
+| KSP | **2.3.x** (tested with 2.3.12; required with the AGP 9 KMP Android plugin) |
 | JDK | **17+** |
 | Android SDK | **API 21+** (minSdk) |
-| Ktor (optional) | **3.5.x** |
+| Ktor (optional) | **3.3.x+** |
 | Retrofit (optional) | **2.11+** |
 | Spring Boot (optional) | **3.4+** |
 
@@ -41,8 +41,8 @@ dependencyResolutionManagement {
 
 ```toml
 [versions]
-ghost = "1.3.1"
-ksp = "2.3.10"
+ghost = "1.4.0"
+ksp = "2.3.12"
 
 [libraries]
 ghost-api            = { module = "com.ghostserializer:ghost-api", version.ref = "ghost" }

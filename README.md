@@ -5,8 +5,8 @@
 Ghost is not a rewrite. It is the fast, low-allocation path for the models you opt in — and a softer landing when the backend ships messy JSON.
 
 [![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-1.3.1-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
+[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21%2B-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
@@ -74,7 +74,7 @@ Ghost.deserialize<User>(responseBytes)     // Ghost (bytes / adapters)
 
 Guides: [Quick Start](docs/wiki/quick-start.md) · [Ktor](docs/wiki/usage-kmp.md) · [Android / Retrofit](docs/wiki/usage-android.md) · [Spring](docs/wiki/usage-spring-boot.md)
 
-**Also:** Android · iOS · JVM · Wasm · YAML · Proto3 JSON · Kotlin **2.4.0** / KSP **2.3.10** / Ktor **3.5.x** → [Modules](docs/wiki/modules.md)
+**Also:** Android · iOS · JVM · Wasm · YAML · Proto3 JSON · Kotlin **2.2.21+** / KSP **2.3.x** / Ktor **3.3.x+** → [Modules](docs/wiki/modules.md)
 
 ---
 
@@ -88,8 +88,8 @@ Twitter macro (**631 KB**) decode:
 
 | | Ghost | KSER | Moshi |
 |:---|---:|---:|---:|
-| String | **1.2 GB/s** · 361 KB | 0.72 GB/s · 1338 KB | 0.37 GB/s · 1709 KB |
-| Bytes | **1.05 GB/s** · 621 KB | 0.42 GB/s · 4297 KB | 0.28 GB/s · 4668 KB |
+| String | **1.2 GB/s** · 308 KB | 0.72 GB/s · 1338 KB | 0.37 GB/s · 1709 KB |
+| Bytes | **1.07 GB/s** · 621 KB | 0.42 GB/s · 4297 KB | 0.28 GB/s · 4668 KB |
 | Streaming | **0.53 GB/s** · 1269 KB | 0.19 GB/s · 1905 KB | 0.43 GB/s · 1709 KB |
 
 [Benchmarks](docs/wiki/benchmarks.md) · [HTTP Arena](https://www.http-arena.com/#sort=rps:-1&q=kotlin) · [Playground Speed Test](https://juanchurtado1991.github.io/ghost-serializer/)

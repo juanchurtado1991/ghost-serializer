@@ -11,7 +11,7 @@ Start with the [Quick Start](quick-start.md), then add only the framework module
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.3.1"
+ghost = "1.4.0"
 ```
 
 ---
@@ -82,7 +82,7 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.ghostserializer.ghost") version "1.4.0"
 }
 ```
 
@@ -91,7 +91,7 @@ plugins {
 ## Framework Integrations
 
 ### `ghost-ktor` — Ktor Client & Server
-Two integration modes for Ktor 3.5.x, with JSON, YAML, and Proto3 JSON variants:
+Two integration modes for Ktor 3.3.x+, with JSON, YAML, and Proto3 JSON variants:
 
 - **Mode A — `ContentNegotiation` plugin**: `ghost()`, `ghostYaml()`, `ghostProto()` beside KotlinX Serialization; types without a Ghost serializer fall through.
 - **Mode B — Direct extensions**: `bodyGhost<T>()` / `respondGhost()` (and YAML/Proto counterparts) bypass the plugin pipeline entirely for maximum throughput on high-RPS endpoints.
@@ -191,7 +191,7 @@ val fromProto: UserProto = GhostProto.deserialize(jsonBytes)
 | Runtime | `ghost-serialization` | KMP | JSON + YAML + Proto3 JSON engine |
 | Compiler | `ghost-compiler` | JVM | KSP code generator |
 | Gradle plugin | `com.ghostserializer.ghost` | — | Auto-wires KSP across targets |
-| Ktor | `ghost-ktor` | KMP (+ wasmJs) | Ktor 3.5.x client + JVM server integration |
+| Ktor | `ghost-ktor` | KMP (+ wasmJs) | Ktor 3.3.x+ client + JVM server integration |
 | Retrofit | `ghost-retrofit` | Android/JVM | Retrofit 2.11+ converter factory |
 | Spring Boot | `ghost-spring-boot-starter` | JVM | Spring Boot 3.4+ auto-configuration |
 | Playground | _(not published)_ | wasmJs | [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/) — browser DTO studio + feature demos |
