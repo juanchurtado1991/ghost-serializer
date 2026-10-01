@@ -21,12 +21,10 @@ inline fun <T> GhostJsonFlatReader.readList(crossinline itemParser: () -> T): Li
     val maxSize = maxCollectionSize
 
     while (true) {
-        pathTracker.enterArrayElement()
         list.add(itemParser())
         val next = nextNonWhitespace()
         if (next == TOK.CLOSE_ARR_INT) {
             if (depth > 0) depth--
-            pathTracker.finishArrayValue()
             break
         }
         if (next != TOK.COMMA_INT) {
@@ -50,12 +48,10 @@ inline fun <T> GhostJsonFlatReader.readSet(crossinline itemParser: () -> T): Set
     val maxSize = maxCollectionSize
 
     while (true) {
-        pathTracker.enterArrayElement()
         set.add(itemParser())
         val next = nextNonWhitespace()
         if (next == TOK.CLOSE_ARR_INT) {
             if (depth > 0) depth--
-            pathTracker.finishArrayValue()
             break
         }
         if (next != TOK.COMMA_INT) {
@@ -92,7 +88,6 @@ inline fun <K, V> GhostJsonFlatReader.readMap(
         val next = nextNonWhitespace()
         if (next == TOK.CLOSE_OBJ_INT) {
             if (depth > 0) depth--
-            pathTracker.finishObjectValue()
             break
         }
         if (next != TOK.COMMA_INT) {
@@ -119,7 +114,6 @@ inline fun <T> GhostJsonFlatReader.decodeResilient(crossinline block: () -> T): 
     val savedDepth = depth
     val savedNeedsCommaMask = needsCommaMask
     val savedCommaConsumedMask = commaConsumedMask
-    val savedPathMark = pathTracker.mark()
     try {
         return block()
     } catch (_: GhostJsonException) {
@@ -128,9 +122,7 @@ inline fun <T> GhostJsonFlatReader.decodeResilient(crossinline block: () -> T): 
         depth = savedDepth
         needsCommaMask = savedNeedsCommaMask
         commaConsumedMask = savedCommaConsumedMask
-        pathTracker.resetTo(mark = savedPathMark)
         skipValue()
-        pathTracker.finishScalarValue()
         return null
     }
 }

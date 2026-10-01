@@ -7,6 +7,7 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.byteToCharPosition
 import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
@@ -30,8 +31,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * only when a byte API is needed. Sibling of the byte flat reader (`GhostJsonFlatReader`) and
  * the streaming `GhostJsonReader`.
  *
- * [pathTracker] holds JSONPath breadcrumbs, formatted only when [throwError] builds an
- * exception. [predictedFieldIndex] is an optimistic hint for the field-select fast path: the
+ * [pathTracker] is scratch for the error JSONPath, rebuilt by re-scanning the input only when
+ * [throwError] builds an exception (nothing is tracked on the happy path). [predictedFieldIndex] is an optimistic hint for the field-select fast path: the
  * next expected field index when JSON objects list fields in declaration order; reset on
  * [beginObject], and a misprediction falls back to hashed dispatch, so it never affects
  * correctness. [stringPool]/[stringPoolHashes] are a cross-call string intern pool — same
@@ -78,7 +79,6 @@ class GhostJsonStringReader(
         val savedDepth = depth
         val savedNeedsCommaMask = needsCommaMask
         val savedCommaConsumedMask = commaConsumedMask
-        val savedPathMark = pathTracker.mark()
         try {
             return block()
         } catch (_: GhostJsonException) {
@@ -87,9 +87,7 @@ class GhostJsonStringReader(
             depth = savedDepth
             needsCommaMask = savedNeedsCommaMask
             commaConsumedMask = savedCommaConsumedMask
-            pathTracker.resetTo(mark = savedPathMark)
             skipValue()
-            pathTracker.finishScalarValue()
             return null
         }
     }
@@ -140,7 +138,6 @@ class GhostJsonStringReader(
         maxCollectionSize = GhostHeuristics.maxCollectionSize
         lastScanContentWas7BitOnly = false
         predictedFieldIndex = SCN.FIELD_PREDICTION_START
-        pathTracker.reset()
         invalidateUtf8Cache()
 
         if (newData !== oldData) {
@@ -181,10 +178,39 @@ class GhostJsonStringReader(
         }
     }
 
-    fun throwError(message: String): Nothing {
+    fun throwError(message: String): Nothing = throwErrorWithPath(
+        message = message,
+        missingKey = null
+    )
+
+    /**
+     * Throws for a missing required field, appending [jsonName] to the JSONPath so the
+     * exception points at `$.….<jsonName>` (validation runs before [endObject]).
+     */
+    fun throwMissingRequiredField(jsonName: String): Nothing = throwErrorWithPath(
+        message = "${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}",
+        missingKey = jsonName
+    )
+
+    private fun throwErrorWithPath(
+        message: String,
+        missingKey: String?
+    ): Nothing {
         val errorPosition = position
         val errorEnd = if (errorPosition > limit) limit else errorPosition
-        val errorPath = pathTracker.formatPath()
+        val localData = rawData
+        val tracker = GhostJsonPathReconstruction.reconstruct(
+            tracker = pathTracker,
+            start = 0,
+            end = errorEnd,
+            getByte = { localData[it].code },
+            decodeRange = { from, to -> localData.substring(startIndex = from, endIndex = to) }
+        )
+        if (missingKey != null) {
+            tracker.finishScalarValue()
+            tracker.pushKey(name = missingKey)
+        }
+        val errorPath = tracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition",
@@ -209,14 +235,6 @@ class GhostJsonStringReader(
         )
     }
 
-    /**
-     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
-     * exception points at `$.….<jsonName>` (validation runs before [endObject]).
-     */
-    fun throwMissingRequiredField(jsonName: String): Nothing {
-        pathTracker.pushKey(name = jsonName)
-        throwError("${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}")
-    }
 
     private fun invalidateUtf8Cache() {
         utf8CacheBytes = null

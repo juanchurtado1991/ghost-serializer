@@ -41,7 +41,6 @@ fun GhostJsonStringReader.beginObject() {
         setPredictedFieldIndex = { predictedFieldIndex = it },
         throwError = { throwError(it) },
     )
-    pathTracker.pushObject()
 }
 
 fun GhostJsonStringReader.endObject() {
@@ -51,7 +50,6 @@ fun GhostJsonStringReader.endObject() {
         setDepth = { depth = it },
         throwError = { throwError(it) },
     )
-    pathTracker.finishObjectValue()
 }
 
 fun GhostJsonStringReader.beginArray() {
@@ -66,7 +64,6 @@ fun GhostJsonStringReader.beginArray() {
         setCommaConsumedMask = { commaConsumedMask = it },
         throwError = { throwError(it) },
     )
-    pathTracker.pushArray()
 }
 
 fun GhostJsonStringReader.endArray() {
@@ -76,7 +73,6 @@ fun GhostJsonStringReader.endArray() {
         setDepth = { depth = it },
         throwError = { throwError(it) },
     )
-    pathTracker.finishArrayValue()
 }
 
 fun GhostJsonStringReader.hasNext(): Boolean {
@@ -92,7 +88,6 @@ fun GhostJsonStringReader.hasNext(): Boolean {
         throwError = { throwError(it) },
     )
     if (hasMore) {
-        pathTracker.enterArrayElement()
     }
     return hasMore
 }
@@ -113,7 +108,6 @@ fun GhostJsonStringReader.nextKey(): String? {
         return null
     }
     val key = readQuotedString()
-    pathTracker.pushKey(name = key)
     return key
 }
 
@@ -147,13 +141,11 @@ fun GhostJsonStringReader.nextBoolean(): Boolean {
         matchCoerceBooleanBytes = { matchCoerceBooleanBytes() },
         throwError = { throwError(it) },
     )
-    pathTracker.finishScalarValue()
     return value
 }
 
 fun GhostJsonStringReader.nextString(): String {
     val value = readQuotedString()
-    pathTracker.finishScalarValue()
     return value
 }
 
@@ -171,7 +163,6 @@ fun GhostJsonStringReader.nextChar(): Char {
         when (length) {
             0 -> throwError(EM.ERR_EXPECTED_SINGLE_CHAR_STRING)
             NUM.SINGLE_CHAR_JSON_LENGTH -> {
-                pathTracker.finishScalarValue()
                 return rawData[start]
             }
 
@@ -184,7 +175,6 @@ fun GhostJsonStringReader.nextChar(): Char {
     if (decoded.length != NUM.SINGLE_CHAR_JSON_LENGTH) {
         throwError(EM.ERR_SINGLE_CHAR_STRING_WRONG_LENGTH + decoded.length)
     }
-    pathTracker.finishScalarValue()
     return decoded[0]
 }
 
@@ -204,7 +194,6 @@ fun GhostJsonStringReader.consumeNull() {
     }
     position = cursor + nullLength
     nextTokenByte = SCN.RESET_TOKEN_BYTE
-    pathTracker.finishScalarValue()
 }
 
 /** Reads a JSON string, or `null` when the next token is the `null` literal. */
@@ -267,7 +256,6 @@ private fun GhostJsonStringReader.matchCoerceBooleanBytes(): Boolean {
 fun GhostJsonStringReader.selectNameAndConsume(options: JsonReaderOptions): Int {
     val index = internalSelect(options = options, consumeSeparator = true)
     if (index >= 0) {
-        pathTracker.pushKey(name = options.rawStrings[index])
     }
     return index
 }
@@ -508,14 +496,12 @@ inline fun <T> GhostJsonStringReader.readList(crossinline itemParser: () -> T): 
     val maxSize = maxCollectionSize
 
     while (true) {
-        pathTracker.enterArrayElement()
         list.add(itemParser())
         val next = nextNonWhitespace()
         if (next == TOK.CLOSE_ARR_INT) {
             if (depth > 0) {
                 depth--
             }
-            pathTracker.finishArrayValue()
             break
         }
         if (next != TOK.COMMA_INT) {
@@ -538,14 +524,12 @@ inline fun <T> GhostJsonStringReader.readSet(crossinline itemParser: () -> T): S
     val maxSize = maxCollectionSize
 
     while (true) {
-        pathTracker.enterArrayElement()
         set.add(itemParser())
         val next = nextNonWhitespace()
         if (next == TOK.CLOSE_ARR_INT) {
             if (depth > 0) {
                 depth--
             }
-            pathTracker.finishArrayValue()
             break
         }
         if (next != TOK.COMMA_INT) {
@@ -582,7 +566,6 @@ inline fun <K, V> GhostJsonStringReader.readMap(
             if (depth > 0) {
                 depth--
             }
-            pathTracker.finishObjectValue()
             break
         }
         if (next != TOK.COMMA_INT) {

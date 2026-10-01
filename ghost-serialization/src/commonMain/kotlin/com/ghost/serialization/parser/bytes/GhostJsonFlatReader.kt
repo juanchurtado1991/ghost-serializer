@@ -16,6 +16,7 @@ import com.ghost.serialization.parser.bytes.extensions.skipNumber
 import com.ghost.serialization.parser.bytes.extensions.skipQuotedString
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.json.JsonReaderOptions
@@ -49,8 +50,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * next, assuming declaration-order JSON (the common case for machine-generated payloads). A hit
  * skips straight to a single compare instead of hash+verify; a miss falls back transparently, so
  * only speed is at stake, never correctness. Reset on [beginObject].
- * @property pathTracker JSONPath breadcrumbs, formatted lazily only when [throwError] builds
- * an exception.
+ * @property pathTracker Scratch stack for the error JSONPath, rebuilt by re-scanning the input only
+ * when [throwError] builds an exception (nothing is tracked on the happy path).
  *
  * [beginObject]/[beginArray] enforce [maxDepth] against stack overflow. [getByte] masks to a
  * positive int since Kotlin's [Byte] is signed — the same `and BYTE_MASK` pattern recurs
@@ -117,6 +118,8 @@ open class GhostJsonFlatReader(
     @PublishedApi
     internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
 
+    private var sliceStart: Int = 0
+
     fun beginArray() {
         if (nextNonWhitespace() != TOK.OPEN_ARR_INT) throwError(EM.ERR_EXPECTED_BEGIN_ARR)
         depth++
@@ -129,7 +132,6 @@ open class GhostJsonFlatReader(
             commaConsumedMask = commaConsumedMask and bit.inv()
         }
 
-        pathTracker.pushArray()
     }
 
     fun beginObject() {
@@ -145,21 +147,18 @@ open class GhostJsonFlatReader(
             commaConsumedMask = commaConsumedMask and bit.inv()
         }
 
-        pathTracker.pushObject()
     }
 
     fun endArray() {
         if (nextNonWhitespace() != TOK.CLOSE_ARR_INT) throwError(EM.ERR_EXPECTED_END_ARR)
         if (depth > 0) depth--
 
-        pathTracker.finishArrayValue()
     }
 
     fun endObject() {
         if (nextNonWhitespace() != TOK.CLOSE_OBJ_INT) throwError(EM.ERR_EXPECTED_END_OBJ)
         if (depth > 0) depth--
 
-        pathTracker.finishObjectValue()
     }
 
     @Suppress("NOTHING_TO_INLINE")
@@ -201,7 +200,9 @@ open class GhostJsonFlatReader(
             coerceStringsToNumbers = saved
         }
     }
+
     open fun nextULong(): ULong = nextProtoUInt64()
+
     fun nextULongOrNull(): ULong? {
         if (isNextNullValue()) {
             consumeNull()
@@ -209,6 +210,7 @@ open class GhostJsonFlatReader(
         }
         return nextULong()
     }
+
     fun peekByte(): Byte = peekNextToken().toByte()
 
     fun peekDiscriminator(key: String = TOK.DEFAULT_DISCRIMINATOR_KEY): String? {
@@ -242,6 +244,7 @@ open class GhostJsonFlatReader(
     fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
         rawData = buffer
         source.data = buffer
+        sliceStart = offset
         position = offset
         limit = offset + length
         nextTokenByte = SCN.RESET_TOKEN_BYTE
@@ -254,7 +257,6 @@ open class GhostJsonFlatReader(
         maxDepth = NUM.MAX_DEPTH
         maxCollectionSize = GhostHeuristics.maxCollectionSize
         lastScanContentWas7BitOnly = false
-        pathTracker.reset()
     }
 
     @InternalGhostApi
@@ -308,14 +310,39 @@ open class GhostJsonFlatReader(
         }
     }
 
-    fun throwError(message: String): Nothing {
+    fun throwError(message: String): Nothing = throwErrorWithPath(
+        message = message,
+        missingKey = null
+    )
+
+    fun throwMissingRequiredField(jsonName: String): Nothing = throwErrorWithPath(
+        message = "${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}",
+        missingKey = jsonName
+    )
+
+    private fun throwErrorWithPath(
+        message: String,
+        missingKey: String?
+    ): Nothing {
         val errorPosition = position
         val errorEnd = if (errorPosition > limit) {
             limit
         } else {
             errorPosition
         }
-        val errorPath = pathTracker.formatPath()
+        val localData = rawData
+        val tracker = GhostJsonPathReconstruction.reconstruct(
+            tracker = pathTracker,
+            start = sliceStart,
+            end = errorEnd,
+            getByte = { localData[it].toInt() and TOK.BYTE_MASK },
+            decodeRange = { from, to -> localData.decodeToString(startIndex = from, endIndex = to) }
+        )
+        if (missingKey != null) {
+            tracker.finishScalarValue()
+            tracker.pushKey(name = missingKey)
+        }
+        val errorPath = tracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition",
@@ -339,10 +366,6 @@ open class GhostJsonFlatReader(
         )
     }
 
-    fun throwMissingRequiredField(jsonName: String): Nothing {
-        pathTracker.pushKey(name = jsonName)
-        throwError("${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}")
-    }
 
     /** Whether [token] closes either container kind (`]` or `}`). */
     @Suppress("NOTHING_TO_INLINE")
@@ -407,7 +430,6 @@ open class GhostJsonFlatReader(
         }
         position = cursor + TOK.LITERAL_NULL_LEN
         nextTokenByte = SCN.RESET_TOKEN_BYTE
-        pathTracker.finishScalarValue()
     }
 
     /** Returns whether the current container has more elements; rejects trailing commas. */
@@ -443,7 +465,6 @@ open class GhostJsonFlatReader(
         } else {
             if (token == TOK.COMMA_INT) skipCommaRejectingTrailing()
         }
-        pathTracker.enterArrayElement()
         return true
     }
 
@@ -455,29 +476,24 @@ open class GhostJsonFlatReader(
         val token = peekNextToken()
         if (token == TOK.TRUE_CHAR_INT) {
             skipAndValidateLiteral(WR.TRUE_BS)
-            pathTracker.finishScalarValue()
             return true
         }
         if (token == TOK.FALSE_CHAR_INT) {
             skipAndValidateLiteral(WR.FALSE_BS)
-            pathTracker.finishScalarValue()
             return false
         }
         if (coerceBooleans) {
             if (token == TOK.ONE_INT) {
                 internalSkip(1)
-                pathTracker.finishScalarValue()
                 return true
             }
             if (token == TOK.ZERO_INT) {
                 internalSkip(1)
-                pathTracker.finishScalarValue()
                 return false
             }
             if (token == TOK.QUOTE_INT) {
                 // Scans the quoted string bytes directly — no String allocation.
                 val coerced = matchCoerceBooleanBytes()
-                pathTracker.finishScalarValue()
                 return coerced
             }
         }
@@ -534,7 +550,6 @@ open class GhostJsonFlatReader(
             }
         }
         val key = readQuotedString()
-        pathTracker.pushKey(name = key)
         return key
     }
 
@@ -548,7 +563,6 @@ open class GhostJsonFlatReader(
 
     fun nextString(): String {
         val value = readQuotedString()
-        pathTracker.finishScalarValue()
         return value
     }
 
@@ -588,7 +602,6 @@ open class GhostJsonFlatReader(
     fun selectNameAndConsume(options: JsonReaderOptions): Int {
         val index = internalSelect(options = options, consumeSeparator = true)
         if (index >= 0) {
-            pathTracker.pushKey(name = options.rawStrings[index])
         }
         return index
     }
