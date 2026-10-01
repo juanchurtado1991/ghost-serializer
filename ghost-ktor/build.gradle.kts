@@ -29,8 +29,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":ghost-serialization"))
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.content.negotiation)
+            api(libs.ktor.client.core)
+            api(libs.ktor.client.content.negotiation)
         }
         jvmMain.dependencies {
             // Server ApplicationCall extensions live in jvmMain — Ktor server is JVM-only.
