@@ -2,26 +2,26 @@
 
 package com.ghost.serialization.writer.common
 
-import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
-import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
-import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
-import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_REPLACEMENTS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS_CHARS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_ESCAPE_LENGTH
-import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_PREFIX_U
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
-import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.BITMASK_INDEX_MASK
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.BITMASK_SHIFT
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.BITMASK_UNIT
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.SHIFT_12
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.SHIFT_4
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.SHIFT_8
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.ASCII_LIMIT
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.BACKSLASH
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.BACKSLASH_INT
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.CHAR_BACKSLASH
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.CHAR_QUOTE
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.CHAR_U
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.HEX_CHARS
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.HEX_CHARS_CHARS
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.HEX_MASK
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.QUOTE_BYTE
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_ESCAPE_LENGTH
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_PREFIX_U
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.ESCAPE_MASKS
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.ESCAPE_REPLACEMENTS
 
 /**
  * Shared JSON string-escape helpers for byte and char writers.
@@ -48,6 +48,283 @@ internal object GhostJsonEscapeHelpers {
     inline fun isSafeUnescapedChar(code: Int): Boolean =
         code >= ASCII_LIMIT ||
                 (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+
+    /**
+     * Escapes [text] from [start] into [scratchBuf], flushing through sink lambdas.
+     * Used by both byte JSON writers when the string does not fit the quoted-scratch path.
+     */
+    inline fun writeEscapedBytes(
+        text: String,
+        start: Int,
+        scratchBuf: ByteArray,
+        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
+        writeReplacement: (replacement: ByteArray) -> Unit,
+        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
+    ) {
+        val length = text.length
+        val remaining = length - start
+        if (remaining <= 0) {
+            return
+        }
+
+        val replacements = ESCAPE_REPLACEMENTS
+        val scratchSize = scratchBuf.size
+
+        if (remaining <= scratchSize) {
+            var scratchPos = 0
+            var index = start
+            while (index < length) {
+                val charCode = text[index].code
+
+                // Unrolled fast path for plain ASCII
+                if (isPlainAsciiSafe(code = charCode)) {
+                    scratchBuf[scratchPos++] = charCode.toByte()
+                    index++
+                    continue
+                }
+
+                if (scratchPos > 0) {
+                    writeBytes(scratchBuf, 0, scratchPos)
+                    scratchPos = 0
+                }
+
+                if (charCode < ASCII_LIMIT) {
+                    val replacement = replacements[charCode]
+                    if (replacement != null) {
+                        writeReplacement(replacement)
+                    } else {
+                        writeUnicodeEscapeBytes(code = charCode, scratchBuf = scratchBuf, write = writeBytes)
+                    }
+                } else {
+                    val c = text[index]
+                    val isSurrogatePair = c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()
+                    if (isSurrogatePair) {
+                        writeUtf8Range(text, index, index + 2)
+                        index++
+                    } else {
+                        writeUtf8Range(text, index, index + 1)
+                    }
+                }
+                index++
+            }
+            if (scratchPos > 0) {
+                writeBytes(scratchBuf, 0, scratchPos)
+            }
+            return
+        }
+
+        var scratchPos = 0
+        var index = start
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (isPlainAsciiSafe(code = charCode)) {
+                scratchBuf[scratchPos++] = charCode.toByte()
+                if (scratchPos == scratchSize) {
+                    writeBytes(scratchBuf, 0, scratchPos)
+                    scratchPos = 0
+                }
+                index++
+                continue
+            }
+
+            if (scratchPos > 0) {
+                writeBytes(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            if (charCode < ASCII_LIMIT) {
+                val replacement = replacements[charCode]
+                if (replacement != null) {
+                    writeReplacement(replacement)
+                } else {
+                    writeUnicodeEscapeBytes(code = charCode, scratchBuf = scratchBuf, write = writeBytes)
+                }
+            } else {
+                val char = text[index]
+                val isSurrogatePair = char.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()
+                if (isSurrogatePair) {
+                    writeUtf8Range(text, index, index + 2)
+                    index++
+                } else {
+                    writeUtf8Range(text, index, index + 1)
+                }
+            }
+            index++
+        }
+
+        if (scratchPos > 0) {
+            writeBytes(scratchBuf, 0, scratchPos)
+        }
+    }
+
+    /**
+     * Char-array twin of [writeEscapedBytes] for the string JSON writer. Unlike the byte
+     * channel, code units `>= ASCII_LIMIT` never need escaping (see [isSafeUnescapedChar]) and
+     * an escaped char is always exactly two chars (`\` + [getEscapeSecondChar]), so there is no
+     * UTF-8-range or variable-length-replacement branch to mirror from the byte side.
+     */
+    inline fun writeEscapedChars(
+        text: String,
+        start: Int,
+        scratchBuf: CharArray,
+        writeChars: (scratch: CharArray, offset: Int, length: Int) -> Unit,
+        writeTwoChars: (first: Int, second: Int) -> Unit,
+        getEscapeSecondChar: (Int) -> Int,
+        writeUnicodeEscape: (code: Int, scratch: CharArray) -> Unit,
+    ) {
+        val length = text.length
+        var scratchPos = 0
+        var index = start
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (isSafeUnescapedChar(code = charCode)) {
+                scratchBuf[scratchPos++] = charCode.toChar()
+                if (scratchPos == scratchBuf.size) {
+                    writeChars(scratchBuf, 0, scratchPos)
+                    scratchPos = 0
+                }
+                index++
+                continue
+            }
+
+            if (scratchPos > 0) {
+                writeChars(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            val esc = getEscapeSecondChar(charCode)
+            if (esc != 0) {
+                writeTwoChars(BACKSLASH_INT, esc)
+            } else {
+                writeUnicodeEscape(charCode, scratchBuf)
+            }
+            index++
+        }
+
+        if (scratchPos > 0) {
+            writeChars(scratchBuf, 0, scratchPos)
+        }
+    }
+
+    /**
+     * Escapes [text] into [scratchBuf] (opening quote already at index 0) and flushes
+     * through the provided sink lambdas. Used by both byte JSON writers.
+     */
+    inline fun writeEscapedIntoByteScratch(
+        text: String,
+        length: Int,
+        scratchBuf: ByteArray,
+        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
+        writeReplacement: (replacement: ByteArray) -> Unit,
+        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
+        writeQuoteByte: () -> Unit,
+    ) {
+        val escapeReplacements = ESCAPE_REPLACEMENTS
+        var scratchPos = 1 // Start after the opening quote already written at index 0.
+        var index = 0
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (isPlainAsciiSafe(code = charCode)) {
+                scratchBuf[scratchPos++] = charCode.toByte()
+                index++
+                continue
+            }
+
+            // Flush what we have so far
+            if (scratchPos > 0) {
+                writeBytes(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            // Handle the escape
+            if (charCode < ASCII_LIMIT) {
+                val replacement = escapeReplacements[charCode]
+                if (replacement != null) {
+                    writeReplacement(replacement)
+                } else {
+                    writeUnicodeEscapeBytes(code = charCode, scratchBuf = scratchBuf, write = writeBytes)
+                }
+            } else {
+                val c = text[index]
+                val isSurrogatePair = c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()
+                if (isSurrogatePair) {
+                    writeUtf8Range(text, index, index + 2)
+                    index++
+                } else {
+                    writeUtf8Range(text, index, index + 1)
+                }
+            }
+            index++
+        }
+
+        // Add the closing quote and final flush
+        if (scratchPos + 1 > scratchBuf.size) {
+            if (scratchPos > 0) {
+                writeBytes(scratchBuf, 0, scratchPos)
+            }
+            writeQuoteByte()
+        } else {
+            scratchBuf[scratchPos++] = QUOTE_BYTE
+            writeBytes(scratchBuf, 0, scratchPos)
+        }
+    }
+
+    /**
+     * Char-array twin of [writeEscapedIntoByteScratch] for the string JSON writer.
+     * [scratchBuf] already has the opening quote written at index 0.
+     */
+    inline fun writeEscapedIntoCharScratch(
+        text: String,
+        length: Int,
+        scratchBuf: CharArray,
+        writeChars: (scratch: CharArray, offset: Int, length: Int) -> Unit,
+        writeTwoChars: (first: Int, second: Int) -> Unit,
+        getEscapeSecondChar: (Int) -> Int,
+        writeUnicodeEscape: (code: Int, scratch: CharArray) -> Unit,
+        writeQuoteChar: () -> Unit,
+    ) {
+        var scratchPos = 1 // Start after the opening quote already written at index 0.
+        var index = 0
+
+        while (index < length) {
+            val charCode = text[index].code
+
+            if (isSafeUnescapedChar(code = charCode)) {
+                scratchBuf[scratchPos++] = charCode.toChar()
+                index++
+                continue
+            }
+
+            if (scratchPos > 0) {
+                writeChars(scratchBuf, 0, scratchPos)
+                scratchPos = 0
+            }
+
+            val esc = getEscapeSecondChar(charCode)
+            if (esc != 0) {
+                writeTwoChars(BACKSLASH_INT, esc)
+            } else {
+                writeUnicodeEscape(charCode, scratchBuf)
+            }
+            index++
+        }
+
+        if (scratchPos + 1 > scratchBuf.size) {
+            if (scratchPos > 0) {
+                writeChars(scratchBuf, 0, scratchPos)
+            }
+            writeQuoteChar()
+        } else {
+            scratchBuf[scratchPos++] = CHAR_QUOTE
+            writeChars(scratchBuf, 0, scratchPos)
+        }
+    }
 
     /**
      * Formats `\uXXXX` into [scratchBuf] at indices `0..5` and flushes via [write].
@@ -83,279 +360,5 @@ internal object GhostJsonEscapeHelpers {
         scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]
         scratchBuf[5] = hexChars[code and HEX_MASK]
         write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)
-    }
-
-    /**
-     * Escapes [text] from [start] into [scratchBuf], flushing through sink lambdas.
-     * Used by both byte JSON writers when the string does not fit the quoted-scratch path.
-     */
-    inline fun writeEscapedBytes(
-        text: String,
-        start: Int,
-        scratchBuf: ByteArray,
-        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
-        writeReplacement: (replacement: ByteArray) -> Unit,
-        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
-    ) {
-        val length = text.length
-        val remaining = length - start
-        if (remaining <= 0) {
-            return
-        }
-
-        val replacements = ESCAPE_REPLACEMENTS
-        val scratchSize = scratchBuf.size
-
-        if (remaining <= scratchSize) {
-            var scratchPos = 0
-            var index = start
-            while (index < length) {
-                val charCode = text[index].code
-
-                // Unrolled fast path for plain ASCII
-                if (isPlainAsciiSafe(charCode)) {
-                    scratchBuf[scratchPos++] = charCode.toByte()
-                    index++
-                    continue
-                }
-
-                if (scratchPos > 0) {
-                    writeBytes(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-
-                if (charCode < ASCII_LIMIT) {
-                    val replacement = replacements[charCode]
-                    if (replacement != null) {
-                        writeReplacement(replacement)
-                    } else {
-                        writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)
-                    }
-                } else {
-                    val c = text[index]
-                    if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                        writeUtf8Range(text, index, index + 2)
-                        index++
-                    } else {
-                        writeUtf8Range(text, index, index + 1)
-                    }
-                }
-                index++
-            }
-            if (scratchPos > 0) {
-                writeBytes(scratchBuf, 0, scratchPos)
-            }
-            return
-        }
-
-        var scratchPos = 0
-        var index = start
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (isPlainAsciiSafe(charCode)) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                if (scratchPos == scratchSize) {
-                    writeBytes(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-                index++
-                continue
-            }
-
-            if (scratchPos > 0) {
-                writeBytes(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            if (charCode < ASCII_LIMIT) {
-                val replacement = replacements[charCode]
-                if (replacement != null) {
-                    writeReplacement(replacement)
-                } else {
-                    writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)
-                }
-            } else {
-                val char = text[index]
-                if (char.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    writeUtf8Range(text, index, index + 2)
-                    index++
-                } else {
-                    writeUtf8Range(text, index, index + 1)
-                }
-            }
-            index++
-        }
-
-        if (scratchPos > 0) {
-            writeBytes(scratchBuf, 0, scratchPos)
-        }
-    }
-
-    /**
-     * Escapes [text] into [scratchBuf] (opening quote already at index 0) and flushes
-     * through the provided sink lambdas. Used by both byte JSON writers.
-     */
-    inline fun writeEscapedIntoByteScratch(
-        text: String,
-        length: Int,
-        scratchBuf: ByteArray,
-        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -> Unit,
-        writeReplacement: (replacement: ByteArray) -> Unit,
-        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -> Unit,
-        writeQuoteByte: () -> Unit,
-    ) {
-        val escapeReplacements = ESCAPE_REPLACEMENTS
-        var scratchPos = 1 // Start after the opening quote already written at index 0.
-        var index = 0
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (isPlainAsciiSafe(charCode)) {
-                scratchBuf[scratchPos++] = charCode.toByte()
-                index++
-                continue
-            }
-
-            // Flush what we have so far
-            if (scratchPos > 0) {
-                writeBytes(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            // Handle the escape
-            if (charCode < ASCII_LIMIT) {
-                val replacement = escapeReplacements[charCode]
-                if (replacement != null) {
-                    writeReplacement(replacement)
-                } else {
-                    writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)
-                }
-            } else {
-                val c = text[index]
-                if (c.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
-                    writeUtf8Range(text, index, index + 2)
-                    index++
-                } else {
-                    writeUtf8Range(text, index, index + 1)
-                }
-            }
-            index++
-        }
-
-        // Add the closing quote and final flush
-        if (scratchPos + 1 > scratchBuf.size) {
-            if (scratchPos > 0) {
-                writeBytes(scratchBuf, 0, scratchPos)
-            }
-            writeQuoteByte()
-        } else {
-            scratchBuf[scratchPos++] = QUOTE_BYTE
-            writeBytes(scratchBuf, 0, scratchPos)
-        }
-    }
-
-    /**
-     * Char-array twin of [writeEscapedBytes] for the string JSON writer. Unlike the byte
-     * channel, code units `>= ASCII_LIMIT` never need escaping (see [isSafeUnescapedChar]) and
-     * an escaped char is always exactly two chars (`\` + [getEscapeSecondChar]), so there is no
-     * UTF-8-range or variable-length-replacement branch to mirror from the byte side.
-     */
-    inline fun writeEscapedChars(
-        text: String,
-        start: Int,
-        scratchBuf: CharArray,
-        writeChars: (scratch: CharArray, offset: Int, length: Int) -> Unit,
-        writeTwoChars: (first: Int, second: Int) -> Unit,
-        getEscapeSecondChar: (Int) -> Int,
-        writeUnicodeEscape: (code: Int, scratch: CharArray) -> Unit,
-    ) {
-        val length = text.length
-        var scratchPos = 0
-        var index = start
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (isSafeUnescapedChar(charCode)) {
-                scratchBuf[scratchPos++] = charCode.toChar()
-                if (scratchPos == scratchBuf.size) {
-                    writeChars(scratchBuf, 0, scratchPos)
-                    scratchPos = 0
-                }
-                index++
-                continue
-            }
-
-            if (scratchPos > 0) {
-                writeChars(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            val esc = getEscapeSecondChar(charCode)
-            if (esc != 0) {
-                writeTwoChars(BACKSLASH_INT, esc)
-            } else {
-                writeUnicodeEscape(charCode, scratchBuf)
-            }
-            index++
-        }
-
-        if (scratchPos > 0) {
-            writeChars(scratchBuf, 0, scratchPos)
-        }
-    }
-
-    /**
-     * Char-array twin of [writeEscapedIntoByteScratch] for the string JSON writer.
-     * [scratchBuf] already has the opening quote written at index 0.
-     */
-    inline fun writeEscapedIntoCharScratch(
-        text: String,
-        length: Int,
-        scratchBuf: CharArray,
-        writeChars: (scratch: CharArray, offset: Int, length: Int) -> Unit,
-        writeTwoChars: (first: Int, second: Int) -> Unit,
-        getEscapeSecondChar: (Int) -> Int,
-        writeUnicodeEscape: (code: Int, scratch: CharArray) -> Unit,
-        writeQuoteChar: () -> Unit,
-    ) {
-        var scratchPos = 1 // Start after the opening quote already written at index 0.
-        var index = 0
-
-        while (index < length) {
-            val charCode = text[index].code
-
-            if (isSafeUnescapedChar(charCode)) {
-                scratchBuf[scratchPos++] = charCode.toChar()
-                index++
-                continue
-            }
-
-            if (scratchPos > 0) {
-                writeChars(scratchBuf, 0, scratchPos)
-                scratchPos = 0
-            }
-
-            val esc = getEscapeSecondChar(charCode)
-            if (esc != 0) {
-                writeTwoChars(BACKSLASH_INT, esc)
-            } else {
-                writeUnicodeEscape(charCode, scratchBuf)
-            }
-            index++
-        }
-
-        if (scratchPos + 1 > scratchBuf.size) {
-            if (scratchPos > 0) {
-                writeChars(scratchBuf, 0, scratchPos)
-            }
-            writeQuoteChar()
-        } else {
-            scratchBuf[scratchPos++] = CHAR_QUOTE
-            writeChars(scratchBuf, 0, scratchPos)
-        }
     }
 }

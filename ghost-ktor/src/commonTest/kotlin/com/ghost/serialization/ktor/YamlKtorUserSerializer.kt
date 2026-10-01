@@ -3,31 +3,28 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
-import io.ktor.http.ContentType
 
-private val YAML_MEDIA_TYPE = ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML)
-
-object YamlKtorUserSerializer : GhostSerializer<YamlKtorUser>, GhostYamlSerializer<YamlKtorUser> {
+object YamlKtorUserSerializer : AbstractGhostSerializer<YamlKtorUser>(), GhostYamlSerializer<YamlKtorUser> {
     override val typeName: String = "com.ghost.serialization.ktor.YamlKtorUser"
 
     override fun serialize(writer: GhostJsonWriter, value: YamlKtorUser) = Unit
 
     override fun deserialize(reader: GhostJsonReader): YamlKtorUser =
-        YamlKtorUser(0, "", false)
+        YamlKtorUser(id = 0, name = "", isActive = false)
 
     override fun serialize(writer: GhostYamlWriter, value: YamlKtorUser) {
         writer.beginObject()
-        writer.name("id")
+        writer.name(key = "id")
         writer.value(value.id)
-        writer.name("name")
+        writer.name(key = "name")
         writer.value(value.name)
-        writer.name("isActive")
+        writer.name(key = "isActive")
         writer.value(value.isActive)
         writer.endObject()
     }
@@ -46,6 +43,6 @@ object YamlKtorUserSerializer : GhostSerializer<YamlKtorUser>, GhostYamlSerializ
             }
         }
         reader.endObject()
-        return YamlKtorUser(id, name, isActive)
+        return YamlKtorUser(id = id, name = name, isActive = isActive)
     }
 }

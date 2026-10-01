@@ -29,18 +29,30 @@ class PrimitiveArrayTest {
         writer.flush()
 
         val json = buffer.readUtf8()
-        assertEquals("[1,2,3,42,0,-1,2147483647]", json)
+        assertEquals(
+            expected = "[1,2,3,42,0,-1,2147483647]",
+            actual = json
+        )
 
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = IntArraySerializer.deserialize(reader)
-        assertContentEquals(original, result)
+        assertContentEquals(
+            expected = original,
+            actual = result
+        )
 
         val flatResult =
-            IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
-        assertContentEquals(original, flatResult)
+            IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = json.encodeToByteArray()))
+        assertContentEquals(
+            expected = original,
+            actual = flatResult
+        )
 
-        val stringResult = IntArraySerializer.deserialize(GhostJsonStringReader(json))
-        assertContentEquals(original, stringResult)
+        val stringResult = IntArraySerializer.deserialize(GhostJsonStringReader(rawData = json))
+        assertContentEquals(
+            expected = original,
+            actual = stringResult
+        )
     }
 
     @Test
@@ -52,30 +64,51 @@ class PrimitiveArrayTest {
         writer.flush()
 
         val json = buffer.readUtf8()
-        assertEquals("[1,2,42,0,-1,9223372036854775807]", json)
+        assertEquals(
+            expected = "[1,2,42,0,-1,9223372036854775807]",
+            actual = json
+        )
 
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = LongArraySerializer.deserialize(reader)
-        assertContentEquals(original, result)
+        assertContentEquals(
+            expected = original,
+            actual = result
+        )
 
         val flatResult =
-            LongArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
-        assertContentEquals(original, flatResult)
+            LongArraySerializer.deserialize(GhostJsonFlatReader(rawData = json.encodeToByteArray()))
+        assertContentEquals(
+            expected = original,
+            actual = flatResult
+        )
 
-        val stringResult = LongArraySerializer.deserialize(GhostJsonStringReader(json))
-        assertContentEquals(original, stringResult)
+        val stringResult = LongArraySerializer.deserialize(GhostJsonStringReader(rawData = json))
+        assertContentEquals(
+            expected = original,
+            actual = stringResult
+        )
     }
 
     @Test
     fun getSerializerResolvesIntArrayAndRoundTrips() {
         val serializer = Ghost.getSerializer(IntArray::class)
-        assertNotNull(serializer)
-        assertSame(IntArraySerializer, serializer)
+        assertNotNull(actual = serializer)
+        assertSame(
+            expected = IntArraySerializer,
+            actual = serializer
+        )
 
         val original = intArrayOf(1, 2)
         val bytes = Ghost.encodeToBytes(original)
-        assertEquals("[1,2]", bytes.decodeToString())
-        assertContentEquals(original, Ghost.deserialize<IntArray>(bytes))
+        assertEquals(
+            expected = "[1,2]",
+            actual = bytes.decodeToString()
+        )
+        assertContentEquals(
+            expected = original,
+            actual = Ghost.deserialize<IntArray>(bytes)
+        )
     }
 
     @Test
@@ -84,17 +117,23 @@ class PrimitiveArrayTest {
         val writer = GhostJsonWriter(buffer)
         IntArraySerializer.serialize(writer, intArrayOf())
         writer.flush()
-        assertEquals("[]", buffer.readUtf8())
+        assertEquals(
+            expected = "[]",
+            actual = buffer.readUtf8()
+        )
 
         val reader = GhostJsonReader("[]".encodeToByteArray())
-        assertContentEquals(intArrayOf(), IntArraySerializer.deserialize(reader))
         assertContentEquals(
-            intArrayOf(),
-            IntArraySerializer.deserialize(GhostJsonFlatReader("[]".encodeToByteArray()))
+            expected = intArrayOf(),
+            actual = IntArraySerializer.deserialize(reader)
         )
         assertContentEquals(
-            intArrayOf(),
-            IntArraySerializer.deserialize(GhostJsonStringReader("[]"))
+            expected = intArrayOf(),
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[]".encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = intArrayOf(),
+            actual = IntArraySerializer.deserialize(GhostJsonStringReader(rawData = "[]"))
         )
     }
 
@@ -106,15 +145,30 @@ class PrimitiveArrayTest {
     fun testIntArrayFastPathAllChannelsAgree() {
         val json = "[1,2,3,42,0,-1,999999999,-999999999]"
         val expected = intArrayOf(1, 2, 3, 42, 0, -1, 999999999, -999999999)
-        assertContentEquals(expected, IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray())))
-        assertContentEquals(expected, IntArraySerializer.deserialize(GhostJsonReader(json.encodeToByteArray())))
-        assertContentEquals(expected, IntArraySerializer.deserialize(GhostJsonStringReader(json)))
+        assertContentEquals(
+            expected = expected,
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = json.encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = expected,
+            actual = IntArraySerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = expected,
+            actual = IntArraySerializer.deserialize(GhostJsonStringReader(rawData = json))
+        )
     }
 
     @Test
     fun testIntArrayFastPathSingleElement() {
-        assertContentEquals(intArrayOf(7), IntArraySerializer.deserialize(GhostJsonFlatReader("[7]".encodeToByteArray())))
-        assertContentEquals(intArrayOf(-7), IntArraySerializer.deserialize(GhostJsonFlatReader("[-7]".encodeToByteArray())))
+        assertContentEquals(
+            expected = intArrayOf(7),
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[7]".encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = intArrayOf(-7),
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[-7]".encodeToByteArray()))
+        )
     }
 
     @Test
@@ -123,11 +177,11 @@ class PrimitiveArrayTest {
         // bail to the slow path so the existing overflow check (not duplicated here) applies.
         val json = "[999999999,2147483647]"
         assertContentEquals(
-            intArrayOf(999999999, Int.MAX_VALUE),
-            IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray()))
+            expected = intArrayOf(999999999, Int.MAX_VALUE),
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = json.encodeToByteArray()))
         )
         assertFailsWith<GhostJsonException> {
-            IntArraySerializer.deserialize(GhostJsonFlatReader("[9999999999]".encodeToByteArray()))
+            IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[9999999999]".encodeToByteArray()))
         }
     }
 
@@ -137,14 +191,17 @@ class PrimitiveArrayTest {
         // List<T>/readList) — the fast path matches that existing behavior rather than
         // introducing new enforcement the slow path doesn't have.
         val tooMany = (1..6).joinToString(",", "[", "]")
-        val reader = GhostJsonFlatReader(tooMany.encodeToByteArray()).also { it.maxCollectionSize = 5 }
-        assertContentEquals(intArrayOf(1, 2, 3, 4, 5, 6), IntArraySerializer.deserialize(reader))
+        val reader = GhostJsonFlatReader(rawData = tooMany.encodeToByteArray()).also { it.maxCollectionSize = 5 }
+        assertContentEquals(
+            expected = intArrayOf(1, 2, 3, 4, 5, 6),
+            actual = IntArraySerializer.deserialize(reader)
+        )
     }
 
     @Test
     fun testIntArrayFastPathBailsOnTrailingComma() {
         assertFailsWith<GhostJsonException> {
-            IntArraySerializer.deserialize(GhostJsonFlatReader("[1,2,]".encodeToByteArray()))
+            IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[1,2,]".encodeToByteArray()))
         }
     }
 
@@ -152,14 +209,14 @@ class PrimitiveArrayTest {
     fun testIntArrayFastPathBailsOnWhitespaceAndDecimalCoercion() {
         // Whitespace between elements: falls back to the general loop, which tolerates it.
         assertContentEquals(
-            intArrayOf(1, 2, 3),
-            IntArraySerializer.deserialize(GhostJsonFlatReader("[1, 2, 3]".encodeToByteArray()))
+            expected = intArrayOf(1, 2, 3),
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[1, 2, 3]".encodeToByteArray()))
         )
         // A decimal value inside an IntArray: falls back to the general loop's
         // nextDouble().toInt() coercion path.
         assertContentEquals(
-            intArrayOf(1, 2, 3),
-            IntArraySerializer.deserialize(GhostJsonFlatReader("[1,2.0,3]".encodeToByteArray()))
+            expected = intArrayOf(1, 2, 3),
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[1,2.0,3]".encodeToByteArray()))
         )
     }
 
@@ -167,9 +224,18 @@ class PrimitiveArrayTest {
     fun testLongArrayFastPathAllChannelsAgree() {
         val json = "[1,2,42,0,-1,999999999999999999,-999999999999999999]"
         val expected = longArrayOf(1, 2, 42, 0, -1, 999999999999999999L, -999999999999999999L)
-        assertContentEquals(expected, LongArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray())))
-        assertContentEquals(expected, LongArraySerializer.deserialize(GhostJsonReader(json.encodeToByteArray())))
-        assertContentEquals(expected, LongArraySerializer.deserialize(GhostJsonStringReader(json)))
+        assertContentEquals(
+            expected = expected,
+            actual = LongArraySerializer.deserialize(GhostJsonFlatReader(rawData = json.encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = expected,
+            actual = LongArraySerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = expected,
+            actual = LongArraySerializer.deserialize(GhostJsonStringReader(rawData = json))
+        )
     }
 
     @Test
@@ -177,11 +243,13 @@ class PrimitiveArrayTest {
         // 18 digits (LONG_SAFE_DIGITS) parses entirely inside the fast path; a 19th digit must
         // bail to the slow path so the existing overflow check applies.
         assertContentEquals(
-            longArrayOf(Long.MAX_VALUE),
-            LongArraySerializer.deserialize(GhostJsonFlatReader("[9223372036854775807]".encodeToByteArray()))
+            expected = longArrayOf(Long.MAX_VALUE),
+            actual = LongArraySerializer.deserialize(
+                GhostJsonFlatReader(rawData = "[9223372036854775807]".encodeToByteArray())
+            )
         )
         assertFailsWith<GhostJsonException> {
-            LongArraySerializer.deserialize(GhostJsonFlatReader("[99999999999999999999]".encodeToByteArray()))
+            LongArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[99999999999999999999]".encodeToByteArray()))
         }
     }
 
@@ -191,8 +259,17 @@ class PrimitiveArrayTest {
         // path targets) must produce byte-identical results across all three channels.
         val values = IntArray(1000) { it * 7 - 500 }
         val json = values.joinToString(",", "[", "]")
-        assertContentEquals(values, IntArraySerializer.deserialize(GhostJsonFlatReader(json.encodeToByteArray())))
-        assertContentEquals(values, IntArraySerializer.deserialize(GhostJsonReader(json.encodeToByteArray())))
-        assertContentEquals(values, IntArraySerializer.deserialize(GhostJsonStringReader(json)))
+        assertContentEquals(
+            expected = values,
+            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = json.encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = values,
+            actual = IntArraySerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
+        )
+        assertContentEquals(
+            expected = values,
+            actual = IntArraySerializer.deserialize(GhostJsonStringReader(rawData = json))
+        )
     }
 }

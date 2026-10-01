@@ -3,7 +3,7 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
@@ -21,14 +21,14 @@ import com.ghost.serialization.writer.bytes.GhostJsonWriter
  * [GhostProtoConverterFactory]'s reliance on `GhostProtoJsonFlatReader.nextLong` polymorphism.
  */
 @InternalGhostApi
-object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
+object ProtoDeviceEventSerializer : AbstractGhostSerializer<ProtoDeviceEvent>() {
     override val typeName: String = "com.ghost.serialization.retrofit.ProtoDeviceEvent"
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoDeviceEvent) {
         writer.beginObject()
-        writer.name("deviceId")
+        writer.name(key = "deviceId")
         writer.value(value.deviceId.toString())
-        writer.name("label")
+        writer.name(key = "label")
         writer.value(value.label)
         writer.endObject()
     }
@@ -47,7 +47,7 @@ object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
             }
         }
         reader.endObject()
-        return ProtoDeviceEvent(deviceId, label)
+        return ProtoDeviceEvent(deviceId = deviceId, label = label)
     }
 
     /**
@@ -69,6 +69,6 @@ object ProtoDeviceEventSerializer : GhostSerializer<ProtoDeviceEvent> {
             }
         }
         reader.endObject()
-        return ProtoDeviceEvent(deviceId, label)
+        return ProtoDeviceEvent(deviceId = deviceId, label = label)
     }
 }

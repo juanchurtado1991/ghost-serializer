@@ -3,10 +3,9 @@
 package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.json.captureJsonValueScan
 import com.ghost.serialization.types.RawJson
-import com.ghost.serialization.parser.common.captureJsonValueScan
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
 
 /**
  * Captures the next complete JSON value as a [RawJson] view into this reader's buffer.
@@ -17,15 +16,15 @@ fun GhostJsonReader.captureRawJson(): RawJson {
     val streaming = source as? StreamingGhostSource
     // Pin the value start: scanning advances [position] and may releaseStreamingPrefix,
     // but we re-read [start, start+length) when materializing the owned byte copy.
-    streaming?.pin(start)
+    streaming?.pin(absoluteIndex = start)
     try {
         captureReaderValueBytes()
-        nextTokenByte = C.RESET_TOKEN_BYTE
+        nextTokenByte = SCN.RESET_TOKEN_BYTE
         val length = position - start
         return if (streaming != null) {
-            RawJson.fromUtf8Bytes(captureReaderRangeBytes(start, length))
+            RawJson.fromUtf8Bytes(bytes = captureReaderRangeBytes(start = start, length = length))
         } else {
-            RawJson.fromBufferSlice(rawData, start, length)
+            RawJson.fromBufferSlice(buffer = rawData, offset = start, length = length)
         }
     } finally {
         streaming?.unpin()
@@ -42,7 +41,7 @@ fun GhostJsonReader.captureRawJson(): RawJson {
 fun GhostJsonReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes
 
 private fun GhostJsonReader.captureReaderValueBytes() {
-    position = captureJsonValueScan(position, limit) { index -> getByte(index) }
+    position = captureJsonValueScan(startPosition = position, limit = limit) { index -> getByte(index) }
 }
 
 private fun GhostJsonReader.captureReaderRangeBytes(start: Int, length: Int): ByteArray {

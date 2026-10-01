@@ -18,7 +18,7 @@ class DefaultExpressionSingleShotKspTest {
     @Test
     fun nonZeroIntDefaultsUseSingleShotWithoutCopy() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ManyDefaults.kt",
                 """
                 package test
@@ -34,7 +34,7 @@ class DefaultExpressionSingleShotKspTest {
                 )
                 """.trimIndent()
             ),
-            "ManyDefaultsSerializer.kt"
+            serializerFileName = "ManyDefaultsSerializer.kt"
         )
         assertFalse("result.copy(" in generated, generated)
         assertTrue("else 1" in generated, generated)
@@ -45,7 +45,7 @@ class DefaultExpressionSingleShotKspTest {
     @Test
     fun complexLiteralDefaultsUseSingleShot() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ComplexDefaults.kt",
                 """
                 package test
@@ -65,7 +65,7 @@ class DefaultExpressionSingleShotKspTest {
                 )
                 """.trimIndent()
             ),
-            "ComplexDefaultsSerializer.kt"
+            serializerFileName = "ComplexDefaultsSerializer.kt"
         )
         // 5 defaults > MAX_DEFAULT_BRANCH_COUNT(4) → createInstance path
         assertFalse("result.copy(" in generated, generated)
@@ -81,7 +81,7 @@ class DefaultExpressionSingleShotKspTest {
     @Test
     fun dependentDefaultFallsBackToCopy() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "DependentDefaults.kt",
                 """
                 package test
@@ -97,7 +97,7 @@ class DefaultExpressionSingleShotKspTest {
                 )
                 """.trimIndent()
             ),
-            "DependentDefaultsSerializer.kt"
+            serializerFileName = "DependentDefaultsSerializer.kt"
         )
         assertTrue("result.copy(" in generated, generated)
         assertFalse("else a + 1" in generated, generated)
@@ -106,7 +106,7 @@ class DefaultExpressionSingleShotKspTest {
     @Test
     fun annotatedParameterStillExtractsDefault() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "AnnotatedDefaults.kt",
                 """
                 package test
@@ -123,7 +123,7 @@ class DefaultExpressionSingleShotKspTest {
                 )
                 """.trimIndent()
             ),
-            "AnnotatedDefaultsSerializer.kt"
+            serializerFileName = "AnnotatedDefaultsSerializer.kt"
         )
         assertFalse("result.copy(" in generated, generated)
         assertTrue("else \"x\"" in generated, generated)

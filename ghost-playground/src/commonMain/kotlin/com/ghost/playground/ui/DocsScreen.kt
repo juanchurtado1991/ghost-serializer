@@ -22,43 +22,53 @@ internal fun DocsScreen(strings: Strings) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             DocLink(
-                strings.wikiQuickStart,
-                PlaygroundLinks.WIKI_QUICK_START,
-                PlaygroundIconKind.Wiki,
-                Teal
+                label = strings.wikiQuickStart,
+                url = PlaygroundLinks.WIKI_QUICK_START,
+                icon = PlaygroundIconKind.Wiki,
+                accent = Teal
             )
             DocLink(
-                strings.wikiAdvanced,
-                PlaygroundLinks.WIKI_ADVANCED,
-                PlaygroundIconKind.Manual,
-                Coral
+                label = strings.wikiAdvanced,
+                url = PlaygroundLinks.WIKI_ADVANCED,
+                icon = PlaygroundIconKind.Manual,
+                accent = Coral
             )
             DocLink(
-                strings.wikiArchitecture,
-                PlaygroundLinks.WIKI_ARCHITECTURE,
-                PlaygroundIconKind.Architecture,
-                Sage
+                label = strings.wikiArchitecture,
+                url = PlaygroundLinks.WIKI_ARCHITECTURE,
+                icon = PlaygroundIconKind.Architecture,
+                accent = Sage
             )
             DocLink(
-                strings.wikiBenchmarks,
-                PlaygroundLinks.WIKI_BENCHMARKS,
-                PlaygroundIconKind.Benchmark,
-                Rose
+                label = strings.wikiBenchmarks,
+                url = PlaygroundLinks.WIKI_BENCHMARKS,
+                icon = PlaygroundIconKind.Benchmark,
+                accent = Rose
             )
             DocLink(
-                strings.wikiUsageYaml,
-                PlaygroundLinks.WIKI_USAGE_YAML,
-                PlaygroundIconKind.RoundTrip,
-                Sage
+                label = strings.wikiUsageYaml,
+                url = PlaygroundLinks.WIKI_USAGE_YAML,
+                icon = PlaygroundIconKind.RoundTrip,
+                accent = Sage
             )
             DocLink(
-                strings.wikiUsageProtobuf,
-                PlaygroundLinks.WIKI_USAGE_PROTOBUF,
-                PlaygroundIconKind.Bytes,
-                TealDark
+                label = strings.wikiUsageProtobuf,
+                url = PlaygroundLinks.WIKI_USAGE_PROTOBUF,
+                icon = PlaygroundIconKind.Bytes,
+                accent = TealDark
             )
-            DocLink(strings.manualMd, PlaygroundLinks.MANUAL_MD, PlaygroundIconKind.Manual, Teal)
-            DocLink(strings.manualPdf, PlaygroundLinks.MANUAL_PDF, PlaygroundIconKind.Book, Coral)
+            DocLink(
+                label = strings.manualMd,
+                url = PlaygroundLinks.MANUAL_MD,
+                icon = PlaygroundIconKind.Manual,
+                accent = Teal
+            )
+            DocLink(
+                label = strings.manualPdf,
+                url = PlaygroundLinks.MANUAL_PDF,
+                icon = PlaygroundIconKind.Book,
+                accent = Coral
+            )
         }
     }
 }

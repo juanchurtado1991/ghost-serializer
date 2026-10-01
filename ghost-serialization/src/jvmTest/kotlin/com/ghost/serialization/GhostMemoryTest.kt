@@ -2,7 +2,7 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
@@ -23,7 +23,7 @@ class GhostMemoryTest {
         Ghost.resetForTest()
     }
 
-    private object RecursiveSerializer : GhostSerializer<Any> {
+    private object RecursiveSerializer : AbstractGhostSerializer<Any>() {
         override val typeName: String = "Recursive"
         override fun serialize(writer: GhostJsonWriter, value: Any) {}
         override fun deserialize(reader: GhostJsonReader): Any {
@@ -64,8 +64,14 @@ class GhostMemoryTest {
         val json = "\"$largeString\""
 
         val result = Ghost.deserialize<String>(json)
-        assertEquals(largeString.length, result.length)
-        assertEquals(largeString, result)
+        assertEquals(
+            expected = largeString.length,
+            actual = result.length
+        )
+        assertEquals(
+            expected = largeString,
+            actual = result
+        )
     }
 
 }

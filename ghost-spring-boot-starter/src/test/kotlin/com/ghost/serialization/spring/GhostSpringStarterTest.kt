@@ -12,8 +12,8 @@ class GhostSpringStarterTest {
             ?.readText()
             ?: error("AutoConfiguration.imports missing from starter JAR resources")
 
-        assertTrue(imports.contains("com.ghost.serialization.spring.GhostAutoConfiguration"))
-        assertTrue(imports.contains("com.ghost.serialization.spring.GhostWebMvcAutoConfiguration"))
-        assertTrue(imports.contains("com.ghost.serialization.spring.GhostWebFluxAutoConfiguration"))
+        assertTrue(actual = imports.contains("com.ghost.serialization.spring.GhostAutoConfiguration"))
+        assertTrue(actual = imports.contains("com.ghost.serialization.spring.GhostWebMvcAutoConfiguration"))
+        assertTrue(actual = imports.contains("com.ghost.serialization.spring.GhostWebFluxAutoConfiguration"))
     }
 }

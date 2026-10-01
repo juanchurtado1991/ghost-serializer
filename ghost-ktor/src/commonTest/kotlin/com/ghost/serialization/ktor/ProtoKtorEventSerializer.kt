@@ -3,7 +3,7 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
@@ -15,14 +15,14 @@ import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
-object ProtoKtorEventSerializer : GhostSerializer<ProtoKtorEvent> {
+object ProtoKtorEventSerializer : AbstractGhostSerializer<ProtoKtorEvent>() {
     override val typeName: String = "com.ghost.serialization.ktor.ProtoKtorEvent"
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoKtorEvent) {
         writer.beginObject()
-        writer.name("deviceId")
+        writer.name(key = "deviceId")
         writer.value(value.deviceId.toString())
-        writer.name("label")
+        writer.name(key = "label")
         writer.value(value.label)
         writer.endObject()
     }
@@ -41,7 +41,7 @@ object ProtoKtorEventSerializer : GhostSerializer<ProtoKtorEvent> {
             }
         }
         reader.endObject()
-        return ProtoKtorEvent(deviceId, label)
+        return ProtoKtorEvent(deviceId = deviceId, label = label)
     }
 
     // Explicit (not the default interface bridge) so a GhostProtoJsonFlatReader dispatches
@@ -60,6 +60,6 @@ object ProtoKtorEventSerializer : GhostSerializer<ProtoKtorEvent> {
             }
         }
         reader.endObject()
-        return ProtoKtorEvent(deviceId, label)
+        return ProtoKtorEvent(deviceId = deviceId, label = label)
     }
 }

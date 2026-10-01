@@ -23,7 +23,10 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
 /**
@@ -33,56 +36,28 @@ internal class SerializerSetupEmitter(
     private val ctx: GhostSerializerContext,
 ) {
 
-    fun addPerfectHashOptions(typeSpecBuilder: TypeSpec.Builder) {
-        val names = if (ctx.isSealed && ctx.isInferred) {
-            ctx.properties
-                .firstOrNull()
-                ?.inferredSubclasses
-                ?.flatMap { it.properties }
-                ?.map { it.jsonName }?.distinct()
-                ?: emptyList()
-        } else {
-            DispatchNamesResolver.topLevelNames(ctx.properties)
-        }
-        val hashConfig = PerfectHashFinder.findPerfectHash(names)
-        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)
-
-        typeSpecBuilder.addProperty(
-            PropertySpec.builder(C.STR_OPTIONS, optionsClass)
-                .addModifiers(KModifier.PRIVATE)
-                .initializer(
-                    buildReaderOptionsInitializer(
-                        optionsClass = optionsClass,
-                        hashConfig = hashConfig,
-                        names = names,
-                    )
-                )
-                .build()
-        )
-    }
-
     fun addCachedHeaderProperties(typeSpecBuilder: TypeSpec.Builder) {
         for (name in ctx.getAllJsonNames()) {
-            val cleanName = name.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()
+            val cleanName = name.replace(CC.STR_DOT, CC.STR_UNDERSCORE).uppercase()
 
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
-                    C.STR_H_VAL_PREFIX + cleanName,
-                    C.BYTE_STRING_CLASS,
+                    CG.STR_H_VAL_PREFIX + cleanName,
+                    CG.BYTE_STRING_CLASS,
                     KModifier.PRIVATE
                 )
-                    .initializer(C.TEMPLATE_ENCODE_UTF8, C.FMT_JSON_FIELD.format(name))
+                    .initializer(CG.TEMPLATE_ENCODE_UTF8, CG.FMT_JSON_FIELD.format(name))
                     .build()
             )
 
             if (ctx.textChannel) {
                 typeSpecBuilder.addProperty(
                     PropertySpec.builder(
-                        C.STR_HS_PREFIX + cleanName,
+                        CG.STR_HS_PREFIX + cleanName,
                         String::class,
                         KModifier.PRIVATE
                     )
-                        .initializer(C.STR_FORMAT_S, C.FMT_JSON_FIELD.format(name))
+                        .initializer(PC.STR_FORMAT_S, CG.FMT_JSON_FIELD.format(name))
                         .build()
                 )
             }
@@ -91,11 +66,11 @@ internal class SerializerSetupEmitter(
 
     fun addEnumOptions(typeSpecBuilder: TypeSpec.Builder) {
         val values = ctx.enumValues!!.values.toList()
-        val hashConfig = PerfectHashFinder.findPerfectHash(values)
-        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = values)
+        val optionsClass = ClassName(CC.PKG_PARSER_COMMON_JSON, CG.STR_OPTIONS_CLASS)
 
         typeSpecBuilder.addProperty(
-            PropertySpec.builder(C.STR_ENUM_OPTIONS, optionsClass)
+            PropertySpec.builder(CG.STR_ENUM_OPTIONS, optionsClass)
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
                     buildReaderOptionsInitializer(
@@ -108,33 +83,61 @@ internal class SerializerSetupEmitter(
         )
     }
 
+    fun addPerfectHashOptions(typeSpecBuilder: TypeSpec.Builder) {
+        val names = if (ctx.isSealed && ctx.isInferred) {
+            ctx.properties
+                .firstOrNull()
+                ?.inferredSubclasses
+                ?.flatMap { it.properties }
+                ?.map { it.jsonName }?.distinct()
+                ?: emptyList()
+        } else {
+            DispatchNamesResolver.topLevelNames(properties = ctx.properties)
+        }
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = names)
+        val optionsClass = ClassName(CC.PKG_PARSER_COMMON_JSON, CG.STR_OPTIONS_CLASS)
+
+        typeSpecBuilder.addProperty(
+            PropertySpec.builder(CG.STR_OPTIONS, optionsClass)
+                .addModifiers(KModifier.PRIVATE)
+                .initializer(
+                    buildReaderOptionsInitializer(
+                        optionsClass = optionsClass,
+                        hashConfig = hashConfig,
+                        names = names,
+                    )
+                )
+                .build()
+        )
+    }
+
     fun buildWarmUpMethod(): FunSpec {
         val warmupJson = generateMinimalJson()
         val warmUpBlock = CodeBlock.builder()
-            .beginControlFlow(C.STR_TRY)
+            .beginControlFlow(CG.STR_TRY)
             .addStatement(
-                C.TEMPLATE_WARM_UP_READER_INIT,
-                C.STR_READER1,
+                CG.TEMPLATE_WARM_UP_READER_INIT,
+                CG.STR_READER1,
                 ctx.streamingReaderClass,
                 warmupJson
             )
-            .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER1)
-            .nextControlFlow(C.STR_CATCH_EXCEPTION)
+            .addStatement(CG.TEMPLATE_WARM_UP_DESERIALIZE, CG.STR_READER1)
+            .nextControlFlow(CG.STR_CATCH_EXCEPTION)
             .endControlFlow()
         if (ctx.textChannel) {
             warmUpBlock
-                .beginControlFlow(C.STR_TRY)
+                .beginControlFlow(CG.STR_TRY)
                 .addStatement(
-                    C.TEMPLATE_WARM_UP_STRING_READER_INIT,
-                    C.STR_READER3,
+                    CG.TEMPLATE_WARM_UP_STRING_READER_INIT,
+                    CG.STR_READER3,
                     ctx.stringReaderClass,
                     warmupJson
                 )
-                .addStatement(C.TEMPLATE_WARM_UP_DESERIALIZE, C.STR_READER3)
-                .nextControlFlow(C.STR_CATCH_EXCEPTION)
+                .addStatement(CG.TEMPLATE_WARM_UP_DESERIALIZE, CG.STR_READER3)
+                .nextControlFlow(CG.STR_CATCH_EXCEPTION)
                 .endControlFlow()
         }
-        return FunSpec.builder(C.STR_WARM_UP)
+        return FunSpec.builder(CG.STR_WARM_UP)
             .addModifiers(KModifier.OVERRIDE)
             .addCode(warmUpBlock.build())
             .build()
@@ -157,33 +160,34 @@ internal class SerializerSetupEmitter(
     }
 
     private fun generateMinimalJson(): String {
-        if (ctx.isSealed || ctx.isEnum || ctx.isValue) {
-            return C.STR_EMPTY_JSON
+        val isSealedEnumOrValue = ctx.isSealed || ctx.isEnum || ctx.isValue
+        if (isSealedEnumOrValue) {
+            return CG.STR_EMPTY_JSON
         }
         val sb = StringBuilder()
-        sb.append(C.STR_CURLY_OPEN)
+        sb.append(CG.STR_CURLY_OPEN)
         val entries = mutableListOf<String>()
         ctx.properties.forEach { prop ->
             if (!prop.isNullable && !prop.hasDefaultValue) {
-                val key = C.STR_DOUBLE_QUOTE + prop.jsonName + C.STR_DOUBLE_QUOTE
+                val key = AC.STR_DOUBLE_QUOTE + prop.jsonName + AC.STR_DOUBLE_QUOTE
                 val value = when {
                     prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() ||
-                            prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -> C.STR_ZERO
+                            prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -> AC.STR_ZERO
 
-                    prop.type.isPrimitiveDouble() || prop.type.isPrimitiveFloat() -> C.STR_ZERO_D
-                    prop.type.isPrimitiveBoolean() -> C.STR_FALSE
-                    prop.type.isPrimitiveChar() -> C.STR_JSON_CHAR_NULL
-                    prop.type.isString() -> C.STR_EMPTY_STRING
-                    prop.type.isList() || prop.type.isSet() -> C.STR_EMPTY_ARRAY
-                    prop.type.isMap() -> C.STR_EMPTY_JSON
-                    prop.type.isGhost() -> C.STR_EMPTY_JSON
-                    else -> C.STR_NULL
+                    prop.type.isPrimitiveDouble() || prop.type.isPrimitiveFloat() -> AC.STR_ZERO_D
+                    prop.type.isPrimitiveBoolean() -> CC.STR_FALSE
+                    prop.type.isPrimitiveChar() -> CG.STR_JSON_CHAR_NULL
+                    prop.type.isString() -> CG.STR_EMPTY_STRING
+                    prop.type.isList() || prop.type.isSet() -> CG.STR_EMPTY_ARRAY
+                    prop.type.isMap() -> CG.STR_EMPTY_JSON
+                    prop.type.isGhost() -> CG.STR_EMPTY_JSON
+                    else -> CC.STR_NULL
                 }
-                entries.add(key + C.STR_COLON + value)
+                entries.add(key + CG.STR_COLON + value)
             }
         }
-        sb.append(entries.joinToString(C.STR_COMMA))
-        sb.append(C.STR_CURLY_CLOSE)
+        sb.append(entries.joinToString(CG.STR_COMMA))
+        sb.append(CG.STR_CURLY_CLOSE)
         return sb.toString()
     }
 }

@@ -9,6 +9,6 @@ class GhostExtendedScalarsTest {
 
     @Test
     fun topLevelFloatDeserializeFromString() {
-        assertEquals(3.14f, Ghost.deserialize("3.14"), 0.001f)
+        assertEquals(expected = 3.14f, actual = Ghost.deserialize("3.14"), absoluteTolerance = 0.001f)
     }
 }

@@ -1,7 +1,7 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.endArray
@@ -38,9 +38,15 @@ class GhostStressAuditTest {
 
         val reader1 = GhostJsonReader(jsonString.encodeToByteArray())
         reader1.beginObject()
-        assertEquals(0, reader1.selectString(JsonReaderOptions.of("k")))
+        assertEquals(
+            expected = 0,
+            actual = reader1.selectString(options = JsonReaderOptions.of("k"))
+        )
         reader1.consumeKeySeparator()
-        assertEquals(stringPadding + "BC", reader1.nextString())
+        assertEquals(
+            expected = stringPadding + "BC",
+            actual = reader1.nextString()
+        )
         reader1.endObject()
 
         // 2. Split a Number
@@ -48,7 +54,10 @@ class GhostStressAuditTest {
         val jsonNum = "[$numPadding 12345]"
         val reader2 = GhostJsonReader(jsonNum.encodeToByteArray())
         reader2.beginArray()
-        assertEquals(12345, reader2.nextInt())
+        assertEquals(
+            expected = 12345,
+            actual = reader2.nextInt()
+        )
         reader2.endArray()
 
         // 3. Split a Boolean
@@ -56,8 +65,14 @@ class GhostStressAuditTest {
         val jsonBool = "[$boolPadding true]"
         val reader3 = GhostJsonReader(jsonBool.encodeToByteArray())
         reader3.beginArray()
-        assertEquals(true, reader3.hasNext())
-        assertEquals(true, reader3.nextBoolean())
+        assertEquals(
+            expected = true,
+            actual = reader3.hasNext()
+        )
+        assertEquals(
+            expected = true,
+            actual = reader3.nextBoolean()
+        )
         reader3.endArray()
     }
 
@@ -67,7 +82,7 @@ class GhostStressAuditTest {
         val nestedJson = "{".repeat(maxDepth + 1) + "}".repeat(maxDepth + 1)
         val bytes = nestedJson.encodeToByteArray()
 
-        val reader = GhostJsonReader(createByteArraySource(bytes), maxDepth = maxDepth)
+        val reader = GhostJsonReader(createByteArraySource(data = bytes), maxDepth = maxDepth)
         assertFailsWith<GhostJsonException> {
             repeat(maxDepth + 1) {
                 reader.beginObject()
@@ -90,12 +105,12 @@ class GhostStressAuditTest {
 
         malformedInputs.forEach { input ->
             val reader =
-                GhostJsonReader(createByteArraySource(input.encodeToByteArray()), strictMode = true)
+                GhostJsonReader(createByteArraySource(data = input.encodeToByteArray()), strictMode = true)
             assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
-                recursiveSkip(reader)
+                recursiveSkip(reader = reader)
                 reader.skipWhitespace()
                 if (reader.position < reader.limit) {
-                    val leftover = reader.source.decodeToString(reader.position, reader.limit)
+                    val leftover = reader.source.decodeToString(start = reader.position, end = reader.limit)
                     if (leftover.trim().isNotEmpty()) {
                         throw GhostJsonException("Unconsumed input: $leftover", 0, 0)
                     }
@@ -113,7 +128,7 @@ class GhostStressAuditTest {
                 while (reader.hasNext()) {
                     reader.nextKey()
                     reader.consumeKeySeparator()
-                    recursiveSkip(reader)
+                    recursiveSkip(reader = reader)
                 }
                 reader.endObject()
             }
@@ -122,7 +137,7 @@ class GhostStressAuditTest {
                 reader.beginArray()
                 if (reader.peekByte() != ']'.code.toByte()) {
                     while (true) {
-                        recursiveSkip(reader)
+                        recursiveSkip(reader = reader)
                         val next = reader.nextNonWhitespace()
                         if (next == ']'.code) {
                             break

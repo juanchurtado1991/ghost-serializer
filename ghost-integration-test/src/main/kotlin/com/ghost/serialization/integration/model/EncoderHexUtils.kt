@@ -34,10 +34,6 @@ object EncoderHexUtils {
         return "$HEX_VALUE_PREFIX$hex"
     }
 
-    fun encodeHex(writer: GhostJsonWriter, value: String) {
-        writer.value(value.removePrefix(HEX_VALUE_PREFIX))
-    }
-
     fun decodeNullableInt(reader: GhostJsonReader): Int? {
         if (reader.isNextNullValue()) {
             reader.consumeNull()
@@ -52,5 +48,9 @@ object EncoderHexUtils {
             return NULLABLE_INT_SENTINEL
         }
         return reader.nextInt()
+    }
+
+    fun encodeHex(writer: GhostJsonWriter, value: String) {
+        writer.value(value.removePrefix(HEX_VALUE_PREFIX))
     }
 }

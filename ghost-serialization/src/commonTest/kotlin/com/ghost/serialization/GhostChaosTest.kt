@@ -31,7 +31,10 @@ class GhostChaosTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals("😀", reader.nextString())
+        assertEquals(
+            expected = "😀",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -65,7 +68,7 @@ class GhostChaosTest {
         // DoS protection: nesting depth is checked even for an unknown/skipped field.
         val deepJson = "{\"unknown\": " + "[".repeat(120) + "]" + "}".repeat(120)
         val reader =
-            GhostJsonReader(createByteArraySource(deepJson.encodeToByteArray()), maxDepth = 100)
+            GhostJsonReader(createByteArraySource(data = deepJson.encodeToByteArray()), maxDepth = 100)
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -83,6 +86,9 @@ class GhostChaosTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals("${padding}😀", reader.nextString())
+        assertEquals(
+            expected = "${padding}😀",
+            actual = reader.nextString()
+        )
     }
 }

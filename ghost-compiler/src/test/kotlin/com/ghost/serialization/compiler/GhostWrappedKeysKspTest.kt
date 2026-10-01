@@ -47,7 +47,7 @@ class GhostWrappedKeysKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         lastCompilation = compilation
-        val source = compilationOutput("WrappedKeysFixtureSerializer.kt")
+        val source = compilationOutput(fileName = "WrappedKeysFixtureSerializer.kt")
         assertTrue("extra1" in source, source)
         assertTrue("captureWrappedKey" in source, source)
         assertTrue("materializeWrappedObject" in source, source)
@@ -84,7 +84,7 @@ class GhostWrappedKeysKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         lastCompilation = compilation
-        val source = compilationOutput("WrappedFixtureSerializer.kt")
+        val source = compilationOutput(fileName = "WrappedFixtureSerializer.kt")
         assertTrue("GhostWrappedKeysCapture" in source, source)
         assertTrue("materializeWrappedObject" in source, source)
         assertTrue("captureWrappedKey" in source, source)
@@ -121,7 +121,7 @@ class GhostWrappedKeysKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         lastCompilation = compilation
-        val source = compilationOutput("OneofFixtureSerializer.kt")
+        val source = compilationOutput(fileName = "OneofFixtureSerializer.kt")
         // No fallback warning/silent drop: each wire key resolves to its owning sealed subclass.
         assertTrue("value.payload is Payload.Text" in source, source)
         assertTrue("value.payload is Payload.Code" in source, source)

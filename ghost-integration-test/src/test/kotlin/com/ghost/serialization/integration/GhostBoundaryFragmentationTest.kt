@@ -14,9 +14,9 @@ class GhostBoundaryFragmentationTest {
         val json = Ghost.serialize(obj)
 
         val result = Ghost.deserialize<Object40>(json)
-        assertEquals(100, result.p1)
-        assertEquals(400, result.p40)
-        assertEquals(2, result.p2)
+        assertEquals(expected = 100, actual = result.p1)
+        assertEquals(expected = 400, actual = result.p40)
+        assertEquals(expected = 2, actual = result.p2)
     }
 
     @Test
@@ -26,15 +26,15 @@ class GhostBoundaryFragmentationTest {
 
         val json = Ghost.serialize(obj)
         val resultString = Ghost.deserialize<Object41>(json)
-        assertEquals(101, resultString.p1)
-        assertEquals(401, resultString.p40)
-        assertEquals(411, resultString.p41)
+        assertEquals(expected = 101, actual = resultString.p1)
+        assertEquals(expected = 401, actual = resultString.p40)
+        assertEquals(expected = 411, actual = resultString.p41)
 
         val bytes = Ghost.encodeToBytes(obj)
         val resultBytes = Ghost.deserialize<Object41>(bytes)
-        assertEquals(101, resultBytes.p1)
-        assertEquals(401, resultBytes.p40)
-        assertEquals(411, resultBytes.p41)
+        assertEquals(expected = 101, actual = resultBytes.p1)
+        assertEquals(expected = 401, actual = resultBytes.p40)
+        assertEquals(expected = 411, actual = resultBytes.p41)
     }
 
     @Test
@@ -42,9 +42,9 @@ class GhostBoundaryFragmentationTest {
         val partialJson = """{"p1": 999, "p41": 888}"""
         val result = Ghost.deserialize<Object41>(partialJson.encodeToByteArray())
 
-        assertEquals(999, result.p1)
-        assertEquals(888, result.p41)
-        assertEquals(2, result.p2)
-        assertEquals(40, result.p40)
+        assertEquals(expected = 999, actual = result.p1)
+        assertEquals(expected = 888, actual = result.p41)
+        assertEquals(expected = 2, actual = result.p2)
+        assertEquals(expected = 40, actual = result.p40)
     }
 }

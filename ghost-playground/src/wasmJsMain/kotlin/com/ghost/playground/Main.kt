@@ -9,7 +9,7 @@ import kotlinx.browser.document
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    Ghost.addRegistry(GhostModuleRegistry_playground.INSTANCE)
+    Ghost.addRegistry(registry = GhostModuleRegistry_playground.INSTANCE)
     ComposeViewport(document.body!!) {
         GhostPlaygroundApp()
     }

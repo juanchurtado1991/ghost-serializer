@@ -1,6 +1,6 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
@@ -18,8 +18,7 @@ class GhostCollectionSerializerResolutionTest {
 
     @Test
     fun getSerializer_listOfJsonOnlyDtoUsesListSerializer() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(JsonOnlyDto::class to JsonOnlyDtoSerializer)
 
@@ -29,14 +28,13 @@ class GhostCollectionSerializerResolutionTest {
         })
 
         val serializer = Ghost.getSerializer(typeOf<List<JsonOnlyDto>>())
-        assertNotNull(serializer)
-        assertTrue(serializer is ListSerializer<*>)
+        assertNotNull(actual = serializer)
+        assertTrue(actual = serializer is ListSerializer<*>)
     }
 
     @Test
     fun getSerializer_listOfYamlCapableDtoUsesGhostYamlListSerializer() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(YamlCapableDto::class to YamlCapableDtoSerializer)
 
@@ -46,14 +44,13 @@ class GhostCollectionSerializerResolutionTest {
         })
 
         val serializer = Ghost.getSerializer(typeOf<List<YamlCapableDto>>())
-        assertNotNull(serializer)
-        assertTrue(serializer is GhostYamlListSerializer<*>)
+        assertNotNull(actual = serializer)
+        assertTrue(actual = serializer is GhostYamlListSerializer<*, *>)
     }
 
     @Test
     fun getSerializer_mapOfYamlCapableDtoUsesGhostYamlMapSerializer() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(YamlCapableDto::class to YamlCapableDtoSerializer)
 
@@ -63,14 +60,13 @@ class GhostCollectionSerializerResolutionTest {
         })
 
         val serializer = Ghost.getSerializer(typeOf<Map<String, YamlCapableDto>>())
-        assertNotNull(serializer)
-        assertTrue(serializer is GhostYamlMapSerializer<*>)
+        assertNotNull(actual = serializer)
+        assertTrue(actual = serializer is GhostYamlMapSerializer<*, *>)
     }
 
     @Test
     fun getSerializer_mapOfJsonOnlyDtoUsesMapSerializer() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(JsonOnlyDto::class to JsonOnlyDtoSerializer)
 
@@ -80,14 +76,13 @@ class GhostCollectionSerializerResolutionTest {
         })
 
         val serializer = Ghost.getSerializer(typeOf<Map<String, JsonOnlyDto>>())
-        assertNotNull(serializer)
-        assertTrue(serializer is MapSerializer<*>)
+        assertNotNull(actual = serializer)
+        assertTrue(actual = serializer is MapSerializer<*>)
     }
 
     @Test
     fun getSerializer_setOfYamlCapableDtoUsesGhostYamlSetSerializer() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(YamlCapableDto::class to YamlCapableDtoSerializer)
 
@@ -97,14 +92,13 @@ class GhostCollectionSerializerResolutionTest {
         })
 
         val serializer = Ghost.getSerializer(typeOf<Set<YamlCapableDto>>())
-        assertNotNull(serializer)
-        assertTrue(serializer is GhostYamlSetSerializer<*>)
+        assertNotNull(actual = serializer)
+        assertTrue(actual = serializer is GhostYamlSetSerializer<*, *>)
     }
 
     @Test
     fun getSerializer_setOfJsonOnlyDtoUsesSetSerializer() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(JsonOnlyDto::class to JsonOnlyDtoSerializer)
 
@@ -114,7 +108,7 @@ class GhostCollectionSerializerResolutionTest {
         })
 
         val serializer = Ghost.getSerializer(typeOf<Set<JsonOnlyDto>>())
-        assertNotNull(serializer)
-        assertTrue(serializer is SetSerializer<*>)
+        assertNotNull(actual = serializer)
+        assertTrue(actual = serializer is SetSerializer<*>)
     }
 }

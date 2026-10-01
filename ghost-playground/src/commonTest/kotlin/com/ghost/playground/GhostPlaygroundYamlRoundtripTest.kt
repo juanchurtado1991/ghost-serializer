@@ -14,7 +14,7 @@ class GhostPlaygroundYamlRoundtripTest {
 
     @BeforeTest
     fun registerModule() {
-        Ghost.addRegistry(GhostModuleRegistry_playground.INSTANCE)
+        Ghost.addRegistry(registry = GhostModuleRegistry_playground.INSTANCE)
     }
 
     @Test
@@ -26,13 +26,13 @@ class GhostPlaygroundYamlRoundtripTest {
         """.trimIndent()
 
         val user = Ghost.decodeFromYaml<PlaygroundUser>(yaml)
-        assertEquals(42L, user.id)
-        assertEquals("Ghost", user.name)
-        assertEquals("playground@ghost.io", user.email)
+        assertEquals(expected = 42L, actual = user.id)
+        assertEquals(expected = "Ghost", actual = user.name)
+        assertEquals(expected = "playground@ghost.io", actual = user.email)
 
-        val encoded = Ghost.encodeToYaml(user)
+        val encoded = Ghost.encodeToYaml(value = user)
         val restored = Ghost.decodeFromYaml<PlaygroundUser>(encoded)
-        assertEquals(user, restored)
-        assertTrue("name:" in encoded)
+        assertEquals(expected = user, actual = restored)
+        assertTrue(actual = "name:" in encoded)
     }
 }

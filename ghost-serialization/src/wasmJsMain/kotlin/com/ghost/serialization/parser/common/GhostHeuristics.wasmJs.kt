@@ -3,20 +3,21 @@
 package com.ghost.serialization.parser.common
 
 actual object GhostHeuristics {
-    actual val initialCollectionCapacity: Int = 10
-    actual val maxStringPoolLength: Int = 64
-    actual val maxCollectionSize: Int = 500_000
-    actual val maxDiscriminatorPeekDistance: Int = 1024
-    actual val maxWarmWriteBufferCapacity: Int = 1024 * 1024
-    actual val maxWarmCharWriteBufferCapacity: Int = 512 * 1024
+    actual val initialCollectionCapacity: Int = GhostHeuristicDefaults.INITIAL_COLLECTION_CAPACITY
+    actual val maxStringPoolLength: Int = GhostHeuristicDefaults.MAX_STRING_POOL_LENGTH
+    actual val maxCollectionSize: Int = GhostHeuristicDefaults.MAX_COLLECTION_SIZE
+    actual val maxDiscriminatorPeekDistance: Int = GhostHeuristicDefaults.MAX_DISCRIMINATOR_PEEK_DISTANCE
+    actual val maxWarmWriteBufferCapacity: Int = GhostHeuristicDefaults.MAX_WARM_WRITE_BUFFER_CAPACITY
+    actual val maxWarmCharWriteBufferCapacity: Int = GhostHeuristicDefaults.MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY
 
     /**
      * JSC (Safari / iOS): UTF-8 flat writer + TextDecoder.
-     * V8 and other engines: keep [GhostJsonStringWriter] (faster on Chrome).
+     * V8 and other engines: keep `GhostJsonStringWriter` (faster on Chrome).
      * Resolved once at first access.
      */
     actual val encodeToStringViaUtf8Bytes: Boolean
         get() = utf8EncodePreference
 
-    private val utf8EncodePreference: Boolean = ghostJsEnginePrefersUtf8EncodeToString()
+    private val utf8EncodePreference: Boolean =
+        ghostJsEnginePrefersUtf8EncodeToString()
 }

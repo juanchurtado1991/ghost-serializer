@@ -20,7 +20,7 @@ class GhostJsonEnvelopeKspTest {
     @Test
     fun fatEnvelopeGeneratesRouteAndParsePayload() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostEnvelopePayload
@@ -56,7 +56,7 @@ class GhostJsonEnvelopeKspTest {
     @Test
     fun genericEnvelopeGeneratesSingleDataRoute() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostJsonEnvelope
@@ -78,15 +78,15 @@ class GhostJsonEnvelopeKspTest {
             generated
         )
         assertFalse(
-            "fun routeTyped" in generated,
-            "Generic envelope without targets must not emit routeTyped"
+            actual = "fun routeTyped" in generated,
+            message = "Generic envelope without targets must not emit routeTyped"
         )
     }
 
     @Test
     fun typedPayloadGeneratesRouteTyped() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostEnvelopePayload
@@ -119,7 +119,7 @@ class GhostJsonEnvelopeKspTest {
     @Test
     fun fallbackPropertyRoutesUnknownDiscriminator() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostEnvelopeFallback

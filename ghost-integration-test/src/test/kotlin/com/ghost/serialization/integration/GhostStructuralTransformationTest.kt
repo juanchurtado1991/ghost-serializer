@@ -38,10 +38,10 @@ class GhostStructuralTransformationTest {
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = FlattenedModelSerializer.deserialize(reader)
 
-        assertEquals(1, result.id)
-        assertEquals(42, result.level)
-        assertEquals("active", result.status)
-        assertEquals("Ghost", result.author)
+        assertEquals(expected = 1, actual = result.id)
+        assertEquals(expected = 42, actual = result.level)
+        assertEquals(expected = "active", actual = result.status)
+        assertEquals(expected = "Ghost", actual = result.author)
     }
 
     @Test
@@ -55,7 +55,7 @@ class GhostStructuralTransformationTest {
         val reader = GhostJsonReader(json.encodeToByteArray())
         val result = FlattenedModelSerializer.deserialize(reader)
 
-        assertEquals(model, result)
+        assertEquals(expected = model, actual = result)
     }
 
     @Test
@@ -68,7 +68,7 @@ class GhostStructuralTransformationTest {
         // Expected @GhostWrap structure: {"id":1,"metadata":{"info":{"name":"Juan","age":30}},"system":{"flags":{"active":true}}}
 
         val result = WrappedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
-        assertEquals(model, result)
+        assertEquals(expected = model, actual = result)
     }
 
     @Test
@@ -76,11 +76,11 @@ class GhostStructuralTransformationTest {
         val json = """{"a":{"b":{"c":{"d":{"e":{"f":{"g":"deep"}}}}}}}"""
         val result =
             DeepFlattenedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
-        assertEquals("deep", result.value)
+        assertEquals(expected = "deep", actual = result.value)
 
         val buffer = Buffer()
         DeepFlattenedModelSerializer.serialize(buffer, result)
-        assertEquals(json, buffer.readUtf8())
+        assertEquals(expected = json, actual = buffer.readUtf8())
     }
 
     @Test
@@ -93,7 +93,7 @@ class GhostStructuralTransformationTest {
         val result =
             MixedStructuralModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
 
-        assertEquals(model, result)
+        assertEquals(expected = model, actual = result)
     }
 
     @Test
@@ -108,8 +108,8 @@ class GhostStructuralTransformationTest {
         }
         """
         val result = FlattenedModelSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
-        assertEquals(1, result.id)
-        assertEquals(10, result.level)
-        assertNull(result.author)
+        assertEquals(expected = 1, actual = result.id)
+        assertEquals(expected = 10, actual = result.level)
+        assertNull(actual = result.author)
     }
 }

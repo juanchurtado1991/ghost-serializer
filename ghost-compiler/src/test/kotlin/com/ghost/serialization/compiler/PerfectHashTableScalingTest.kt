@@ -2,7 +2,7 @@ package com.ghost.serialization.compiler
 
 import com.ghost.serialization.compiler.hash.PerfectHashConfig
 import com.ghost.serialization.compiler.hash.PerfectHashFinder
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -93,20 +93,28 @@ class PerfectHashTableScalingTest {
         val streaming = GhostJsonReader(bytes)
         streaming.beginObject()
         repeat(fields.size) {
-            val idx = streaming.selectString(options)
+            val idx = streaming.selectString(options = options)
             streaming.consumeKeySeparator()
             val value = streaming.nextInt()
-            assertEquals(value, idx, "$label streaming: '${fields.getOrElse(value) { "?" }}'")
+            assertEquals(
+                expected = value,
+                actual = idx,
+                message = "$label streaming: '${fields.getOrElse(value) { "?" }}'"
+            )
         }
         streaming.endObject()
 
-        val string = GhostJsonStringReader(json)
+        val string = GhostJsonStringReader(rawData = json)
         string.beginObject()
         repeat(fields.size) {
-            val idx = string.selectString(options)
+            val idx = string.selectString(options = options)
             string.consumeKeySeparator()
             val value = string.nextInt()
-            assertEquals(value, idx, "$label string: '${fields.getOrElse(value) { "?" }}'")
+            assertEquals(
+                expected = value,
+                actual = idx,
+                message = "$label string: '${fields.getOrElse(value) { "?" }}'"
+            )
         }
         string.endObject()
     }
@@ -115,24 +123,28 @@ class PerfectHashTableScalingTest {
 
     @Test
     fun tableSize128_diverseFields_dispatchesCorrectly() {
-        val fields = generateDiverseFields(60)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
-        assertEquals(128, hashConfig.tableSize, "Expected 128-entry table for 60 diverse fields")
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=128")
+        val fields = generateDiverseFields(n = 60)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
+        assertEquals(
+            expected = 128,
+            actual = hashConfig.tableSize,
+            message = "Expected 128-entry table for 60 diverse fields"
+        )
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(fields = fields, options = options, label = "tableSize=128")
     }
 
     @Test
     fun tableSize128_withCollisions_dispatchesCorrectly() {
         // ~40 colliding pairs → hasCollisions=true, polynomial path, still fits in 128
-        val fields = generateCollidingFields(40)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateCollidingFields(n = 40)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize <= 256,
-            "Expected table ≤ 256 for 40 colliding fields, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize <= 256,
+            message = "Expected table ≤ 256 for 40 colliding fields, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} collisions")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(fields = fields, options = options, label = "tableSize=${hashConfig.tableSize} collisions")
     }
 
     // ─── table size 256 ─────────────────────────────────────────────────────────
@@ -140,81 +152,89 @@ class PerfectHashTableScalingTest {
     @Test
     fun tableSize256_diverseFields_dispatchesCorrectly() {
         // 129+ fields guarantees the search must use at least 256 slots
-        val fields = generateDiverseFields(130)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateDiverseFields(n = 130)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 256,
-            "Expected at least 256-entry table for 130 fields, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 256,
+            message = "Expected at least 256-entry table for 130 fields, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} (target 256)")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(fields = fields, options = options, label = "tableSize=${hashConfig.tableSize} (target 256)")
     }
 
     @Test
     fun tableSize256_withCollisions_dispatchesCorrectly() {
-        val fields = generateCollidingFields(130)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateCollidingFields(n = 130)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 256,
-            "Expected at least 256, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 256,
+            message = "Expected at least 256, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} collisions (target 256)")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(
+            fields = fields,
+            options = options,
+            label = "tableSize=${hashConfig.tableSize} collisions (target 256)"
+        )
     }
 
     // ─── table size 512 ─────────────────────────────────────────────────────────
 
     @Test
     fun tableSize512_diverseFields_dispatchesCorrectly() {
-        val fields = generateDiverseFields(260)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateDiverseFields(n = 260)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 512,
-            "Expected at least 512-entry table for 260 fields, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 512,
+            message = "Expected at least 512-entry table for 260 fields, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} (target 512)")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(fields = fields, options = options, label = "tableSize=${hashConfig.tableSize} (target 512)")
     }
 
     @Test
     fun tableSize512_withCollisions_dispatchesCorrectly() {
-        val fields = generateCollidingFields(260)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateCollidingFields(n = 260)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 512,
-            "Expected at least 512, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 512,
+            message = "Expected at least 512, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} collisions (target 512)")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(
+            fields = fields,
+            options = options,
+            label = "tableSize=${hashConfig.tableSize} collisions (target 512)"
+        )
     }
 
     // ─── table size 1024 ────────────────────────────────────────────────────────
 
     @Test
     fun tableSize1024_diverseFields_dispatchesCorrectly() {
-        val fields = generateDiverseFields(520)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateDiverseFields(n = 520)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 1024,
-            "Expected at least 1024-entry table for 520 fields, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 1024,
+            message = "Expected at least 1024-entry table for 520 fields, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} (target 1024)")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(fields = fields, options = options, label = "tableSize=${hashConfig.tableSize} (target 1024)")
     }
 
     @Test
     fun tableSize1024_withCollisions_dispatchesCorrectly() {
-        val fields = generateCollidingFields(520)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateCollidingFields(n = 520)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 1024,
-            "Expected at least 1024, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 1024,
+            message = "Expected at least 1024, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
         verifyDispatch(
-            fields,
-            options,
-            "tableSize=${hashConfig.tableSize} collisions (target 1024)"
+            fields = fields,
+            options = options,
+            label = "tableSize=${hashConfig.tableSize} collisions (target 1024)"
         )
     }
 
@@ -222,29 +242,29 @@ class PerfectHashTableScalingTest {
 
     @Test
     fun tableSize2048_diverseFields_dispatchesCorrectly() {
-        val fields = generateDiverseFields(1030)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateDiverseFields(n = 1030)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 2048,
-            "Expected at least 2048-entry table for 1030 fields, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 2048,
+            message = "Expected at least 2048-entry table for 1030 fields, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
-        verifyDispatch(fields, options, "tableSize=${hashConfig.tableSize} (target 2048)")
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
+        verifyDispatch(fields = fields, options = options, label = "tableSize=${hashConfig.tableSize} (target 2048)")
     }
 
     @Test
     fun tableSize2048_withCollisions_dispatchesCorrectly() {
-        val fields = generateCollidingFields(1030)
-        val hashConfig = PerfectHashFinder.findPerfectHash(fields)
+        val fields = generateCollidingFields(n = 1030)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
         assertTrue(
-            hashConfig.tableSize >= 2048,
-            "Expected at least 2048, got ${hashConfig.tableSize}"
+            actual = hashConfig.tableSize >= 2048,
+            message = "Expected at least 2048, got ${hashConfig.tableSize}"
         )
-        val options = readerOptions(hashConfig, fields)
+        val options = readerOptions(hashConfig = hashConfig, fields = fields)
         verifyDispatch(
-            fields,
-            options,
-            "tableSize=${hashConfig.tableSize} collisions (target 2048)"
+            fields = fields,
+            options = options,
+            label = "tableSize=${hashConfig.tableSize} collisions (target 2048)"
         )
     }
 
@@ -255,9 +275,9 @@ class PerfectHashTableScalingTest {
         // Confirms the finder's chosen parameters produce correct dispatch, not just the right size.
         val boundaries = listOf(60, 130, 260, 520)
         for (n in boundaries) {
-            val fields = generateDiverseFields(n)
-            val hashConfig = PerfectHashFinder.findPerfectHash(fields)
-            val options = readerOptions(hashConfig, fields)
+            val fields = generateDiverseFields(n = n)
+            val hashConfig = PerfectHashFinder.findPerfectHash(names = fields)
+            val options = readerOptions(hashConfig = hashConfig, fields = fields)
 
             // Sample 5 fields from across the list to keep test time reasonable
             val step = maxOf(1, fields.size / 5)
@@ -269,9 +289,9 @@ class PerfectHashTableScalingTest {
                 val reader = GhostJsonReader(bytes)
                 reader.beginObject()
                 assertEquals(
-                    i,
-                    reader.selectString(options),
-                    "n=$n tableSize=${hashConfig.tableSize} field='$name'"
+                    expected = i,
+                    actual = reader.selectString(options = options),
+                    message = "n=$n tableSize=${hashConfig.tableSize} field='$name'"
                 )
             }
         }
@@ -306,20 +326,20 @@ class PerfectHashTableScalingTest {
             "w:scenes",
             "unknown"
         )
-        val hashConfig = PerfectHashFinder.findPerfectHash(wireValues)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = wireValues)
         assertTrue(
-            hashConfig.extendedKeyHash,
-            "LocationPermission wire values require extended key hashing"
+            actual = hashConfig.extendedKeyHash,
+            message = "LocationPermission wire values require extended key hashing"
         )
-        val options = readerOptions(hashConfig, wireValues)
+        val options = readerOptions(hashConfig = hashConfig, fields = wireValues)
 
         val geoIndex = wireValues.indexOf("w:locations:geo")
         val geoJson = "\"w:locations:geo\"".encodeToByteArray()
         val reader = GhostJsonReader(geoJson)
         assertEquals(
-            geoIndex,
-            reader.selectString(options),
-            "w:locations:geo should dispatch to its index"
+            expected = geoIndex,
+            actual = reader.selectString(options = options),
+            message = "w:locations:geo should dispatch to its index"
         )
     }
 }

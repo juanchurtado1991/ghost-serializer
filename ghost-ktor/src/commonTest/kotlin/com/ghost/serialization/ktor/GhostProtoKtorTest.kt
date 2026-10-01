@@ -4,7 +4,7 @@ package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -25,8 +25,7 @@ class GhostProtoKtorTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(ProtoKtorEvent::class to ProtoKtorEventSerializer)
 
@@ -44,7 +43,7 @@ class GhostProtoKtorTest {
             respond(
                 content = """{"deviceId":"9223372036854775807","label":"sensor-1"}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -55,8 +54,8 @@ class GhostProtoKtorTest {
         }
 
         val response: ProtoKtorEvent = client.get("/event").body()
-        assertEquals(Long.MAX_VALUE, response.deviceId)
-        assertEquals("sensor-1", response.label)
+        assertEquals(expected = Long.MAX_VALUE, actual = response.deviceId)
+        assertEquals(expected = "sensor-1", actual = response.label)
     }
 
     @Test
@@ -65,13 +64,13 @@ class GhostProtoKtorTest {
             respond(
                 content = """{"deviceId":"42","label":"sensor-2"}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
         val client = HttpClient(mockEngine)
         val response = client.get("/event").bodyGhostProto<ProtoKtorEvent>()
-        assertEquals(42L, response.deviceId)
-        assertEquals("sensor-2", response.label)
+        assertEquals(expected = 42L, actual = response.deviceId)
+        assertEquals(expected = "sensor-2", actual = response.label)
     }
 }

@@ -18,6 +18,6 @@ internal fun WhyItsFastScreen(strings: Strings, lang: Lang) {
         modifier = Modifier.padding(bottom = 8.dp)
     )
     SpeedPillars.all.forEach { pillar ->
-        PillarCard(pillar, strings, lang)
+        PillarCard(pillar = pillar, strings = strings, lang = lang)
     }
 }

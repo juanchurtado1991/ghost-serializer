@@ -1,6 +1,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.captureRawJson
@@ -18,10 +19,9 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-
 /**
  * Tests [StreamingGhostSource], the buffering layer behind every streaming [GhostJsonReader].
- * Its window is [GhostJsonConstants.STREAMING_BUFFER_SIZE] (8192) bytes, so this file
+ * Its window is [com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.STREAMING_BUFFER_SIZE] (8192) bytes, so this file
  * deliberately uses payloads larger than that to exercise the segment-realignment (`getSlow`)
  * and cross-segment continuation branches that smaller payloads elsewhere never reach.
  */
@@ -29,84 +29,105 @@ import kotlin.test.assertTrue
 class StreamingGhostSourceTest {
 
     private fun sourceOf(json: String): StreamingGhostSource =
-        StreamingGhostSource(Buffer().writeUtf8(json))
+        StreamingGhostSource(okioSource = Buffer().writeUtf8(json))
 
     // ── Direct GhostSource contract tests (simple, hand-verifiable semantics) ──────────
 
     @Test
     fun get_readsBytesWithinFirstSegment() {
-        val source = sourceOf("Hello")
-        assertEquals('H'.code, source[0])
-        assertEquals('o'.code, source[4])
+        val source = sourceOf(json = "Hello")
+        assertEquals(
+            expected = 'H'.code,
+            actual = source[0]
+        )
+        assertEquals(
+            expected = 'o'.code,
+            actual = source[4]
+        )
     }
 
     @Test
     fun get_readsAcrossSegmentBoundary() {
         val payload = "a".repeat(9000)
-        val source = sourceOf(payload)
-        assertEquals('a'.code, source[0])
+        val source = sourceOf(json = payload)
+        assertEquals(
+            expected = 'a'.code,
+            actual = source[0]
+        )
         // Past STREAMING_BUFFER_SIZE (8192): forces getSlow to realign to a new segment.
-        assertEquals('a'.code, source[8500])
-        assertEquals('a'.code, source[8999])
+        assertEquals(
+            expected = 'a'.code,
+            actual = source[8500]
+        )
+        assertEquals(
+            expected = 'a'.code,
+            actual = source[8999]
+        )
     }
 
     @Test
     fun get_throwsForIndexBeyondAvailableData() {
-        val source = sourceOf("short")
+        val source = sourceOf(json = "short")
         assertFailsWith<IndexOutOfBoundsException> { source[100] }
     }
 
     @Test
     fun decodeToString_decodesWithinBufferedSegment() {
-        val source = sourceOf("""{"key":"value"}""")
+        val source = sourceOf(json = """{"key":"value"}""")
         source[0] // establishes the buffered segment
-        assertEquals("key", source.decodeToString(2, 5))
+        assertEquals(
+            expected = "key",
+            actual = source.decodeToString(start = 2, end = 5)
+        )
     }
 
     @Test
     fun decodeToString_fallsBackWhenRangeOutsideBufferedSegment() {
         val payload = "a".repeat(9000) + "END"
-        val source = sourceOf(payload)
+        val source = sourceOf(json = payload)
         source[0] // buffers [0, 8192) only
-        assertEquals("END", source.decodeToString(9000, 9003))
+        assertEquals(
+            expected = "END",
+            actual = source.decodeToString(start = 9000, end = 9003)
+        )
     }
 
     @Test
     fun contentEquals_trueForMatchingByteString() {
-        val source = sourceOf("hello world")
-        assertTrue(source.contentEquals(0, "hello".encodeUtf8()))
+        val source = sourceOf(json = "hello world")
+        assertTrue(actual = source.contentEquals(start = 0, expected = "hello".encodeUtf8()))
     }
 
     @Test
     fun contentEquals_falseForMismatch() {
-        val source = sourceOf("hello world")
-        assertFalse(source.contentEquals(0, "world".encodeUtf8()))
+        val source = sourceOf(json = "hello world")
+        assertFalse(actual = source.contentEquals(start = 0, expected = "world".encodeUtf8()))
     }
 
     @Test
     fun contentEqualsString_trueForMatch() {
-        val source = sourceOf("""{"key":"value"}""")
-        assertTrue(source.contentEqualsString(2, 3, "key"))
+        val source = sourceOf(json = """{"key":"value"}""")
+        assertTrue(actual = source.contentEqualsString(start = 2, length = 3, expected = "key"))
     }
 
     @Test
     fun contentEqualsString_falseForLengthMismatch() {
-        val source = sourceOf("""{"key":"value"}""")
-        assertFalse(source.contentEqualsString(2, 4, "key"))
+        val source = sourceOf(json = """{"key":"value"}""")
+        assertFalse(actual = source.contentEqualsString(start = 2, length = 4, expected = "key"))
     }
 
     @Test
     fun contentEqualsString_falseForContentMismatch() {
-        val source = sourceOf("""{"key":"value"}""")
-        assertFalse(source.contentEqualsString(2, 3, "abc"))
+        val source = sourceOf(json = """{"key":"value"}""")
+        assertFalse(actual = source.contentEqualsString(start = 2, length = 3, expected = "abc"))
     }
 
     @Test
     fun contentEqualsString_crossesSegmentBoundary() {
         val payload = "a".repeat(9000) + "needle"
-        val source = sourceOf(payload)
+        val source = sourceOf(json = payload)
         source[0]
-        assertTrue(source.contentEqualsString(9000, 6, "needle"))
+        assertTrue(actual = source.contentEqualsString(start = 9000, length = 6, expected = "needle"))
     }
 
     // ── Cross-segment parsing via GhostJsonReader (exercises findNextNonWhitespace/ ──────
@@ -119,10 +140,16 @@ class StreamingGhostSourceTest {
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         reader.beginObject()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
-        assertEquals(padding, reader.nextString())
+        assertEquals(
+            expected = padding,
+            actual = reader.nextString()
+        )
         reader.consumeArraySeparator()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
-        assertEquals(777, reader.nextInt())
+        assertEquals(
+            expected = 777,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -133,7 +160,10 @@ class StreamingGhostSourceTest {
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         reader.beginObject()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
-        assertEquals(longValue, reader.nextString())
+        assertEquals(
+            expected = longValue,
+            actual = reader.nextString()
+        )
         reader.endObject()
     }
 
@@ -144,7 +174,10 @@ class StreamingGhostSourceTest {
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         reader.beginObject()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
-        assertEquals(prefix + "\nend", reader.nextString())
+        assertEquals(
+            expected = prefix + "\nend",
+            actual = reader.nextString()
+        )
         reader.endObject()
     }
 
@@ -155,7 +188,10 @@ class StreamingGhostSourceTest {
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         reader.beginObject()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
-        assertEquals(longValue, reader.nextString())
+        assertEquals(
+            expected = longValue,
+            actual = reader.nextString()
+        )
         reader.endObject()
     }
 
@@ -166,9 +202,15 @@ class StreamingGhostSourceTest {
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         reader.beginObject()
         reader.skipWhitespace()
-        assertEquals("v", reader.readQuotedString())
+        assertEquals(
+            expected = "v",
+            actual = reader.readQuotedString()
+        )
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -176,22 +218,35 @@ class StreamingGhostSourceTest {
 
     @Test
     fun releaseBefore_skipsFullWindowsBehindReader() {
-        val window = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val window = GhostJsonWriterConstants.STREAMING_BUFFER_SIZE
         val touchAt = window * 3 + 1_000
         val payload = "a".repeat(touchAt + window)
         val okio = Buffer().writeUtf8(payload)
-        val source = StreamingGhostSource(okio)
+        val source = StreamingGhostSource(okioSource = okio)
 
         // Touch far into the document so Okio has buffered a large prefix.
-        assertEquals('a'.code, source[touchAt])
+        assertEquals(
+            expected = 'a'.code,
+            actual = source[touchAt]
+        )
         val sizeBefore = okio.size
 
         // retainFrom = touchAt - window, aligned down to a window multiple.
-        source.releaseBefore(touchAt)
+        source.releaseBefore(absoluteIndex = touchAt)
         val expectedDiscarded = ((touchAt - window) / window) * window
-        assertEquals(expectedDiscarded, source.discarded)
-        assertTrue(okio.size < sizeBefore, "Okio buffer should shrink after releaseBefore")
-        assertEquals('a'.code, source[touchAt], "bytes at/after retain window must stay readable")
+        assertEquals(
+            expected = expectedDiscarded,
+            actual = source.discarded
+        )
+        assertTrue(
+            actual = okio.size < sizeBefore,
+            message = "Okio buffer should shrink after releaseBefore"
+        )
+        assertEquals(
+            expected = 'a'.code,
+            actual = source[touchAt],
+            message = "bytes at/after retain window must stay readable"
+        )
         assertFailsWith<IndexOutOfBoundsException> {
             source[0]
         }
@@ -199,24 +254,30 @@ class StreamingGhostSourceTest {
 
     @Test
     fun releaseBefore_respectsPin() {
-        val window = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val window = GhostJsonWriterConstants.STREAMING_BUFFER_SIZE
         val touchAt = window * 4
-        val source = StreamingGhostSource(Buffer().writeUtf8("a".repeat(touchAt + window)))
+        val source = StreamingGhostSource(okioSource = Buffer().writeUtf8("a".repeat(touchAt + window)))
         source[touchAt]
-        source.pin(100)
-        source.releaseBefore(touchAt)
+        source.pin(absoluteIndex = 100)
+        source.releaseBefore(absoluteIndex = touchAt)
         // Pin at 100 blocks aligned retainFrom from advancing past 0.
-        assertEquals(0, source.discarded)
-        assertEquals('a'.code, source[100])
+        assertEquals(
+            expected = 0,
+            actual = source.discarded
+        )
+        assertEquals(
+            expected = 'a'.code,
+            actual = source[100]
+        )
         source.unpin()
-        source.releaseBefore(touchAt)
-        assertTrue(source.discarded >= window)
+        source.releaseBefore(absoluteIndex = touchAt)
+        assertTrue(actual = source.discarded >= window)
     }
 
     @Test
     fun reader_slidingConsume_parsesMultiSegmentDocument() {
         // Enough small fields to span several windows (need > window + margin to discard).
-        val fieldCount = (GhostJsonConstants.STREAMING_BUFFER_SIZE * 4 / 110) + 50
+        val fieldCount = (GhostJsonWriterConstants.STREAMING_BUFFER_SIZE * 4 / 110) + 50
         val fields = (0 until fieldCount).joinToString(",") { i ->
             val pad = "x".repeat(100)
             "\"f$i\":\"$pad$i\""
@@ -226,16 +287,22 @@ class StreamingGhostSourceTest {
         reader.beginObject()
         for (i in 0 until fieldCount) {
             reader.skipWhitespace()
-            assertEquals("f$i", reader.readQuotedString())
+            assertEquals(
+                expected = "f$i",
+                actual = reader.readQuotedString()
+            )
             reader.consumeKeySeparator()
-            assertEquals("x".repeat(100) + "$i", reader.nextString())
+            assertEquals(
+                expected = "x".repeat(100) + "$i",
+                actual = reader.nextString()
+            )
             if (i < fieldCount - 1) reader.consumeArraySeparator()
         }
         reader.endObject()
         val streaming = reader.source as StreamingGhostSource
         assertTrue(
-            streaming.discarded > 0,
-            "expected sliding consume to discard prefix after parsing ~${json.length} bytes"
+            actual = streaming.discarded > 0,
+            message = "expected sliding consume to discard prefix after parsing ~${json.length} bytes"
         )
     }
 
@@ -247,10 +314,13 @@ class StreamingGhostSourceTest {
         reader.beginObject()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
         val raw = reader.captureRawJson()
-        assertTrue(raw.asDisplayString().contains(padding))
+        assertTrue(actual = raw.asDisplayString().contains(padding))
         reader.consumeArraySeparator()
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 }

@@ -3,22 +3,12 @@ package com.ghost.serialization.ktor
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
-import com.ghost.serialization.yaml.ghostYamlInternalUseFlatWriter
+import com.ghost.serialization.ghostYamlEncodeToBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.ByteArrayContent
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
-
-@PublishedApi
-internal const val ERROR_PREFIX = "Ghost serializer not found for class "
-
-@PublishedApi
-internal const val ERROR_SUFFIX = ". Make sure it is annotated with @GhostSerialization."
-
-@PublishedApi
-internal const val YAML_ERROR_SUFFIX =
-    ". Make sure a GhostYamlSerializer is registered for it."
 
 /**
  * Serializes [value] directly with Ghost and responds, bypassing Ktor Server's
@@ -29,9 +19,9 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhost(
     status: HttpStatusCode = HttpStatusCode.OK
 ) {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("$ERROR_PREFIX${T::class.simpleName}$ERROR_SUFFIX")
+        ?: throw IllegalArgumentException("${GhostKtorErrorMessages.SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName}${GhostKtorErrorMessages.SERIALIZER_NOT_FOUND_SUFFIX}")
 
-    val bytes = Ghost.encodeToBytes(serializer, value)
+    val bytes = Ghost.encodeToBytes(serializer = serializer, value = value)
     respond(ByteArrayContent(bytes, ContentType.Application.Json, status))
 }
 
@@ -57,7 +47,7 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
     status: HttpStatusCode = HttpStatusCode.OK
 ) {
     val serializer = Ghost.getSerializer(T::class)
-        ?: throw IllegalArgumentException("$ERROR_PREFIX${T::class.simpleName}$YAML_ERROR_SUFFIX")
+        ?: throw IllegalArgumentException("${GhostKtorErrorMessages.SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName}${GhostKtorErrorMessages.YAML_SERIALIZER_NOT_FOUND_SUFFIX}")
     if (serializer !is GhostYamlSerializer<*>) {
         throw IllegalArgumentException(
             "Serializer for ${T::class.simpleName} does not implement GhostYamlSerializer"
@@ -65,9 +55,9 @@ suspend inline fun <reified T : Any> ApplicationCall.respondGhostYaml(
     }
     @Suppress("UNCHECKED_CAST")
     val yamlSerializer = serializer as GhostYamlSerializer<T>
-    val bytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
-        yamlSerializer.serialize(writer, value)
-        buffer.toByteArray()
-    }
-    respond(ByteArrayContent(bytes, ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML), status))
+    val bytes = ghostYamlEncodeToBytes(
+            serializer = yamlSerializer,
+            value = value
+        )
+    respond(ByteArrayContent(bytes, GhostKtorMediaTypes.APPLICATION_YAML, status))
 }

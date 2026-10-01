@@ -35,9 +35,9 @@ class HugeJsonTest {
         writer.beginArray()
         for (obj in data) {
             writer.beginObject()
-            writer.name("id").value(obj["id"] as Int)
-            writer.name("name").value(obj["name"] as String)
-            writer.name("value").value(obj["value"] as Double)
+            writer.name(key = "id").value(obj["id"] as Int)
+            writer.name(key = "name").value(obj["name"] as String)
+            writer.name(key = "value").value(obj["value"] as Double)
             writer.endObject()
         }
         writer.endArray()
@@ -52,24 +52,45 @@ class HugeJsonTest {
         var count = 0
         while (reader.hasNext()) {
             reader.beginObject()
-            assertEquals("id", reader.nextKey())
+            assertEquals(
+                expected = "id",
+                actual = reader.nextKey()
+            )
             reader.consumeKeySeparator()
-            assertEquals(count, reader.nextInt())
+            assertEquals(
+                expected = count,
+                actual = reader.nextInt()
+            )
 
             reader.consumeArraySeparator()
-            assertEquals("name", reader.nextKey())
+            assertEquals(
+                expected = "name",
+                actual = reader.nextKey()
+            )
             reader.consumeKeySeparator()
-            assertEquals("item_$count", reader.nextString())
+            assertEquals(
+                expected = "item_$count",
+                actual = reader.nextString()
+            )
 
             reader.consumeArraySeparator()
-            assertEquals("value", reader.nextKey())
+            assertEquals(
+                expected = "value",
+                actual = reader.nextKey()
+            )
             reader.consumeKeySeparator()
-            assertEquals(count * 1.5, reader.nextDouble())
+            assertEquals(
+                expected = count * 1.5,
+                actual = reader.nextDouble()
+            )
 
             reader.endObject()
             count++
         }
         reader.endArray()
-        assertEquals(100, count)
+        assertEquals(
+            expected = 100,
+            actual = count
+        )
     }
 }

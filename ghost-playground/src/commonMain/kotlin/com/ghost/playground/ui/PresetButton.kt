@@ -65,7 +65,7 @@ internal fun PresetButton(label: String, selected: Boolean = false, onClick: () 
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (selected) PlaygroundIcon(PlaygroundIconKind.Check, tint = Color.White, size = 11.dp)
+            if (selected) PlaygroundIcon(kind = PlaygroundIconKind.Check, tint = Color.White, size = 11.dp)
             Text(
                 label,
                 color = if (selected) Color.White else TealDark,

@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 class GhostTextChannelPerModelKspTest {
 
     private fun readSerializer(serializerName: String, fixture: String): String {
-        val (compilation, result) = compileFixture(fixture)
+        val (compilation, result) = compileFixture(source = fixture)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         return compilation.kspSourcesDir.walk()
             .filter { it.name == "$serializerName.kt" }
@@ -35,12 +35,12 @@ class GhostTextChannelPerModelKspTest {
         val generatedNested = readSerializer("MacroNestedSerializer", PER_MODEL_FIXTURE)
 
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generatedRoot,
-            "Plain @GhostSerialization (no args) must default to textChannel=true",
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generatedRoot,
+            message = "Plain @GhostSerialization (no args) must default to textChannel=true",
         )
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generatedNested,
-            "Nested Ghost type must inherit the string channel from an enabled root",
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generatedNested,
+            message = "Nested Ghost type must inherit the string channel from an enabled root",
         )
     }
 
@@ -49,8 +49,8 @@ class GhostTextChannelPerModelKspTest {
         val generatedLeaf = readSerializer("SmallDtoSerializer", PER_MODEL_FIXTURE)
 
         assertFalse(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generatedLeaf,
-            "textChannel=false on a model nothing else references must stay disabled",
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generatedLeaf,
+            message = "textChannel=false on a model nothing else references must stay disabled",
         )
     }
 
@@ -63,11 +63,11 @@ class GhostTextChannelPerModelKspTest {
             readSerializer("OptedOutButReferencedSerializer", FORCED_ENABLE_FIXTURE)
 
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generatedParent,
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generatedParent,
         )
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generatedOptedOut,
-            "A model's own textChannel=false must be overridden when an enabled parent " +
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generatedOptedOut,
+            message = "A model's own textChannel=false must be overridden when an enabled parent " +
                     "depends on it, otherwise the parent's generated code wouldn't compile",
         )
     }

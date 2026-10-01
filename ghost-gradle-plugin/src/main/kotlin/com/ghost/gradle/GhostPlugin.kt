@@ -7,80 +7,48 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
  * Gradle plugin (id `com.ghostserializer.ghost`) that wires Ghost Serialization into Android, JVM,
- * and KMP projects: adds `ghost-compiler` to KSP, adds the runtime/API dependencies, and optionally
- * injects `ghost-ktor`/`ghost-retrofit` when those libraries are detected. Configure via the
- * [GhostExtension] `ghost` block.
+ * and KMP projects: adds `ghost-compiler` to KSP and adds the runtime/API dependencies. Configure
+ * via the [GhostExtension] `ghost` block. Network-adapter auto-injection (`ghost-ktor`/
+ * `ghost-retrofit`) is a separate concern — see [GhostNetworkAutoInjector].
+ *
+ * KSP wiring is reactive, via `PluginContainer.withId` listeners, so it works regardless of
+ * whether the KSP/KMP/Android plugins are applied before or after this plugin.
  */
 class GhostPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        val extension = createExtension(project)
-        val ghostVersion = extension.version
+        val extension = createExtension(project = project)
+        wireKspAutoConfiguration(
+            project = project,
+            ghostVersion = extension.version
+        )
+        GhostNetworkAutoInjector.wireNetworkAutoInjection(
+            project = project,
+            extension = extension
+        )
+    }
 
-        // Wired reactively via withId listeners so this works regardless of whether KSP/KMP/Android
-        // plugins are applied before or after this plugin.
-        var kspSetupDone = false
-        fun configureKspDependencies() {
-            if (kspSetupDone) return
-            if (!project.plugins.hasPlugin(PLUGIN_KSP)) return
+    private fun addCoreDependencies(project: Project, version: Provider<String>, configuration: String) {
+        val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
+        val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
+        project.dependencies.add(configuration, runtimeDep)
+        project.dependencies.add(configuration, apiDep)
+    }
 
-            val compilerDep = ghostVersion.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
-            if (project.plugins.hasPlugin(PLUGIN_KMP)) {
-                val kotlinExtension = project
-                    .extensions
-                    .findByType(KotlinMultiplatformExtension::class.java)
+    private fun configureKspForKmp(project: Project, compilerDep: Provider<String>) {
+        val kotlinExtension = project
+            .extensions
+            .findByType(KotlinMultiplatformExtension::class.java)
 
-                kotlinExtension?.targets?.configureEach {
-                    if (name == TARGET_METADATA) {
-                        project.dependencies.add(CONFIG_KSP_COMMON, compilerDep)
-                    } else {
-                        val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
-                        project.dependencies.add(
-                            "$PREFIX_KSP$capitalizedTarget",
-                            compilerDep
-                        )
-                    }
-                }
-                kspSetupDone = true
-            } else if (project.plugins.hasPlugin(PLUGIN_ANDROID_APP) ||
-                project.plugins.hasPlugin(PLUGIN_ANDROID_LIB) ||
-                project.plugins.hasPlugin(PLUGIN_JVM)
-            ) {
+        kotlinExtension?.targets?.configureEach {
+            if (name == TARGET_METADATA) {
+                project.dependencies.add(CONFIG_KSP_COMMON, compilerDep)
+            } else {
+                val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
                 project.dependencies.add(
-                    PREFIX_KSP,
+                    "$PREFIX_KSP$capitalizedTarget",
                     compilerDep
                 )
-                kspSetupDone = true
-            }
-        }
-
-        project.plugins.withId(PLUGIN_KSP) {
-            configureKspDependencies()
-        }
-        project.plugins.withId(PLUGIN_KMP) {
-            setupKmp(project, ghostVersion)
-            configureKspDependencies()
-        }
-
-        var coreApplied = false
-        listOf(PLUGIN_ANDROID_APP, PLUGIN_ANDROID_LIB, PLUGIN_JVM).forEach { pluginId ->
-            project.plugins.withId(pluginId) {
-                if (!coreApplied) {
-                    setupAndroidOrJvmCore(project, ghostVersion)
-                    coreApplied = true
-                }
-                configureKspDependencies()
-            }
-        }
-
-        // afterEvaluate: configurations must be fully resolved before we can detect ktor/retrofit deps.
-        project.afterEvaluate {
-            val version = ghostVersion.get()
-            if (extension.autoInjectKtor.get() && hasKtorDependency(project)) {
-                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_KTOR:$version")
-            }
-            if (extension.autoInjectRetrofit.get() && hasRetrofitDependency(project)) {
-                injectNetworkDependency(project, "$GROUP_ID:$ARTIFACT_RETROFIT:$version")
             }
         }
     }
@@ -93,53 +61,91 @@ class GhostPlugin : Plugin<Project> {
         }
     }
 
-    private fun setupKmp(project: Project, version: Provider<String>) {
-        val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
-        val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
+    private fun isAndroidOrJvmProject(project: Project): Boolean =
+        project.plugins.hasPlugin(PLUGIN_ANDROID_APP) ||
+                project.plugins.hasPlugin(PLUGIN_ANDROID_LIB) ||
+                project.plugins.hasPlugin(PLUGIN_JVM)
 
-        project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, runtimeDep)
-        project.dependencies.add(CONFIG_COMMON_MAIN_IMPL, apiDep)
-    }
+    private fun tryAddKspCompilerDependency(
+        project: Project,
+        ghostVersion: Provider<String>
+    ): Boolean {
+        val compilerDep = ghostVersion.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
+        return when {
+            project.plugins.hasPlugin(PLUGIN_KMP) -> {
+                configureKspForKmp(
+                    project = project,
+                    compilerDep = compilerDep
+                )
+                true
+            }
 
-    private fun setupAndroidOrJvmCore(project: Project, version: Provider<String>) {
-        val runtimeDep = version.map { "$GROUP_ID:$ARTIFACT_RUNTIME:$it" }
-        val apiDep = version.map { "$GROUP_ID:$ARTIFACT_API:$it" }
-        project.dependencies.add(CONFIG_IMPL, runtimeDep)
-        project.dependencies.add(CONFIG_IMPL, apiDep)
-    }
+            isAndroidOrJvmProject(project = project) -> {
+                project.dependencies.add(
+                    PREFIX_KSP,
+                    compilerDep
+                )
+                true
+            }
 
-    private fun hasKtorDependency(project: Project): Boolean {
-        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
-            val config = project.configurations.findByName(name)
-            config?.dependencies?.any {
-                it.group == GROUP_KTOR &&
-                        it.name.startsWith(PREFIX_KTOR_CLIENT)
-            } ?: false
+            else -> false
         }
     }
 
-    private fun hasRetrofitDependency(project: Project): Boolean {
-        return listOf(CONFIG_IMPL, CONFIG_API, CONFIG_COMMON_MAIN_IMPL).any { name ->
-            val config = project.configurations.findByName(name)
-            config?.dependencies?.any {
-                it.group == GROUP_RETROFIT &&
-                        it.name == NAME_RETROFIT
-            } ?: false
+    private fun wireAndroidOrJvmCoreSetup(
+        project: Project,
+        version: Provider<String>,
+        onCoreApplied: () -> Unit
+    ) {
+        var coreApplied = false
+
+        listOf(PLUGIN_ANDROID_APP, PLUGIN_ANDROID_LIB, PLUGIN_JVM).forEach { pluginId ->
+            project.plugins.withId(pluginId) {
+                if (!coreApplied) {
+                    addCoreDependencies(
+                        project = project,
+                        version = version,
+                        configuration = CONFIG_IMPL
+                    )
+                    coreApplied = true
+                }
+                onCoreApplied()
+            }
         }
     }
 
-    private fun injectNetworkDependency(project: Project, dep: String) {
-        if (project.pluginManager.hasPlugin(PLUGIN_KMP)) {
-            project.dependencies.add(
-                CONFIG_COMMON_MAIN_IMPL,
-                dep
+    private fun wireKspAutoConfiguration(
+        project: Project,
+        ghostVersion: Provider<String>
+    ) {
+        var kspSetupDone = false
+        fun configureKspDependenciesOnce() {
+            if (kspSetupDone) return
+            if (!project.plugins.hasPlugin(PLUGIN_KSP)) return
+            kspSetupDone = tryAddKspCompilerDependency(
+                project = project,
+                ghostVersion = ghostVersion
             )
-        } else {
-            project.dependencies.add(
-                CONFIG_IMPL,
-                dep
-            )
         }
+
+        project.plugins.withId(PLUGIN_KSP) {
+            configureKspDependenciesOnce()
+        }
+
+        project.plugins.withId(PLUGIN_KMP) {
+            addCoreDependencies(
+                project = project,
+                version = ghostVersion,
+                configuration = CONFIG_COMMON_MAIN_IMPL
+            )
+            configureKspDependenciesOnce()
+        }
+
+        wireAndroidOrJvmCoreSetup(
+            project = project,
+            version = ghostVersion,
+            onCoreApplied = ::configureKspDependenciesOnce
+        )
     }
 
     companion object {
@@ -155,20 +161,12 @@ class GhostPlugin : Plugin<Project> {
         private const val ARTIFACT_COMPILER = "ghost-compiler"
         private const val ARTIFACT_RUNTIME = "ghost-serialization"
         private const val ARTIFACT_API = "ghost-api"
-        private const val ARTIFACT_KTOR = "ghost-ktor"
-        private const val ARTIFACT_RETROFIT = "ghost-retrofit"
 
         private const val CONFIG_COMMON_MAIN_IMPL = "commonMainImplementation"
         private const val CONFIG_IMPL = "implementation"
-        private const val CONFIG_API = "api"
         private const val CONFIG_KSP_COMMON = "kspCommonMainMetadata"
         private const val PREFIX_KSP = "ksp"
 
         private const val TARGET_METADATA = "metadata"
-
-        private const val GROUP_KTOR = "io.ktor"
-        private const val PREFIX_KTOR_CLIENT = "ktor-client"
-        private const val GROUP_RETROFIT = "com.squareup.retrofit2"
-        private const val NAME_RETROFIT = "retrofit"
     }
 }

@@ -3,7 +3,7 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -16,16 +16,16 @@ import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 // --- Mock Models ---
-object KtorUserSerializer : GhostSerializer<KtorUser> {
+object KtorUserSerializer : AbstractGhostSerializer<KtorUser>() {
     override val typeName: String = "com.ghost.serialization.ktor.KtorUser"
 
     override fun serialize(writer: GhostJsonWriter, value: KtorUser) {
         writer.beginObject()
-        writer.name("id")
+        writer.name(key = "id")
         writer.value(value.id.toLong())
-        writer.name("name")
+        writer.name(key = "name")
         writer.value(value.name)
-        writer.name("isActive")
+        writer.name(key = "isActive")
         writer.value(value.isActive)
         writer.endObject()
     }
@@ -46,6 +46,6 @@ object KtorUserSerializer : GhostSerializer<KtorUser> {
             }
         }
         reader.endObject()
-        return KtorUser(id, name, isActive)
+        return KtorUser(id = id, name = name, isActive = isActive)
     }
 }

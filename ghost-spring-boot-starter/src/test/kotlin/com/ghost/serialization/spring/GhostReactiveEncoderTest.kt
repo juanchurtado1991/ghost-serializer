@@ -30,9 +30,9 @@ class GhostReactiveEncoderTest {
     @Test
     fun canEncode_trueForAnnotatedTypeWithSupportedMimeType() {
         assertTrue(
-            encoder.canEncode(
-                ResolvableType.forClass(HelloMessage::class.java),
-                MediaType.APPLICATION_JSON
+            actual = encoder.canEncode(
+                elementType = ResolvableType.forClass(HelloMessage::class.java),
+                mimeType = MediaType.APPLICATION_JSON
             )
         )
     }
@@ -40,9 +40,9 @@ class GhostReactiveEncoderTest {
     @Test
     fun canEncode_falseForUnregisteredType() {
         assertFalse(
-            encoder.canEncode(
-                ResolvableType.forClass(UnregisteredReactiveMessage::class.java),
-                MediaType.APPLICATION_JSON
+            actual = encoder.canEncode(
+                elementType = ResolvableType.forClass(UnregisteredReactiveMessage::class.java),
+                mimeType = MediaType.APPLICATION_JSON
             )
         )
     }
@@ -50,9 +50,9 @@ class GhostReactiveEncoderTest {
     @Test
     fun canEncode_falseForUnsupportedMimeType() {
         assertFalse(
-            encoder.canEncode(
-                ResolvableType.forClass(HelloMessage::class.java),
-                MediaType.APPLICATION_XML
+            actual = encoder.canEncode(
+                elementType = ResolvableType.forClass(HelloMessage::class.java),
+                mimeType = MediaType.APPLICATION_XML
             )
         )
     }
@@ -60,18 +60,18 @@ class GhostReactiveEncoderTest {
     @Test
     fun encode_writesGhostJsonBytesForEachElement() {
         val flux = encoder.encode(
-            Flux.just(HelloMessage(1, "ghost")),
-            bufferFactory,
-            ResolvableType.forClass(HelloMessage::class.java),
-            MediaType.APPLICATION_JSON,
-            null
+            inputStream = Flux.just(HelloMessage(id = 1, name = "ghost")),
+            bufferFactory = bufferFactory,
+            elementType = ResolvableType.forClass(HelloMessage::class.java),
+            mimeType = MediaType.APPLICATION_JSON,
+            hints = null
         )
 
         StepVerifier.create(flux)
             .assertNext { buffer ->
                 assertEquals(
-                    """{"id":1,"name":"ghost"}""",
-                    bufferText(buffer)
+                    expected = """{"id":1,"name":"ghost"}""",
+                    actual = bufferText(buffer = buffer)
                 )
             }
             .verifyComplete()
@@ -81,24 +81,24 @@ class GhostReactiveEncoderTest {
     fun encode_appendsNewlineFramingForNdjson() {
         val ndjson = MimeType("application", "x-ndjson")
         val flux = encoder.encode(
-            Flux.just(HelloMessage(1, "a"), HelloMessage(2, "b")),
-            bufferFactory,
-            ResolvableType.forClass(HelloMessage::class.java),
-            ndjson,
-            null
+            inputStream = Flux.just(HelloMessage(id = 1, name = "a"), HelloMessage(id = 2, name = "b")),
+            bufferFactory = bufferFactory,
+            elementType = ResolvableType.forClass(HelloMessage::class.java),
+            mimeType = ndjson,
+            hints = null
         )
 
         StepVerifier.create(flux)
             .assertNext { buffer ->
                 assertEquals(
-                    """{"id":1,"name":"a"}""" + "\n",
-                    bufferText(buffer)
+                    expected = """{"id":1,"name":"a"}""" + "\n",
+                    actual = bufferText(buffer = buffer)
                 )
             }
             .assertNext { buffer ->
                 assertEquals(
-                    """{"id":2,"name":"b"}""" + "\n",
-                    bufferText(buffer)
+                    expected = """{"id":2,"name":"b"}""" + "\n",
+                    actual = bufferText(buffer = buffer)
                 )
             }
             .verifyComplete()
@@ -107,32 +107,32 @@ class GhostReactiveEncoderTest {
     @Test
     fun encode_doesNotAppendNewlineForPlainJson() {
         val flux = encoder.encode(
-            Flux.just(HelloMessage(1, "ghost")),
-            bufferFactory,
-            ResolvableType.forClass(HelloMessage::class.java),
-            MediaType.APPLICATION_JSON,
-            null
+            inputStream = Flux.just(HelloMessage(id = 1, name = "ghost")),
+            bufferFactory = bufferFactory,
+            elementType = ResolvableType.forClass(HelloMessage::class.java),
+            mimeType = MediaType.APPLICATION_JSON,
+            hints = null
         )
 
         StepVerifier.create(flux)
-            .assertNext { buffer -> assertFalse(bufferText(buffer).endsWith("\n")) }
+            .assertNext { buffer -> assertFalse(actual = bufferText(buffer = buffer).endsWith("\n")) }
             .verifyComplete()
     }
 
     @Test
     fun encode_errorsWithDescriptiveMessageForUnregisteredType() {
         val flux = encoder.encode(
-            Flux.just(UnregisteredReactiveMessage(1)),
-            bufferFactory,
-            ResolvableType.forClass(UnregisteredReactiveMessage::class.java),
-            MediaType.APPLICATION_JSON,
-            null
+            inputStream = Flux.just(UnregisteredReactiveMessage(value = 1)),
+            bufferFactory = bufferFactory,
+            elementType = ResolvableType.forClass(UnregisteredReactiveMessage::class.java),
+            mimeType = MediaType.APPLICATION_JSON,
+            hints = null
         )
 
         StepVerifier.create(flux)
             .verifyErrorSatisfies { error ->
-                assertTrue(error is IllegalArgumentException)
-                assertTrue(error.message!!.contains("UnregisteredReactiveMessage"))
+                assertTrue(actual = error is IllegalArgumentException)
+                assertTrue(actual = error.message!!.contains("UnregisteredReactiveMessage"))
             }
     }
 }

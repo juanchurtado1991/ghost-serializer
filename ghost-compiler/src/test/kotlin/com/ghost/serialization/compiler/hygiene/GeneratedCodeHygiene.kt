@@ -1,7 +1,7 @@
 package com.ghost.serialization.compiler.hygiene
 
 import com.ghost.serialization.compiler.GhostEmitterTestConstants as T
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
 /**
@@ -12,7 +12,15 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
  */
 internal object GeneratedCodeHygiene {
 
-    private val redundantKotlinImport = Regex(C.REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT)
+    const val MAX_GENERATED_LINE_LENGTH = 120
+
+    private val redundantKotlinImport = Regex(CG.REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT)
+
+    private val FILE_LEVEL_SYMBOLS = setOf(
+        "OptIn",
+        "Suppress",
+        "InternalGhostApi",
+    )
 
     data class Violation(
         val kind: Kind,
@@ -38,23 +46,23 @@ internal object GeneratedCodeHygiene {
 
     fun analyze(source: String, fileLabel: String = "serializer"): List<Violation> {
         val violations = mutableListOf<Violation>()
-        val imports = parseImports(source)
-        val usageScope = buildUsageScope(source)
+        val imports = parseImports(source = source)
+        val usageScope = buildUsageScope(source = source)
 
         imports.groupBy { it.rawLine.trim() }
             .filter { it.value.size > 1 }
             .forEach { (line, _) ->
                 violations += Violation(
-                    Violation.Kind.DUPLICATE_IMPORT,
-                    "$fileLabel: duplicate import `$line`",
+                    kind = Violation.Kind.DUPLICATE_IMPORT,
+                    message = "$fileLabel: duplicate import `$line`",
                 )
             }
 
         imports.forEach { import ->
-            if (!isImportReferenced(import, usageScope)) {
+            if (!isImportReferenced(import = import, usageScope = usageScope)) {
                 violations += Violation(
-                    Violation.Kind.UNUSED_IMPORT,
-                    "$fileLabel: unused import `${import.rawLine.trim()}`",
+                    kind = Violation.Kind.UNUSED_IMPORT,
+                    message = "$fileLabel: unused import `${import.rawLine.trim()}`",
                 )
             }
         }
@@ -68,32 +76,32 @@ internal object GeneratedCodeHygiene {
         textChannel: Boolean,
     ): List<Violation> {
         val violations = mutableListOf<Violation>()
-        val imports = parseImports(source).map { it.symbol }.toSet()
-        val body = stripImportSection(source)
+        val imports = parseImports(source = source).map { it.symbol }.toSet()
+        val body = stripImportSection(source = source)
 
         if (!textChannel) {
             if ("GhostJsonStringReader" in imports) {
                 violations += Violation(
-                    Violation.Kind.FORBIDDEN_IMPORT,
-                    "$fileLabel: `GhostJsonStringReader` must not be imported when textChannel=false",
+                    kind = Violation.Kind.FORBIDDEN_IMPORT,
+                    message = "$fileLabel: `GhostJsonStringReader` must not be imported when textChannel=false",
                 )
             }
             if ("GhostJsonStringWriter" in imports) {
                 violations += Violation(
-                    Violation.Kind.FORBIDDEN_IMPORT,
-                    "$fileLabel: `GhostJsonStringWriter` must not be imported when textChannel=false",
+                    kind = Violation.Kind.FORBIDDEN_IMPORT,
+                    message = "$fileLabel: `GhostJsonStringWriter` must not be imported when textChannel=false",
                 )
             }
             if (T.STR_OVERRIDE_DESERIALIZE_STRING_READER in body) {
                 violations += Violation(
-                    Violation.Kind.FORBIDDEN_IMPORT,
-                    "$fileLabel: string-channel deserialize overload must not be generated when textChannel=false",
+                    kind = Violation.Kind.FORBIDDEN_IMPORT,
+                    message = "$fileLabel: string-channel deserialize overload must not be generated when textChannel=false",
                 )
             }
             if ("override fun serialize(writer: GhostJsonStringWriter," in body) {
                 violations += Violation(
-                    Violation.Kind.FORBIDDEN_IMPORT,
-                    "$fileLabel: string-channel serialize overload must not be generated when textChannel=false",
+                    kind = Violation.Kind.FORBIDDEN_IMPORT,
+                    message = "$fileLabel: string-channel serialize overload must not be generated when textChannel=false",
                 )
             }
         }
@@ -102,14 +110,14 @@ internal object GeneratedCodeHygiene {
         val usesCaptureRawJsonBytes = "captureRawJsonBytes()" in body
         if (usesCaptureRawJson && "captureRawJsonBytes" in imports) {
             violations += Violation(
-                Violation.Kind.FORBIDDEN_IMPORT,
-                "$fileLabel: `captureRawJsonBytes` imported but only `captureRawJson()` is used",
+                kind = Violation.Kind.FORBIDDEN_IMPORT,
+                message = "$fileLabel: `captureRawJsonBytes` imported but only `captureRawJson()` is used",
             )
         }
         if (usesCaptureRawJsonBytes && "captureRawJsonBytes" !in imports) {
             violations += Violation(
-                Violation.Kind.MISSING_IMPORT,
-                "$fileLabel: `captureRawJsonBytes` must be imported when `captureRawJsonBytes()` is used",
+                kind = Violation.Kind.MISSING_IMPORT,
+                message = "$fileLabel: `captureRawJsonBytes` must be imported when `captureRawJsonBytes()` is used",
             )
         }
 
@@ -117,20 +125,20 @@ internal object GeneratedCodeHygiene {
         val usesReadSet = "readSet" in body
         if (usesReadList && "readList" !in imports) {
             violations += Violation(
-                Violation.Kind.MISSING_IMPORT,
-                "$fileLabel: `readList` must be imported when `readList` is used",
+                kind = Violation.Kind.MISSING_IMPORT,
+                message = "$fileLabel: `readList` must be imported when `readList` is used",
             )
         }
         if (!usesReadSet && "readSet" in imports) {
             violations += Violation(
-                Violation.Kind.FORBIDDEN_IMPORT,
-                "$fileLabel: `readSet` imported but never used",
+                kind = Violation.Kind.FORBIDDEN_IMPORT,
+                message = "$fileLabel: `readSet` imported but never used",
             )
         }
         if (!usesReadList && "readList" in imports) {
             violations += Violation(
-                Violation.Kind.FORBIDDEN_IMPORT,
-                "$fileLabel: `readList` imported but never used",
+                kind = Violation.Kind.FORBIDDEN_IMPORT,
+                message = "$fileLabel: `readList` imported but never used",
             )
         }
 
@@ -142,21 +150,21 @@ internal object GeneratedCodeHygiene {
         val header = source.lineSequence().take(15).joinToString("\n")
         if ("@file:Suppress" in header) {
             violations += Violation(
-                Violation.Kind.FORBIDDEN_IMPORT,
-                "$fileLabel: `@file:Suppress` must not mask dead generated code",
+                kind = Violation.Kind.FORBIDDEN_IMPORT,
+                message = "$fileLabel: `@file:Suppress` must not mask dead generated code",
             )
         }
-        parseImports(source).forEach { import ->
+        parseImports(source = source).forEach { import ->
             if (redundantKotlinImport.matches(import.rawLine.trim())) {
                 violations += Violation(
-                    Violation.Kind.FORBIDDEN_IMPORT,
-                    "$fileLabel: redundant stdlib import `${import.rawLine.trim()}`",
+                    kind = Violation.Kind.FORBIDDEN_IMPORT,
+                    message = "$fileLabel: redundant stdlib import `${import.rawLine.trim()}`",
                 )
             }
         }
-        violations += analyzeUnusedMaskConstants(source, fileLabel)
-        violations += analyzeLocalVariableNaming(source, fileLabel)
-        violations += analyzeLineLength(source, fileLabel)
+        violations += analyzeUnusedMaskConstants(source = source, fileLabel = fileLabel)
+        violations += analyzeLocalVariableNaming(source = source, fileLabel = fileLabel)
+        violations += analyzeLineLength(source = source, fileLabel = fileLabel)
         return violations
     }
 
@@ -168,7 +176,7 @@ internal object GeneratedCodeHygiene {
         source: String,
         fileLabel: String = "serializer"
     ): List<Violation> {
-        val body = stripImportSection(source)
+        val body = stripImportSection(source = source)
         val declRegex =
             Regex("""^\s*private const val (MASK_[A-Z0-9_]+): Long = .+$""", RegexOption.MULTILINE)
         return declRegex.findAll(body).mapNotNull { match ->
@@ -186,8 +194,8 @@ internal object GeneratedCodeHygiene {
                 null
             } else {
                 Violation(
-                    Violation.Kind.UNUSED_CONSTANT,
-                    "$fileLabel: unused mask constant `$constName`",
+                    kind = Violation.Kind.UNUSED_CONSTANT,
+                    message = "$fileLabel: unused mask constant `$constName`",
                 )
             }
         }.toList()
@@ -201,13 +209,13 @@ internal object GeneratedCodeHygiene {
         source: String,
         fileLabel: String = "serializer"
     ): List<Violation> {
-        val body = stripImportSection(source)
+        val body = stripImportSection(source = source)
         val localDecl = Regex("""^\s+(?:var|val) ([A-Za-z][\w]*_[\w]*)\b""", RegexOption.MULTILINE)
         return localDecl.findAll(body).map { match ->
             val name = match.groupValues[1]
             Violation(
-                Violation.Kind.BAD_LOCAL_NAME,
-                "$fileLabel: local variable `$name` must not contain underscores",
+                kind = Violation.Kind.BAD_LOCAL_NAME,
+                message = "$fileLabel: local variable `$name` must not contain underscores",
             )
         }.toList()
     }
@@ -222,12 +230,12 @@ internal object GeneratedCodeHygiene {
         maxLength: Int = MAX_GENERATED_LINE_LENGTH,
     ): List<Violation> {
         return source.lineSequence().mapIndexedNotNull { index, line ->
-            if (line.length <= maxLength || isUnwrappableLiteralLine(line)) {
+            if (line.length <= maxLength || isUnwrappableLiteralLine(line = line)) {
                 null
             } else {
                 Violation(
-                    Violation.Kind.LONG_LINE,
-                    "$fileLabel:${index + 1}: line length ${line.length} exceeds $maxLength",
+                    kind = Violation.Kind.LONG_LINE,
+                    message = "$fileLabel:${index + 1}: line length ${line.length} exceeds $maxLength",
                 )
             }
         }.toList()
@@ -241,15 +249,13 @@ internal object GeneratedCodeHygiene {
                 ))
     }
 
-    const val MAX_GENERATED_LINE_LENGTH = 120
-
     fun parseImports(source: String): List<Import> {
         return source.lineSequence()
             .map { it.trim() }
             .filter { it.startsWith("import ") && !it.startsWith("import(") }
             .mapNotNull { line ->
                 val statement = line.removePrefix("import ").trim()
-                val alias = aliasFrom(statement)
+                val alias = aliasFrom(statement = statement)
                 val qualified = statement.substringBefore(" as ").trim()
                 val symbol = qualified.substringAfterLast('.')
                 Import(
@@ -272,7 +278,7 @@ internal object GeneratedCodeHygiene {
     }
 
     private fun buildUsageScope(source: String): String {
-        val withoutImports = stripImportSection(source)
+        val withoutImports = stripImportSection(source = source)
         val fileAnnotations = source.lineSequence()
             .takeWhile { line ->
                 val trimmed = line.trim()
@@ -309,10 +315,4 @@ internal object GeneratedCodeHygiene {
         val pattern = Regex("""(?<![.\w])${Regex.escape(reference)}(?![.\w])""")
         return pattern.containsMatchIn(usageScope)
     }
-
-    private val FILE_LEVEL_SYMBOLS = setOf(
-        "OptIn",
-        "Suppress",
-        "InternalGhostApi",
-    )
 }

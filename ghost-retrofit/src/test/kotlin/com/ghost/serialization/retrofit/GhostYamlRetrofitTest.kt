@@ -23,7 +23,7 @@ class GhostYamlRetrofitTest {
     fun setup() {
         mockWebServer = MockWebServer()
         mockWebServer.start()
-        Ghost.addRegistry(YamlRetrofitTestRegistry)
+        Ghost.addRegistry(registry = YamlRetrofitTestRegistry)
 
         val retrofit = Retrofit.Builder()
             .baseUrl(mockWebServer.url("/"))
@@ -49,12 +49,12 @@ class GhostYamlRetrofitTest {
                     label: sensor-1
                     """.trimIndent()
                 )
-                .addHeader("Content-Type", "application/yaml")
+                .addHeader(GhostRetrofitMediaTypes.CONTENT_TYPE_HEADER, GhostRetrofitMediaTypes.APPLICATION_YAML)
         )
 
         val profile = apiService.getProfile()
-        assertEquals(42, profile.deviceId)
-        assertEquals("sensor-1", profile.label)
+        assertEquals(expected = 42, actual = profile.deviceId)
+        assertEquals(expected = "sensor-1", actual = profile.label)
     }
 
     @Test
@@ -70,11 +70,11 @@ class GhostYamlRetrofitTest {
                 )
         )
 
-        apiService.createProfile(YamlDeviceProfile(deviceId = 7, label = "sensor-2"))
+        apiService.createProfile(profile = YamlDeviceProfile(deviceId = 7, label = "sensor-2"))
 
         val request = mockWebServer.takeRequest()
         val body = request.body.readUtf8()
-        assertTrue(body.contains("deviceId: 7"))
-        assertTrue(body.contains("label: sensor-2") || body.contains("label: \"sensor-2\""))
+        assertTrue(actual = body.contains("deviceId: 7"))
+        assertTrue(actual = body.contains("label: sensor-2") || body.contains("label: \"sensor-2\""))
     }
 }

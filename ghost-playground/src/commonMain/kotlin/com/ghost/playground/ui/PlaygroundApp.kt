@@ -48,7 +48,7 @@ fun GhostPlaygroundApp() {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Header(strings, lang, dest, onLang = { lang = it }, onNav = { dest = it })
+            Header(strings = strings, lang = lang, dest = dest, onLang = { lang = it }, onNav = { dest = it })
             Spacer(Modifier.height(28.dp))
             AnimatedContent(
                 targetState = dest,
@@ -62,10 +62,10 @@ fun GhostPlaygroundApp() {
             ) { tab ->
                 Column(Modifier.fillMaxWidth()) {
                     when (tab) {
-                        PlaygroundDest.SpeedTest -> SpeedTestScreen(strings)
-                        PlaygroundDest.Studio -> StudioScreen(strings, lang)
-                        PlaygroundDest.UnderHood -> WhyItsFastScreen(strings, lang)
-                        PlaygroundDest.LearnMore -> DocsScreen(strings)
+                        PlaygroundDest.SpeedTest -> SpeedTestScreen(strings = strings)
+                        PlaygroundDest.Studio -> StudioScreen(strings = strings, lang = lang)
+                        PlaygroundDest.UnderHood -> WhyItsFastScreen(strings = strings, lang = lang)
+                        PlaygroundDest.LearnMore -> DocsScreen(strings = strings)
                     }
                 }
             }

@@ -28,13 +28,13 @@ internal fun PillarCard(pillar: SpeedPillar, strings: Strings, lang: Lang) {
         AnimatedVisibility(open) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillarSection(
-                    strings.whatItIs,
-                    if (lang == Lang.EN) pillar.whatEn else pillar.whatEs
+                    label = strings.whatItIs,
+                    body = if (lang == Lang.EN) pillar.whatEn else pillar.whatEs
                 )
-                PillarSection(strings.whyFast, if (lang == Lang.EN) pillar.whyEn else pillar.whyEs)
+                PillarSection(label = strings.whyFast, body = if (lang == Lang.EN) pillar.whyEn else pillar.whyEs)
                 PillarSection(
-                    strings.vsOthers,
-                    if (lang == Lang.EN) pillar.vsEn else pillar.vsEs,
+                    label = strings.vsOthers,
+                    body = if (lang == Lang.EN) pillar.vsEn else pillar.vsEs,
                     muted = true
                 )
             }

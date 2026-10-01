@@ -1,6 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -14,26 +15,47 @@ class GhostYamlGroupCTest {
     @Test
     fun `reads simple flow mapping`() {
         val yaml = "simple_flow_map: {name: Alice, age: 30, active: true}"
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
 
         @Suppress("UNCHECKED_CAST")
         val map = result["simple_flow_map"] as Map<String, Any?>
-        assertEquals("Alice", map["name"])
-        assertEquals(30L, map["age"])
-        assertEquals(true, map["active"])
+        assertEquals(
+            expected = "Alice",
+            actual = map["name"]
+        )
+        assertEquals(
+            expected = 30L,
+            actual = map["age"]
+        )
+        assertEquals(
+            expected = true,
+            actual = map["active"]
+        )
     }
 
     @Test
     fun `reads simple flow sequence`() {
         val yaml = "simple_flow_seq: [one, two, three]"
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
 
         @Suppress("UNCHECKED_CAST")
         val list = result["simple_flow_seq"] as List<Any?>
-        assertEquals(3, list.size)
-        assertEquals("one", list[0])
-        assertEquals("two", list[1])
-        assertEquals("three", list[2])
+        assertEquals(
+            expected = 3,
+            actual = list.size
+        )
+        assertEquals(
+            expected = "one",
+            actual = list[0]
+        )
+        assertEquals(
+            expected = "two",
+            actual = list[1]
+        )
+        assertEquals(
+            expected = "three",
+            actual = list[2]
+        )
     }
 
     @Test
@@ -42,33 +64,39 @@ class GhostYamlGroupCTest {
             empty_map: {}
             empty_seq: []
         """.trimIndent()
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
 
         @Suppress("UNCHECKED_CAST")
         val map = result["empty_map"] as Map<String, Any?>
 
         @Suppress("UNCHECKED_CAST")
         val seq = result["empty_seq"] as List<Any?>
-        assertTrue(map.isEmpty())
-        assertTrue(seq.isEmpty())
+        assertTrue(actual = map.isEmpty())
+        assertTrue(actual = seq.isEmpty())
     }
 
     @Test
     fun `reads nested flow mapping`() {
         val yaml = "nested_flow: {user: {name: Bob, role: admin}}"
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
 
         @Suppress("UNCHECKED_CAST")
         val nested = result["nested_flow"] as Map<String, Any?>
 
         @Suppress("UNCHECKED_CAST")
         val user = nested["user"] as Map<String, Any?>
-        assertEquals("Bob", user["name"])
-        assertEquals("admin", user["role"])
+        assertEquals(
+            expected = "Bob",
+            actual = user["name"]
+        )
+        assertEquals(
+            expected = "admin",
+            actual = user["role"]
+        )
     }
 
     private fun parseMap(yaml: String): Map<String, Any?> {
-        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val reader = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
         @Suppress("UNCHECKED_CAST")
         return reader.readDocument() as Map<String, Any?>
     }

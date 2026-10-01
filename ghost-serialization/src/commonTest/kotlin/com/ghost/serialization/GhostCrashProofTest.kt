@@ -2,10 +2,10 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.isNextNullValue
@@ -30,7 +30,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-
 class GhostCrashProofTest {
 
     private fun readerOf(json: String): GhostJsonReader {
@@ -47,7 +46,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.isNextNullValue())
+        assertTrue(actual = reader.isNextNullValue())
     }
 
     @Test
@@ -56,7 +55,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.isNextNullValue())
+        assertFalse(actual = reader.isNextNullValue())
     }
 
     @Test
@@ -65,7 +64,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.isNextNullValue())
+        assertFalse(actual = reader.isNextNullValue())
     }
 
     @Test
@@ -74,7 +73,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.isNextNullValue())
+        assertFalse(actual = reader.isNextNullValue())
     }
 
     @Test
@@ -83,7 +82,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.isNextNullValue())
+        assertFalse(actual = reader.isNextNullValue())
     }
 
     @Test
@@ -92,7 +91,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.isNextNullValue())
+        assertFalse(actual = reader.isNextNullValue())
     }
 
     @Test
@@ -101,7 +100,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.isNextNullValue())
+        assertFalse(actual = reader.isNextNullValue())
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -150,7 +149,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     @Test
@@ -159,7 +161,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Long.MIN_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MIN_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -172,7 +177,7 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.isNextNullValue())
+        assertTrue(actual = reader.isNextNullValue())
         assertFailsWith<Exception> { reader.consumeNull() }
     }
 
@@ -194,12 +199,15 @@ class GhostCrashProofTest {
 
     @Test
     fun registryReturnsNullForUnregisteredClass() {
-        val fakeRegistry = object : GhostRegistry {
+        val fakeRegistry = object : AbstractGhostRegistry() {
             override fun <T : Any> getSerializer(
                 clazz: kotlin.reflect.KClass<T>
             ): GhostSerializer<T>? = null
+
+            override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> = emptyMap()
+
         }
-        assertNull(fakeRegistry.getSerializer(String::class))
+        assertNull(actual = fakeRegistry.getSerializer(String::class))
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -214,7 +222,10 @@ class GhostCrashProofTest {
         reader.nextKey()
         reader.consumeKeySeparator()
         val result = reader.nextString()
-        assertEquals("\uD83D\uDE80", result)
+        assertEquals(
+            expected = "\uD83D\uDE80",
+            actual = result
+        )
     }
 
     @Test
@@ -223,7 +234,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals("\uD83D\uDD25\uD83D\uDC80\uD83C\uDF89", reader.nextString())
+        assertEquals(
+            expected = "\uD83D\uDD25\uD83D\uDC80\uD83C\uDF89",
+            actual = reader.nextString()
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -237,15 +251,27 @@ class GhostCrashProofTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         val list1 = reader.readList { reader.nextInt() }
-        assertEquals(listOf(1, 2), list1)
+        assertEquals(
+            expected = listOf(1, 2),
+            actual = list1
+        )
 
-        assertEquals(1, reader.selectString(options))
+        assertEquals(
+            expected = 1,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         val list2 = reader.readList { reader.nextInt() }
-        assertEquals(listOf(3, 4), list2)
+        assertEquals(
+            expected = listOf(3, 4),
+            actual = list2
+        )
         reader.endObject()
     }
 
@@ -257,9 +283,15 @@ class GhostCrashProofTest {
         val json = "{\"$key\":\"value\"}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals("value", reader.nextString())
+        assertEquals(
+            expected = "value",
+            actual = reader.nextString()
+        )
         reader.endObject()
     }
 
@@ -270,13 +302,22 @@ class GhostCrashProofTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(-2, reader.selectString(options))
+        assertEquals(
+            expected = -2,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(-2, reader.selectString(options))
+        assertEquals(
+            expected = -2,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(-1, reader.selectString(options))
+        assertEquals(
+            expected = -1,
+            actual = reader.selectString(options = options)
+        )
         reader.endObject()
     }
 
@@ -286,10 +327,19 @@ class GhostCrashProofTest {
         val json = "{\"only\":\"found\"}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals("found", reader.nextString())
-        assertEquals(-1, reader.selectString(options))
+        assertEquals(
+            expected = "found",
+            actual = reader.nextString()
+        )
+        assertEquals(
+            expected = -1,
+            actual = reader.selectString(options = options)
+        )
         reader.endObject()
     }
 
@@ -300,7 +350,10 @@ class GhostCrashProofTest {
     @Test
     fun whitespaceOnlyInputReportsEndDocument() {
         val reader = readerOf("   \n\t  ")
-        assertEquals(-1, reader.peekNextToken())
+        assertEquals(
+            expected = -1,
+            actual = reader.peekNextToken()
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -342,7 +395,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals("\\\\", reader.nextString())
+        assertEquals(
+            expected = "\\\\",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -354,7 +410,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals("\n\t\r\b", reader.nextString())
+        assertEquals(
+            expected = "\n\t\r\b",
+            actual = reader.nextString()
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -365,15 +424,25 @@ class GhostCrashProofTest {
     fun readsNumberAtEndOfArray() {
         val reader = readerOf("[42]")
         val result = reader.readList { reader.nextInt() }
-        assertEquals(listOf(42), result)
+        assertEquals(
+            expected = listOf(42),
+            actual = result
+        )
     }
 
     @Test
     fun readsDoubleAtEndOfArray() {
         val reader = readerOf("[3.14]")
         val result = reader.readList { reader.nextDouble() }
-        assertEquals(1, result.size)
-        assertEquals(3.14, result[0], 0.001)
+        assertEquals(
+            expected = 1,
+            actual = result.size
+        )
+        assertEquals(
+            expected = 3.14,
+            actual = result[0],
+            absoluteTolerance = 0.001
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -386,12 +455,21 @@ class GhostCrashProofTest {
         val json = "{\"junk\":{\"msg\":\"value with { and } inside\"},\"id\":1}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(-2, reader.selectString(options))
+        assertEquals(
+            expected = -2,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
     }
 
     @Test
@@ -400,12 +478,21 @@ class GhostCrashProofTest {
         val json = "{\"junk\":[\"contains [ and ]\"],\"id\":2}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(-2, reader.selectString(options))
+        assertEquals(
+            expected = -2,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals(2, reader.nextInt())
+        assertEquals(
+            expected = 2,
+            actual = reader.nextInt()
+        )
     }
 
     @Test
@@ -414,12 +501,21 @@ class GhostCrashProofTest {
         val json = "{\"junk\":{\"msg\":\"escaped \\\"quotes\\\" and {braces}\"},\"id\":3}"
         val reader = readerOf(json)
         reader.beginObject()
-        assertEquals(-2, reader.selectString(options))
+        assertEquals(
+            expected = -2,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals(3, reader.nextInt())
+        assertEquals(
+            expected = 3,
+            actual = reader.nextInt()
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -431,7 +527,7 @@ class GhostCrashProofTest {
         val original = "tab\there\nnewline\rcarriage\bback\"quote\\slash"
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
-        writer.beginObject().name("v").value(original).endObject()
+        writer.beginObject().name(key = "v").value(original).endObject()
 
         writer.flush()
         val json = buffer.readUtf8()
@@ -439,7 +535,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(original, reader.nextString())
+        assertEquals(
+            expected = original,
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -447,7 +546,7 @@ class GhostCrashProofTest {
         val original = "\u0001\u0002\u0003\u0010\u001F"
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
-        writer.beginObject().name("v").value(original).endObject()
+        writer.beginObject().name(key = "v").value(original).endObject()
 
         writer.flush()
         val json = buffer.readUtf8()
@@ -455,7 +554,10 @@ class GhostCrashProofTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(original, reader.nextString())
+        assertEquals(
+            expected = original,
+            actual = reader.nextString()
+        )
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -471,17 +573,38 @@ class GhostCrashProofTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(2, reader.selectString(options))
+        assertEquals(
+            expected = 2,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         reader.readList { reader.nextInt() }
-        assertEquals(3, reader.selectString(options))
+        assertEquals(
+            expected = 3,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals("g", reader.nextString())
-        assertEquals(1, reader.selectString(options))
+        assertEquals(
+            expected = "g",
+            actual = reader.nextString()
+        )
+        assertEquals(
+            expected = 1,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
-        assertEquals("obj", reader.nextString())
+        assertEquals(
+            expected = "obj",
+            actual = reader.nextString()
+        )
     }
 }

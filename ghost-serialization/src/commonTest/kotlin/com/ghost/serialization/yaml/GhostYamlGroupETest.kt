@@ -1,6 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,14 +21,26 @@ class GhostYamlGroupETest {
               name: service-a
               port: 8080
         """.trimIndent()
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
 
         @Suppress("UNCHECKED_CAST")
         val serviceA = result["service_a"] as Map<String, Any?>
-        assertEquals(30L, serviceA["timeout"])
-        assertEquals(3L, serviceA["retries"])
-        assertEquals("service-a", serviceA["name"])
-        assertEquals(8080L, serviceA["port"])
+        assertEquals(
+            expected = 30L,
+            actual = serviceA["timeout"]
+        )
+        assertEquals(
+            expected = 3L,
+            actual = serviceA["retries"]
+        )
+        assertEquals(
+            expected = "service-a",
+            actual = serviceA["name"]
+        )
+        assertEquals(
+            expected = 8080L,
+            actual = serviceA["port"]
+        )
     }
 
     @Test
@@ -36,9 +49,15 @@ class GhostYamlGroupETest {
             default_host: &default_host "localhost"
             db_host: *default_host
         """.trimIndent()
-        val result = parseMap(yaml)
-        assertEquals("localhost", result["default_host"])
-        assertEquals("localhost", result["db_host"])
+        val result = parseMap(yaml = yaml)
+        assertEquals(
+            expected = "localhost",
+            actual = result["default_host"]
+        )
+        assertEquals(
+            expected = "localhost",
+            actual = result["db_host"]
+        )
     }
 
     @Test
@@ -51,16 +70,22 @@ class GhostYamlGroupETest {
               name: ghost-serializer
               tags: *tags
         """.trimIndent()
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
 
         @Suppress("UNCHECKED_CAST")
         val tags = result["project_a"].let { it as Map<String, Any?> }["tags"] as List<Any?>
-        assertEquals(2, tags.size)
-        assertEquals("kotlin", tags[0])
+        assertEquals(
+            expected = 2,
+            actual = tags.size
+        )
+        assertEquals(
+            expected = "kotlin",
+            actual = tags[0]
+        )
     }
 
     private fun parseMap(yaml: String): Map<String, Any?> {
-        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val reader = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
         @Suppress("UNCHECKED_CAST")
         return reader.readDocument() as Map<String, Any?>
     }

@@ -28,9 +28,9 @@ class GhostStressTest {
 
         val json = Ghost.serialize(node)
         val deserialized = Ghost.deserialize<RecursiveNode>(json)
-        assertEquals(node, deserialized)
-        assertEquals(2, deserialized.children?.size)
-        assertEquals("grandchild", deserialized.children?.get(1)?.children?.get(0)?.name)
+        assertEquals(expected = node, actual = deserialized)
+        assertEquals(expected = 2, actual = deserialized.children?.size)
+        assertEquals(expected = "grandchild", actual = deserialized.children?.get(1)?.children?.get(0)?.name)
     }
 
     @Test
@@ -46,8 +46,8 @@ class GhostStressTest {
 
         val json = Ghost.serialize(model)
         val deserialized = Ghost.deserialize<DeepGenericModel>(json)
-        assertEquals(model, deserialized)
-        assertEquals("b", deserialized.data["level1"]?.get(0)?.get("1")?.get(1))
+        assertEquals(expected = model, actual = deserialized)
+        assertEquals(expected = "b", actual = deserialized.data["level1"]?.get(0)?.get("1")?.get(1))
     }
 
     @Test
@@ -65,7 +65,7 @@ class GhostStressTest {
 
         val json = Ghost.serialize(model)
         val deserialized = Ghost.deserialize<ReservedWordModel>(json)
-        assertEquals(model, deserialized)
+        assertEquals(expected = model, actual = deserialized)
     }
 
     @Test
@@ -85,11 +85,11 @@ class GhostStressTest {
         )
 
         val json = Ghost.serialize(model)
-        assertTrue(json.contains("\"f01\":\"v1\""))
-        assertTrue(json.contains("\"f55\":\"v55\""))
+        assertTrue(actual = json.contains("\"f01\":\"v1\""))
+        assertTrue(actual = json.contains("\"f55\":\"v55\""))
 
         val deserialized = Ghost.deserialize<WideModel>(json)
-        assertEquals(model, deserialized)
+        assertEquals(expected = model, actual = deserialized)
     }
 
     @Test
@@ -104,13 +104,13 @@ class GhostStressTest {
         try {
             val json = Ghost.serialize(current)
             Ghost.deserialize<RecursiveNode>(json)
-            assertTrue(false, "Should have thrown GhostJsonException due to depth")
+            assertTrue(actual = false, message = "Should have thrown GhostJsonException due to depth")
         } catch (e: Exception) {
             val isGhostException = e is com.ghost.serialization.exception.GhostJsonException ||
                     e.message?.contains("depth") == true
             assertTrue(
-                isGhostException,
-                "Expected depth protection exception but got: ${e.javaClass.simpleName}: ${e.message}"
+                actual = isGhostException,
+                message = "Expected depth protection exception but got: ${e.javaClass.simpleName}: ${e.message}"
             )
         }
     }
@@ -120,7 +120,7 @@ class GhostStressTest {
         val largeList = List(10000) { RecursiveNode(id = it, name = "name_$it") }
         val json = Ghost.serialize(largeList)
         val deserialized = Ghost.deserialize<List<RecursiveNode>>(json)
-        assertEquals(10000, deserialized.size)
-        assertEquals("name_9999", deserialized.last().name)
+        assertEquals(expected = 10000, actual = deserialized.size)
+        assertEquals(expected = "name_9999", actual = deserialized.last().name)
     }
 }

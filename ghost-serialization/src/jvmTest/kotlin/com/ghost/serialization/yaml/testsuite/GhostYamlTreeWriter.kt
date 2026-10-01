@@ -15,11 +15,9 @@ import com.ghost.serialization.writer.yaml.GhostYamlWriter
  */
 @OptIn(InternalGhostApi::class)
 internal object GhostYamlTreeWriter {
-
-    /** Encodes a single document's value. */
     fun encode(value: Any?): String {
         val buffer = FlatByteArrayWriter()
-        writeValue(GhostYamlWriter(buffer), value)
+        writeValue(writer = GhostYamlWriter(buffer), value = value)
         return buffer.toStringUtf8()
     }
 
@@ -41,15 +39,15 @@ internal object GhostYamlTreeWriter {
                     // readKey/stringifyExplicitMappingKey all produce String) — a loud
                     // ClassCastException here would itself be a reader finding worth
                     // investigating, not something to silently coerce around.
-                    writer.name(key as String)
-                    writeValue(writer, v)
+                    writer.name(key = key as String)
+                    writeValue(writer = writer, value = v)
                 }
                 writer.endObject()
             }
 
             is List<*> -> {
                 writer.beginArray()
-                for (item in value) writeValue(writer, item)
+                for (item in value) writeValue(writer = writer, value = item)
                 writer.endArray()
             }
 

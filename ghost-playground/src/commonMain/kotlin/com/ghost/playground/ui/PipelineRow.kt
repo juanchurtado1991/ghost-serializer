@@ -64,7 +64,7 @@ internal fun PipelineRow(
             contentAlignment = Alignment.Center,
         ) {
             if (status == StepStatus.Done) {
-                PlaygroundIcon(PlaygroundIconKind.Check, tint = Color.White, size = 16.dp)
+                PlaygroundIcon(kind = PlaygroundIconKind.Check, tint = Color.White, size = 16.dp)
             } else {
                 Text(
                     num.toString(),

@@ -3,12 +3,11 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import kotlin.reflect.KClass
 
-object YamlRetrofitTestRegistry : GhostRegistry {
-    override fun prewarm() {}
+object YamlRetrofitTestRegistry : AbstractGhostRegistry() {
     override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
         mapOf(YamlDeviceProfile::class to YamlDeviceProfileSerializer)
 

@@ -1,42 +1,46 @@
 package com.ghost.serialization.parser.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
 /** Parses flow-style mappings (`{key: value}`). */
 internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
     position++ // consume '{'
-    val result = LinkedHashMap<String, Any?>(C.DEFAULT_MAP_CAPACITY)
+    val result = LinkedHashMap<String, Any?>(SC.DEFAULT_MAP_CAPACITY)
     skipWhitespaceAndComments()
 
     val localRawData = rawData
     val localLimit = limit
 
-    if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
+    if (position < localLimit && localRawData[position] == TOK.RIGHT_BRACE_BYTE) {
         position++
         return result
     }
 
     // Flow collections recurse into readValue the same way block ones do, so they need the same
     // depth guard — without it, deeply nested flow input has no bound on call-stack recursion.
-    if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
+    checkMaxNestingDepth()
     depth++
     try {
         while (position < localLimit) {
             skipWhitespaceAndComments()
             if (position >= localLimit) break
-            if (localRawData[position] == C.RIGHT_BRACE_BYTE) {
+            if (localRawData[position] == TOK.RIGHT_BRACE_BYTE) {
                 position++
                 break
             }
-            if (localRawData[position] == C.COMMA_BYTE) {
-                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_MAPPING)
+            if (localRawData[position] == TOK.COMMA_BYTE) {
+                yamlError(message = EM.ERR_UNEXPECTED_COMMA_FLOW_MAPPING)
             }
 
             // A nested flow collection used as a key (e.g. "[d, e]: f") must go through
             // readValue — readKey()'s bare-scalar scan has no bracket-nesting awareness, so a
             // comma inside it would look identical to the entry separator.
-            val key = if (localRawData[position] == C.LEFT_BRACKET_BYTE || localRawData[position] == C.LEFT_BRACE_BYTE) {
-                stringifyExplicitMappingKey(readValue(indent = 0, inFlow = true))
+            val isNestedFlowCollectionKey =
+                localRawData[position] == TOK.LEFT_BRACKET_BYTE || localRawData[position] == TOK.LEFT_BRACE_BYTE
+            val key = if (isNestedFlowCollectionKey) {
+                stringifyExplicitMappingKey(keyNode = readValue(indent = 0, inFlow = true))
             } else {
                 readKey(inFlow = true) ?: break
             }
@@ -44,29 +48,31 @@ internal fun GhostYamlFlatReader.readFlowMapping(): Map<String, Any?> {
 
             // A flow mapping entry can be just a key with no ':' (e.g. "{ a, b }") — same
             // empty-value shorthand as an explicit block key with nothing after it.
-            val value = if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
+            val isEmptyValueShorthand = position < localLimit &&
+                (localRawData[position] == TOK.COMMA_BYTE || localRawData[position] == TOK.RIGHT_BRACE_BYTE)
+            val value = if (position < localLimit && localRawData[position] == TOK.COLON_BYTE) {
                 position++ // consume ':'
                 skipWhitespaceAndComments()
                 readValue(indent = 0, inFlow = true)
-            } else if (position < localLimit && (localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACE_BYTE)) {
+            } else if (isEmptyValueShorthand) {
                 null
             } else {
-                yamlError("${C.ERR_EXPECTED_COLON_AFTER_FLOW_KEY_PREFIX}$key'")
+                yamlError(message = "${EM.ERR_EXPECTED_COLON_AFTER_FLOW_KEY_PREFIX}$key'")
             }
-            if (key == C.STR_MERGE_KEY) {
-                mergeInto(result, value)
+            if (key == TOK.STR_MERGE_KEY) {
+                mergeInto(target = result, value = value)
             } else {
                 result[key] = value
             }
 
             skipWhitespaceAndComments()
-            if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
+            if (position < localLimit && localRawData[position] == TOK.COMMA_BYTE) {
                 position++ // consume ','
-            } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACE_BYTE) {
+            } else if (position < localLimit && localRawData[position] == TOK.RIGHT_BRACE_BYTE) {
                 position++ // consume '}'
                 break
             } else {
-                yamlError(C.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_MAP)
+                yamlError(message = EM.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_MAP)
             }
         }
     } finally {
@@ -84,38 +90,38 @@ internal fun GhostYamlFlatReader.readFlowSequence(): List<Any?> {
     val localRawData = rawData
     val localLimit = limit
 
-    if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
+    if (position < localLimit && localRawData[position] == TOK.RIGHT_BRACKET_BYTE) {
         position++
         return result
     }
 
     // See the matching guard in readFlowMapping — flow collections recurse into readValue the
     // same way block ones do and need the same bound on nesting depth.
-    if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
+    checkMaxNestingDepth()
     depth++
     try {
         while (position < localLimit) {
             skipWhitespaceAndComments()
             if (position >= localLimit) break
-            if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {
+            if (localRawData[position] == TOK.RIGHT_BRACKET_BYTE) {
                 position++
                 break
             }
-            if (localRawData[position] == C.COMMA_BYTE) {
-                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_SEQUENCE)
+            if (localRawData[position] == TOK.COMMA_BYTE) {
+                yamlError(message = EM.ERR_UNEXPECTED_COMMA_FLOW_SEQUENCE)
             }
 
             val item = readFlowSequenceEntry()
             result.add(item)
 
             skipWhitespaceAndComments()
-            if (position < localLimit && localRawData[position] == C.COMMA_BYTE) {
+            if (position < localLimit && localRawData[position] == TOK.COMMA_BYTE) {
                 position++ // consume ','
-            } else if (position < localLimit && localRawData[position] == C.RIGHT_BRACKET_BYTE) {
+            } else if (position < localLimit && localRawData[position] == TOK.RIGHT_BRACKET_BYTE) {
                 position++ // consume ']'
                 break
             } else {
-                yamlError(C.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_SEQ)
+                yamlError(message = EM.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_SEQ)
             }
         }
     } finally {
@@ -139,11 +145,15 @@ internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
     val localRawData = rawData
     val localLimit = limit
 
-    if (position < localLimit && localRawData[position] == C.QUESTION_BYTE && isExplicitKeyIndicator()) {
+    val isExplicitKeyAt = position < localLimit &&
+        localRawData[position] == TOK.QUESTION_BYTE &&
+        isExplicitKeyIndicator()
+    if (isExplicitKeyAt) {
         return readExplicitFlowSequenceKeyEntry()
     }
 
-    if (position < localLimit && localRawData[position] == C.COLON_BYTE && isFlowPairColon()) {
+    val isFlowPairColonAt = position < localLimit && localRawData[position] == TOK.COLON_BYTE && isFlowPairColon()
+    if (isFlowPairColonAt) {
         position++ // consume ':'
         skipWhitespaceAndComments()
         val value = readValue(indent = 0, inFlow = true)
@@ -154,11 +164,11 @@ internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
     // Inline whitespace only — an implicit key's ':' must be on the same line as the key
     // (crossing a newline would misread "[ key\n  : value ]" as a pair).
     skipInlineWhitespace()
-    if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
+    if (position < localLimit && localRawData[position] == TOK.COLON_BYTE) {
         position++ // consume ':'
         skipWhitespaceAndComments()
         val value = readValue(indent = 0, inFlow = true)
-        return linkedMapOf(stringifyExplicitMappingKey(keyOrValue) to value)
+        return linkedMapOf(stringifyExplicitMappingKey(keyNode = keyOrValue) to value)
     }
     return keyOrValue
 }
@@ -176,17 +186,17 @@ private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
     val localRawData = rawData
     val localLimit = limit
     val keyNode = if (position >= localLimit ||
-        localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACKET_BYTE ||
-        localRawData[position] == C.COLON_BYTE
+        localRawData[position] == TOK.COMMA_BYTE || localRawData[position] == TOK.RIGHT_BRACKET_BYTE ||
+        localRawData[position] == TOK.COLON_BYTE
     ) {
         null
     } else {
         readValue(indent = 0, inFlow = true)
     }
-    val key = stringifyExplicitMappingKey(keyNode)
+    val key = stringifyExplicitMappingKey(keyNode = keyNode)
 
     skipWhitespaceAndComments()
-    val value = if (position < localLimit && localRawData[position] == C.COLON_BYTE) {
+    val value = if (position < localLimit && localRawData[position] == TOK.COLON_BYTE) {
         position++ // consume ':'
         skipWhitespaceAndComments()
         readValue(indent = 0, inFlow = true)
@@ -204,8 +214,8 @@ private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
 private fun GhostYamlFlatReader.isFlowPairColon(): Boolean {
     val nextPosition = position + 1
     return nextPosition >= limit ||
-        rawData[nextPosition] == C.SPACE_BYTE ||
-        rawData[nextPosition] == C.NEWLINE_BYTE ||
-        rawData[nextPosition] == C.CR_BYTE ||
-        rawData[nextPosition] == C.TAB_BYTE
+        rawData[nextPosition] == TOK.SPACE_BYTE ||
+        rawData[nextPosition] == TOK.NEWLINE_BYTE ||
+        rawData[nextPosition] == TOK.CR_BYTE ||
+        rawData[nextPosition] == TOK.TAB_BYTE
 }

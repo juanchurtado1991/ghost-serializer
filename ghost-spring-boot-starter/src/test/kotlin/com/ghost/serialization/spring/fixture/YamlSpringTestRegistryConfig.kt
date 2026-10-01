@@ -8,6 +8,6 @@ import org.springframework.context.annotation.Configuration
 open class YamlSpringTestRegistryConfig {
     @PostConstruct
     fun registerYamlSerializers() {
-        Ghost.addRegistry(YamlSpringTestRegistry)
+        Ghost.addRegistry(registry = YamlSpringTestRegistry)
     }
 }

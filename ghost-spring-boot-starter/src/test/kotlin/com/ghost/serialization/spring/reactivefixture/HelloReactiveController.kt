@@ -22,7 +22,7 @@ class HelloReactiveController {
 
     @GetMapping("/hello-stream", produces = ["application/x-ndjson"])
     fun getHelloStream(): Flux<HelloMessage> =
-        Flux.just(HelloMessage(1, "a"), HelloMessage(2, "b"))
+        Flux.just(HelloMessage(id = 1, name = "a"), HelloMessage(id = 2, name = "b"))
 
     @PostMapping(
         "/hello-stream",

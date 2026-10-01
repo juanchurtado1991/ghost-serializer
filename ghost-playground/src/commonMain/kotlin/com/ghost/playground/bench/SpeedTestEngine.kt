@@ -25,7 +25,6 @@ data class SpeedTestPayload(
 object SpeedTestEngine {
     val WARMUP_DURATION: Duration = 3.seconds
     val PHASE_DURATION: Duration = 15.seconds
-    val TOTAL_DURATION: Duration = WARMUP_DURATION + PHASE_DURATION * 3
     private val BATCH_BUDGET: Duration = 30.milliseconds
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -48,7 +47,13 @@ object SpeedTestEngine {
         val totalDuration = warmupDuration + phaseDuration * 3
         val text = payload.text
 
-        warmup(text, warmupDuration, payloadBytes, totalDuration, onUpdate)
+        warmup(
+            text = text,
+            warmupDuration = warmupDuration,
+            payloadBytes = payloadBytes,
+            totalDuration = totalDuration,
+            onUpdate = onUpdate
+        )
 
         val kser = runPhase(
             duration = phaseDuration,
@@ -68,7 +73,7 @@ object SpeedTestEngine {
 
         val moshi = runPhase(
             duration = phaseDuration,
-            op = { MoshiBench.roundTrip(text) },
+            op = { MoshiBench.roundTrip(payload = text) },
         ) { elapsed, ops, opsPerSec ->
             onUpdate(
                 sample(
@@ -122,33 +127,6 @@ object SpeedTestEngine {
         )
     }
 
-    private suspend fun warmup(
-        text: String,
-        warmupDuration: Duration,
-        payloadBytes: Long,
-        totalDuration: Duration,
-        onUpdate: suspend (SpeedSample) -> Unit,
-    ) {
-        val warmupStart = TimeSource.Monotonic.markNow()
-        while (warmupStart.elapsedNow() < warmupDuration) {
-            val batchStart = TimeSource.Monotonic.markNow()
-            while (batchStart.elapsedNow() < BATCH_BUDGET && warmupStart.elapsedNow() < warmupDuration) {
-                json.encodeToString(json.decodeFromString<TwitterResponse>(text))
-                MoshiBench.roundTrip(text)
-                Ghost.encodeToString(Ghost.deserialize<TwitterResponse>(text))
-            }
-            onUpdate(
-                sample(
-                    phase = SpeedTestPhase.Warmup,
-                    elapsed = warmupStart.elapsedNow(),
-                    totalDuration = totalDuration,
-                    payloadBytes = payloadBytes,
-                ),
-            )
-            delay(1)
-        }
-    }
-
     private fun sample(
         phase: SpeedTestPhase,
         elapsed: Duration,
@@ -178,6 +156,33 @@ object SpeedTestEngine {
         )
     }
 
+    private suspend fun warmup(
+        text: String,
+        warmupDuration: Duration,
+        payloadBytes: Long,
+        totalDuration: Duration,
+        onUpdate: suspend (SpeedSample) -> Unit,
+    ) {
+        val warmupStart = TimeSource.Monotonic.markNow()
+        while (warmupStart.elapsedNow() < warmupDuration) {
+            val batchStart = TimeSource.Monotonic.markNow()
+            while (batchStart.elapsedNow() < BATCH_BUDGET && warmupStart.elapsedNow() < warmupDuration) {
+                json.encodeToString(json.decodeFromString<TwitterResponse>(text))
+                MoshiBench.roundTrip(payload = text)
+                Ghost.encodeToString(Ghost.deserialize<TwitterResponse>(text))
+            }
+            onUpdate(
+                sample(
+                    phase = SpeedTestPhase.Warmup,
+                    elapsed = warmupStart.elapsedNow(),
+                    totalDuration = totalDuration,
+                    payloadBytes = payloadBytes,
+                ),
+            )
+            delay(1)
+        }
+    }
+
     private class PhaseResult(val ops: Long, val avgOpsPerSec: Double)
 
     private suspend fun runPhase(
@@ -203,7 +208,7 @@ object SpeedTestEngine {
         }
         val elapsed = phaseStart.elapsedNow()
         val avg = if (elapsed > Duration.ZERO) ops / elapsed.toDouble(DurationUnit.SECONDS) else 0.0
-        return PhaseResult(ops, avg)
+        return PhaseResult(ops = ops, avgOpsPerSec = avg)
     }
 
 }

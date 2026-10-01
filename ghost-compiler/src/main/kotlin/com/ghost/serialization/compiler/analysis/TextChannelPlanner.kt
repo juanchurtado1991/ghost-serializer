@@ -4,7 +4,8 @@ import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 
 
 /**
@@ -49,7 +50,7 @@ internal object TextChannelPlanner {
         while (pending.isNotEmpty()) {
             val current = pending.removeFirst()
             val properties = byDeclaration[current] ?: emptyList()
-            for (dependency in ghostDependencies(current, properties)) {
+            for (dependency in ghostDependencies(classDeclaration = current, properties = properties)) {
                 if (enabled.add(dependency)) {
                     pending.addLast(dependency)
                 }
@@ -57,51 +58,6 @@ internal object TextChannelPlanner {
         }
 
         return byDeclaration.keys.associateWith { it in enabled }
-    }
-
-    /**
-     * A class's own stated preference, ignoring transitive requirements. Only
-     * `@GhostSerialization` classes have an opinion (default `true`); others (e.g.
-     * `@GhostProtoSerialization`) return `false` but can still be pulled in transitively.
-     */
-    private fun KSClassDeclaration.effectiveOwnTextChannelValue(): Boolean {
-        val annotation = annotations.firstOrNull {
-            it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION
-        } ?: return false
-        val explicit = annotation.arguments
-            .firstOrNull { arg -> arg.name?.asString() == C.ARG_TEXT_CHANNEL }
-            ?.value as? Boolean
-        return explicit ?: true
-    }
-
-    private fun ghostDependencies(
-        classDeclaration: KSClassDeclaration,
-        properties: List<GhostPropertyModel>,
-    ): Set<KSClassDeclaration> {
-        val deps = mutableSetOf<KSClassDeclaration>()
-
-        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {
-            classDeclaration.getSealedSubclasses().forEach { subclass ->
-                subclass.toGhostDeclaration()?.let { deps.add(it) }
-            }
-        }
-
-        for (property in properties) {
-            collectPropertyDependencies(property, deps)
-            property.valueClassProperty?.let { inner ->
-                if (inner.isGhost) {
-                    inner.type.toGhostDeclaration()?.let { deps.add(it) }
-                }
-            }
-            for (subclass in property.inferredSubclasses) {
-                subclass.declaration.toGhostDeclaration()?.let { deps.add(it) }
-                for (subProperty in subclass.properties) {
-                    collectPropertyDependencies(subProperty, deps)
-                }
-            }
-        }
-
-        return deps
     }
 
     private fun collectPropertyDependencies(
@@ -119,11 +75,56 @@ internal object TextChannelPlanner {
         }
     }
 
+    /**
+     * A class's own stated preference, ignoring transitive requirements. Only
+     * `@GhostSerialization` classes have an opinion (default `true`); others (e.g.
+     * `@GhostProtoSerialization`) return `false` but can still be pulled in transitively.
+     */
+    private fun KSClassDeclaration.effectiveOwnTextChannelValue(): Boolean {
+        val annotation = annotations.firstOrNull {
+            it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION
+        } ?: return false
+        val explicit = annotation.arguments
+            .firstOrNull { arg -> arg.name?.asString() == AC.ARG_TEXT_CHANNEL }
+            ?.value as? Boolean
+        return explicit ?: true
+    }
+
+    private fun ghostDependencies(
+        classDeclaration: KSClassDeclaration,
+        properties: List<GhostPropertyModel>,
+    ): Set<KSClassDeclaration> {
+        val deps = mutableSetOf<KSClassDeclaration>()
+
+        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {
+            classDeclaration.getSealedSubclasses().forEach { subclass ->
+                subclass.toGhostDeclaration()?.let { deps.add(it) }
+            }
+        }
+
+        for (property in properties) {
+            collectPropertyDependencies(property = property, deps = deps)
+            property.valueClassProperty?.let { inner ->
+                if (inner.isGhost) {
+                    inner.type.toGhostDeclaration()?.let { deps.add(it) }
+                }
+            }
+            for (subclass in property.inferredSubclasses) {
+                subclass.declaration.toGhostDeclaration()?.let { deps.add(it) }
+                for (subProperty in subclass.properties) {
+                    collectPropertyDependencies(property = subProperty, deps = deps)
+                }
+            }
+        }
+
+        return deps
+    }
+
     private fun KSType.toGhostDeclaration(): KSClassDeclaration? =
         (declaration as? KSClassDeclaration)?.toGhostDeclaration()
 
     private fun KSClassDeclaration.toGhostDeclaration(): KSClassDeclaration? {
-        if (!annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }) {
+        if (!annotations.any { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }) {
             return null
         }
         return this

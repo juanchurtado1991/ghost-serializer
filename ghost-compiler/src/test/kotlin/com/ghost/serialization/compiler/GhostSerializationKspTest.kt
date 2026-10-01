@@ -33,8 +33,8 @@ class GhostSerializationKspTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
-            kspOutput.any { "UserSerializer.kt" in it },
-            "Expected UserSerializer.kt in kspSourcesDir walk. Compiler Output:\n${result.messages}\nFiles:\n$kspOutput"
+            actual = kspOutput.any { "UserSerializer.kt" in it },
+            message = "Expected UserSerializer.kt in kspSourcesDir walk. Compiler Output:\n${result.messages}\nFiles:\n$kspOutput"
         )
     }
 
@@ -56,7 +56,7 @@ class GhostSerializationKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
-        assertTrue(kspOutput.any { "GhostModuleRegistry" in it }, "Expected registry: $kspOutput")
+        assertTrue(actual = kspOutput.any { "GhostModuleRegistry" in it }, message = "Expected registry: $kspOutput")
     }
 
     @Test
@@ -78,8 +78,8 @@ class GhostSerializationKspTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
-            kspOutput.any { "StatusSerializer.kt" in it },
-            "Expected enum serializer: $kspOutput"
+            actual = kspOutput.any { "StatusSerializer.kt" in it },
+            message = "Expected enum serializer: $kspOutput"
         )
     }
 
@@ -99,7 +99,7 @@ class GhostSerializationKspTest {
             )
         )
 
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
         assertTrue(
             result.messages.contains("data class", ignoreCase = true) ||
                     result.messages.contains("GhostSerialization", ignoreCase = true),

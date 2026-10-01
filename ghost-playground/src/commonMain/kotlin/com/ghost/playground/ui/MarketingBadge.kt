@@ -33,7 +33,7 @@ internal fun MarketingBadge(label: String, icon: PlaygroundIconKind) {
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PlaygroundIcon(icon, tint = Teal, size = 12.dp)
+        PlaygroundIcon(kind = icon, tint = Teal, size = 12.dp)
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = InkSoft)
     }
 }

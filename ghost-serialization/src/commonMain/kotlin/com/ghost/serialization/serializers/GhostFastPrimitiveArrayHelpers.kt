@@ -1,130 +1,60 @@
 package com.ghost.serialization.serializers
 
 import okio.ByteString
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /** True when the [limit]-bounded bytes at [pos] match [literal] byte-for-byte. */
 @PublishedApi
-internal inline fun matchesLiteral(getByte: (Int) -> Int, pos: Int, limit: Int, literal: ByteString): Boolean {
+internal inline fun matchesLiteral(
+    getByte: (Int) -> Int,
+    pos: Int,
+    limit: Int,
+    literal: ByteString
+): Boolean {
     val size = literal.size
     if (pos + size > limit) return false
     for (i in 0 until size) {
-        if (getByte(pos + i) != (literal[i].toInt() and C.BYTE_MASK)) return false
+        if (getByte(pos + i) != (literal[i].toInt() and TOK.BYTE_MASK)) return false
     }
     return true
 }
 
 /**
- * Writes [size] elements via [writeAt]; separator bookkeeping is handled inside each
- * `writer.value(...)` overload, so this is pure iteration shared by every primitive array
- * serializer's write path.
- */
-internal inline fun writeArrayElements(size: Int, writeAt: (Int) -> Unit) {
-    for (i in 0 until size) writeAt(i)
-}
-
-/**
- * Fast path for a compact, comma-separated run of bare integers inside `[...]` (the common,
- * dominant-cost shape for large numeric arrays). Falls back to `null` (position reset to
- * [startPosition]) on anything that doesn't fit — whitespace, decimal point/exponent, digit
- * overflow — so the general element-by-element loop remains the source of truth for overflow
- * and error messages. Like that loop, it does not enforce `maxCollectionSize`.
+ * Fast path for a compact, comma-separated run of bare `true`/`false` literals — bypasses the
+ * per-element `hasNext()`/comma-bookkeeping dispatch. Does not activate for coerced boolean
+ * values (`1`/`0`, quoted strings); those fall back to the general loop.
  *
- * Precondition: called right after `beginArray()` confirms a non-empty array, with
- * [startPosition] at that first byte. On success, position is left AT the closing `]` —
- * callers must still call `endArray()` themselves.
+ * Precondition: same as [tryFastIntArrayCore].
  */
-internal inline fun tryFastIntArrayCore(
+internal inline fun tryFastBooleanArrayCore(
     startPosition: Int,
     limit: Int,
     getByte: (Int) -> Int,
     setPosition: (Int) -> Unit,
-): IntArray? {
+): BooleanArray? {
     var pos = startPosition
-    val list = GhostIntList()
+    val list = GhostBooleanList()
     while (true) {
-        var negative = false
-        if (pos < limit && getByte(pos) == C.MINUS_INT) {
-            negative = true
-            pos++
-        }
-        val digitsStart = pos
-        var value = 0
-        var digitCount = 0
-        while (pos < limit) {
-            val b = getByte(pos)
-            if (b < C.ZERO_INT || b > C.NINE_INT) break
-            if (digitCount >= C.INT_SAFE_DIGITS) {
-                setPosition(startPosition)
-                return null
-            }
-            value = value * C.BASE_TEN + (b - C.ZERO_INT)
-            digitCount++
-            pos++
-        }
-        if (pos == digitsStart) {
+        val value: Boolean
+        if (matchesLiteral(getByte = getByte, pos = pos, limit = limit, literal = WR.TRUE_BS)) {
+            value = true
+            pos += WR.TRUE_BS.size
+        } else if (matchesLiteral(getByte = getByte, pos = pos, limit = limit, literal = WR.FALSE_BS)) {
+            value = false
+            pos += WR.FALSE_BS.size
+        } else {
             setPosition(startPosition)
             return null
         }
-        list.add(if (negative) -value else value)
+        list.add(value = value)
         when {
-            pos < limit && getByte(pos) == C.COMMA_INT -> {
+            pos < limit && getByte(pos) == TOK.COMMA_INT -> {
                 pos++
             }
 
-            pos < limit && getByte(pos) == C.CLOSE_ARR_INT -> {
-                setPosition(pos)
-                return list.toArray()
-            }
-
-            else -> {
-                setPosition(startPosition)
-                return null
-            }
-        }
-    }
-}
-
-/** Same fast path as [tryFastIntArrayCore], for a run of bare `Long`s. */
-internal inline fun tryFastLongArrayCore(
-    startPosition: Int,
-    limit: Int,
-    getByte: (Int) -> Int,
-    setPosition: (Int) -> Unit,
-): LongArray? {
-    var pos = startPosition
-    val list = GhostLongList()
-    while (true) {
-        var negative = false
-        if (pos < limit && getByte(pos) == C.MINUS_INT) {
-            negative = true
-            pos++
-        }
-        val digitsStart = pos
-        var value = 0L
-        var digitCount = 0
-        while (pos < limit) {
-            val b = getByte(pos)
-            if (b < C.ZERO_INT || b > C.NINE_INT) break
-            if (digitCount >= C.LONG_SAFE_DIGITS) {
-                setPosition(startPosition)
-                return null
-            }
-            value = value * C.BASE_TEN + (b - C.ZERO_INT)
-            digitCount++
-            pos++
-        }
-        if (pos == digitsStart) {
-            setPosition(startPosition)
-            return null
-        }
-        list.add(if (negative) -value else value)
-        when {
-            pos < limit && getByte(pos) == C.COMMA_INT -> {
-                pos++
-            }
-
-            pos < limit && getByte(pos) == C.CLOSE_ARR_INT -> {
+            pos < limit && getByte(pos) == TOK.CLOSE_ARR_INT -> {
                 setPosition(pos)
                 return list.toArray()
             }
@@ -163,18 +93,19 @@ internal inline fun <T> tryFastDecimalArrayCore(
             return false
         }
         val first = getByte(checkPosition)
-        if (first != C.MINUS_INT && (first < C.ZERO_INT || first > C.NINE_INT)) {
+        val isInvalidNumberLead = first != TOK.MINUS_INT && (first < TOK.ZERO_INT || first > TOK.NINE_INT)
+        if (isInvalidNumberLead) {
             setPosition(startPosition)
             return false
         }
-        addTo.add(parseNext())
+        addTo.add(element = parseNext())
         val afterPosition = getPosition()
-        if (afterPosition < limit && getByte(afterPosition) == C.COMMA_INT) {
+        if (afterPosition < limit && getByte(afterPosition) == TOK.COMMA_INT) {
             checkPosition = afterPosition + 1
             setPosition(checkPosition)
             continue
         }
-        if (afterPosition < limit && getByte(afterPosition) == C.CLOSE_ARR_INT) {
+        if (afterPosition < limit && getByte(afterPosition) == TOK.CLOSE_ARR_INT) {
             return true
         }
         setPosition(startPosition)
@@ -183,39 +114,55 @@ internal inline fun <T> tryFastDecimalArrayCore(
 }
 
 /**
- * Fast path for a compact, comma-separated run of bare `true`/`false` literals — bypasses the
- * per-element `hasNext()`/comma-bookkeeping dispatch. Does not activate for coerced boolean
- * values (`1`/`0`, quoted strings); those fall back to the general loop.
+ * Fast path for a compact, comma-separated run of bare integers inside `[...]` (the common,
+ * dominant-cost shape for large numeric arrays). Falls back to `null` (position reset to
+ * [startPosition]) on anything that doesn't fit — whitespace, decimal point/exponent, digit
+ * overflow — so the general element-by-element loop remains the source of truth for overflow
+ * and error messages. Like that loop, it does not enforce `maxCollectionSize`.
  *
- * Precondition: same as [tryFastIntArrayCore].
+ * Precondition: called right after `beginArray()` confirms a non-empty array, with
+ * [startPosition] at that first byte. On success, position is left AT the closing `]` —
+ * callers must still call `endArray()` themselves.
  */
-internal inline fun tryFastBooleanArrayCore(
+internal inline fun tryFastIntArrayCore(
     startPosition: Int,
     limit: Int,
     getByte: (Int) -> Int,
     setPosition: (Int) -> Unit,
-): BooleanArray? {
+): IntArray? {
     var pos = startPosition
-    val list = GhostBooleanList()
+    val list = GhostIntList()
     while (true) {
-        val value: Boolean
-        if (matchesLiteral(getByte, pos, limit, C.TRUE_BS)) {
-            value = true
-            pos += C.TRUE_BS.size
-        } else if (matchesLiteral(getByte, pos, limit, C.FALSE_BS)) {
-            value = false
-            pos += C.FALSE_BS.size
-        } else {
+        var negative = false
+        if (pos < limit && getByte(pos) == TOK.MINUS_INT) {
+            negative = true
+            pos++
+        }
+        val digitsStart = pos
+        var value = 0
+        var digitCount = 0
+        while (pos < limit) {
+            val b = getByte(pos)
+            if (b < TOK.ZERO_INT || b > TOK.NINE_INT) break
+            if (digitCount >= NUM.INT_SAFE_DIGITS) {
+                setPosition(startPosition)
+                return null
+            }
+            value = value * WR.BASE_TEN + (b - TOK.ZERO_INT)
+            digitCount++
+            pos++
+        }
+        if (pos == digitsStart) {
             setPosition(startPosition)
             return null
         }
-        list.add(value)
+        list.add(value = if (negative) -value else value)
         when {
-            pos < limit && getByte(pos) == C.COMMA_INT -> {
+            pos < limit && getByte(pos) == TOK.COMMA_INT -> {
                 pos++
             }
 
-            pos < limit && getByte(pos) == C.CLOSE_ARR_INT -> {
+            pos < limit && getByte(pos) == TOK.CLOSE_ARR_INT -> {
                 setPosition(pos)
                 return list.toArray()
             }
@@ -226,4 +173,68 @@ internal inline fun tryFastBooleanArrayCore(
             }
         }
     }
+}
+
+/** Same fast path as [tryFastIntArrayCore], for a run of bare `Long`s. */
+internal inline fun tryFastLongArrayCore(
+    startPosition: Int,
+    limit: Int,
+    getByte: (Int) -> Int,
+    setPosition: (Int) -> Unit,
+): LongArray? {
+    var pos = startPosition
+    val list = GhostLongList()
+    while (true) {
+        var negative = false
+        if (pos < limit && getByte(pos) == TOK.MINUS_INT) {
+            negative = true
+            pos++
+        }
+        val digitsStart = pos
+        var value = 0L
+        var digitCount = 0
+        while (pos < limit) {
+            val b = getByte(pos)
+            if (b < TOK.ZERO_INT || b > TOK.NINE_INT) break
+            if (digitCount >= NUM.LONG_SAFE_DIGITS) {
+                setPosition(startPosition)
+                return null
+            }
+            value = value * WR.BASE_TEN + (b - TOK.ZERO_INT)
+            digitCount++
+            pos++
+        }
+        if (pos == digitsStart) {
+            setPosition(startPosition)
+            return null
+        }
+        list.add(value = if (negative) -value else value)
+        when {
+            pos < limit && getByte(pos) == TOK.COMMA_INT -> {
+                pos++
+            }
+
+            pos < limit && getByte(pos) == TOK.CLOSE_ARR_INT -> {
+                setPosition(pos)
+                return list.toArray()
+            }
+
+            else -> {
+                setPosition(startPosition)
+                return null
+            }
+        }
+    }
+}
+
+/**
+ * Writes [size] elements via [writeAt]; separator bookkeeping is handled inside each
+ * `writer.value(...)` overload, so this is pure iteration shared by every primitive array
+ * serializer's write path.
+ */
+internal inline fun writeArrayElements(
+    size: Int,
+    writeAt: (Int) -> Unit
+) {
+    for (i in 0 until size) writeAt(i)
 }

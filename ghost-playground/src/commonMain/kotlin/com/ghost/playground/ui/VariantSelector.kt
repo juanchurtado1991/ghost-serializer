@@ -90,7 +90,7 @@ fun VariantSelector(
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            PlaygroundIcon(PlaygroundIconKind.Chevron, tint = Teal, size = 14.dp)
+            PlaygroundIcon(kind = PlaygroundIconKind.Chevron, tint = Teal, size = 14.dp)
         }
         DropdownMenu(
             expanded = expanded,

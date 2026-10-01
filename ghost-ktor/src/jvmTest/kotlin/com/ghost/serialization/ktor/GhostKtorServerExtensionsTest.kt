@@ -1,7 +1,7 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -22,8 +22,7 @@ class GhostKtorServerExtensionsTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = mapOf(
                 KtorUser::class to KtorUserSerializer,
                 ProtoKtorEvent::class to ProtoKtorEventSerializer,
@@ -45,15 +44,18 @@ class GhostKtorServerExtensionsTest {
     fun respondGhost_writesGhostEncodedBodyWithJsonContentType() = testApplication {
         routing {
             get("/user") {
-                call.respondGhost(KtorUser(id = 42, name = "John", isActive = true))
+                call.respondGhost(value = KtorUser(id = 42, name = "John", isActive = true))
             }
         }
 
         val response = client.get("/user")
 
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("application/json", response.headers["Content-Type"]?.substringBefore(";"))
-        assertEquals("""{"id":42,"name":"John","isActive":true}""", response.bodyAsText())
+        assertEquals(expected = HttpStatusCode.OK, actual = response.status)
+        assertEquals(
+            expected = GhostKtorMediaTypes.JSON_CONTENT_TYPE,
+            actual = response.headers["Content-Type"]?.substringBefore(";")
+        )
+        assertEquals(expected = """{"id":42,"name":"John","isActive":true}""", actual = response.bodyAsText())
     }
 
     @Test
@@ -61,28 +63,28 @@ class GhostKtorServerExtensionsTest {
         routing {
             get("/user") {
                 call.respondGhost(
-                    KtorUser(id = 1, name = "Ada", isActive = false),
-                    HttpStatusCode.Created
+                    value = KtorUser(id = 1, name = "Ada", isActive = false),
+                    status = HttpStatusCode.Created
                 )
             }
         }
 
         val response = client.get("/user")
 
-        assertEquals(HttpStatusCode.Created, response.status)
+        assertEquals(expected = HttpStatusCode.Created, actual = response.status)
     }
 
     @Test
     fun respondGhost_unregisteredTypeThrowsDescriptiveException() = testApplication {
         routing {
             get("/user") {
-                call.respondGhost(UnregisteredUser(id = 1, name = "X"))
+                call.respondGhost(value = UnregisteredUser(id = 1, name = "X"))
             }
         }
 
         // Ktor 3 test host converts uncaught handler exceptions into 500s, not client-side throws.
         val response = client.get("/user")
-        assertEquals(HttpStatusCode.InternalServerError, response.status)
+        assertEquals(expected = HttpStatusCode.InternalServerError, actual = response.status)
     }
 
     @Test
@@ -90,7 +92,7 @@ class GhostKtorServerExtensionsTest {
         routing {
             get("/event") {
                 call.respondGhostProto(
-                    ProtoKtorEvent(
+                    value = ProtoKtorEvent(
                         deviceId = Long.MAX_VALUE,
                         label = "sensor-1"
                     )
@@ -100,10 +102,10 @@ class GhostKtorServerExtensionsTest {
 
         val response = client.get("/event")
 
-        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(expected = HttpStatusCode.OK, actual = response.status)
         assertEquals(
-            """{"deviceId":"9223372036854775807","label":"sensor-1"}""",
-            response.bodyAsText()
+            expected = """{"deviceId":"9223372036854775807","label":"sensor-1"}""",
+            actual = response.bodyAsText()
         )
     }
 
@@ -111,16 +113,19 @@ class GhostKtorServerExtensionsTest {
     fun respondGhostYaml_writesYamlBodyWithYamlContentType() = testApplication {
         routing {
             get("/user") {
-                call.respondGhostYaml(YamlKtorUser(id = 42, name = "John", isActive = true))
+                call.respondGhostYaml(value = YamlKtorUser(id = 42, name = "John", isActive = true))
             }
         }
 
         val response = client.get("/user")
 
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("application/yaml", response.headers["Content-Type"]?.substringBefore(";"))
+        assertEquals(expected = HttpStatusCode.OK, actual = response.status)
+        assertEquals(
+            expected = GhostKtorMediaTypes.YAML_CONTENT_TYPE,
+            actual = response.headers["Content-Type"]?.substringBefore(";")
+        )
         val body = response.bodyAsText()
-        assertEquals(true, body.contains("id: 42"))
-        assertEquals(true, body.contains("name: John") || body.contains("name: \"John\""))
+        assertEquals(expected = true, actual = body.contains("id: 42"))
+        assertEquals(expected = true, actual = body.contains("name: John") || body.contains("name: \"John\""))
     }
 }

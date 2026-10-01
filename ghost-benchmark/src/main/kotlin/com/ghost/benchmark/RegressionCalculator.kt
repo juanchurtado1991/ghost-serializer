@@ -31,6 +31,26 @@ object RegressionCalculator {
      */
     const val REPORT_JSON_PATH = "build/reports/regression/regression-report.json"
 
+    const val TWITTER = "TWITTER MACRO"
+    const val LIST_MEDIUM = "LIST_MEDIUM (200)"
+    const val SYNC_FULL = "SYNC_FULL_LARGE (2000)"
+    const val WRITING = "WRITING (1000)"
+    const val DECODE_STRING = "Decode (String)"
+    const val DECODE_BYTES = "Decode (Bytes)"
+    const val DECODE_STREAMING = "Decode (Streaming)"
+    const val ENCODE_STRING = "Encode (String)"
+    const val ENCODE_BYTES = "Encode (Bytes)"
+    const val ENCODE_STREAMING = "Encode (Streaming)"
+    const val MODE_STRING = "String"
+    const val MODE_BYTES = "Bytes"
+    const val MODE_STREAMING = "Streaming"
+
+    private const val STATUS_OK = "✅ OK"
+    private const val STATUS_SPEED = "❌ SPD"
+    private const val STATUS_MEM = "❌ MEM"
+    private const val STATUS_BOTH = "❌ S+M"
+    private const val NOT_AVAILABLE = "n/a"
+
     private val REPORT_JSON = Json { prettyPrint = true }
 
     @Serializable
@@ -55,7 +75,6 @@ object RegressionCalculator {
         val categories: List<ReportCategory>,
     )
 
-    /** Raw metric kind for a regression category (controls how advantage is derived). */
     enum class Metric { THROUGHPUT, LATENCY }
 
     /**
@@ -96,27 +115,147 @@ object RegressionCalculator {
      * `benchmarkTwitter`.
      */
     private val BASELINES: List<Baseline> = listOf(
-        Baseline(TWITTER, DECODE_STRING, Metric.THROUGHPUT, 1829.3, 1090.9, 361.2, 1337.6),
+        Baseline(
+            group = TWITTER,
+            category = DECODE_STRING,
+            metric = Metric.THROUGHPUT,
+            ghostSpeed = 1829.3,
+            kserSpeed = 1090.9,
+            ghostMemKb = 361.2,
+            kserMemKb = 1337.6
+        ),
 
-        Baseline(TWITTER, DECODE_BYTES, Metric.THROUGHPUT, 1514.3, 661.6, 621.2, 4297.0),
+        Baseline(
+            group = TWITTER,
+            category = DECODE_BYTES,
+            metric = Metric.THROUGHPUT,
+            ghostSpeed = 1514.3,
+            kserSpeed = 661.6,
+            ghostMemKb = 621.2,
+            kserMemKb = 4297.0
+        ),
 
-        Baseline(TWITTER, DECODE_STREAMING, Metric.THROUGHPUT, 818.3, 303.0, 1268.6, 1904.9),
+        Baseline(
+            group = TWITTER,
+            category = DECODE_STREAMING,
+            metric = Metric.THROUGHPUT,
+            ghostSpeed = 818.3,
+            kserSpeed = 303.0,
+            ghostMemKb = 1268.6,
+            kserMemKb = 1904.9
+        ),
 
-        Baseline(TWITTER, ENCODE_STRING, Metric.THROUGHPUT, 4445.4, 3129.4, 1074.3, 981.6),
-        Baseline(TWITTER, ENCODE_BYTES, Metric.THROUGHPUT, 2330.2, 1227.7, 420.2, 2216.3),
-        Baseline(TWITTER, ENCODE_STREAMING, Metric.THROUGHPUT, 2310.5, 1576.3, 426.9, 464.5),
+        Baseline(
+            group = TWITTER,
+            category = ENCODE_STRING,
+            metric = Metric.THROUGHPUT,
+            ghostSpeed = 4445.4,
+            kserSpeed = 3129.4,
+            ghostMemKb = 1074.3,
+            kserMemKb = 981.6
+        ),
+        Baseline(
+            group = TWITTER,
+            category = ENCODE_BYTES,
+            metric = Metric.THROUGHPUT,
+            ghostSpeed = 2330.2,
+            kserSpeed = 1227.7,
+            ghostMemKb = 420.2,
+            kserMemKb = 2216.3
+        ),
+        Baseline(
+            group = TWITTER,
+            category = ENCODE_STREAMING,
+            metric = Metric.THROUGHPUT,
+            ghostSpeed = 2310.5,
+            kserSpeed = 1576.3,
+            ghostMemKb = 426.9,
+            kserMemKb = 464.5
+        ),
 
-        Baseline(LIST_MEDIUM, MODE_STRING, Metric.LATENCY, 1.0, 2.565, 33.9, 113.9),
-        Baseline(LIST_MEDIUM, MODE_BYTES, Metric.LATENCY, 1.0, 2.452, 24.5, 113.9),
-        Baseline(LIST_MEDIUM, MODE_STREAMING, Metric.LATENCY, 1.0, 4.383, 24.5, 113.9),
+        Baseline(
+            group = LIST_MEDIUM,
+            category = MODE_STRING,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 2.565,
+            ghostMemKb = 33.9,
+            kserMemKb = 113.9
+        ),
+        Baseline(
+            group = LIST_MEDIUM,
+            category = MODE_BYTES,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 2.452,
+            ghostMemKb = 24.5,
+            kserMemKb = 113.9
+        ),
+        Baseline(
+            group = LIST_MEDIUM,
+            category = MODE_STREAMING,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 4.383,
+            ghostMemKb = 24.5,
+            kserMemKb = 113.9
+        ),
 
-        Baseline(SYNC_FULL, MODE_STRING, Metric.LATENCY, 1.0, 2.196, 240.3, 1009.3),
-        Baseline(SYNC_FULL, MODE_BYTES, Metric.LATENCY, 1.0, 2.102, 158.3, 1009.3),
-        Baseline(SYNC_FULL, MODE_STREAMING, Metric.LATENCY, 1.0, 3.897, 222.7, 1073.8),
+        Baseline(
+            group = SYNC_FULL,
+            category = MODE_STRING,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 2.196,
+            ghostMemKb = 240.3,
+            kserMemKb = 1009.3
+        ),
+        Baseline(
+            group = SYNC_FULL,
+            category = MODE_BYTES,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 2.102,
+            ghostMemKb = 158.3,
+            kserMemKb = 1009.3
+        ),
+        Baseline(
+            group = SYNC_FULL,
+            category = MODE_STREAMING,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 3.897,
+            ghostMemKb = 222.7,
+            kserMemKb = 1073.8
+        ),
 
-        Baseline(WRITING, MODE_STRING, Metric.LATENCY, 1.0, 1.736, 92.7, 202.6),
-        Baseline(WRITING, MODE_BYTES, Metric.LATENCY, 1.0, 1.431, 92.6, 263.9),
-        Baseline(WRITING, MODE_STREAMING, Metric.LATENCY, 1.0, 2.573, 32.2, 141.2),
+        Baseline(
+            group = WRITING,
+            category = MODE_STRING,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 1.736,
+            ghostMemKb = 92.7,
+            kserMemKb = 202.6
+        ),
+        Baseline(
+            group = WRITING,
+            category = MODE_BYTES,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 1.431,
+            ghostMemKb = 92.6,
+            kserMemKb = 263.9
+        ),
+        Baseline(
+            group = WRITING,
+            category = MODE_STREAMING,
+            metric = Metric.LATENCY,
+            ghostSpeed = 1.0,
+            kserSpeed = 2.573,
+            ghostMemKb = 32.2,
+            kserMemKb = 141.2
+        ),
     )
 
     private data class Row(
@@ -140,7 +279,7 @@ object RegressionCalculator {
      * @return `true` when no regression was detected; `false` when at least one category regressed.
      */
     fun report(observed: List<Observed>, tolerance: Double = DEFAULT_TOLERANCE): Boolean {
-        val rows = observed.mapNotNull { obs -> buildRow(obs, tolerance) }
+        val rows = observed.mapNotNull { obs -> buildRow(obs = obs, tolerance = tolerance) }
 
         println("\n════════════════════════════════════════════════════════════════")
         println("  📊 REGRESSION CALCULATOR — engine-relative vs README baseline")
@@ -158,10 +297,10 @@ object RegressionCalculator {
         var lastGroup = ""
         for (row in rows) {
             if (row.group != lastGroup) {
-                printGroupHeader(row.group)
+                printGroupHeader(group = row.group)
                 lastGroup = row.group
             }
-            printRow(row)
+            printRow(row = row)
         }
 
         val regressions = rows.count { it.speedRegressed || it.memRegressed }
@@ -187,8 +326,107 @@ object RegressionCalculator {
         }
         println("════════════════════════════════════════════════════════════════\n")
 
-        writeJsonReport(rows, tolerance, regressions == 0)
+        writeJsonReport(rows = rows, tolerance = tolerance, passed = regressions == 0)
         return regressions == 0
+    }
+
+    /** Renders an advantage ratio as a signed percentage, e.g. 1.267 → "+26.7%". */
+    private fun advantagePct(advantage: Double): String {
+        return "%+.1f%%".format((advantage - 1.0) * 100.0)
+    }
+
+    private fun buildRow(obs: Observed, tolerance: Double): Row? {
+        val baseline = BASELINES.firstOrNull {
+            it.group == obs.group && it.category == obs.category
+        } ?: return null
+
+        val baseSpeedAdv = speedAdvantage(
+            metric = baseline.metric,
+            ghost = baseline.ghostSpeed,
+            kser = baseline.kserSpeed
+        )
+        val curSpeedAdv = speedAdvantage(metric = obs.metric, ghost = obs.ghostSpeed, kser = obs.kserSpeed)
+        val speedDeltaRel = relativeDelta(baseline = baseSpeedAdv, current = curSpeedAdv)
+        val speedRegressed = speedDeltaRel < -tolerance
+
+        val baseMemAdv = leannessAdvantage(ghostMemKb = baseline.ghostMemKb, kserMemKb = baseline.kserMemKb)
+        val curMemAdv = leannessAdvantage(ghostMemKb = obs.ghostMemKb, kserMemKb = obs.kserMemKb)
+        val memDeltaRel = if (baseMemAdv != null && curMemAdv != null) {
+            relativeDelta(baseline = baseMemAdv, current = curMemAdv)
+        } else {
+            null
+        }
+        val memRegressed = memDeltaRel != null && memDeltaRel < -tolerance
+
+        return Row(
+            group = obs.group,
+            category = obs.category,
+            baseSpeedAdv = baseSpeedAdv,
+            curSpeedAdv = curSpeedAdv,
+            speedDeltaRel = speedDeltaRel,
+            speedRegressed = speedRegressed,
+            baseMemAdv = baseMemAdv,
+            curMemAdv = curMemAdv,
+            memDeltaRel = memDeltaRel,
+            memRegressed = memRegressed,
+        )
+    }
+
+    /** Leanness advantage: higher = Ghost allocates less than KSER. Null when unmeasured. */
+    private fun leannessAdvantage(ghostMemKb: Double, kserMemKb: Double): Double? {
+        if (ghostMemKb <= 0.0 || kserMemKb <= 0.0) {
+            return null
+        }
+        return kserMemKb / ghostMemKb
+    }
+
+    private fun printGroupHeader(group: String) {
+        println("\n  $group")
+        println("  | Category           | Base adv | Cur adv | Δrel(spd) | Base mem | Cur mem | Δrel(mem) | Status |")
+        println("  |--------------------|----------|---------|-----------|----------|---------|-----------|--------|")
+    }
+
+    private fun printRow(row: Row) {
+        val status = when {
+            row.speedRegressed && row.memRegressed -> STATUS_BOTH
+            row.speedRegressed -> STATUS_SPEED
+            row.memRegressed -> STATUS_MEM
+            else -> STATUS_OK
+        }
+        println(
+            "  | %-18s | %8s | %7s | %9s | %8s | %7s | %9s | %-6s |".format(
+                row.category,
+                advantagePct(advantage = row.baseSpeedAdv),
+                advantagePct(advantage = row.curSpeedAdv),
+                signed(deltaRel = row.speedDeltaRel),
+                row.baseMemAdv?.let { advantagePct(advantage = it) } ?: NOT_AVAILABLE,
+                row.curMemAdv?.let { advantagePct(advantage = it) } ?: NOT_AVAILABLE,
+                row.memDeltaRel?.let { signed(deltaRel = it) } ?: NOT_AVAILABLE,
+                status,
+            )
+        )
+    }
+
+    private fun relativeDelta(baseline: Double, current: Double): Double {
+        if (baseline <= 0.0) {
+            return 0.0
+        }
+        return current / baseline - 1.0
+    }
+
+    private fun signed(deltaRel: Double): String {
+        return "%+.1f%%".format(deltaRel * 100.0)
+    }
+
+    /** Advantage where higher = Ghost faster, regardless of raw metric direction. */
+    private fun speedAdvantage(metric: Metric, ghost: Double, kser: Double): Double {
+        if (ghost <= 0.0 || kser <= 0.0) {
+            return 0.0
+        }
+        return when (metric) {
+            Metric.THROUGHPUT -> ghost / kser
+            Metric.LATENCY -> kser / ghost
+        }
     }
 
     /**
@@ -221,144 +459,4 @@ object RegressionCalculator {
         file.writeText(REPORT_JSON.encodeToString(report))
         println("  📄 JSON report written to ${file.path}\n")
     }
-
-    private fun buildRow(obs: Observed, tolerance: Double): Row? {
-        val baseline = BASELINES.firstOrNull {
-            it.group == obs.group && it.category == obs.category
-        } ?: return null
-
-        val baseSpeedAdv = speedAdvantage(baseline.metric, baseline.ghostSpeed, baseline.kserSpeed)
-        val curSpeedAdv = speedAdvantage(obs.metric, obs.ghostSpeed, obs.kserSpeed)
-        val speedDeltaRel = relativeDelta(baseSpeedAdv, curSpeedAdv)
-        val speedRegressed = speedDeltaRel < -tolerance
-
-        val baseMemAdv = leannessAdvantage(baseline.ghostMemKb, baseline.kserMemKb)
-        val curMemAdv = leannessAdvantage(obs.ghostMemKb, obs.kserMemKb)
-        val memDeltaRel = if (baseMemAdv != null && curMemAdv != null) {
-            relativeDelta(baseMemAdv, curMemAdv)
-        } else {
-            null
-        }
-        val memRegressed = memDeltaRel != null && memDeltaRel < -tolerance
-
-        return Row(
-            group = obs.group,
-            category = obs.category,
-            baseSpeedAdv = baseSpeedAdv,
-            curSpeedAdv = curSpeedAdv,
-            speedDeltaRel = speedDeltaRel,
-            speedRegressed = speedRegressed,
-            baseMemAdv = baseMemAdv,
-            curMemAdv = curMemAdv,
-            memDeltaRel = memDeltaRel,
-            memRegressed = memRegressed,
-        )
-    }
-
-    /** Advantage where higher = Ghost faster, regardless of raw metric direction. */
-    private fun speedAdvantage(metric: Metric, ghost: Double, kser: Double): Double {
-        if (ghost <= 0.0 || kser <= 0.0) {
-            return 0.0
-        }
-        return when (metric) {
-            Metric.THROUGHPUT -> ghost / kser
-            Metric.LATENCY -> kser / ghost
-        }
-    }
-
-    /** Leanness advantage: higher = Ghost allocates less than KSER. Null when unmeasured. */
-    private fun leannessAdvantage(ghostMemKb: Double, kserMemKb: Double): Double? {
-        if (ghostMemKb <= 0.0 || kserMemKb <= 0.0) {
-            return null
-        }
-        return kserMemKb / ghostMemKb
-    }
-
-    private fun relativeDelta(baseline: Double, current: Double): Double {
-        if (baseline <= 0.0) {
-            return 0.0
-        }
-        return current / baseline - 1.0
-    }
-
-    private fun printGroupHeader(group: String) {
-        println("\n  $group")
-        println("  | Category           | Base adv | Cur adv | Δrel(spd) | Base mem | Cur mem | Δrel(mem) | Status |")
-        println("  |--------------------|----------|---------|-----------|----------|---------|-----------|--------|")
-    }
-
-    private fun printRow(row: Row) {
-        val status = when {
-            row.speedRegressed && row.memRegressed -> STATUS_BOTH
-            row.speedRegressed -> STATUS_SPEED
-            row.memRegressed -> STATUS_MEM
-            else -> STATUS_OK
-        }
-        println(
-            "  | %-18s | %8s | %7s | %9s | %8s | %7s | %9s | %-6s |".format(
-                row.category,
-                advantagePct(row.baseSpeedAdv),
-                advantagePct(row.curSpeedAdv),
-                signed(row.speedDeltaRel),
-                row.baseMemAdv?.let { advantagePct(it) } ?: NOT_AVAILABLE,
-                row.curMemAdv?.let { advantagePct(it) } ?: NOT_AVAILABLE,
-                row.memDeltaRel?.let { signed(it) } ?: NOT_AVAILABLE,
-                status,
-            )
-        )
-    }
-
-    /** Renders an advantage ratio as a signed percentage, e.g. 1.267 → "+26.7%". */
-    private fun advantagePct(advantage: Double): String {
-        return "%+.1f%%".format((advantage - 1.0) * 100.0)
-    }
-
-    private fun signed(deltaRel: Double): String {
-        return "%+.1f%%".format(deltaRel * 100.0)
-    }
-
-    /** Baseline group label for the Twitter macro dataset ([BenchmarkThroughput.TWITTER_PAYLOAD_BYTES]). */
-    const val TWITTER = "TWITTER MACRO"
-
-    /** Baseline group label for LIST_MEDIUM deserialization (200-item `ComplexResponse` list). */
-    const val LIST_MEDIUM = "LIST_MEDIUM (200)"
-
-    /** Baseline group label for SYNC_FULL_LARGE deserialization (2 000 items). */
-    const val SYNC_FULL = "SYNC_FULL_LARGE (2000)"
-
-    /** Baseline group label for WRITING serialization (1 000 items). */
-    const val WRITING = "WRITING (1000)"
-
-    /** Twitter / synthetic decode category — JSON string input. */
-    const val DECODE_STRING = "Decode (String)"
-
-    /** Twitter / synthetic decode category — UTF-8 byte array input. */
-    const val DECODE_BYTES = "Decode (Bytes)"
-
-    /** Twitter / synthetic decode category — Okio buffered source input. */
-    const val DECODE_STREAMING = "Decode (Streaming)"
-
-    /** Twitter / synthetic encode category — JSON string output. */
-    const val ENCODE_STRING = "Encode (String)"
-
-    /** Twitter / synthetic encode category — UTF-8 byte array output. */
-    const val ENCODE_BYTES = "Encode (Bytes)"
-
-    /** Twitter / synthetic encode category — Okio buffered sink output. */
-    const val ENCODE_STREAMING = "Encode (Streaming)"
-
-    /** Synthetic I/O mode — JSON string channel. */
-    const val MODE_STRING = "String"
-
-    /** Synthetic I/O mode — UTF-8 byte array channel. */
-    const val MODE_BYTES = "Bytes"
-
-    /** Synthetic I/O mode — Okio streaming channel. */
-    const val MODE_STREAMING = "Streaming"
-
-    private const val STATUS_OK = "✅ OK"
-    private const val STATUS_SPEED = "❌ SPD"
-    private const val STATUS_MEM = "❌ MEM"
-    private const val STATUS_BOTH = "❌ S+M"
-    private const val NOT_AVAILABLE = "n/a"
 }

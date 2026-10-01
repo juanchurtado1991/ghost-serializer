@@ -16,10 +16,10 @@ class GhostGodObjectTest {
 
         val result = Ghost.deserialize<GodObject>(json.encodeToByteArray())
 
-        assertEquals(100, result.p0)
-        assertEquals(400, result.p40)
-        assertEquals(590, result.p59)
-        assertEquals(1, result.p1)
+        assertEquals(expected = 100, actual = result.p0)
+        assertEquals(expected = 400, actual = result.p40)
+        assertEquals(expected = 590, actual = result.p59)
+        assertEquals(expected = 1, actual = result.p1)
     }
 
     @Test
@@ -35,9 +35,9 @@ class GhostGodObjectTest {
         assert(json.contains("\"p1\":1"))
 
         val result = Ghost.deserialize<GodObject>(bytes)
-        assertEquals(100, result.p0)
-        assertEquals(400, result.p40)
-        assertEquals(590, result.p59)
-        assertEquals(1, result.p1)
+        assertEquals(expected = 100, actual = result.p0)
+        assertEquals(expected = 400, actual = result.p40)
+        assertEquals(expected = 590, actual = result.p59)
+        assertEquals(expected = 1, actual = result.p1)
     }
 }

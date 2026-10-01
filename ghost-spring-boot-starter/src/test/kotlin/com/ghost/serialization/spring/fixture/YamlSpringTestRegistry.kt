@@ -3,12 +3,11 @@
 package com.ghost.serialization.spring.fixture
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import kotlin.reflect.KClass
 
-object YamlSpringTestRegistry : GhostRegistry {
-    override fun prewarm() {}
+object YamlSpringTestRegistry : AbstractGhostRegistry() {
     override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
         mapOf(YamlProfileMessage::class to YamlProfileMessageSerializer)
 

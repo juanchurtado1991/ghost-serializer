@@ -3,7 +3,7 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
@@ -19,23 +19,15 @@ import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+import com.ghost.serialization.proto.GhostProtoConstants as PC
 
-
-object ProtoEmptySerializer : GhostSerializer<ProtoEmpty> {
-    override val typeName: String get() = C.WKT_EMPTY_TYPE
-
-    override fun serialize(writer: GhostJsonWriter, value: ProtoEmpty) {
-        writer.beginObject().endObject()
-    }
-
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoEmpty) {
-        writer.beginObject().endObject()
-    }
+object ProtoEmptySerializer : AbstractGhostSerializer<ProtoEmpty>() {
+    override val typeName: String get() = PC.WKT_EMPTY_TYPE
 
     override fun deserialize(reader: GhostJsonReader): ProtoEmpty {
         reader.beginObject()
-        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {
             reader.nextString()
             reader.consumeKeySeparator()
             reader.skipValue()
@@ -46,7 +38,7 @@ object ProtoEmptySerializer : GhostSerializer<ProtoEmpty> {
 
     override fun deserialize(reader: GhostJsonFlatReader): ProtoEmpty {
         reader.beginObject()
-        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {
             reader.nextString()
             reader.consumeKeySeparator()
             reader.skipValue()
@@ -57,12 +49,20 @@ object ProtoEmptySerializer : GhostSerializer<ProtoEmpty> {
 
     override fun deserialize(reader: GhostJsonStringReader): ProtoEmpty {
         reader.beginObject()
-        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {
             reader.nextString()
             reader.consumeKeySeparator()
             reader.skipValue()
         }
         reader.endObject()
         return ProtoEmpty
+    }
+
+    override fun serialize(writer: GhostJsonWriter, value: ProtoEmpty) {
+        writer.beginObject().endObject()
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: ProtoEmpty) {
+        writer.beginObject().endObject()
     }
 }

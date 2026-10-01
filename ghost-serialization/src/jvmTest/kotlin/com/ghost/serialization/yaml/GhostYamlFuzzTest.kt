@@ -3,6 +3,8 @@ package com.ghost.serialization.yaml
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readAllDocuments
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.yaml.exception.GhostYamlException
 
 /**
@@ -26,7 +28,7 @@ class GhostYamlFuzzTest {
     fun fuzzReadDocumentBytes(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostYamlFlatReader(bytes).readDocument()
+            GhostYamlFlatReader(rawData = bytes).readDocument()
         } catch (_: GhostYamlException) {
             // Expected for malformed input — readDocument's documented contract.
         }
@@ -38,7 +40,7 @@ class GhostYamlFuzzTest {
         // "---"/"..." markers, stream-level state) that a single readDocument() never reaches.
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostYamlFlatReader(bytes).readAllDocuments()
+            GhostYamlFlatReader(rawData = bytes).readAllDocuments()
         } catch (_: GhostYamlException) {
             // Expected for malformed input — readAllDocuments's documented contract.
         }
@@ -50,7 +52,7 @@ class GhostYamlFuzzTest {
         // structure, instead of the malformed-UTF-8 cases the byte-level methods already cover.
         val text = data.consumeRemainingAsString()
         try {
-            GhostYamlFlatReader(text.encodeToByteArray()).readDocument()
+            GhostYamlFlatReader(rawData = text.encodeToByteArray()).readDocument()
         } catch (_: GhostYamlException) {
             // Expected for malformed input — readDocument's documented contract.
         }

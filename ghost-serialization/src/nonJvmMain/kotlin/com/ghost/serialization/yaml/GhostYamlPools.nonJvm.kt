@@ -1,0 +1,52 @@
+@file:OptIn(InternalGhostApi::class)
+
+package com.ghost.serialization.yaml
+
+import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.reset
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.yaml.GhostYamlWriter
+import kotlin.native.concurrent.ThreadLocal
+
+@ThreadLocal
+private var cachedReader: GhostYamlFlatReader? = null
+
+@ThreadLocal
+private var cachedWriter: GhostYamlWriter? = null
+
+@ThreadLocal
+private var cachedWriterBuffer: FlatByteArrayWriter? = null
+
+@InternalGhostApi
+actual fun <T> ghostYamlInternalUseFlatReader(
+    bytes: ByteArray,
+    block: (GhostYamlFlatReader) -> T
+): T {
+    var reader = cachedReader
+    if (reader == null) {
+        reader = GhostYamlFlatReader(rawData = bytes)
+        cachedReader = reader
+    } else {
+        reader.reset(newData = bytes)
+    }
+    return block(reader)
+}
+
+@InternalGhostApi
+actual fun <T> ghostYamlInternalUseFlatWriter(
+    block: (GhostYamlWriter, FlatByteArrayWriter) -> T
+): T {
+    var writer = cachedWriter
+    var buffer = cachedWriterBuffer
+    if (writer == null || buffer == null) {
+        buffer = FlatByteArrayWriter()
+        writer = GhostYamlWriter(flatBuffer = buffer)
+        cachedWriter = writer
+        cachedWriterBuffer = buffer
+    } else {
+        writer.reset()
+        buffer.reset()
+    }
+    return block(writer, buffer)
+}

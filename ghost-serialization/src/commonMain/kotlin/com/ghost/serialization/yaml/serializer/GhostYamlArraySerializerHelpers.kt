@@ -6,6 +6,21 @@ package com.ghost.serialization.yaml.serializer
  * `ArrayList<T>` intermediate on the read side.
  */
 
+internal inline fun <T> readYamlArrayCore(
+    beginArray: () -> Unit,
+    hasNextArrayElement: () -> Boolean,
+    readElement: () -> T,
+    endArray: () -> Unit,
+): ArrayList<T> {
+    beginArray()
+    val list = ArrayList<T>()
+    while (hasNextArrayElement()) {
+        list.add(element = readElement())
+    }
+    endArray()
+    return list
+}
+
 internal inline fun writeYamlArrayCore(
     size: Int,
     beginArray: () -> Unit,
@@ -19,19 +34,4 @@ internal inline fun writeYamlArrayCore(
         index++
     }
     endArray()
-}
-
-internal inline fun <T> readYamlArrayCore(
-    beginArray: () -> Unit,
-    hasNextArrayElement: () -> Boolean,
-    readElement: () -> T,
-    endArray: () -> Unit,
-): ArrayList<T> {
-    beginArray()
-    val list = ArrayList<T>()
-    while (hasNextArrayElement()) {
-        list.add(readElement())
-    }
-    endArray()
-    return list
 }

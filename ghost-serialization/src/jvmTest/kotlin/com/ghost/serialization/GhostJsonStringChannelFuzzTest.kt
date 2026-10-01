@@ -36,7 +36,7 @@ class GhostJsonStringChannelFuzzTest {
     fun fuzzSkipValueStringReader(data: FuzzedDataProvider) {
         val text = data.consumeRemainingAsString()
         try {
-            GhostJsonStringReader(text).skipValue()
+            GhostJsonStringReader(rawData = text).skipValue()
         } catch (_: GhostJsonException) {
             // Expected for malformed input — skipValue's documented contract.
         }
@@ -44,12 +44,12 @@ class GhostJsonStringChannelFuzzTest {
 
     @FuzzTest
     fun fuzzJsonStringChannelValueRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val charWriter = FlatCharArrayWriter()
-        GhostJsonStringWriter(charWriter).beginObject().name("v").value(expected).endObject()
+        GhostJsonStringWriter(buffer = charWriter).beginObject().name(key = "v").value(expected).endObject()
 
-        val reader = GhostJsonStringReader(charWriter.toString())
+        val reader = GhostJsonStringReader(rawData = charWriter.toString())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -63,12 +63,12 @@ class GhostJsonStringChannelFuzzTest {
 
     @FuzzTest
     fun fuzzJsonStringChannelKeyRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val charWriter = FlatCharArrayWriter()
-        GhostJsonStringWriter(charWriter).beginObject().name(expected).value(1).endObject()
+        GhostJsonStringWriter(buffer = charWriter).beginObject().name(key = expected).value(1).endObject()
 
-        val reader = GhostJsonStringReader(charWriter.toString())
+        val reader = GhostJsonStringReader(rawData = charWriter.toString())
         reader.beginObject()
         val decoded = reader.nextKey()
         reader.consumeKeySeparator()

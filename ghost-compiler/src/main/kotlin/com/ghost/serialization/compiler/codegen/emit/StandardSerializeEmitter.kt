@@ -3,6 +3,7 @@ package com.ghost.serialization.compiler.codegen.emit
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
@@ -14,7 +15,7 @@ internal class StandardSerializeEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
     writerClass: ClassName
-) : BaseSerializeEmitter(properties, originalClassName, writerClass) {
+) : BaseSerializeEmitter(properties = properties, originalClassName = originalClassName, writerClass = writerClass) {
 
     fun emit(
         code: CodeBlock.Builder,
@@ -39,16 +40,16 @@ internal class StandardSerializeEmitter(
                 ?: emptyList()
 
             // Close objects that are not in the new target path
-            while (currentPath.isNotEmpty() && !isPrefix(currentPath, targetPath)) {
+            while (currentPath.isNotEmpty() && !isPrefix(prefix = currentPath, full = targetPath)) {
                 code.addStatement(C.STR_WRITER_END_OBJ)
                 currentPath.removeAt(currentPath.size - 1)
             }
 
             val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
             val prefix = if (isStringWriter) {
-                C.STR_HS_PREFIX
+                CG.STR_HS_PREFIX
             } else {
-                C.STR_H_VAL_PREFIX
+                CG.STR_H_VAL_PREFIX
             }
             // Open new objects in the target path
             targetPath.drop(currentPath.size).forEach { segment ->
@@ -60,7 +61,7 @@ internal class StandardSerializeEmitter(
                 currentPath.add(segment)
             }
 
-            emitProperty(code, prop)
+            emitProperty(code = code, prop = prop)
         }
 
         // Close remaining open objects

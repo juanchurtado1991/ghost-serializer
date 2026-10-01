@@ -9,35 +9,35 @@ class DefaultExpressionExtractorTest {
 
     @Test
     fun whitelistAcceptsLiteralsAndEmptyCollections() {
-        assertEquals("null", DefaultExpressionExtractor.whitelist("null"))
-        assertEquals("true", DefaultExpressionExtractor.whitelist("true"))
-        assertEquals("false", DefaultExpressionExtractor.whitelist("false"))
-        assertEquals("0", DefaultExpressionExtractor.whitelist("0"))
-        assertEquals("1", DefaultExpressionExtractor.whitelist("1"))
-        assertEquals("42L", DefaultExpressionExtractor.whitelist("42L"))
-        assertEquals("3.14", DefaultExpressionExtractor.whitelist("3.14"))
-        assertEquals("1.0f", DefaultExpressionExtractor.whitelist("1.0f"))
-        assertEquals("'x'", DefaultExpressionExtractor.whitelist("'x'"))
-        assertEquals("'\\n'", DefaultExpressionExtractor.whitelist("'\\n'"))
-        assertEquals("\"viewer\"", DefaultExpressionExtractor.whitelist("\"viewer\""))
-        assertEquals("\"a,b\"", DefaultExpressionExtractor.whitelist("\"a,b\""))
-        assertEquals("emptyList()", DefaultExpressionExtractor.whitelist("emptyList()"))
-        assertEquals("emptyMap()", DefaultExpressionExtractor.whitelist("emptyMap()"))
-        assertEquals("listOf()", DefaultExpressionExtractor.whitelist("listOf()"))
-        assertEquals("Priority.LOW", DefaultExpressionExtractor.whitelist("Priority.LOW"))
-        assertEquals("FOO_BAR", DefaultExpressionExtractor.whitelist("FOO_BAR"))
+        assertEquals(expected = "null", actual = DefaultExpressionExtractor.whitelist(expr = "null"))
+        assertEquals(expected = "true", actual = DefaultExpressionExtractor.whitelist(expr = "true"))
+        assertEquals(expected = "false", actual = DefaultExpressionExtractor.whitelist(expr = "false"))
+        assertEquals(expected = "0", actual = DefaultExpressionExtractor.whitelist(expr = "0"))
+        assertEquals(expected = "1", actual = DefaultExpressionExtractor.whitelist(expr = "1"))
+        assertEquals(expected = "42L", actual = DefaultExpressionExtractor.whitelist(expr = "42L"))
+        assertEquals(expected = "3.14", actual = DefaultExpressionExtractor.whitelist(expr = "3.14"))
+        assertEquals(expected = "1.0f", actual = DefaultExpressionExtractor.whitelist(expr = "1.0f"))
+        assertEquals(expected = "'x'", actual = DefaultExpressionExtractor.whitelist(expr = "'x'"))
+        assertEquals(expected = "'\\n'", actual = DefaultExpressionExtractor.whitelist(expr = "'\\n'"))
+        assertEquals(expected = "\"viewer\"", actual = DefaultExpressionExtractor.whitelist(expr = "\"viewer\""))
+        assertEquals(expected = "\"a,b\"", actual = DefaultExpressionExtractor.whitelist(expr = "\"a,b\""))
+        assertEquals(expected = "emptyList()", actual = DefaultExpressionExtractor.whitelist(expr = "emptyList()"))
+        assertEquals(expected = "emptyMap()", actual = DefaultExpressionExtractor.whitelist(expr = "emptyMap()"))
+        assertEquals(expected = "listOf()", actual = DefaultExpressionExtractor.whitelist(expr = "listOf()"))
+        assertEquals(expected = "Priority.LOW", actual = DefaultExpressionExtractor.whitelist(expr = "Priority.LOW"))
+        assertEquals(expected = "FOO_BAR", actual = DefaultExpressionExtractor.whitelist(expr = "FOO_BAR"))
     }
 
     @Test
     fun whitelistRejectsUnsafeExpressions() {
-        assertNull(DefaultExpressionExtractor.whitelist("a + 1"))
-        assertNull(DefaultExpressionExtractor.whitelist("listOf(1)"))
-        assertNull(DefaultExpressionExtractor.whitelist("foo()"))
-        assertNull(DefaultExpressionExtractor.whitelist("\"hello \$name\""))
-        assertNull(DefaultExpressionExtractor.whitelist("\"\"\"multi\"\"\""))
-        assertNull(DefaultExpressionExtractor.whitelist("MyVC(0)"))
-        assertNull(DefaultExpressionExtractor.whitelist("lowercase"))
-        assertNull(DefaultExpressionExtractor.whitelist(""))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "a + 1"))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "listOf(1)"))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "foo()"))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "\"hello \$name\""))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "\"\"\"multi\"\"\""))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "MyVC(0)"))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = "lowercase"))
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = ""))
     }
 
     @Test
@@ -48,8 +48,14 @@ class DefaultExpressionExtractorTest {
                 val count: Int = 1,
             )
         """.trimIndent()
-        assertEquals("\"a,b,c\"", DefaultExpressionExtractor.extractRawDefault(source, "label", 2))
-        assertEquals("1", DefaultExpressionExtractor.extractRawDefault(source, "count", 3))
+        assertEquals(
+            expected = "\"a,b,c\"",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "label", lineNumber = 2)
+        )
+        assertEquals(
+            expected = "1",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "count", lineNumber = 3)
+        )
     }
 
     @Test
@@ -59,7 +65,10 @@ class DefaultExpressionExtractorTest {
                 val meta: Map<String, Int> = emptyMap(),
             )
         """.trimIndent()
-        assertEquals("emptyMap()", DefaultExpressionExtractor.extractRawDefault(source, "meta", 2))
+        assertEquals(
+            expected = "emptyMap()",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "meta", lineNumber = 2)
+        )
     }
 
     @Test
@@ -69,7 +78,10 @@ class DefaultExpressionExtractorTest {
                 val tags: List<List<String>> = emptyList(),
             )
         """.trimIndent()
-        assertEquals("emptyList()", DefaultExpressionExtractor.extractRawDefault(source, "tags", 2))
+        assertEquals(
+            expected = "emptyList()",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "tags", lineNumber = 2)
+        )
     }
 
     @Test
@@ -80,8 +92,14 @@ class DefaultExpressionExtractorTest {
                 val y: Boolean = false,
             )
         """.trimIndent()
-        assertEquals("1", DefaultExpressionExtractor.extractRawDefault(source, "x", 2))
-        assertEquals("false", DefaultExpressionExtractor.extractRawDefault(source, "y", 3))
+        assertEquals(
+            expected = "1",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "x", lineNumber = 2)
+        )
+        assertEquals(
+            expected = "false",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "y", lineNumber = 3)
+        )
     }
 
     @Test
@@ -93,7 +111,10 @@ class DefaultExpressionExtractorTest {
                 val n: Int = 2,
             )
         """.trimIndent()
-        assertEquals("\"viewer\"", DefaultExpressionExtractor.extractRawDefault(source, "role", 2))
+        assertEquals(
+            expected = "\"viewer\"",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "role", lineNumber = 2)
+        )
     }
 
     @Test
@@ -104,9 +125,9 @@ class DefaultExpressionExtractorTest {
                 val b: Int = a + 1,
             )
         """.trimIndent()
-        val raw = DefaultExpressionExtractor.extractRawDefault(source, "b", 3)
-        assertEquals("a + 1", raw)
-        assertNull(DefaultExpressionExtractor.whitelist(raw!!))
+        val raw = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "b", lineNumber = 3)
+        assertEquals(expected = "a + 1", actual = raw)
+        assertNull(actual = DefaultExpressionExtractor.whitelist(expr = raw!!))
     }
 
     @Test
@@ -114,9 +135,13 @@ class DefaultExpressionExtractorTest {
         val props = (1..5).joinToString(",\n") { "    val p$it: Int = $it" }
         val source = "data class ObjectN(\n$props\n)"
         for (i in 1..5) {
-            val raw = DefaultExpressionExtractor.extractRawDefault(source, "p$i", i + 1)
-            assertEquals("$i", raw)
-            assertEquals("$i", DefaultExpressionExtractor.whitelist(raw!!))
+            val raw = DefaultExpressionExtractor.extractRawDefault(
+                source = source,
+                paramName = "p$i",
+                lineNumber = i + 1
+            )
+            assertEquals(expected = "$i", actual = raw)
+            assertEquals(expected = "$i", actual = DefaultExpressionExtractor.whitelist(expr = raw!!))
         }
     }
 
@@ -128,6 +153,9 @@ class DefaultExpressionExtractorTest {
                 val count: Int = 3,
             )
         """.trimIndent()
-        assertEquals("3", DefaultExpressionExtractor.extractRawDefault(source, "count", 3))
+        assertEquals(
+            expected = "3",
+            actual = DefaultExpressionExtractor.extractRawDefault(source = source, paramName = "count", lineNumber = 3)
+        )
     }
 }

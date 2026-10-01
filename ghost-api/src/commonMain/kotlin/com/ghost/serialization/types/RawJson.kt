@@ -7,6 +7,9 @@ package com.ghost.serialization.types
  *
  * When captured from a flat byte reader, [storage], [storageOffset], and [storageLength] alias
  * the parse input buffer until [bytes] is accessed, which materializes an exact-length copy.
+ *
+ * [contentHashCode] uses the same seed and multiplier as `kotlin.collections.contentHashCode`
+ * and `java.util.Arrays.hashCode`, so it matches [String.hashCode] for the same bytes.
  */
 class RawJson internal constructor(
     val storage: ByteArray,
@@ -19,57 +22,61 @@ class RawJson internal constructor(
      * a larger [storage] buffer.
      */
     val bytes: ByteArray
-        get() = if (storageOffset == 0 && storageLength == storage.size) {
+        get() = if (isFullStorageSpan()) {
             storage
         } else {
-            storage.copyOfRange(storageOffset, storageOffset + storageLength)
+            storage.copyOfRange(
+                fromIndex = storageOffset,
+                toIndex = storageOffset + storageLength
+            )
         }
 
     /** Decodes the captured UTF-8 JSON bytes as a [String] (wire form, including quotes for strings). */
-    fun decodeToString(): String =
-        storage.decodeToString(storageOffset, storageOffset + storageLength)
+    fun decodeToString(): String = storage.decodeToString(
+        startIndex = storageOffset,
+        endIndex = storageOffset + storageLength
+    )
 
-    /** Exclusive end index of this slice in [storage] (`storageOffset + storageLength`). */
     val endExclusive: Int
         get() = storageOffset + storageLength
 
     /** Classifies the JSON value without parsing or copying the payload. */
-    fun kind(): RawJsonKind = RawJsonValueScanner.kind(this)
+    fun kind(): RawJsonKind = RawJsonValueScanner.kind(raw = this)
 
-    /** `true` when the payload is the JSON literal `null`. */
     val isJsonNull: Boolean
-        get() = RawJsonValueScanner.isJsonNull(this)
+        get() = RawJsonValueScanner.isJsonNull(raw = this)
 
     /** `true`/`false` for JSON booleans; `null` for `null`, non-boolean, or invalid payloads. */
-    fun asBooleanOrNull(): Boolean? = RawJsonValueScanner.asBooleanOrNull(this)
-
-    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
-    fun asIntOrNull(): Int? = RawJsonValueScanner.asIntOrNull(this)
-
-    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
-    fun asLongOrNull(): Long? = RawJsonValueScanner.asLongOrNull(this)
-
-    /** JSON number as [Double]; integer path avoids extra allocation; fraction/exponent uses UTF-8 decode once. */
-    fun asDoubleOrNull(): Double? = RawJsonValueScanner.asDoubleOrNull(this)
-
-    /**
-     * Decoded string contents when the payload is a JSON string (`"..."`); otherwise `null`.
-     * ASCII fast path avoids escape scanning allocations when no `\` is present.
-     */
-    fun asStringOrNull(): String? = RawJsonValueScanner.asStringOrNull(this)
+    fun asBooleanOrNull(): Boolean? = RawJsonValueScanner.asBooleanOrNull(raw = this)
 
     /**
      * Human-readable scalar for UI (capability status, labels). Strings are unquoted;
      * numbers/booleans/null use wire text; objects/arrays return full JSON text.
      */
-    fun asDisplayString(): String = RawJsonValueScanner.asDisplayString(this)
+    fun asDisplayString(): String = RawJsonValueScanner.asDisplayString(raw = this)
 
-    /** Value-based equality for the underlying JSON bytes. */
-    fun contentEquals(other: RawJson?): Boolean {
+    /** JSON number as [Double]; integer path avoids extra allocation; fraction/exponent uses UTF-8 decode once. */
+    fun asDoubleOrNull(): Double? = RawJsonValueScanner.asDoubleOrNull(raw = this)
+
+    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
+    fun asIntOrNull(): Int? = RawJsonValueScanner.asIntOrNull(raw = this)
+
+    /** JSON integer when the payload is a number without fraction or exponent; otherwise `null`. */
+    fun asLongOrNull(): Long? = RawJsonValueScanner.asLongOrNull(raw = this)
+
+    /**
+     * Decoded string contents when the payload is a JSON string (`"..."`); otherwise `null`.
+     * ASCII fast path avoids escape scanning allocations when no `\` is present.
+     */
+    fun asStringOrNull(): String? = RawJsonValueScanner.asStringOrNull(raw = this)
+
+    fun contentEquals(
+        other: RawJson?
+    ): Boolean {
         if (other == null) return false
         if (storageLength != other.storageLength) return false
         if (isFullStorageSpan() && other.isFullStorageSpan()) {
-            return storage.contentEquals(other.storage)
+            return storage.contentEquals(other = other.storage)
         }
         val end = storageOffset + storageLength
         var otherIndex = other.storageOffset
@@ -81,7 +88,6 @@ class RawJson internal constructor(
         return true
     }
 
-    /** Value-based hash for the underlying JSON bytes. */
     fun contentHashCode(): Int {
         if (isFullStorageSpan()) {
             return storage.contentHashCode()
@@ -97,10 +103,12 @@ class RawJson internal constructor(
     private fun isFullStorageSpan(): Boolean =
         storageOffset == 0 && storageLength == storage.size
 
-    override fun equals(other: Any?): Boolean {
+    override fun equals(
+        other: Any?
+    ): Boolean {
         if (this === other) return true
         if (other !is RawJson) return false
-        return contentEquals(other)
+        return contentEquals(other = other)
     }
 
     override fun hashCode(): Int = contentHashCode()
@@ -108,20 +116,34 @@ class RawJson internal constructor(
     override fun toString(): String = "RawJson(${decodeToString()})"
 
     companion object {
-        /** Initial accumulator for [contentHashCode]; matches `kotlin.collections.contentHashCode`. */
         private const val CONTENT_HASH_SEED = 1
 
-        /** Multiplier for [contentHashCode]; matches `java.util.Arrays.hashCode` and [kotlin.String.hashCode]. */
         private const val CONTENT_HASH_MULTIPLIER = 31
 
-        /** Wraps an owned UTF-8 buffer exactly as it appears in JSON. */
-        fun fromUtf8Bytes(bytes: ByteArray): RawJson = RawJson(bytes, 0, bytes.size)
+        /** Wraps a slice of an existing buffer without
+         *  copying (flat-reader capture path). */
+        fun fromBufferSlice(
+            buffer: ByteArray,
+            offset: Int,
+            length: Int
+        ): RawJson = RawJson(
+            storage = buffer,
+            storageOffset = offset,
+            storageLength = length
+        )
 
-        /** Wraps a slice of an existing buffer without copying (flat-reader capture path). */
-        fun fromBufferSlice(buffer: ByteArray, offset: Int, length: Int): RawJson =
-            RawJson(buffer, offset, length)
+        /** Encodes [json] to UTF-8 bytes. Prefer [fromBufferSlice]
+         * or reader capture when decoding parsed wire bytes. */
+        fun fromString(
+            json: String
+        ): RawJson = fromUtf8Bytes(bytes = json.encodeToByteArray())
 
-        /** Encodes [json] to UTF-8 bytes. Prefer [fromBufferSlice] or reader capture when decoding parsed wire bytes. */
-        fun fromString(json: String): RawJson = fromUtf8Bytes(json.encodeToByteArray())
+        fun fromUtf8Bytes(
+            bytes: ByteArray
+        ): RawJson = RawJson(
+            storage = bytes,
+            storageOffset = 0,
+            storageLength = bytes.size
+        )
     }
 }

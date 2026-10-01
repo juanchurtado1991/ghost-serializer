@@ -3,8 +3,10 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
+import com.ghost.serialization.parser.yaml.reset
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,7 +22,7 @@ import kotlin.test.assertTrue
 class GhostYamlFlatReaderEdgeCaseTest {
 
     private fun readerOf(yaml: String): GhostYamlFlatReader {
-        return GhostYamlFlatReader(yaml.encodeToByteArray())
+        return GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
     }
 
     private fun parseMap(yaml: String): Map<String, Any?> {
@@ -33,32 +35,45 @@ class GhostYamlFlatReaderEdgeCaseTest {
     fun readsExactLongMaxValue() {
         val reader = readerOf("v: ${Long.MAX_VALUE}")
         reader.beginObject()
-        reader.selectNameAndConsume(JsonReaderOptions.of("v"))
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        reader.selectNameAndConsume(options = JsonReaderOptions.of("v"))
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     @Test
     fun readsExactLongMinValue() {
         val reader = readerOf("v: ${Long.MIN_VALUE}")
         reader.beginObject()
-        reader.selectNameAndConsume(JsonReaderOptions.of("v"))
-        assertEquals(Long.MIN_VALUE, reader.nextLong())
+        reader.selectNameAndConsume(options = JsonReaderOptions.of("v"))
+        assertEquals(
+            expected = Long.MIN_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     @Test
     fun veryLargeNumberClampsToLongMaxValue() {
         val reader = readerOf("v: 99999999999999999999")
         reader.beginObject()
-        reader.selectNameAndConsume(JsonReaderOptions.of("v"))
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        reader.selectNameAndConsume(options = JsonReaderOptions.of("v"))
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     @Test
     fun readsScientificNotationDouble() {
         val reader = readerOf("v: 1e10")
         reader.beginObject()
-        reader.selectNameAndConsume(JsonReaderOptions.of("v"))
-        assertEquals(1e10, reader.nextDouble(), 0.1)
+        reader.selectNameAndConsume(options = JsonReaderOptions.of("v"))
+        assertEquals(
+            expected = 1e10,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 0.1
+        )
     }
 
     // ── B. MALFORMED YAML ────────────────────────────────────────────
@@ -66,21 +81,24 @@ class GhostYamlFlatReaderEdgeCaseTest {
     @Test
     fun unclosedDoubleQuoteThrows() {
         assertFailsWith<GhostYamlException> {
-            parseMap("""name: "unclosed""")
+            parseMap(yaml = """name: "unclosed""")
         }
     }
 
     @Test
     fun unclosedSingleQuoteThrows() {
         assertFailsWith<GhostYamlException> {
-            parseMap("name: 'unclosed")
+            parseMap(yaml = "name: 'unclosed")
         }
     }
 
     @Test
     fun missingColonAfterKeyIsPlainScalarAtRoot() {
         val doc = readerOf("name Alice").readDocument()
-        assertEquals("name Alice", doc)
+        assertEquals(
+            expected = "name Alice",
+            actual = doc
+        )
     }
 
     @Test
@@ -127,17 +145,17 @@ class GhostYamlFlatReaderEdgeCaseTest {
 
     @Test
     fun emptyDocumentReturnsEmptyMap() {
-        assertTrue(parseMap("").isEmpty())
+        assertTrue(actual = parseMap("").isEmpty())
     }
 
     @Test
     fun whitespaceOnlyDocumentReturnsEmptyMap() {
-        assertTrue(parseMap("   \n  \t  \n").isEmpty())
+        assertTrue(actual = parseMap("   \n  \t  \n").isEmpty())
     }
 
     @Test
     fun commentsOnlyDocumentReturnsEmptyMap() {
-        assertTrue(parseMap("# just a comment\n# another").isEmpty())
+        assertTrue(actual = parseMap("# just a comment\n# another").isEmpty())
     }
 
     // ── D. DUPLICATE KEYS ──────────────────────────────────────────────
@@ -150,7 +168,10 @@ class GhostYamlFlatReaderEdgeCaseTest {
             name: second
             """.trimIndent()
         )
-        assertEquals("second", result["name"])
+        assertEquals(
+            expected = "second",
+            actual = result["name"]
+        )
     }
 
     // ── E. DEPTH PROTECTION ──────────────────────────────────────────
@@ -184,7 +205,10 @@ class GhostYamlFlatReaderEdgeCaseTest {
         val reader = readerOf("v: maybe")
         reader.beginObject()
         reader.selectNameAndConsume(JsonReaderOptions.of("v"))
-        assertEquals(false, reader.nextBoolean())
+        assertEquals(
+            expected = false,
+            actual = reader.nextBoolean()
+        )
     }
 
     // ── F. NULL DETECTION ─────────────────────────────────────────────
@@ -192,13 +216,13 @@ class GhostYamlFlatReaderEdgeCaseTest {
     @Test
     fun readsExplicitNullScalar() {
         val result = parseMap("v: null")
-        assertNull(result["v"])
+        assertNull(actual = result["v"])
     }
 
     @Test
     fun readsEmptyValueAsNull() {
         val result = parseMap("v:")
-        assertNull(result["v"])
+        assertNull(actual = result["v"])
     }
 
     @Test
@@ -206,7 +230,7 @@ class GhostYamlFlatReaderEdgeCaseTest {
         val reader = readerOf("v: null")
         reader.beginObject()
         reader.selectNameAndConsume(JsonReaderOptions.of("v"))
-        assertTrue(reader.isNextNullValue())
+        assertTrue(actual = reader.isNextNullValue())
     }
 
     // ── G. BAD INDENTATION ────────────────────────────────────────────
@@ -219,8 +243,11 @@ class GhostYamlFlatReaderEdgeCaseTest {
              rogue: bad
         """.trimIndent()
         val user = parseMap(yaml)["user"] as Map<*, *>
-        assertEquals("Alice", user["name"])
-        assertNull(user["rogue"])
+        assertEquals(
+            expected = "Alice",
+            actual = user["name"]
+        )
+        assertNull(actual = user["rogue"])
     }
 
     // ── H. SLICE / LIMIT ──────────────────────────────────────────────
@@ -231,8 +258,11 @@ class GhostYamlFlatReaderEdgeCaseTest {
         val reader = GhostYamlFlatReader(full)
         reader.limit = "a: 1".encodeToByteArray().size
         val map = reader.readDocument() as Map<*, *>
-        assertEquals(1L, map["a"])
-        assertNull(map["b"])
+        assertEquals(
+            expected = 1L,
+            actual = map["a"]
+        )
+        assertNull(actual = map["b"])
     }
 
     @Test
@@ -246,6 +276,9 @@ class GhostYamlFlatReaderEdgeCaseTest {
         reader.reset("b: 2".encodeToByteArray())
         reader.beginObject()
         reader.selectNameAndConsume(JsonReaderOptions.of("b"))
-        assertEquals(2, reader.nextInt())
+        assertEquals(
+            expected = 2,
+            actual = reader.nextInt()
+        )
     }
 }

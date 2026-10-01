@@ -5,6 +5,10 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
@@ -32,7 +36,7 @@ internal class GhostSerializerContext private constructor(
     val sealedDiscriminatorKey: String,
     val enumValues: Map<String, String>?,
     val hasFallbackEnum: Boolean,
-    val serializerInterface: ClassName,
+    val serializerBaseClass: ClassName,
     val streamingWriterClass: ClassName,
     val stringWriterClass: ClassName,
     val streamingReaderClass: ClassName,
@@ -43,19 +47,7 @@ internal class GhostSerializerContext private constructor(
     val yamlWriterClass: ClassName,
     val yamlFlatReaderClass: ClassName,
 ) {
-    val serializerName: String = baseClassName + C.STR_SERIALIZER_SUFFIX
-
-    fun needsObjectParsingImports(): Boolean {
-        if (isEnum || isValue) return false
-        if (isObject) return true
-        if (isSealed) return isInferred
-        return properties.isNotEmpty()
-    }
-
-    fun needsCachedByteStringHeaders(): Boolean {
-        if (isEnum || isValue || isSealed || isObject) return false
-        return getAllJsonNames().isNotEmpty()
-    }
+    val serializerName: String = baseClassName + CC.STR_SERIALIZER_SUFFIX
 
     fun getAllJsonNames(): List<String> {
         val names = mutableSetOf<String>()
@@ -65,18 +57,32 @@ internal class GhostSerializerContext private constructor(
             properties
         }
         allProps.forEach { prop ->
-            if (prop.wrappedSourceKeys != null) {
-                names.addAll(prop.wrappedSourceKeys)
+            val wrappedKeys = prop.wrappedKeys
+            if (wrappedKeys != null) {
+                names.addAll(wrappedKeys.sourceKeys)
             } else if (prop.flattenPath != null) {
                 names.addAll(prop.flattenPath)
             } else if (prop.wrapPath != null) {
                 names.addAll(prop.wrapPath)
             }
-            if (prop.wrappedSourceKeys == null) {
+            if (prop.wrappedKeys == null) {
                 names.add(prop.jsonName)
             }
         }
         return names.toList().sorted()
+    }
+
+    fun needsCachedByteStringHeaders(): Boolean {
+        val isNonDataShape = isEnum || isValue || isSealed || isObject
+        if (isNonDataShape) return false
+        return getAllJsonNames().isNotEmpty()
+    }
+
+    fun needsObjectParsingImports(): Boolean {
+        if (isEnum || isValue) return false
+        if (isObject) return true
+        if (isSealed) return isInferred
+        return properties.isNotEmpty()
     }
 
     companion object {
@@ -99,9 +105,9 @@ internal class GhostSerializerContext private constructor(
             val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS
             val isObject = classDeclaration.classKind == ClassKind.OBJECT
             val isResilient =
-                classDeclaration.annotations.any { it.shortName.asString() == C.GHOST_RESILIENT }
+                classDeclaration.annotations.any { it.shortName.asString() == AC.GHOST_RESILIENT }
             val isProto =
-                classDeclaration.annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION }
+                classDeclaration.annotations.any { it.shortName.asString() == CC.ANNOTATION_GHOST_PROTO_SERIALIZATION }
 
             val sealedSubclasses = if (isSealed) {
                 classDeclaration.getSealedSubclasses().toList()
@@ -110,19 +116,19 @@ internal class GhostSerializerContext private constructor(
             }
 
             val originalClassName = classDeclaration.toClassName()
-            val baseClassName = originalClassName.simpleNames.joinToString(C.STR_UNDERSCORE)
+            val baseClassName = originalClassName.simpleNames.joinToString(CC.STR_UNDERSCORE)
 
             val parentSealedClass = resolveParentSealedClass(
-                classDeclaration,
-                isSealed,
-                isValue,
-                isEnum
+                classDeclaration = classDeclaration,
+                isSealed = isSealed,
+                isValue = isValue,
+                isEnum = isEnum
             )
 
             val discriminator = if (parentSealedClass != null) {
                 val customName = classDeclaration.annotations
-                    .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
-                    ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String
+                    .find { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }
+                    ?.arguments?.find { it.name?.asString() == AC.NAME }?.value as? String
                 if (!customName.isNullOrEmpty()) customName else classDeclaration.simpleName.asString()
             } else {
                 null
@@ -131,27 +137,27 @@ internal class GhostSerializerContext private constructor(
             val sealedDiscriminatorKey = run {
                 val annotationSource = parentSealedClass ?: classDeclaration
                 annotationSource.annotations
-                    .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+                    .find { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }
                     ?.arguments
-                    ?.find { it.name?.asString() == C.ARG_DISCRIMINATOR }
+                    ?.find { it.name?.asString() == CG.ARG_DISCRIMINATOR }
                     ?.value as? String
-                    ?: C.STR_DEFAULT_DISCRIMINATOR
+                    ?: AC.STR_DEFAULT_DISCRIMINATOR
             }
 
             val customTypeName = classDeclaration.annotations
-                .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+                .find { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }
                 ?.arguments
-                ?.find { it.name?.asString() == C.NAME }
-                ?.value as? String ?: C.STR_EMPTY
+                ?.find { it.name?.asString() == AC.NAME }
+                ?.value as? String ?: CC.STR_EMPTY
 
             val isInferred = (if (discriminator != null) {
                 classDeclaration.parentDeclaration as? KSClassDeclaration
             } else {
                 classDeclaration
             })?.annotations
-                ?.find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
+                ?.find { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }
                 ?.arguments
-                ?.find { it.name?.asString() == C.ARG_INFERRED }
+                ?.find { it.name?.asString() == PC.ARG_INFERRED }
                 ?.value as? Boolean
                 ?: false
 
@@ -161,7 +167,7 @@ internal class GhostSerializerContext private constructor(
                 it.shortName.asString() == C.STR_FALLBACK_ANNOTATION
             }
 
-            val yamlFlatReaderClass = ClassName(C.PKG_YAML_PARSER, C.STR_GHOST_YAML_FLAT_READER)
+            val yamlFlatReaderClass = ClassName(CC.PKG_YAML_PARSER, CG.STR_GHOST_YAML_FLAT_READER)
 
             return GhostSerializerContext(
                 properties = properties,
@@ -185,18 +191,18 @@ internal class GhostSerializerContext private constructor(
                 sealedDiscriminatorKey = sealedDiscriminatorKey,
                 enumValues = enumValues,
                 hasFallbackEnum = hasFallbackEnum,
-                serializerInterface = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER),
-                streamingWriterClass = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER),
-                stringWriterClass = ClassName(C.PKG_WRITER_STRINGS, C.STR_GHOST_JSON_STRING_WRITER),
-                streamingReaderClass = ClassName(C.PKG_PARSER_STREAMING, C.STR_GHOST_JSON_READER),
-                flatReaderClass = ClassName(C.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),
-                stringReaderClass = ClassName(C.PKG_PARSER_STRINGS, C.STR_GHOST_JSON_STRING_READER),
+                serializerBaseClass = ClassName(CC.PKG_CONTRACT, CG.STR_ABSTRACT_GHOST_SERIALIZER),
+                streamingWriterClass = ClassName(CC.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER),
+                stringWriterClass = ClassName(CC.PKG_WRITER_STRINGS, C.STR_GHOST_JSON_STRING_WRITER),
+                streamingReaderClass = ClassName(CC.PKG_PARSER_STREAMING, CG.STR_GHOST_JSON_READER),
+                flatReaderClass = ClassName(CC.PKG_PARSER_BYTES, C.STR_GHOST_JSON_FLAT_READER),
+                stringReaderClass = ClassName(CC.PKG_PARSER_STRINGS, C.STR_GHOST_JSON_STRING_READER),
                 hasYaml = hasYaml,
                 yamlSerializerInterface = ClassName(
-                    C.PKG_YAML_CONTRACT,
-                    C.STR_GHOST_YAML_SERIALIZER
+                    CC.PKG_YAML_CONTRACT,
+                    CG.STR_GHOST_YAML_SERIALIZER
                 ),
-                yamlWriterClass = ClassName(C.PKG_YAML_WRITER, C.STR_GHOST_YAML_WRITER),
+                yamlWriterClass = ClassName(CC.PKG_YAML_WRITER, CG.STR_GHOST_YAML_WRITER),
                 yamlFlatReaderClass = yamlFlatReaderClass,
             )
         }
@@ -207,7 +213,8 @@ internal class GhostSerializerContext private constructor(
             isValue: Boolean,
             isEnum: Boolean,
         ): KSClassDeclaration? {
-            if (isSealed || isValue || isEnum) return null
+            val isSealedEnumOrValue = isSealed || isValue || isEnum
+            if (isSealedEnumOrValue) return null
             val parentDecl = classDeclaration.parentDeclaration as? KSClassDeclaration
             if (parentDecl != null && parentDecl.modifiers.contains(Modifier.SEALED)) {
                 return parentDecl

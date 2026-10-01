@@ -3,7 +3,7 @@
 package com.ghost.serialization.spring.fixture
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
@@ -11,19 +11,19 @@ import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 object YamlProfileMessageSerializer :
-    GhostSerializer<YamlProfileMessage>,
+    AbstractGhostSerializer<YamlProfileMessage>(),
     GhostYamlSerializer<YamlProfileMessage> {
     override val typeName: String = "com.ghost.serialization.spring.fixture.YamlProfileMessage"
 
     override fun serialize(writer: GhostJsonWriter, value: YamlProfileMessage) = Unit
     override fun deserialize(reader: GhostJsonReader): YamlProfileMessage =
-        YamlProfileMessage(0, "")
+        YamlProfileMessage(id = 0, name = "")
 
     override fun serialize(writer: GhostYamlWriter, value: YamlProfileMessage) {
         writer.beginObject()
-        writer.name("id")
+        writer.name(key = "id")
         writer.value(value.id)
-        writer.name("name")
+        writer.name(key = "name")
         writer.value(value.name)
         writer.endObject()
     }
@@ -40,6 +40,6 @@ object YamlProfileMessageSerializer :
             }
         }
         reader.endObject()
-        return YamlProfileMessage(id, name)
+        return YamlProfileMessage(id = id, name = name)
     }
 }

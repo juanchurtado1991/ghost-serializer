@@ -11,6 +11,9 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
@@ -19,45 +22,68 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
  */
 internal object WrappedKeysEmitter {
 
-    fun captureVariableName(prop: GhostPropertyModel): String =
-        C.STR_WRAPPED_CAPTURE_PREFIX + prop.localNameSuffix()
-
-    fun jsonVariableName(prop: GhostPropertyModel): String =
-        C.STR_WRAPPED_JSON_VAR_PREFIX + prop.localNameSuffix()
-
-    fun wrappedKeyDispatch(properties: List<GhostPropertyModel>): Map<String, Pair<GhostPropertyModel, Int>> {
-        val map = linkedMapOf<String, Pair<GhostPropertyModel, Int>>()
+    fun addWrappedKeyConstants(
+        typeSpecBuilder: TypeSpec.Builder,
+        properties: List<GhostPropertyModel>,
+    ) {
         properties.forEach { prop ->
-            val keys = prop.wrappedSourceKeys ?: return@forEach
-            keys.forEachIndexed { index, key ->
-                map[key] = prop to index
+            val keys = prop.wrappedKeys?.sourceKeys ?: return@forEach
+            val literalsName = wrappedKeyLiteralsConstantName(prop = prop)
+            if (typeSpecBuilder.propertySpecs.any { it.name == literalsName }) {
+                return@forEach
             }
-        }
-        return map
-    }
 
-    fun emitCaptureVariables(body: CodeBlock.Builder, properties: List<GhostPropertyModel>) {
-        properties.forEach { prop ->
-            val keys = prop.wrappedSourceKeys ?: return@forEach
-            body.addStatement(
-                C.TEMPLATE_WRAPPED_CAPTURE_VAR,
-                captureVariableName(prop),
-                ClassName(C.PKG_PARSER_COMMON, C.STR_GHOST_WRAPPED_KEYS_CAPTURE),
-                keys.size,
+            val initializer = CodeBlock.builder()
+                .add(C.TEMPLATE_ARRAY_OF_OPEN)
+            keys.forEachIndexed { index, key ->
+                if (index > 0) {
+                    initializer.add(PC.STR_COMMA_NEWLINE)
+                }
+                val quotedKey = C.STR_JSON_KEY_QUOTE + key + C.STR_JSON_KEY_COLON_SUFFIX
+                initializer.add(C.TEMPLATE_WRAPPED_KEY_LITERAL_BYTE, quotedKey)
+            }
+            initializer.add(C.STR_NEWLINE_CLOSE_PAREN)
+
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    literalsName,
+                    Array::class.asClassName().parameterizedBy(ByteArray::class.asClassName()),
+                )
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(initializer.build())
+                    .build(),
+            )
+
+            val omitAbsentName = wrappedOmitAbsentConstantName(prop = prop)
+            val absentIndices = prop.wrappedKeys?.omitIfAbsent.orEmpty().map { absentKey ->
+                keys.indexOf(absentKey)
+            }.filter { it >= 0 }
+
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(omitAbsentName, IntArray::class)
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(
+                        C.TEMPLATE_INT_ARRAY_OF,
+                        absentIndices.joinToString(CG.STR_COMMA),
+                    )
+                    .build(),
             )
         }
     }
 
-    fun emitWrappedKeyCapture(
-        body: CodeBlock.Builder,
-        prop: GhostPropertyModel,
-        keyIndex: Int,
-    ) {
-        body.addStatement(
-            C.TEMPLATE_CAPTURE_WRAPPED_KEY,
-            captureVariableName(prop),
-            keyIndex,
-        )
+    fun captureVariableName(prop: GhostPropertyModel): String =
+        C.STR_WRAPPED_CAPTURE_PREFIX + prop.localNameSuffix()
+
+    fun emitCaptureVariables(body: CodeBlock.Builder, properties: List<GhostPropertyModel>) {
+        properties.forEach { prop ->
+            val keys = prop.wrappedKeys?.sourceKeys ?: return@forEach
+            body.addStatement(
+                C.TEMPLATE_WRAPPED_CAPTURE_VAR,
+                captureVariableName(prop = prop),
+                ClassName(CC.PKG_PARSER_COMMON, CG.STR_GHOST_WRAPPED_KEYS_CAPTURE),
+                keys.size,
+            )
+        }
     }
 
     fun emitPostLoopDeserialization(
@@ -67,22 +93,22 @@ internal object WrappedKeysEmitter {
         readerClass: ClassName,
     ) {
         properties.forEach { prop ->
-            val keys = prop.wrappedSourceKeys ?: return@forEach
+            val keys = prop.wrappedKeys?.sourceKeys ?: return@forEach
             val index = propertyIndices[prop] ?: return@forEach
-            val captureName = captureVariableName(prop)
-            val jsonName = jsonVariableName(prop)
+            val captureName = captureVariableName(prop = prop)
+            val jsonName = jsonVariableName(prop = prop)
             val maskIdx = index / C.MASK_SIZE_BITS.toInt()
             val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
             val varName = prop.localValueName()
-            val keyLiteralsName = wrappedKeyLiteralsConstantName(prop)
-            val omitAbsentName = wrappedOmitAbsentConstantName(prop)
+            val keyLiteralsName = wrappedKeyLiteralsConstantName(prop = prop)
+            val omitAbsentName = wrappedOmitAbsentConstantName(prop = prop)
 
             body.addStatement(
                 C.TEMPLATE_WRAPPED_JSON_MATERIALIZE,
                 jsonName,
                 captureName,
                 keyLiteralsName,
-                prop.wrappedOmitIfEmpty,
+                prop.wrappedKeys?.omitIfEmpty == true,
                 omitAbsentName,
             )
             body.beginControlFlow(C.TEMPLATE_WRAPPED_JSON_IF_NOT_NULL, jsonName)
@@ -116,53 +142,30 @@ internal object WrappedKeysEmitter {
         }
     }
 
-    fun addWrappedKeyConstants(
-        typeSpecBuilder: TypeSpec.Builder,
-        properties: List<GhostPropertyModel>,
+    fun emitWrappedKeyCapture(
+        body: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        keyIndex: Int,
     ) {
+        body.addStatement(
+            C.TEMPLATE_CAPTURE_WRAPPED_KEY,
+            captureVariableName(prop = prop),
+            keyIndex,
+        )
+    }
+
+    fun jsonVariableName(prop: GhostPropertyModel): String =
+        C.STR_WRAPPED_JSON_VAR_PREFIX + prop.localNameSuffix()
+
+    fun wrappedKeyDispatch(properties: List<GhostPropertyModel>): Map<String, Pair<GhostPropertyModel, Int>> {
+        val map = linkedMapOf<String, Pair<GhostPropertyModel, Int>>()
         properties.forEach { prop ->
-            val keys = prop.wrappedSourceKeys ?: return@forEach
-            val literalsName = wrappedKeyLiteralsConstantName(prop)
-            if (typeSpecBuilder.propertySpecs.any { it.name == literalsName }) {
-                return@forEach
-            }
-
-            val initializer = CodeBlock.builder()
-                .add(C.TEMPLATE_ARRAY_OF_OPEN)
+            val keys = prop.wrappedKeys?.sourceKeys ?: return@forEach
             keys.forEachIndexed { index, key ->
-                if (index > 0) {
-                    initializer.add(C.STR_COMMA_NEWLINE)
-                }
-                val quotedKey = C.STR_JSON_KEY_QUOTE + key + C.STR_JSON_KEY_COLON_SUFFIX
-                initializer.add(C.TEMPLATE_WRAPPED_KEY_LITERAL_BYTE, quotedKey)
+                map[key] = prop to index
             }
-            initializer.add(C.STR_NEWLINE_CLOSE_PAREN)
-
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(
-                    literalsName,
-                    Array::class.asClassName().parameterizedBy(ByteArray::class.asClassName()),
-                )
-                    .addModifiers(KModifier.PRIVATE)
-                    .initializer(initializer.build())
-                    .build(),
-            )
-
-            val omitAbsentName = wrappedOmitAbsentConstantName(prop)
-            val absentIndices = prop.wrappedOmitIfAbsent.map { absentKey ->
-                keys.indexOf(absentKey)
-            }.filter { it >= 0 }
-
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(omitAbsentName, IntArray::class)
-                    .addModifiers(KModifier.PRIVATE)
-                    .initializer(
-                        C.TEMPLATE_INT_ARRAY_OF,
-                        absentIndices.joinToString(C.STR_COMMA),
-                    )
-                    .build(),
-            )
         }
+        return map
     }
 
     private fun wrappedKeyLiteralsConstantName(prop: GhostPropertyModel): String =

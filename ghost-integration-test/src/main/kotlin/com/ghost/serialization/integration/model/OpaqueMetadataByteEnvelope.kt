@@ -3,6 +3,8 @@ package com.ghost.serialization.integration.model
 import com.ghost.serialization.annotations.GhostName
 import com.ghost.serialization.annotations.GhostSerialization
 
+private const val HASH_MULTIPLIER = 31
+
 /** Large opaque metadata payload for capture benchmarks. */
 @GhostSerialization
 data class OpaqueMetadataByteEnvelope(
@@ -22,7 +24,7 @@ data class OpaqueMetadataByteEnvelope(
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + metadata.contentHashCode()
+        result = HASH_MULTIPLIER * result + metadata.contentHashCode()
         return result
     }
 }

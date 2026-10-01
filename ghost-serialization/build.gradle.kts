@@ -55,6 +55,15 @@ kotlin {
         jvmMain.get().dependsOn(jvmAndroidMain)
         androidMain.get().dependsOn(jvmAndroidMain)
 
+        // Kotlin/Native and Kotlin/Wasm share the same single-threaded-or-@ThreadLocal `actual`s
+        // (pools, caches, scalar fallbacks); only genuinely platform-specific ones stay in
+        // nativeMain/iosMain/wasmJsMain.
+        val nonJvmMain by creating {
+            dependsOn(commonMain)
+        }
+        nativeMain.get().dependsOn(nonJvmMain)
+        wasmJsMain.get().dependsOn(nonJvmMain)
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.core)

@@ -8,6 +8,16 @@ package com.ghost.benchmark
  */
 internal object BenchmarkProgress {
 
+    /** Logs a numbered phase header such as `Phase 2/5: Global JIT warmup`. */
+    fun logPhase(phase: Int, totalPhases: Int, title: String) {
+        println("\n--- Phase $phase/$totalPhases: $title ---")
+    }
+
+    /** Logs a single indented step within the current phase. */
+    fun logStep(label: String) {
+        println("  → $label")
+    }
+
     /**
      * Runs [block] [total] times, emitting progress lines for [label].
      *
@@ -21,21 +31,11 @@ internal object BenchmarkProgress {
         }
         repeat(total) { index ->
             val current = index + 1
-            if (shouldLog(current, total)) {
+            if (shouldLog(current = current, total = total)) {
                 println("  [$label] $current / $total")
             }
             block(index)
         }
-    }
-
-    /** Logs a numbered phase header such as `Phase 2/5: Global JIT warmup`. */
-    fun logPhase(phase: Int, totalPhases: Int, title: String) {
-        println("\n--- Phase $phase/$totalPhases: $title ---")
-    }
-
-    /** Logs a single indented step within the current phase. */
-    fun logStep(label: String) {
-        println("  → $label")
     }
 
     private fun shouldLog(current: Int, total: Int): Boolean {

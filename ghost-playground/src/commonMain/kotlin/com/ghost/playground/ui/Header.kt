@@ -56,38 +56,38 @@ internal fun Header(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            MarketingBadge(strings.badgeDropIn, PlaygroundIconKind.Bolt)
-            MarketingBadge(strings.badgeCoexist, PlaygroundIconKind.RoundTrip)
-            MarketingBadge(strings.badgeHotPaths, PlaygroundIconKind.Target)
+            MarketingBadge(label = strings.badgeDropIn, icon = PlaygroundIconKind.Bolt)
+            MarketingBadge(label = strings.badgeCoexist, icon = PlaygroundIconKind.RoundTrip)
+            MarketingBadge(label = strings.badgeHotPaths, icon = PlaygroundIconKind.Target)
         }
         Spacer(Modifier.height(22.dp))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TabChip(strings.speedTest, dest == PlaygroundDest.SpeedTest, Sage) {
+            TabChip(label = strings.speedTest, selected = dest == PlaygroundDest.SpeedTest, accent = Sage) {
                 onNav(
                     PlaygroundDest.SpeedTest
                 )
             }
             TabChip(
-                strings.studio,
-                dest == PlaygroundDest.Studio,
-                Teal
+                label = strings.studio,
+                selected = dest == PlaygroundDest.Studio,
+                accent = Teal
             ) { onNav(PlaygroundDest.Studio) }
-            TabChip(strings.underHood, dest == PlaygroundDest.UnderHood, Rose) {
+            TabChip(label = strings.underHood, selected = dest == PlaygroundDest.UnderHood, accent = Rose) {
                 onNav(
                     PlaygroundDest.UnderHood
                 )
             }
-            TabChip(strings.learnMore, dest == PlaygroundDest.LearnMore, InkSoft) {
+            TabChip(label = strings.learnMore, selected = dest == PlaygroundDest.LearnMore, accent = InkSoft) {
                 onNav(
                     PlaygroundDest.LearnMore
                 )
             }
             Spacer(Modifier.weight(1f))
-            LangToggle(LangCodeEn, lang == Lang.EN) { onLang(Lang.EN) }
-            LangToggle(LangCodeEs, lang == Lang.ES) { onLang(Lang.ES) }
+            LangToggle(label = LangCodeEn, on = lang == Lang.EN) { onLang(Lang.EN) }
+            LangToggle(label = LangCodeEs, on = lang == Lang.ES) { onLang(Lang.ES) }
         }
     }
 }

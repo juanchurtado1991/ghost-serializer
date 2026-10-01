@@ -42,25 +42,43 @@ class GhostMemoryAuditTest {
 
         reader.endObject()
 
-        assertEquals("status", key1)
-        assertEquals("success", val1)
-        assertEquals("level", key2)
-        assertEquals("success", val2)
-        assertEquals("key", key3)
-        assertEquals("success", val3)
+        assertEquals(
+            expected = "status",
+            actual = key1
+        )
+        assertEquals(
+            expected = "success",
+            actual = val1
+        )
+        assertEquals(
+            expected = "level",
+            actual = key2
+        )
+        assertEquals(
+            expected = "success",
+            actual = val2
+        )
+        assertEquals(
+            expected = "key",
+            actual = key3
+        )
+        assertEquals(
+            expected = "success",
+            actual = val3
+        )
 
         // Reference equality only holds where pooling is guaranteed (JVM/Android); JS interns
         // strings on its own, so this check would pass there even without pooling.
         if (isJvm) {
             assertSame(
-                val1,
-                val2,
-                "Memory leak: Duplicate string allocation detected for 'success'"
+                expected = val1,
+                actual = val2,
+                message = "Memory leak: Duplicate string allocation detected for 'success'"
             )
             assertSame(
-                val2,
-                val3,
-                "Memory leak: Duplicate string allocation detected for 'success'"
+                expected = val2,
+                actual = val3,
+                message = "Memory leak: Duplicate string allocation detected for 'success'"
             )
         }
     }
@@ -79,13 +97,22 @@ class GhostMemoryAuditTest {
         reader.consumeKeySeparator()
         val val2 = reader.nextString()
 
-        assertEquals(longString, val1)
-        assertEquals(longString, val2)
+        assertEquals(
+            expected = longString,
+            actual = val1
+        )
+        assertEquals(
+            expected = longString,
+            actual = val2
+        )
 
         // Strings past the pool limit should bypass it entirely; skipped on JS since identical
         // strings are often the same object there regardless of pooling.
         if (isJvm) {
-            assertNotSame(val1, val2)
+            assertNotSame(
+                illegal = val1,
+                actual = val2
+            )
         }
     }
 
@@ -98,14 +125,26 @@ class GhostMemoryAuditTest {
         val reader = GhostJsonReader(json.encodeToByteArray())
 
         reader.beginObject()
-        assertEquals("big", reader.nextKey())
+        assertEquals(
+            expected = "big",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
         val result = reader.nextString()
 
-        assertEquals(2001, result.length)
-        assertTrue(result.contains("\n"))
-        assertEquals(part1, result.substring(0, 1000))
-        assertEquals(part2, result.substring(1001))
+        assertEquals(
+            expected = 2001,
+            actual = result.length
+        )
+        assertTrue(actual = result.contains("\n"))
+        assertEquals(
+            expected = part1,
+            actual = result.substring(0, 1000)
+        )
+        assertEquals(
+            expected = part2,
+            actual = result.substring(1001)
+        )
     }
 
     @Test
@@ -118,17 +157,35 @@ class GhostMemoryAuditTest {
 
                 reader.beginObject()
 
-                assertEquals("id", reader.nextKey())
+                assertEquals(
+                    expected = "id",
+                    actual = reader.nextKey()
+                )
                 reader.consumeKeySeparator()
-                assertEquals(i, reader.nextInt())
+                assertEquals(
+                    expected = i,
+                    actual = reader.nextInt()
+                )
 
-                assertEquals("name", reader.nextKey())
+                assertEquals(
+                    expected = "name",
+                    actual = reader.nextKey()
+                )
                 reader.consumeKeySeparator()
-                assertEquals("Thread-$i", reader.nextString())
+                assertEquals(
+                    expected = "Thread-$i",
+                    actual = reader.nextString()
+                )
 
-                assertEquals("tag", reader.nextKey())
+                assertEquals(
+                    expected = "tag",
+                    actual = reader.nextKey()
+                )
                 reader.consumeKeySeparator()
-                assertEquals("shared", reader.nextString())
+                assertEquals(
+                    expected = "shared",
+                    actual = reader.nextString()
+                )
 
                 reader.endObject()
             }
@@ -146,13 +203,25 @@ class GhostMemoryAuditTest {
         // When
         reader.beginObject()
 
-        assertEquals("emoji", reader.nextKey())
+        assertEquals(
+            expected = "emoji",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals(emoji, reader.nextString())
+        assertEquals(
+            expected = emoji,
+            actual = reader.nextString()
+        )
 
-        assertEquals("escaped", reader.nextKey())
+        assertEquals(
+            expected = "escaped",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals(emoji, reader.nextString())
+        assertEquals(
+            expected = emoji,
+            actual = reader.nextString()
+        )
 
         reader.endObject()
     }

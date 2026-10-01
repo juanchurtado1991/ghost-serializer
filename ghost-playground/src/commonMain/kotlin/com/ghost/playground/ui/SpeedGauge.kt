@@ -123,7 +123,7 @@ fun SpeedGauge(
         }
         Spacer(Modifier.height(2.dp))
         Text(
-            formatCompactNumber(animatedValue.toDouble()),
+            formatCompactNumber(value = animatedValue.toDouble()),
             fontWeight = FontWeight.Black,
             fontSize = 26.sp,
             color = Ink

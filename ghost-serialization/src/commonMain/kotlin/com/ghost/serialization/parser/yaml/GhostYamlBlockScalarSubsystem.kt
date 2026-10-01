@@ -1,17 +1,19 @@
 package com.ghost.serialization.parser.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
 /**
  * Parses block scalar values (literal `|` and folded `>` styles).
  *
- * @param indent The enclosing context's indentation; `GhostYamlConstants.INDENT_UNSET` means
+ * @param indent The enclosing context's indentation; `GhostYamlScanConstants.INDENT_UNSET` means
  *   "document root, no enclosing key/dash" — the one case content may sit at column 0 with no
  *   explicit indicator. See [detectBlockScalarIndent].
  */
 internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): String {
     position++ // consume '|' or '>'
-    val isFolded = indicator == C.GT_BYTE
+    val isFolded = indicator == TOK.GT_BYTE
 
     var chomp = GhostYamlFlatReader.ChompStyle.CLIP
     var explicitIndent = -1
@@ -22,58 +24,52 @@ internal fun GhostYamlFlatReader.readBlockScalar(indicator: Byte, indent: Int): 
     while (position < localLimit) {
         val currByte = localRawData[position]
         when {
-            currByte == C.PLUS_BYTE -> {
+            currByte == TOK.PLUS_BYTE -> {
                 chomp = GhostYamlFlatReader.ChompStyle.KEEP; position++
             }
 
-            currByte == C.DASH_BYTE -> {
+            currByte == TOK.DASH_BYTE -> {
                 chomp = GhostYamlFlatReader.ChompStyle.STRIP; position++
             }
 
             isDigit(currByte) -> {
                 if (explicitIndent >= 0) {
-                    yamlError(C.ERR_BLOCK_INDENT_INDICATOR_DIGIT)
+                    yamlError(message = EM.ERR_BLOCK_INDENT_INDICATOR_DIGIT)
                 }
-                explicitIndent = currByte - C.ZERO_BYTE
+                explicitIndent = currByte - TOK.ZERO_BYTE
                 if (explicitIndent == 0) {
-                    yamlError(C.ERR_BLOCK_INDENT_RANGE_1_9)
+                    yamlError(message = EM.ERR_BLOCK_INDENT_RANGE_1_9)
                 }
                 position++
             }
 
-            currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE -> position++
-            currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE -> break
+            isInlineWhitespaceByte(byte = currByte) -> position++
+            isLineBreakByte(byte = currByte) -> break
 
-            currByte == C.HASH_BYTE -> {
+            currByte == TOK.HASH_BYTE -> {
                 // A comment must be preceded by whitespace, same rule as everywhere else in the
                 // reader — "># comment" isn't a comment, it's invalid trailing text.
-                if (position > 0 &&
-                    (localRawData[position - 1] == C.SPACE_BYTE || localRawData[position - 1] == C.TAB_BYTE)
-                ) {
+                if (position > 0 && isInlineWhitespaceByte(byte = localRawData[position - 1])) {
                     skipToEndOfLine(); break
                 }
-                yamlError(C.ERR_COMMENT_AFTER_BLOCK_INDICATOR_WS)
+                yamlError(message = EM.ERR_COMMENT_AFTER_BLOCK_INDICATOR_WS)
             }
 
-            else -> yamlError(C.ERR_INVALID_TEXT_AFTER_BLOCK_INDICATOR)
+            else -> yamlError(message = EM.ERR_INVALID_TEXT_AFTER_BLOCK_INDICATOR)
         }
     }
     skipToEndOfLine()
-    if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-    else if (position < localLimit && localRawData[position] == C.CR_BYTE) {
-        position++
-        if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-    }
+    consumeLineBreakIfPresent()
 
     // An explicit indicator (e.g. the "1" in "|1") is relative to the parent node's indentation
     // level, not an absolute column.
     val blockIndent = if (explicitIndent >= 0) {
         currentIndent + explicitIndent
     } else {
-        detectBlockScalarIndent(currentIndent, isDocumentRoot = indent == C.INDENT_UNSET)
+        detectBlockScalarIndent(parentIndent = currentIndent, isDocumentRoot = indent == SC.INDENT_UNSET)
     }
 
-    return readBlockScalarContent(blockIndent, isFolded, chomp)
+    return readBlockScalarContent(blockIndent = blockIndent, isFolded = isFolded, chomp = chomp)
 }
 
 internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDocumentRoot: Boolean): Int {
@@ -85,16 +81,16 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
     var maxLeadingEmptyLineIndent = 0
     while (scannerPos < localLimit) {
         val currByte = localRawData[scannerPos]
-        if (currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE) {
+        if (currByte == TOK.NEWLINE_BYTE || currByte == TOK.CR_BYTE) {
             scannerPos++
             continue
         }
         var spaces = 0
         var peekPos = scannerPos
-        while (peekPos < localLimit && localRawData[peekPos] == C.SPACE_BYTE) {
+        while (peekPos < localLimit && localRawData[peekPos] == TOK.SPACE_BYTE) {
             spaces++; peekPos++
         }
-        if (peekPos < localLimit && localRawData[peekPos] != C.NEWLINE_BYTE && localRawData[peekPos] != C.CR_BYTE) {
+        if (peekPos < localLimit && !isLineBreakByte(byte = localRawData[peekPos])) {
             // Only a genuine document-root scalar may have content at/below the parent's own
             // indentation; everywhere else, fall back to parentIndent + 2 and let
             // readBlockScalarContent's de-indent check treat it as empty.
@@ -106,7 +102,7 @@ internal fun GhostYamlFlatReader.detectBlockScalarIndent(parentIndent: Int, isDo
             // A leading empty line more indented than the first content line is ambiguous;
             // the spec rejects it rather than guessing.
             if (maxLeadingEmptyLineIndent > spaces) {
-                yamlError(C.ERR_LEADING_EMPTY_LINE_OVERINDENTED)
+                yamlError(message = EM.ERR_LEADING_EMPTY_LINE_OVERINDENTED)
             }
             return spaces
         }
@@ -133,26 +129,23 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
     while (position < localLimit) {
         var spaces = 0
         val lineStart = position
-        while (position < localLimit && localRawData[position] == C.SPACE_BYTE) {
+        while (position < localLimit && localRawData[position] == TOK.SPACE_BYTE) {
             spaces++; position++
         }
 
-        if ((position >= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) &&
-            spaces <= blockIndent
-        ) {
+        val isAtLineEnd = position >= localLimit || isLineBreakByte(byte = localRawData[position])
+        val isBlankLine = isAtLineEnd && spaces <= blockIndent
+        if (isBlankLine) {
             // A line with spaces beyond blockIndent isn't blank — falling through to normal
             // content handling preserves them (see DWX9/6FWR's expected " " line).
             trailingNewlines++
             skipToEndOfLine()
-            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-            else if (position < localLimit && localRawData[position] == C.CR_BYTE) {
-                position++
-                if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-            }
+            consumeLineBreakIfPresent()
             continue
         }
 
-        if (spaces < blockIndent || isDocumentMarker() || isDocumentEndMarker()) {
+        val endsBlockScalar = spaces < blockIndent || isDocumentMarker() || isDocumentEndMarker()
+        if (endsBlockScalar) {
             // Markers are structural and terminate the scalar unconditionally, even a
             // root-level scalar with blockIndent 0 (every line looks "indented enough").
             position = lineStart
@@ -168,7 +161,8 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
             if (isFirstLine) {
                 repeat(trailingNewlines) { contentBuilder.append('\n') }
             } else if (trailingNewlines == 1) {
-                if (isFolded && !isIndented && !lastLineWasIndented) {
+                val foldsWithPreviousLine = isFolded && !isIndented && !lastLineWasIndented
+                if (foldsWithPreviousLine) {
                     contentBuilder.append(' ')
                 } else {
                     contentBuilder.append('\n')
@@ -185,18 +179,13 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
         repeat(effectiveSpaces) { contentBuilder.append(' ') }
 
         val contentStart = position
-        while (position < localLimit && localRawData[position] != C.NEWLINE_BYTE && localRawData[position] != C.CR_BYTE) {
+        while (position < localLimit && !isLineBreakByte(byte = localRawData[position])) {
             position++
         }
         contentBuilder.append(localRawData.decodeToString(contentStart, position))
 
         skipToEndOfLine()
-        if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) {
-            position++
-        } else if (position < localLimit && localRawData[position] == C.CR_BYTE) {
-            position++
-            if (position < localLimit && localRawData[position] == C.NEWLINE_BYTE) position++
-        }
+        consumeLineBreakIfPresent()
         trailingNewlines = 1 // Count the newline ending this content line
     }
 
@@ -218,5 +207,17 @@ internal fun GhostYamlFlatReader.readBlockScalarContent(
             val trailing = if (trailingNewlines > 0) "\n".repeat(trailingNewlines) else ""
             content + trailing
         }
+    }
+}
+
+/** Consumes a single `\n`, `\r`, or `\r\n` line break at the current position, if present. */
+private fun GhostYamlFlatReader.consumeLineBreakIfPresent() {
+    val localRawData = rawData
+    val localLimit = limit
+    if (position < localLimit && localRawData[position] == TOK.NEWLINE_BYTE) {
+        position++
+    } else if (position < localLimit && localRawData[position] == TOK.CR_BYTE) {
+        position++
+        if (position < localLimit && localRawData[position] == TOK.NEWLINE_BYTE) position++
     }
 }

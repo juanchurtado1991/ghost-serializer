@@ -3,6 +3,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.endObject
@@ -18,7 +19,7 @@ class GhostWrappedKeysCaptureTest {
 
     @Test
     fun materializeBuildsSyntheticWrapperObject() {
-        val capture = GhostWrappedKeysCapture(2)
+        val capture = GhostWrappedKeysCapture(slotCount = 2)
         val reader = GhostJsonReader(
             """{"extra1":"a","extra2":42}""".encodeToByteArray(),
         )
@@ -26,11 +27,11 @@ class GhostWrappedKeysCaptureTest {
         reader.selectNameAndConsume(
             JsonReaderOptions.of("extra1", "extra2"),
         )
-        reader.captureWrappedKey(capture, 0)
+        reader.captureWrappedKey(capture = capture, slotIndex = 0)
         reader.selectNameAndConsume(
             JsonReaderOptions.of("extra1", "extra2"),
         )
-        reader.captureWrappedKey(capture, 1)
+        reader.captureWrappedKey(capture = capture, slotIndex = 1)
         reader.endObject()
 
         val keyLiterals = arrayOf(
@@ -43,12 +44,15 @@ class GhostWrappedKeysCaptureTest {
             omitIfAbsentIndices = intArrayOf(),
         )
 
-        assertEquals("""{"extra1":"a","extra2":42}""", wrapped!!.decodeToString())
+        assertEquals(
+            expected = """{"extra1":"a","extra2":42}""",
+            actual = wrapped!!.decodeToString()
+        )
     }
 
     @Test
     fun omitIfEmptyReturnsNullWhenAllAbsent() {
-        val capture = GhostWrappedKeysCapture(2)
+        val capture = GhostWrappedKeysCapture(slotCount = 2)
         val wrapped = capture.materializeWrappedObject(
             keyUtf8Literals = arrayOf(
                 "\"extra1\":".encodeToByteArray(),
@@ -57,13 +61,13 @@ class GhostWrappedKeysCaptureTest {
             omitIfEmpty = true,
             omitIfAbsentIndices = intArrayOf(),
         )
-        assertNull(wrapped)
+        assertNull(actual = wrapped)
     }
 
     @Test
     fun omitIfAbsentReturnsNullWhenTriggerMissing() {
-        val capture = GhostWrappedKeysCapture(2)
-        capture.put(0, RawJson.fromString("\"a\""))
+        val capture = GhostWrappedKeysCapture(slotCount = 2)
+        capture.put(0, RawJson.fromString(json = "\"a\""))
         val wrapped = capture.materializeWrappedObject(
             keyUtf8Literals = arrayOf(
                 "\"extra1\":".encodeToByteArray(),
@@ -72,13 +76,13 @@ class GhostWrappedKeysCaptureTest {
             omitIfEmpty = false,
             omitIfAbsentIndices = intArrayOf(1),
         )
-        assertNull(wrapped)
+        assertNull(actual = wrapped)
     }
 
     @Test
     fun absentSlotsAreOmittedFromMaterializedObject() {
-        val capture = GhostWrappedKeysCapture(2)
-        capture.put(0, RawJson.fromString("\"a\""))
+        val capture = GhostWrappedKeysCapture(slotCount = 2)
+        capture.put(0, RawJson.fromString(json = "\"a\""))
         val wrapped = capture.materializeWrappedObject(
             keyUtf8Literals = arrayOf(
                 "\"extra1\":".encodeToByteArray(),
@@ -88,8 +92,8 @@ class GhostWrappedKeysCaptureTest {
             omitIfAbsentIndices = intArrayOf(),
         )
         assertContentEquals(
-            """{"extra1":"a"}""".encodeToByteArray(),
-            wrapped,
+            expected = """{"extra1":"a"}""".encodeToByteArray(),
+            actual = wrapped
         )
     }
 }

@@ -23,7 +23,7 @@ class GhostRetrofitExpansionTest {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        Ghost.addRegistry(RetrofitTestRegistry)
+        Ghost.addRegistry(registry = RetrofitTestRegistry)
 
         val retrofit = Retrofit.Builder()
             .baseUrl(mockWebServer.url("/"))
@@ -50,14 +50,14 @@ class GhostRetrofitExpansionTest {
     fun `handles 204 No Content correctly`() = runTest {
         mockWebServer.enqueue(MockResponse().setResponseCode(204))
         val result = apiService.getNoContent()
-        assertEquals(Unit, result)
+        assertEquals(expected = Unit, actual = result)
     }
 
     @Test
     fun `handles null response body correctly`() = runTest {
         mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("null"))
         val response = apiService.getEmpty()
-        assertNull(response.body())
+        assertNull(actual = response.body())
     }
 
     @Test
@@ -76,8 +76,8 @@ class GhostRetrofitExpansionTest {
             MockResponse().setResponseCode(200).setBody("{\"id\":1 \"name\":\"John\"}")
         )
         val user = apiService.getLenientUser()
-        assertEquals(1, user.id)
-        assertEquals("John", user.name)
+        assertEquals(expected = 1, actual = user.id)
+        assertEquals(expected = "John", actual = user.name)
     }
 
     @Test
@@ -87,8 +87,8 @@ class GhostRetrofitExpansionTest {
                 .setBody("{\"id\":\"42\", \"name\":\"John\", \"isActive\":\"true\"}")
         )
         val user = apiService.getCoercedUser()
-        assertEquals(42, user.id)
-        assertEquals("John", user.name)
-        assertEquals(true, user.isActive)
+        assertEquals(expected = 42, actual = user.id)
+        assertEquals(expected = "John", actual = user.name)
+        assertEquals(expected = true, actual = user.isActive)
     }
 }

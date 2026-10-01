@@ -27,12 +27,12 @@ class GhostTextChannelKspTest {
         val generated = compileAndReadSerializer(textChannel = true)
 
         assertTrue(
-            "override fun deserialize(reader: GhostJsonReader)" in generated,
-            "Expected the unified in-memory/streaming deserialize overload"
+            actual = "override fun deserialize(reader: GhostJsonReader)" in generated,
+            message = "Expected the unified in-memory/streaming deserialize overload"
         )
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generated,
-            "Expected native string deserialize overload when textChannel=true"
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generated,
+            message = "Expected native string deserialize overload when textChannel=true"
         )
     }
 
@@ -41,12 +41,12 @@ class GhostTextChannelKspTest {
         val generated = compileAndReadSerializer(textChannel = true)
 
         assertTrue(
-            "override fun serialize(writer: GhostJsonWriter," in generated,
-            "Expected the unified in-memory/streaming serialize overload"
+            actual = "override fun serialize(writer: GhostJsonWriter," in generated,
+            message = "Expected the unified in-memory/streaming serialize overload"
         )
         assertTrue(
-            "override fun serialize(writer: GhostJsonStringWriter," in generated,
-            "Expected string serialize overload"
+            actual = "override fun serialize(writer: GhostJsonStringWriter," in generated,
+            message = "Expected string serialize overload"
         )
     }
 
@@ -55,8 +55,8 @@ class GhostTextChannelKspTest {
         val generated = compileAndReadSerializer(textChannel = false)
 
         assertFalse(
-            "override fun serialize(writer: GhostJsonStringWriter," in generated,
-            "String serialize must not be generated when textChannel=false:\n$generated"
+            actual = "override fun serialize(writer: GhostJsonStringWriter," in generated,
+            message = "String serialize must not be generated when textChannel=false:\n$generated"
         )
     }
 
@@ -65,12 +65,12 @@ class GhostTextChannelKspTest {
         val generated = compileAndReadSerializer(textChannel = false)
 
         assertTrue(
-            "override fun deserialize(reader: GhostJsonReader)" in generated,
-            "Expected the unified in-memory/streaming deserialize overload"
+            actual = "override fun deserialize(reader: GhostJsonReader)" in generated,
+            message = "Expected the unified in-memory/streaming deserialize overload"
         )
         assertFalse(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generated,
-            "String deserialize must not be generated when textChannel=false:\n$generated"
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generated,
+            message = "String deserialize must not be generated when textChannel=false:\n$generated"
         )
     }
 
@@ -85,12 +85,12 @@ class GhostTextChannelKspTest {
         @Suppress("UNCHECKED_CAST")
         val serializer = instanceField.get(null) as GhostSerializer<Any>
 
-        val reader = GhostJsonStringReader("""{"id":42,"name":"bridge"}""")
+        val reader = GhostJsonStringReader(rawData = """{"id":42,"name":"bridge"}""")
         val decoded = serializer.deserialize(reader)
 
         val userClass = result.classLoader.loadClass("fixtures.ChannelUser")
-        assertEquals(42, userClass.getMethod("getId").invoke(decoded))
-        assertEquals("bridge", userClass.getMethod("getName").invoke(decoded))
+        assertEquals(expected = 42, actual = userClass.getMethod("getId").invoke(decoded))
+        assertEquals(expected = "bridge", actual = userClass.getMethod("getName").invoke(decoded))
     }
 
     @Test
@@ -98,26 +98,26 @@ class GhostTextChannelKspTest {
         val generated = compileFeatureModel(textChannel = true)
 
         assertEquals(
-            1,
-            Regex("override fun deserialize\\(reader: GhostJsonReader\\)").findAll(generated)
+            expected = 1,
+            actual = Regex("override fun deserialize\\(reader: GhostJsonReader\\)").findAll(generated)
                 .count()
         )
         assertEquals(
-            1,
-            Regex("override fun deserialize\\(reader: GhostJsonFlatReader\\)").findAll(generated)
+            expected = 1,
+            actual = Regex("override fun deserialize\\(reader: GhostJsonFlatReader\\)").findAll(generated)
                 .count()
         )
         assertEquals(
-            1,
-            Regex("override fun deserialize\\(reader: GhostJsonStringReader\\)").findAll(generated)
+            expected = 1,
+            actual = Regex("override fun deserialize\\(reader: GhostJsonStringReader\\)").findAll(generated)
                 .count()
         )
-        assertEquals(3, "reader.readSet".toRegex().findAll(generated).count())
-        assertEquals(3, "reader.captureRawJson()".toRegex().findAll(generated).count())
-        assertEquals(3, "reader.nextChar()".toRegex().findAll(generated).count())
+        assertEquals(expected = 3, actual = "reader.readSet".toRegex().findAll(generated).count())
+        assertEquals(expected = 3, actual = "reader.captureRawJson()".toRegex().findAll(generated).count())
+        assertEquals(expected = 3, actual = "reader.nextChar()".toRegex().findAll(generated).count())
         assertTrue(
-            "writer.rawValue(value.metadata.storage, value.metadata.storageOffset, value.metadata.storageLength)" in generated,
-            "Expected slice rawValue for RawJson field:\n$generated"
+            actual = "writer.rawValue(value.metadata.storage, value.metadata.storageOffset, value.metadata.storageLength)" in generated,
+            message = "Expected slice rawValue for RawJson field:\n$generated"
         )
     }
 

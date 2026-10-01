@@ -1,6 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,13 +15,16 @@ import kotlin.test.assertEquals
  */
 class GhostYamlBlockScalarLeadingBlankLineTest {
 
-    private fun readerOf(yaml: String) = GhostYamlFlatReader(yaml.encodeToByteArray())
+    private fun readerOf(yaml: String) = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
 
     @Test
     fun preservesLeadingBlankLinesInLiteralScalar() {
         val yaml = "|\n \n  \n  literal\n"
         val doc = readerOf(yaml).readDocument()
-        assertEquals("\n\nliteral\n", doc)
+        assertEquals(
+            expected = "\n\nliteral\n",
+            actual = doc
+        )
     }
 
     @Test
@@ -29,7 +33,10 @@ class GhostYamlBlockScalarLeadingBlankLineTest {
         // real " " to the content, not just a bare newline.
         val yaml = "|\n  literal\n   \n  text\n"
         val doc = readerOf(yaml).readDocument()
-        assertEquals("literal\n \ntext\n", doc)
+        assertEquals(
+            expected = "literal\n \ntext\n",
+            actual = doc
+        )
     }
 
     @Test
@@ -38,12 +45,18 @@ class GhostYamlBlockScalarLeadingBlankLineTest {
         // content just because they exceed the guessed (no-real-content) blockIndent.
         val yaml = "- |+\n   \n"
         val doc = readerOf(yaml).readDocument() as List<*>
-        assertEquals(listOf("\n"), doc)
+        assertEquals(
+            expected = listOf("\n"),
+            actual = doc
+        )
     }
 
     @Test
     fun ordinaryLiteralScalarWithNoLeadingBlankLinesUnaffected() {
         val doc = readerOf("|\n  a\n  b\n").readDocument()
-        assertEquals("a\nb\n", doc)
+        assertEquals(
+            expected = "a\nb\n",
+            actual = doc
+        )
     }
 }

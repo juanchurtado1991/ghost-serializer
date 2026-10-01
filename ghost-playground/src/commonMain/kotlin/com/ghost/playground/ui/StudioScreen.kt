@@ -95,7 +95,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             )
             FeatureCatalog.labs.forEach { lab ->
                 PresetButton(
-                    if (lang == Lang.EN) lab.titleEn else lab.titleEs,
+                    label = if (lang == Lang.EN) lab.titleEn else lab.titleEs,
                     selected = selectedLab.id == lab.id
                 ) {
                     selectedLab = lab
@@ -110,13 +110,13 @@ fun StudioScreen(strings: Strings, lang: Lang) {
             style = MaterialTheme.typography.bodyLarge,
         )
 
-        selectedLab.wireFormatDocGuide(strings)?.let { (label, url) ->
+        selectedLab.wireFormatDocGuide(strings = strings)?.let { (label, url) ->
             Text(
                 label,
                 color = Teal,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { openUrl(url) },
+                modifier = Modifier.clickable { openUrl(url = url) },
             )
         }
 
@@ -132,11 +132,11 @@ fun StudioScreen(strings: Strings, lang: Lang) {
         }
 
         Card(title = strings.dtoSource, accent = Teal, leadingIcon = selectedLab.icon) {
-            CodeArea(selectedLab.dtoSource)
+            CodeArea(value = selectedLab.dtoSource)
         }
 
         Card(title = selectedLab.inputLabel(strings), accent = Coral) {
-            CodeArea(selectedVariant.json)
+            CodeArea(value = selectedVariant.json)
         }
 
         HeroButton(
@@ -151,7 +151,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PlaygroundIcon(PlaygroundIconKind.Warning, tint = Rose, size = 18.dp)
+                PlaygroundIcon(kind = PlaygroundIconKind.Warning, tint = Rose, size = 18.dp)
                 Text(err, color = Rose, fontWeight = FontWeight.SemiBold)
             }
         }
@@ -159,25 +159,25 @@ fun StudioScreen(strings: Strings, lang: Lang) {
         if (running || output != null) {
             Card(title = strings.pipelineTitle, accent = Sage) {
                 PipelineRow(
-                    1,
-                    strings.pipelineStepReadTitle,
-                    strings.pipelineStepReadDetail,
-                    StepStatus.Done,
-                    true
+                    num = 1,
+                    title = strings.pipelineStepReadTitle,
+                    detail = strings.pipelineStepReadDetail,
+                    status = StepStatus.Done,
+                    lit = true
                 )
                 PipelineRow(
-                    2,
-                    selectedLab.pipelineRunTitle(strings),
-                    if (activeStep >= 1) selectedLab.pipelineRunDetail(strings) else strings.speedTestLoading,
-                    if (activeStep >= 1) StepStatus.Done else StepStatus.Active,
-                    activeStep >= 1,
+                    num = 2,
+                    title = selectedLab.pipelineRunTitle(strings),
+                    detail = if (activeStep >= 1) selectedLab.pipelineRunDetail(strings) else strings.speedTestLoading,
+                    status = if (activeStep >= 1) StepStatus.Done else StepStatus.Active,
+                    lit = activeStep >= 1,
                 )
             }
 
             if (selectedLab.fieldNames.isNotEmpty()) {
                 Card(title = strings.dispatchTitle, accent = Teal) {
                     val (slots, hashSummary) = remember(selectedLab.id) {
-                        PerfectHashLab.dispatchPreview(selectedLab.fieldNames)
+                        PerfectHashLab.dispatchPreview(names = selectedLab.fieldNames)
                     }
                     Text(
                         hashSummary,
@@ -191,7 +191,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         slots.forEach { slot ->
-                            DispatchCell(slot.index, slot.fieldName, slot.occupied)
+                            DispatchCell(index = slot.index, field = slot.fieldName, occupied = slot.occupied)
                         }
                     }
                 }
@@ -200,7 +200,7 @@ fun StudioScreen(strings: Strings, lang: Lang) {
 
         output?.let { out ->
             Card(title = strings.ghostOutput, accent = Teal) {
-                CodeArea(out)
+                CodeArea(value = out)
                 Text(strings.whatHappened, fontWeight = FontWeight.Bold, color = Ink)
                 Text(explanation.orEmpty(), style = MaterialTheme.typography.bodyLarge)
             }

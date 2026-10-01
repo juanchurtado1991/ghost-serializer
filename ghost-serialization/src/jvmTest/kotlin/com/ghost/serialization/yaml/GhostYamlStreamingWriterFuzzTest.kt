@@ -6,6 +6,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import okio.Buffer
 
@@ -31,14 +32,14 @@ class GhostYamlStreamingWriterFuzzTest {
 
     @FuzzTest
     fun fuzzYamlStreamingStringValueRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val buffer = Buffer()
         val writer = GhostYamlWriter(buffer)
-        writer.beginObject().name("v").value(expected).endObject()
+        writer.beginObject().name(key = "v").value(expected).endObject()
         writer.flush()
 
-        val decoded = GhostYamlFlatReader(buffer.readByteArray()).readDocument()
+        val decoded = GhostYamlFlatReader(rawData = buffer.readByteArray()).readDocument()
         check(decoded is Map<*, *> && decoded["v"] == expected) {
             "YAML streaming value round-trip mismatch: ${expected.length} chars -> $decoded"
         }
@@ -46,14 +47,14 @@ class GhostYamlStreamingWriterFuzzTest {
 
     @FuzzTest
     fun fuzzYamlStreamingMappingKeyRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val buffer = Buffer()
         val writer = GhostYamlWriter(buffer)
-        writer.beginObject().name(expected).value(1).endObject()
+        writer.beginObject().name(key = expected).value(1).endObject()
         writer.flush()
 
-        val decoded = GhostYamlFlatReader(buffer.readByteArray()).readDocument()
+        val decoded = GhostYamlFlatReader(rawData = buffer.readByteArray()).readDocument()
         check(decoded is Map<*, *> && decoded.keys.singleOrNull() == expected) {
             "YAML streaming key round-trip mismatch: ${expected.length} chars -> $decoded"
         }

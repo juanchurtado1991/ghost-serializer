@@ -12,22 +12,22 @@ class GeneratedSyntaxTest {
     fun testGeneratedSyntax() {
         // Replicates SerializeCodeEmitter output directly since KSP may not have run for this module.
 
-        val model = SyntaxModel(1, "test", listOf("a", "b"), intArrayOf(10, 20))
+        val model = SyntaxModel(id = 1, name = "test", tags = listOf("a", "b"), scores = intArrayOf(10, 20))
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
 
         writer.beginObject()
-        writer.name("id").value(model.id)
-        writer.name("name").value(model.name)
+        writer.name(key = "id").value(model.id)
+        writer.name(key = "name").value(model.name)
 
-        writer.name("tags")
+        writer.name(key = "tags")
         writer.beginArray()
         for (item in model.tags) {
             writer.value(item)
         }
         writer.endArray()
 
-        writer.name("scores")
+        writer.name(key = "scores")
         writer.beginArray()
         for (item in model.scores) {
             writer.value(item)
@@ -40,6 +40,9 @@ class GeneratedSyntaxTest {
         writer.flush()
         val json = buffer.readUtf8()
         val expected = "{\"id\":1,\"name\":\"test\",\"tags\":[\"a\",\"b\"],\"scores\":[10,20]}"
-        assertEquals(expected, json)
+        assertEquals(
+            expected = expected,
+            actual = json
+        )
     }
 }

@@ -1,6 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,31 +16,43 @@ import kotlin.test.assertFailsWith
  */
 class GhostYamlMultilinePlainScalarFoldTest {
 
-    private fun readerOf(yaml: String) = GhostYamlFlatReader(yaml.encodeToByteArray())
+    private fun readerOf(yaml: String) = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
 
     @Test
     fun foldsSameIndentContinuationLines() {
         val doc = readerOf("plain:\n  This unquoted scalar\n  spans many lines.\n").readDocument()
-        assertEquals(mapOf("plain" to "This unquoted scalar spans many lines."), doc)
+        assertEquals(
+            expected = mapOf("plain" to "This unquoted scalar spans many lines."),
+            actual = doc
+        )
     }
 
     @Test
     fun matchesInlineStartEquivalent() {
         val fresh = readerOf("plain:\n  This unquoted scalar\n  spans many lines.\n").readDocument()
         val inline = readerOf("plain: This unquoted scalar\n  spans many lines.\n").readDocument()
-        assertEquals(inline, fresh)
+        assertEquals(
+            expected = inline,
+            actual = fresh
+        )
     }
 
     @Test
     fun foldsAcrossBlankLineWithNewlineSeparator() {
         val doc = readerOf("key:\n  line one\n\n  line two\n").readDocument()
-        assertEquals(mapOf("key" to "line one\nline two"), doc)
+        assertEquals(
+            expected = mapOf("key" to "line one\nline two"),
+            actual = doc
+        )
     }
 
     @Test
     fun stillDedentsToASiblingKey() {
         val doc = readerOf("plain:\n  value line\nsibling: next\n").readDocument()
-        assertEquals(mapOf("plain" to "value line", "sibling" to "next"), doc)
+        assertEquals(
+            expected = mapOf("plain" to "value line", "sibling" to "next"),
+            actual = doc
+        )
     }
 
     @Test
@@ -56,6 +69,9 @@ class GhostYamlMultilinePlainScalarFoldTest {
         // still needs its own auto-detected column as ITS blockIndent, for its own sibling-dedent
         // detection -- this is deliberately a different "indent" than the fold-boundary fix above.
         val doc = readerOf("outer:\n  a: 1\n  b: 2\nsibling: 3\n").readDocument()
-        assertEquals(mapOf("outer" to mapOf("a" to 1L, "b" to 2L), "sibling" to 3L), doc)
+        assertEquals(
+            expected = mapOf("outer" to mapOf("a" to 1L, "b" to 2L), "sibling" to 3L),
+            actual = doc
+        )
     }
 }

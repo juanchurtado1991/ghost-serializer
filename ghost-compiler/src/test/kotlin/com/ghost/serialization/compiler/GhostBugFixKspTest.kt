@@ -47,8 +47,8 @@ class GhostBugFixKspTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
-            kspOutput.any { "VehicleSerializer.kt" in it },
-            "Expected VehicleSerializer.kt: $kspOutput"
+            actual = kspOutput.any { "VehicleSerializer.kt" in it },
+            message = "Expected VehicleSerializer.kt: $kspOutput"
         )
     }
 
@@ -73,10 +73,10 @@ class GhostBugFixKspTest {
         val generated =
             compilation.kspSourcesDir.walk().filter { it.name == "ConnectionStateSerializer.kt" }
                 .map { it.readText() }.firstOrNull()
-        assertTrue(generated != null, "ConnectionStateSerializer.kt not generated")
+        assertTrue(actual = generated != null, message = "ConnectionStateSerializer.kt not generated")
         assertTrue(
-            "else -> ConnectionState.UNKNOWN" in (generated ?: ""),
-            "Expected auto-UNKNOWN else branch in generated code:\n$generated"
+            actual = "else -> ConnectionState.UNKNOWN" in (generated ?: ""),
+            message = "Expected auto-UNKNOWN else branch in generated code:\n$generated"
         )
     }
 
@@ -101,10 +101,10 @@ class GhostBugFixKspTest {
         val generated =
             compilation.kspSourcesDir.walk().filter { it.name == "SyncStateSerializer.kt" }
                 .map { it.readText() }.firstOrNull()
-        assertTrue(generated != null, "SyncStateSerializer.kt not generated")
+        assertTrue(actual = generated != null, message = "SyncStateSerializer.kt not generated")
         assertTrue(
-            "else -> SyncState.unknown" in (generated ?: ""),
-            "Expected auto-unknown else branch in generated code:\n$generated"
+            actual = "else -> SyncState.unknown" in (generated ?: ""),
+            message = "Expected auto-unknown else branch in generated code:\n$generated"
         )
     }
 
@@ -137,10 +137,10 @@ class GhostBugFixKspTest {
         val generated =
             compilation.kspSourcesDir.walk().filter { it.name == "LocationPermissionSerializer.kt" }
                 .map { it.readText() }.firstOrNull()
-        assertTrue(generated != null, "LocationPermissionSerializer.kt not generated")
+        assertTrue(actual = generated != null, message = "LocationPermissionSerializer.kt not generated")
         assertTrue(
-            Regex("""JsonReaderOptions\.of\(\s*\d+,""").containsMatchIn(generated!!),
-            "Expected ENUM_OPTIONS to use computed perfect-hash seeds, got:\n$generated"
+            actual = Regex("""JsonReaderOptions\.of\(\s*\d+,""").containsMatchIn(generated!!),
+            message = "Expected ENUM_OPTIONS to use computed perfect-hash seeds, got:\n$generated"
         )
     }
 
@@ -164,8 +164,8 @@ class GhostBugFixKspTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
-            kspOutput.any { "RawPayloadSerializer.kt" in it },
-            "Expected RawPayloadSerializer.kt: $kspOutput"
+            actual = kspOutput.any { "RawPayloadSerializer.kt" in it },
+            message = "Expected RawPayloadSerializer.kt: $kspOutput"
         )
     }
 
@@ -192,15 +192,15 @@ class GhostBugFixKspTest {
             .filter { it.name == "RawJsonPayloadSerializer.kt" }
             .map { it.readText() }
             .firstOrNull()
-        assertTrue(generated != null, "RawJsonPayloadSerializer.kt not generated")
+        assertTrue(actual = generated != null, message = "RawJsonPayloadSerializer.kt not generated")
         assertTrue(
-            "captureRawJson()" in (generated ?: ""),
-            "Expected captureRawJson in generated serializer:\n$generated"
+            actual = "captureRawJson()" in (generated ?: ""),
+            message = "Expected captureRawJson in generated serializer:\n$generated"
         )
         assertTrue(
-            "writer.rawValue(value.body.storage, value.body.storageOffset, value.body.storageLength)" in (generated
+            actual = "writer.rawValue(value.body.storage, value.body.storageOffset, value.body.storageLength)" in (generated
                 ?: ""),
-            "Expected slice rawValue in generated serializer:\n$generated"
+            message = "Expected slice rawValue in generated serializer:\n$generated"
         )
     }
 

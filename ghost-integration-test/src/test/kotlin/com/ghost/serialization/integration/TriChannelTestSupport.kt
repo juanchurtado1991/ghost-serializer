@@ -13,15 +13,19 @@ import kotlin.test.assertEquals
  */
 internal inline fun <reified T : Any> assertTriChannelRoundTrip(expected: T, value: T = expected) {
     val bytes = Ghost.encodeToBytes(value)
-    assertEquals(expected, Ghost.deserialize<T>(bytes), "bytes channel round-trip failed")
+    assertEquals(expected = expected, actual = Ghost.deserialize<T>(bytes), message = "bytes channel round-trip failed")
 
     val json = Ghost.encodeToString(value)
-    assertEquals(expected, Ghost.deserialize<T>(json), "string channel round-trip failed")
+    assertEquals(expected = expected, actual = Ghost.deserialize<T>(json), message = "string channel round-trip failed")
 
     val viaStreaming = Ghost.deserializeStreaming<T>(Buffer().write(bytes))
-    assertEquals(expected, viaStreaming, "streaming channel round-trip failed")
+    assertEquals(expected = expected, actual = viaStreaming, message = "streaming channel round-trip failed")
 
     val streamingSink = Buffer()
     Ghost.serialize(streamingSink, value)
-    assertContentEquals(bytes, streamingSink.readByteArray(), "streaming encode channel failed")
+    assertContentEquals(
+        expected = bytes,
+        actual = streamingSink.readByteArray(),
+        message = "streaming encode channel failed"
+    )
 }

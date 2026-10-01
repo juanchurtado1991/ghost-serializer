@@ -6,7 +6,10 @@ import com.ghost.serialization.releaseScratchBuffer
 import com.ghost.serialization.writer.common.GhostWriterLongDigits
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import okio.ByteString
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
+import com.ghost.serialization.yaml.GhostYamlWriterConstants as WR
 
 /**
  * Shared YAML writer kernels used by [GhostYamlWriter], whether backed by an okio
@@ -23,37 +26,95 @@ internal object GhostYamlWriterHelpers {
     const val PREPARE_PENDING_SPACE = 2
     const val PREPARE_INCREMENT_ITEM = 4
 
-    fun newScratch(): ByteArray = acquireScratchBuffer(C.SCRATCH_BUFFER_SIZE)
-
-    fun releaseScratch(current: ByteArray?) {
-        if (current != null) {
-            releaseScratchBuffer(current)
-        }
-    }
-
     fun extractKey(header: ByteString): String {
         val size = header.size
-        if (size >= C.HEADER_MIN_SIZE &&
-            header[C.HEADER_QUOTE_START_OFFSET] == C.DOUBLE_QUOTE_BYTE &&
-            header[size - C.HEADER_QUOTE_END_OFFSET_SUB] == C.DOUBLE_QUOTE_BYTE &&
-            header[size - C.HEADER_COLON_OFFSET_SUB] == C.COLON_BYTE
-        ) {
-            return header.substring(C.SUBSTRING_START_OFFSET, size - C.HEADER_QUOTE_END_OFFSET_SUB)
+        val isQuotedHeaderWithColon = size >= WR.HEADER_MIN_SIZE &&
+            header[WR.HEADER_QUOTE_START_OFFSET] == TOK.DOUBLE_QUOTE_BYTE &&
+            header[size - WR.HEADER_QUOTE_END_OFFSET_SUB] == TOK.DOUBLE_QUOTE_BYTE &&
+            header[size - WR.HEADER_COLON_OFFSET_SUB] == TOK.COLON_BYTE
+        if (isQuotedHeaderWithColon) {
+            return header.substring(WR.SUBSTRING_START_OFFSET, size - WR.HEADER_QUOTE_END_OFFSET_SUB)
                 .utf8()
         }
         return header.utf8()
     }
 
-    inline fun writeIndentation(
-        level: Int,
-        writeByte: (Int) -> Unit,
-    ) {
-        val spacesCount = level * C.SPACES_PER_LEVEL
-        var count = 0
-        while (count < spacesCount) {
-            writeByte(C.SPACE_INT)
-            count++
+    /**
+     * True if [key] can't safely be written as bare plain-scalar text, i.e. it would round-trip
+     * wrong when re-read: a leading '&'/'!'/'*' looks like an anchor/tag/alias, '"'/'\'' looks
+     * like a quoted key, a bare '?' looks like an explicit-key indicator, and '['/'{' can send a
+     * stringified complex key (Ghost collapses a non-scalar key via `toString()`, e.g. `"[a, b]"`)
+     * through the flow-collection dispatch instead of being read as opaque text. An embedded
+     * ": " gets misread as the key/value separator; an embedded newline truncates the key.
+     * A leading/trailing space or tab is silently trimmed by the reader — found by fuzzing
+     * (`GhostYamlWriterFuzzTest`): `" ?xup"` wrote bare and re-read as `"?xup"`. A leading '%' is
+     * read as a `%YAML`/`%TAG` directive instead of a key — also found by fuzzing
+     * (`GhostYamlStreamingWriterFuzzTest`). An empty key is fine bare (round-trips as `""`).
+     */
+    fun keyNeedsQuoting(key: String): Boolean {
+        val length = key.length
+        if (length == 0) return false
+        val first = key[0].code
+        val startsWithIndicator = first == TOK.AMPERSAND_BYTE.toInt() ||
+            first == TOK.ASTERISK_BYTE.toInt() ||
+            first == TOK.EXCLAMATION_BYTE.toInt() ||
+            first == TOK.DOUBLE_QUOTE_INT ||
+            first == TOK.SINGLE_QUOTE_BYTE.toInt() ||
+            first == TOK.LEFT_BRACKET_BYTE.toInt() ||
+            first == TOK.LEFT_BRACE_BYTE.toInt() ||
+            first == TOK.SPACE_INT ||
+            first == TOK.CHAR_TAB_INT ||
+            first == TOK.PERCENT_BYTE.toInt()
+        if (startsWithIndicator) {
+            return true
         }
+        val last = key[length - 1].code
+        if (last == TOK.SPACE_INT || last == TOK.CHAR_TAB_INT) {
+            return true
+        }
+        val isExplicitKeyIndicator = first == TOK.QUESTION_BYTE.toInt() &&
+            (length == 1 || key[1].code == TOK.SPACE_INT || key[1].code == TOK.CHAR_TAB_INT)
+        if (isExplicitKeyIndicator) {
+            return true
+        }
+        var index = 0
+        while (index < length) {
+            val code = key[index].code
+            if (code == TOK.NEWLINE_INT || code == TOK.CHAR_CR_INT) return true
+            val isColonSeparator = code == TOK.COLON_INT &&
+                (index + 1 == length || key[index + 1].code == TOK.SPACE_INT || key[index + 1].code == TOK.CHAR_TAB_INT)
+            if (isColonSeparator) {
+                return true
+            }
+            index++
+        }
+        return false
+    }
+
+    fun newScratch(): ByteArray = acquireScratchBuffer(minSize = SC.SCRATCH_BUFFER_SIZE)
+
+    /**
+     * Shared name() layout: validates depth, clears justWroteDash, writes newline+indent when needed.
+     * Key bytes and Flat-only quoting stay at the call site.
+     *
+     * @return [depth] for the caller to index itemCounts after writing the key.
+     */
+    inline fun prepareNameLayout(
+        depth: Int,
+        itemCountAtDepth: Int,
+        justWroteDash: Boolean,
+        writeByte: (Int) -> Unit,
+    ): Int {
+        if (depth <= 0) {
+            throw GhostYamlException(baseMessage = EM.ERR_NAME_OUTSIDE_OBJECT)
+        }
+        if (!justWroteDash) {
+            if (itemCountAtDepth > 0 || depth > 1) {
+                writeByte(TOK.NEWLINE_INT)
+                writeIndentation(level = depth - 1, writeByte = writeByte)
+            }
+        }
+        return depth
     }
 
     /**
@@ -73,15 +134,15 @@ internal object GhostYamlWriterHelpers {
         var dash = justWroteDash
         var space = pendingSpace
         var increment = false
-        if (depth > 0 && contextAtDepth == C.TYPE_ARRAY) {
+        if (depth > 0 && contextAtDepth == WR.TYPE_ARRAY) {
             if (justWroteDash) {
-                writeByte(C.DASH_INT)
-                writeByte(C.SPACE_INT)
+                writeByte(TOK.DASH_INT)
+                writeByte(TOK.SPACE_INT)
             } else {
-                writeByte(C.NEWLINE_INT)
-                writeIndentation(depth - 1, writeByte)
-                writeByte(C.DASH_INT)
-                writeByte(C.SPACE_INT)
+                writeByte(TOK.NEWLINE_INT)
+                writeIndentation(level = depth - 1, writeByte = writeByte)
+                writeByte(TOK.DASH_INT)
+                writeByte(TOK.SPACE_INT)
             }
             increment = true
             dash = isStructural
@@ -89,7 +150,7 @@ internal object GhostYamlWriterHelpers {
             if (isStructural) {
                 space = false
             } else if (space) {
-                writeByte(C.SPACE_INT)
+                writeByte(TOK.SPACE_INT)
                 space = false
             }
         }
@@ -100,28 +161,10 @@ internal object GhostYamlWriterHelpers {
         return flags
     }
 
-    /**
-     * Shared name() layout: validates depth, clears justWroteDash, writes newline+indent when needed.
-     * Key bytes and Flat-only quoting stay at the call site.
-     *
-     * @return [depth] for the caller to index itemCounts after writing the key.
-     */
-    inline fun prepareNameLayout(
-        depth: Int,
-        itemCountAtDepth: Int,
-        justWroteDash: Boolean,
-        writeByte: (Int) -> Unit,
-    ): Int {
-        if (depth <= 0) {
-            throw GhostYamlException(C.ERR_NAME_OUTSIDE_OBJECT)
+    fun releaseScratch(current: ByteArray?) {
+        if (current != null) {
+            releaseScratchBuffer(buffer = current)
         }
-        if (!justWroteDash) {
-            if (itemCountAtDepth > 0 || depth > 1) {
-                writeByte(C.NEWLINE_INT)
-                writeIndentation(depth - 1, writeByte)
-            }
-        }
-        return depth
     }
 
     inline fun writeEmptyPlaceholderIfNeeded(
@@ -135,21 +178,10 @@ internal object GhostYamlWriterHelpers {
     ) {
         if (itemCountAtDepth != 0) return
         val parentDepth = depth - 1
-        if (parentDepth > 0 && parentContext == C.TYPE_OBJECT) {
-            writeByte(C.SPACE_INT)
+        if (parentDepth > 0 && parentContext == WR.TYPE_OBJECT) {
+            writeByte(TOK.SPACE_INT)
         }
         writeOpenClose(openInt, closeInt)
-    }
-
-    inline fun writeUnicodeHex(
-        code: Int,
-        writeByte: (Int) -> Unit,
-    ) {
-        val hexChars = C.HEX_CHARS_ARR
-        writeByte(hexChars[(code shr C.SHIFT_12) and C.HEX_MASK].toInt())
-        writeByte(hexChars[(code shr C.SHIFT_8) and C.HEX_MASK].toInt())
-        writeByte(hexChars[(code shr C.SHIFT_4) and C.HEX_MASK].toInt())
-        writeByte(hexChars[code and C.HEX_MASK].toInt())
     }
 
     inline fun writeEscaped(
@@ -162,51 +194,54 @@ internal object GhostYamlWriterHelpers {
 
         while (index < length) {
             when (val charCode = text[index].code) {
-                C.DOUBLE_QUOTE_INT -> {
-                    writeByte(C.BACKSLASH_INT)
-                    writeByte(C.DOUBLE_QUOTE_INT)
+                TOK.DOUBLE_QUOTE_INT -> {
+                    writeByte(TOK.BACKSLASH_INT)
+                    writeByte(TOK.DOUBLE_QUOTE_INT)
                 }
-                C.BACKSLASH_INT -> {
-                    writeByte(C.BACKSLASH_INT)
-                    writeByte(C.BACKSLASH_INT)
+                TOK.BACKSLASH_INT -> {
+                    writeByte(TOK.BACKSLASH_INT)
+                    writeByte(TOK.BACKSLASH_INT)
                 }
                 else -> {
                     when (charCode) {
-                        C.CHAR_LF_INT -> {
-                            writeByte(C.BACKSLASH_INT)
-                            writeByte(C.CHAR_N_INT)
+                        TOK.NEWLINE_INT -> {
+                            writeByte(TOK.BACKSLASH_INT)
+                            writeByte(TOK.CHAR_N_INT)
                         }
 
-                        C.CHAR_CR_INT -> {
-                            writeByte(C.BACKSLASH_INT)
-                            writeByte(C.CHAR_R_INT)
+                        TOK.CHAR_CR_INT -> {
+                            writeByte(TOK.BACKSLASH_INT)
+                            writeByte(TOK.CHAR_R_INT)
                         }
 
-                        C.CHAR_TAB_INT -> {
-                            writeByte(C.BACKSLASH_INT)
-                            writeByte(C.CHAR_T_INT)
+                        TOK.CHAR_TAB_INT -> {
+                            writeByte(TOK.BACKSLASH_INT)
+                            writeByte(TOK.CHAR_T_INT)
                         }
 
-                        C.CHAR_BS_INT -> {
-                            writeByte(C.BACKSLASH_INT)
-                            writeByte(C.CHAR_B_INT)
+                        TOK.CHAR_BS_INT -> {
+                            writeByte(TOK.BACKSLASH_INT)
+                            writeByte(TOK.CHAR_B_INT)
                         }
 
-                        C.CHAR_FF_INT -> {
-                            writeByte(C.BACKSLASH_INT)
-                            writeByte(C.CHAR_F_INT)
+                        TOK.CHAR_FF_INT -> {
+                            writeByte(TOK.BACKSLASH_INT)
+                            writeByte(TOK.CHAR_F_INT)
                         }
 
                         else -> {
-                            if (charCode < C.CHAR_SPACE_INT) {
-                                writeByte(C.BACKSLASH_INT)
-                                writeByte(C.CHAR_U_INT)
-                                writeUnicodeHex(charCode, writeByte)
-                            } else if (charCode < C.ASCII_LIMIT) {
+                            if (charCode < TOK.SPACE_INT) {
+                                writeByte(TOK.BACKSLASH_INT)
+                                writeByte(TOK.CHAR_U_INT)
+                                writeUnicodeHex(code = charCode, writeByte = writeByte)
+                            } else if (charCode < WR.ASCII_LIMIT) {
                                 writeByte(charCode)
                             } else {
                                 val charVal = text[index]
-                                if (charVal.isHighSurrogate() && index + 1 < length && text[index + 1].isLowSurrogate()) {
+                                val isSurrogatePair = charVal.isHighSurrogate() &&
+                                    index + 1 < length &&
+                                    text[index + 1].isLowSurrogate()
+                                if (isSurrogatePair) {
                                     writeUtf8Range(text, index, index + 2)
                                     index++
                                 } else {
@@ -221,6 +256,18 @@ internal object GhostYamlWriterHelpers {
         }
     }
 
+    inline fun writeIndentation(
+        level: Int,
+        writeByte: (Int) -> Unit,
+    ) {
+        val spacesCount = level * WR.SPACES_PER_LEVEL
+        var count = 0
+        while (count < spacesCount) {
+            writeByte(TOK.SPACE_INT)
+            count++
+        }
+    }
+
     inline fun writeLong(
         value: Long,
         scratch: ByteArray?,
@@ -230,69 +277,32 @@ internal object GhostYamlWriterHelpers {
         writeBytes: (buf: ByteArray, offset: Int, length: Int) -> Unit,
     ) {
         if (value == 0L) {
-            writeByte(C.ZERO_INT)
+            writeByte(TOK.ZERO_INT)
             return
         }
         var remaining = value
         val isNegative = remaining < 0
         if (isNegative) {
-            writeByte(C.DASH_INT)
+            writeByte(TOK.DASH_INT)
             if (remaining == Long.MIN_VALUE) {
-                writeUtf8(C.STR_MIN_LONG_ABS)
+                writeUtf8(WR.STR_MIN_LONG_ABS)
                 return
             }
             remaining = -remaining
         }
         val scratchBuf = scratch ?: acquireScratch()
-        val pos = GhostWriterLongDigits.writePositiveDigitsBytes(remaining, scratchBuf)
+        val pos = GhostWriterLongDigits.writePositiveDigitsBytes(absoluteValue = remaining, scratch = scratchBuf)
         writeBytes(scratchBuf, pos, scratchBuf.size - pos)
     }
 
-    /**
-     * True if [key] can't safely be written as bare plain-scalar text, i.e. it would round-trip
-     * wrong when re-read: a leading '&'/'!'/'*' looks like an anchor/tag/alias, '"'/'\'' looks
-     * like a quoted key, a bare '?' looks like an explicit-key indicator, and '['/'{' can send a
-     * stringified complex key (Ghost collapses a non-scalar key via `toString()`, e.g. `"[a, b]"`)
-     * through the flow-collection dispatch instead of being read as opaque text. An embedded
-     * ": " gets misread as the key/value separator; an embedded newline truncates the key.
-     * A leading/trailing space or tab is silently trimmed by the reader — found by fuzzing
-     * (`GhostYamlWriterFuzzTest`): `" ?xup"` wrote bare and re-read as `"?xup"`. A leading '%' is
-     * read as a `%YAML`/`%TAG` directive instead of a key — also found by fuzzing
-     * (`GhostYamlStreamingWriterFuzzTest`). An empty key is fine bare (round-trips as `""`).
-     */
-    fun keyNeedsQuoting(key: String): Boolean {
-        val length = key.length
-        if (length == 0) return false
-        val first = key[0].code
-        if (first == C.AMPERSAND_BYTE.toInt() || first == C.ASTERISK_BYTE.toInt() ||
-            first == C.EXCLAMATION_BYTE.toInt() || first == C.DOUBLE_QUOTE_INT ||
-            first == C.SINGLE_QUOTE_BYTE.toInt() || first == C.LEFT_BRACKET_BYTE.toInt() ||
-            first == C.LEFT_BRACE_BYTE.toInt() ||
-            first == C.SPACE_INT || first == C.CHAR_TAB_INT ||
-            first == C.PERCENT_BYTE.toInt()
-        ) {
-            return true
-        }
-        val last = key[length - 1].code
-        if (last == C.SPACE_INT || last == C.CHAR_TAB_INT) {
-            return true
-        }
-        if (first == C.QUESTION_BYTE.toInt() &&
-            (length == 1 || key[1].code == C.SPACE_INT || key[1].code == C.CHAR_TAB_INT)
-        ) {
-            return true
-        }
-        var index = 0
-        while (index < length) {
-            val code = key[index].code
-            if (code == C.CHAR_LF_INT || code == C.CHAR_CR_INT) return true
-            if (code == C.COLON_INT &&
-                (index + 1 == length || key[index + 1].code == C.SPACE_INT || key[index + 1].code == C.CHAR_TAB_INT)
-            ) {
-                return true
-            }
-            index++
-        }
-        return false
+    inline fun writeUnicodeHex(
+        code: Int,
+        writeByte: (Int) -> Unit,
+    ) {
+        val hexChars = WR.HEX_CHARS_ARR
+        writeByte(hexChars[(code shr WR.SHIFT_12) and WR.HEX_MASK].toInt())
+        writeByte(hexChars[(code shr WR.SHIFT_8) and WR.HEX_MASK].toInt())
+        writeByte(hexChars[(code shr WR.SHIFT_4) and WR.HEX_MASK].toInt())
+        writeByte(hexChars[code and WR.HEX_MASK].toInt())
     }
 }

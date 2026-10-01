@@ -2,30 +2,31 @@ package com.ghost.serialization.writer.bytes
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostJsonConstants.BUFFER_SCALE_FACTOR
-import com.ghost.serialization.parser.common.GhostJsonConstants.CAPACITY_GROWTH_SHIFT
-import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_END
-import com.ghost.serialization.parser.common.GhostJsonConstants.HIGH_SURROGATE_START
-import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
-import com.ghost.serialization.parser.common.GhostJsonConstants.LOW_SURROGATE_END
-import com.ghost.serialization.parser.common.GhostJsonConstants.LOW_SURROGATE_START
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_10
-import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
-import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_BASE
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_1BYTE_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_2BYTE_LIMIT
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_2BYTE_PREFIX
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_3BYTE_PREFIX
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_4BYTE_PREFIX
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_CONT_MASK
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_CONT_PREFIX
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_MAX_BMP_BYTES
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_REPLACEMENT_CHAR
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_18
-import com.ghost.serialization.parser.common.GhostJsonConstants.UTF8_SHIFT_6
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.SHIFT_12
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.HIGH_SURROGATE_END
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.HIGH_SURROGATE_START
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.LOW_SURROGATE_END
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.LOW_SURROGATE_START
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.SHIFT_10
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_BASE
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.BUFFER_SCALE_FACTOR
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.CAPACITY_GROWTH_SHIFT
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.INITIAL_WRITE_BUFFER_SIZE
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_1BYTE_LIMIT
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_2BYTE_LIMIT
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_2BYTE_PREFIX
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_3BYTE_PREFIX
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_4BYTE_PREFIX
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_CONT_MASK
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_CONT_PREFIX
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_MAX_BMP_BYTES
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_REPLACEMENT_CHAR
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_SHIFT_18
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_SHIFT_6
 import okio.ByteString
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-
+import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
  * A growing flat-array byte buffer used as the in-memory output target for
@@ -38,7 +39,7 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  * Compared to the streaming path that writes through `okio.Buffer` segments,
  * this class trades the ability to incrementally drain bytes for ~2-3x
  * faster small-encode throughput. The full encoded payload is exposed at
- * the end of the encode via [toByteArray] / [toStringUtf8] (or accessed
+ * the end of the encoded via [toByteArray] / [toStringUtf8] (or accessed
  * directly via [array] + [size] for zero-copy fast paths).
  */
 @InternalGhostApi
@@ -53,7 +54,6 @@ class FlatByteArrayWriter(
     var array: ByteArray = ByteArray(initialCapacity)
         private set
 
-    /** Number of bytes currently written into [array]. */
     var size: Int = 0
         private set
 
@@ -65,7 +65,7 @@ class FlatByteArrayWriter(
     private fun ensureCapacity(extraBytes: Int) {
         val requiredCapacity = size + extraBytes
         if (requiredCapacity < 0) {
-            throw IllegalStateException(C.ERR_CAPACITY_OVERFLOW_PREFIX + "size=$size, extraBytes=$extraBytes")
+            throw IllegalStateException(EM.ERR_CAPACITY_OVERFLOW_PREFIX + "size=$size, extraBytes=$extraBytes")
         }
         if (requiredCapacity > array.size) {
             var newCapacity = array.size
@@ -104,6 +104,35 @@ class FlatByteArrayWriter(
         array[size++] = byteAsInt.toByte()
     }
 
+    override fun write(bytes: ByteArray) {
+        ensureCapacity(bytes.size)
+        bytes.copyInto(array, size)
+        size += bytes.size
+    }
+
+    override fun write(bytes: ByteArray, offset: Int, length: Int) {
+        ensureCapacity(length)
+        bytes.copyInto(
+            array,
+            size,
+            offset,
+            offset + length
+        )
+        size += length
+    }
+
+    override fun write(byteString: ByteString) {
+        val length = byteString.size
+        ensureCapacity(length)
+        byteString.copyInto(
+            0,
+            array,
+            size,
+            length
+        )
+        size += length
+    }
+
     /**
      * Appends exactly two bytes in a single bounds-check.
      * Use instead of two consecutive [writeByte] calls whenever both bytes
@@ -133,10 +162,10 @@ class FlatByteArrayWriter(
      * saving one intermediate copy + thread-local acquire for the common case.
      */
     override fun writeQuotedAscii(text: String, length: Int) {
-        ensureCapacity(length + C.STRING_QUOTE_PAIR_BYTES)
+        ensureCapacity(length + WR.STRING_QUOTE_PAIR_BYTES)
         val backingArray = array
         var writeIndex = size
-        backingArray[writeIndex++] = C.QUOTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.QUOTE_INT.toByte()
         var charIndex = 0
         // Unrolled x4 for instruction-level parallelism
         while (charIndex + 3 < length) {
@@ -151,43 +180,20 @@ class FlatByteArrayWriter(
             backingArray[writeIndex++] = text[charIndex].code.toByte()
             charIndex++
         }
-        backingArray[writeIndex++] = C.QUOTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.QUOTE_INT.toByte()
         size = writeIndex
     }
 
-    /** Appends every byte from [bytes] to the live payload. */
-    override fun write(bytes: ByteArray) {
-        ensureCapacity(bytes.size)
-        bytes.copyInto(array, size)
-        size += bytes.size
+    /**
+     * Writes a JSON string containing a single BMP code point, without allocating a [String].
+     */
+    override fun writeQuotedBmpCodeUnit(codePoint: Int) {
+        ensureCapacity(WR.STRING_QUOTE_PAIR_BYTES + WR.UTF8_3BYTE_SIZE)
+        writeByte(TOK.QUOTE_INT)
+        writeBmpUtf8CodeUnit(codePoint = codePoint)
+        writeByte(TOK.QUOTE_INT)
     }
 
-    /** Appends `bytes[offset until offset + length]` to the live payload. */
-    override fun write(bytes: ByteArray, offset: Int, length: Int) {
-        ensureCapacity(length)
-        bytes.copyInto(
-            array,
-            size,
-            offset,
-            offset + length
-        )
-        size += length
-    }
-
-    /** Appends every byte of the immutable [byteString] to the live payload. */
-    override fun write(byteString: ByteString) {
-        val length = byteString.size
-        ensureCapacity(length)
-        byteString.copyInto(
-            0,
-            array,
-            size,
-            length
-        )
-        size += length
-    }
-
-    /** UTF-8 encodes the entire string [text] directly into the payload. */
     override fun writeUtf8(text: String) {
         writeUtf8(text, 0, text.length)
     }
@@ -281,16 +287,6 @@ class FlatByteArrayWriter(
         size = writeIndex
     }
 
-    /**
-     * Writes a JSON string containing a single BMP code point, without allocating a [String].
-     */
-    override fun writeQuotedBmpCodeUnit(codePoint: Int) {
-        ensureCapacity(C.STRING_QUOTE_PAIR_BYTES + C.UTF8_3BYTE_SIZE)
-        writeByte(C.QUOTE_INT)
-        writeBmpUtf8CodeUnit(codePoint)
-        writeByte(C.QUOTE_INT)
-    }
-
     private fun writeBmpUtf8CodeUnit(codePoint: Int) {
         when {
             codePoint < UTF8_1BYTE_LIMIT -> writeByte(codePoint)
@@ -307,47 +303,9 @@ class FlatByteArrayWriter(
         }
     }
 
-    override fun writeTrue() {
-        ensureCapacity(4)
-        val backingArray = array
-        var writeIndex = size
-        backingArray[writeIndex++] = C.T_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.R_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()
-        size = writeIndex
-    }
-
-    override fun writeFalse() {
-        ensureCapacity(5)
-        val backingArray = array
-        var writeIndex = size
-        backingArray[writeIndex++] = C.F_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.A_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.S_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.E_BYTE_INT.toByte()
-        size = writeIndex
-    }
-
-    override fun writeNull() {
-        ensureCapacity(4)
-        val backingArray = array
-        var writeIndex = size
-        backingArray[writeIndex++] = C.N_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.U_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()
-        backingArray[writeIndex++] = C.L_BYTE_INT.toByte()
-        size = writeIndex
-    }
-
-    override fun writeDotZero() {
-        ensureCapacity(2)
-        val backingArray = array
-        var writeIndex = size
-        backingArray[writeIndex++] = C.DOT_INT.toByte()
-        backingArray[writeIndex++] = C.ZERO_INT.toByte()
-        size = writeIndex
+    /** No-op — the flat-array path has nothing to drain. */
+    override fun flush() {
+        /* No Ops */
     }
 
     /**
@@ -361,14 +319,50 @@ class FlatByteArrayWriter(
         }
     }
 
-    /** Returns a fresh [ByteArray] containing exactly the encoded payload. */
     fun toByteArray(): ByteArray = array.copyOf(size)
 
-    /** Decodes the encoded payload back into a [String] (UTF-8). */
     fun toStringUtf8(): String = array.decodeToString(0, size)
 
-    /** No-op — the flat-array path has nothing to drain. */
-    override fun flush() {
-        /* No Ops */
+    override fun writeDotZero() {
+        ensureCapacity(2)
+        val backingArray = array
+        var writeIndex = size
+        backingArray[writeIndex++] = TOK.DOT_INT.toByte()
+        backingArray[writeIndex++] = TOK.ZERO_INT.toByte()
+        size = writeIndex
+    }
+
+    override fun writeFalse() {
+        ensureCapacity(5)
+        val backingArray = array
+        var writeIndex = size
+        backingArray[writeIndex++] = TOK.F_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.A_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.L_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.S_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.E_BYTE_INT.toByte()
+        size = writeIndex
+    }
+
+    override fun writeNull() {
+        ensureCapacity(4)
+        val backingArray = array
+        var writeIndex = size
+        backingArray[writeIndex++] = TOK.N_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.U_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.L_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.L_BYTE_INT.toByte()
+        size = writeIndex
+    }
+
+    override fun writeTrue() {
+        ensureCapacity(4)
+        val backingArray = array
+        var writeIndex = size
+        backingArray[writeIndex++] = TOK.T_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.R_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.U_BYTE_INT.toByte()
+        backingArray[writeIndex++] = TOK.E_BYTE_INT.toByte()
+        size = writeIndex
     }
 }

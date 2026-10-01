@@ -4,14 +4,15 @@ package com.ghost.serialization.yaml
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.exception.GhostYamlException
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import okio.Buffer
 
 /**
  * Mirrors the failure modes covered by `GhostChaosTest` and `GhostStressAuditTest`, for YAML.
@@ -23,8 +24,8 @@ class GhostYamlChaosTest {
     private object PairBoxSerializer : GhostYamlSerializer<PairBox> {
         override fun serialize(writer: GhostYamlWriter, value: PairBox) {
             writer.beginObject()
-            writer.name("left").value(value.left)
-            writer.name("right").value(value.right)
+            writer.name(key = "left").value(value.left)
+            writer.name(key = "right").value(value.right)
             writer.endObject()
         }
 
@@ -40,7 +41,7 @@ class GhostYamlChaosTest {
                 }
             }
             reader.endObject()
-            return PairBox(left, right)
+            return PairBox(left = left, right = right)
         }
     }
 
@@ -50,7 +51,10 @@ class GhostYamlChaosTest {
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
-        assertEquals("😀", reader.nextString())
+        assertEquals(
+            expected = "😀",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -74,7 +78,10 @@ class GhostYamlChaosTest {
         """.trimIndent()
         val doc = GhostYamlFlatReader(yaml.encodeToByteArray()).readDocument() as Map<*, *>
         val items = doc["items"] as List<*>
-        assertEquals(listOf("one", "two", "three"), items)
+        assertEquals(
+            expected = listOf("one", "two", "three"),
+            actual = items
+        )
     }
 
     @Test
@@ -103,7 +110,10 @@ class GhostYamlChaosTest {
     @Test
     fun flowSequenceWithTrailingCommaParsesLeniently() {
         val list = GhostYamlFlatReader("[1, 2, ]".encodeToByteArray()).readDocument() as List<*>
-        assertEquals(listOf(1L, 2L), list)
+        assertEquals(
+            expected = listOf(1L, 2L),
+            actual = list
+        )
     }
 
     @Test
@@ -111,7 +121,10 @@ class GhostYamlChaosTest {
         val longKey = "k".repeat(9000)
         val yaml = "$longKey: value"
         val map = GhostYamlFlatReader(yaml.encodeToByteArray()).readDocument() as Map<*, *>
-        assertEquals("value", map[longKey])
+        assertEquals(
+            expected = "value",
+            actual = map[longKey]
+        )
     }
 
     @Test
@@ -121,7 +134,10 @@ class GhostYamlChaosTest {
         val writer = GhostYamlWriter(buffer)
         writer.beginObject().name("payload").value(longValue).endObject()
         val map = GhostYamlFlatReader(buffer.toByteArray()).readDocument() as Map<*, *>
-        assertEquals(longValue, map["payload"])
+        assertEquals(
+            expected = longValue,
+            actual = map["payload"]
+        )
     }
 
     @Test
@@ -139,11 +155,17 @@ class GhostYamlChaosTest {
         val fromFlat = PairBoxSerializer.deserialize(GhostYamlFlatReader(flatBytes))
         val fromStream = PairBoxSerializer.deserialize(GhostYamlFlatReader(streamBytes))
 
-        assertEquals(value, fromFlat)
-        assertEquals(value, fromStream)
         assertEquals(
-            GhostYamlFlatReader(flatBytes).readDocument() as Map<*, *>,
-            GhostYamlFlatReader(streamBytes).readDocument() as Map<*, *>,
+            expected = value,
+            actual = fromFlat
+        )
+        assertEquals(
+            expected = value,
+            actual = fromStream
+        )
+        assertEquals(
+            expected = GhostYamlFlatReader(flatBytes).readDocument() as Map<*, *>,
+            actual = GhostYamlFlatReader(streamBytes).readDocument() as Map<*, *>
         )
     }
 
@@ -158,6 +180,9 @@ class GhostYamlChaosTest {
         val pooled = ghostYamlInternalUseFlatReader(yaml) { reader ->
             PairBoxSerializer.deserialize(reader)
         }
-        assertEquals(fresh, pooled)
+        assertEquals(
+            expected = fresh,
+            actual = pooled
+        )
     }
 }

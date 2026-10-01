@@ -3,14 +3,12 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.captureRawJson
+import com.ghost.serialization.parser.bytes.extensions.captureRawJson
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.streaming.captureRawJsonBytes
-import com.ghost.serialization.parser.streaming.consumeKeySeparator
-import com.ghost.serialization.parser.streaming.nextKey
-import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectNameAndConsume
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.beginObject
@@ -37,9 +35,18 @@ class CaptureRawJsonTest {
         val reader = GhostJsonReader(json)
         val captured = reader.captureRawJson()
 
-        assertSame(json, captured.storage)
-        assertEquals(0, captured.storageOffset)
-        assertEquals(json.size, captured.storageLength)
+        assertSame(
+            expected = json,
+            actual = captured.storage
+        )
+        assertEquals(
+            expected = 0,
+            actual = captured.storageOffset
+        )
+        assertEquals(
+            expected = json.size,
+            actual = captured.storageLength
+        )
     }
 
     @Test
@@ -48,11 +55,14 @@ class CaptureRawJsonTest {
         val reader = GhostJsonReader(json)
         reader.beginObject()
         reader.selectNameAndConsume(
-            com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "body")
+            options = JsonReaderOptions.of(0, 31, 128, true, "body")
         )
 
         val bytes = reader.captureRawJsonBytes()
-        assertContentEquals("""{"k":"v"}""".encodeToByteArray(), bytes)
+        assertContentEquals(
+            expected = """{"k":"v"}""".encodeToByteArray(),
+            actual = bytes
+        )
     }
 
     @Test
@@ -61,14 +71,20 @@ class CaptureRawJsonTest {
         val reader = GhostJsonReader(json)
         reader.beginObject()
         reader.selectNameAndConsume(
-            com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "meta")
+            options = JsonReaderOptions.of(0, 31, 128, true, "meta")
         )
 
         val captured = reader.captureRawJson()
         val materialized = captured.bytes
 
-        assertEquals("123", materialized.decodeToString())
-        assertNotSame(captured.storage, materialized)
+        assertEquals(
+            expected = "123",
+            actual = materialized.decodeToString()
+        )
+        assertNotSame(
+            illegal = captured.storage,
+            actual = materialized
+        )
     }
 
     @Test
@@ -76,7 +92,7 @@ class CaptureRawJsonTest {
         val json = """{"enabled":true,"tags":["a","b"]}"""
         val value = Ghost.deserialize<RawJson>(json.encodeToByteArray())
         val restored = Ghost.deserialize<RawJson>(Ghost.serialize(value))
-        assertTrue(value.contentEquals(restored))
+        assertTrue(actual = value.contentEquals(restored))
     }
 
     @Test
@@ -85,36 +101,60 @@ class CaptureRawJsonTest {
         val reader = GhostJsonReader(json)
         val captured = reader.captureRawJson()
 
-        assertSame(json, captured.storage)
-        assertEquals(0, captured.storageOffset)
-        assertEquals(json.size, captured.storageLength)
+        assertSame(
+            expected = json,
+            actual = captured.storage
+        )
+        assertEquals(
+            expected = 0,
+            actual = captured.storageOffset
+        )
+        assertEquals(
+            expected = json.size,
+            actual = captured.storageLength
+        )
     }
 
     @Test
     fun captureRawJsonFlatReaderMaterializesOwnedBytesWhenBridgedFromString() {
         val json = """{"body":{"k":"v"}}""".encodeToByteArray()
-        val reader = GhostJsonFlatReader(json).also {
+        val reader = GhostJsonFlatReader(rawData = json).also {
             it.materializeRawJsonCaptures = true
         }
         reader.beginObject()
         reader.selectNameAndConsume(
-            com.ghost.serialization.parser.common.JsonReaderOptions.of(0, 31, 128, true, "body")
+            options = JsonReaderOptions.of(0, 31, 128, true, "body")
         )
 
         val captured = reader.captureRawJson()
-        assertNotSame(json, captured.storage)
-        assertEquals(0, captured.storageOffset)
-        assertEquals("""{"k":"v"}""", captured.decodeToString())
+        assertNotSame(
+            illegal = json,
+            actual = captured.storage
+        )
+        assertEquals(
+            expected = 0,
+            actual = captured.storageOffset
+        )
+        assertEquals(
+            expected = """{"k":"v"}""",
+            actual = captured.decodeToString()
+        )
     }
 
     @Test
     fun captureRawJsonStringReaderMaterializesOwnedBytes() {
         val json = """{"k":"v"}"""
-        val reader = GhostJsonStringReader(json)
+        val reader = GhostJsonStringReader(rawData = json)
         val captured = reader.captureRawJson()
 
-        assertNotSame(json.encodeToByteArray(), captured.storage)
-        assertEquals(json, captured.decodeToString())
+        assertNotSame(
+            illegal = json.encodeToByteArray(),
+            actual = captured.storage
+        )
+        assertEquals(
+            expected = json,
+            actual = captured.decodeToString()
+        )
     }
 
     @Test
@@ -126,7 +166,7 @@ class CaptureRawJsonTest {
                 repeat(4) { index ->
                     if (index > 0) append(',')
                     append("\"k$level$index\":{")
-                    append(nested(level - 1))
+                    append(nested(level = level - 1))
                     append('}')
                 }
                 append('}')
@@ -134,7 +174,7 @@ class CaptureRawJsonTest {
         }
 
         val envelope = """{"id":"bench-1","metadata":${nested(3)}}"""
-        val reader = GhostJsonStringReader(envelope)
+        val reader = GhostJsonStringReader(rawData = envelope)
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -145,7 +185,10 @@ class CaptureRawJsonTest {
         val bytes = reader.captureRawJsonBytes()
         val metadataStart = envelope.indexOf("\"metadata\":") + "\"metadata\":".length
         val expected = envelope.substring(metadataStart, envelope.lastIndex).encodeToByteArray()
-        assertContentEquals(expected, bytes)
+        assertContentEquals(
+            expected = expected,
+            actual = bytes
+        )
     }
 
     @Test
@@ -154,7 +197,13 @@ class CaptureRawJsonTest {
         val reader = GhostJsonReader(Buffer().writeUtf8(json))
         val captured = reader.captureRawJson()
 
-        assertEquals(0, captured.storageOffset)
-        assertEquals(json, captured.decodeToString())
+        assertEquals(
+            expected = 0,
+            actual = captured.storageOffset
+        )
+        assertEquals(
+            expected = json,
+            actual = captured.decodeToString()
+        )
     }
 }

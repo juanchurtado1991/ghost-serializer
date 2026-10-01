@@ -89,7 +89,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
     fun hasNextRejectsTrailingCommaInArray() {
         val reader = readerOf("""[1,]""")
         reader.beginArray()
-        assertTrue(reader.hasNext())
+        assertTrue(actual = reader.hasNext())
         reader.nextInt()
         assertFailsWith<GhostJsonException> { reader.hasNext() }
     }
@@ -108,7 +108,10 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
             values.add(reader.nextInt())
         }
         reader.endArray()
-        assertEquals(listOf(1, 2, 3), values)
+        assertEquals(
+            expected = listOf(1, 2, 3),
+            actual = values
+        )
     }
 
     // ── coerceBooleans ───────────────────────────────────────────────
@@ -120,7 +123,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.nextBoolean())
+        assertTrue(actual = reader.nextBoolean())
     }
 
     @Test
@@ -130,7 +133,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.nextBoolean())
+        assertFalse(actual = reader.nextBoolean())
     }
 
     @Test
@@ -140,7 +143,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.nextBoolean())
+        assertTrue(actual = reader.nextBoolean())
     }
 
     @Test
@@ -150,7 +153,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.nextBoolean())
+        assertFalse(actual = reader.nextBoolean())
     }
 
     @Test

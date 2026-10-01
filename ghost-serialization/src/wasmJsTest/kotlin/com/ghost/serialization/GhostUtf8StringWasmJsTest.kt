@@ -18,21 +18,49 @@ class GhostUtf8StringWasmJsTest {
 
     @Test
     fun decodesEmptyRange() {
-        assertEquals("", ghostUtf8BytesToString(ByteArray(0), 0, 0))
-        assertEquals("", ghostUtf8BytesToString("hello".encodeToByteArray(), 0, 0))
+        assertEquals(
+            expected = "",
+            actual = ghostUtf8BytesToString(
+                bytes = ByteArray(size = 0),
+                offset = 0,
+                length = 0
+            )
+        )
+        assertEquals(
+            expected = "",
+            actual = ghostUtf8BytesToString(
+                bytes = "hello".encodeToByteArray(),
+                offset = 0,
+                length = 0
+            )
+        )
     }
 
     @Test
     fun decodesPlainAscii() {
         val bytes = "the quick brown fox".encodeToByteArray()
-        assertEquals("the quick brown fox", ghostUtf8BytesToString(bytes, 0, bytes.size))
+        assertEquals(
+            expected = "the quick brown fox",
+            actual = ghostUtf8BytesToString(
+                bytes = bytes,
+                offset = 0,
+                length = bytes.size
+            )
+        )
     }
 
     @Test
     fun decodesMultiByteUtf8() {
         val text = "héllo wörld 漢字 🔥👻🎉"
         val bytes = text.encodeToByteArray()
-        assertEquals(text, ghostUtf8BytesToString(bytes, 0, bytes.size))
+        assertEquals(
+            expected = text,
+            actual = ghostUtf8BytesToString(
+                bytes = bytes,
+                offset = 0,
+                length = bytes.size
+            )
+        )
     }
 
     @Test
@@ -42,26 +70,54 @@ class GhostUtf8StringWasmJsTest {
         val payload = "漢字テスト".encodeToByteArray()
         val suffix = ":IGNORE".encodeToByteArray()
         val combined = prefix + payload + suffix
-        val decoded = ghostUtf8BytesToString(combined, prefix.size, payload.size)
-        assertEquals("漢字テスト", decoded)
+        val decoded = ghostUtf8BytesToString(
+            bytes = combined,
+            offset = prefix.size,
+            length = payload.size
+        )
+        assertEquals(
+            expected = "漢字テスト",
+            actual = decoded
+        )
     }
 
     @Test
     fun cachedViewShrinksCorrectlyAfterLargerCall() {
         // Grows the cache past its 4096-byte floor, then decodes something short — wrong length
         // bookkeeping would return leftover bytes from the prior call instead of "hi".
-        val large = "x".repeat(10_000).encodeToByteArray()
-        assertEquals("x".repeat(10_000), ghostUtf8BytesToString(large, 0, large.size))
+        val large = "x".repeat(n = 10_000).encodeToByteArray()
+        assertEquals(
+            expected = "x".repeat(n = 10_000),
+            actual = ghostUtf8BytesToString(
+                bytes = large,
+                offset = 0,
+                length = large.size
+            )
+        )
 
         val small = "hi".encodeToByteArray()
-        assertEquals("hi", ghostUtf8BytesToString(small, 0, small.size))
+        assertEquals(
+            expected = "hi",
+            actual = ghostUtf8BytesToString(
+                bytes = small,
+                offset = 0,
+                length = small.size
+            )
+        )
     }
 
     @Test
     fun repeatedCallsWithGrowingLengthsStayCorrect() {
         for (size in intArrayOf(1, 10, 100, 1000, 5000, 50, 2)) {
-            val text = "y".repeat(size)
-            assertEquals(text, ghostUtf8BytesToString(text.encodeToByteArray(), 0, size))
+            val text = "y".repeat(n = size)
+            assertEquals(
+                expected = text,
+                actual = ghostUtf8BytesToString(
+                    bytes = text.encodeToByteArray(),
+                    offset = 0,
+                    length = size
+                )
+            )
         }
     }
 }

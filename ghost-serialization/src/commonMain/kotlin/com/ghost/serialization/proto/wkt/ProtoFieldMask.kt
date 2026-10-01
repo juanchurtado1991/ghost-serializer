@@ -3,64 +3,12 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
 
-/** A set of symbolic field paths, e.g. paths: "f.a,b". */
+/**
+ * A set of symbolic field paths, e.g. paths: "f.a,b".
+ *
+ * [paths] holds proto's snake_case form (e.g. `"foo_bar"`). [parseFieldMask]/[formatFieldMask]
+ * (in `ProtoFieldMaskCodec.kt`) convert to/from the camelCase form proto3 JSON uses on the wire
+ * (e.g. `"fooBar"`).
+ */
 data class ProtoFieldMask(val paths: List<String>)
-
-internal fun parseFieldMask(pathsText: String): ProtoFieldMask {
-    if (pathsText.isEmpty()) return ProtoFieldMask(emptyList())
-    val paths = mutableListOf<String>()
-    val stringBuilder = StringBuilder()
-    var charIndex = 0
-    val stringLength = pathsText.length
-    while (charIndex < stringLength) {
-        val character = pathsText[charIndex]
-        if (character == C.CHAR_COMMA) {
-            paths.add(stringBuilder.toString())
-            stringBuilder.clear()
-        } else {
-            if (character.isUpperCase()) {
-                stringBuilder.append(C.CHAR_UNDERSCORE)
-                stringBuilder.append(character.lowercaseChar())
-            } else {
-                stringBuilder.append(character)
-            }
-        }
-        charIndex++
-    }
-    if (stringBuilder.isNotEmpty()) {
-        paths.add(stringBuilder.toString())
-    }
-    return ProtoFieldMask(paths)
-}
-
-internal fun formatFieldMask(mask: ProtoFieldMask): String {
-    if (mask.paths.isEmpty()) return ""
-    val stringBuilder = StringBuilder()
-    var pathIndex = 0
-    val pathsSize = mask.paths.size
-    while (pathIndex < pathsSize) {
-        if (pathIndex > 0) stringBuilder.append(C.CHAR_COMMA)
-        val path = mask.paths[pathIndex]
-        var uppercaseNext = false
-        var charIndex = 0
-        val pathLength = path.length
-        while (charIndex < pathLength) {
-            val character = path[charIndex]
-            if (character == C.CHAR_UNDERSCORE) {
-                uppercaseNext = true
-            } else {
-                if (uppercaseNext) {
-                    stringBuilder.append(character.uppercaseChar())
-                    uppercaseNext = false
-                } else {
-                    stringBuilder.append(character)
-                }
-            }
-            charIndex++
-        }
-        pathIndex++
-    }
-    return stringBuilder.toString()
-}

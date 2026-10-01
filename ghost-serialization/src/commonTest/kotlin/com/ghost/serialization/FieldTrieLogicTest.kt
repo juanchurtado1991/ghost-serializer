@@ -2,7 +2,7 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.selectString
@@ -20,15 +20,23 @@ class FieldTrieLogicTest {
 
         val options = JsonReaderOptions.of("id", "name", "species")
 
-        val index1 = reader.selectString(options)
-        assertEquals(0, index1, "Should match 'id' at index 0")
+        val index1 = reader.selectString(options = options)
+        assertEquals(
+            expected = 0,
+            actual = index1,
+            message = "Should match 'id' at index 0"
+        )
 
-        reader.expectByte(':'.code)
+        reader.expectByte(expected = ':'.code)
         reader.internalSkip(1)
-        reader.expectByte(','.code)
+        reader.expectByte(expected = ','.code)
 
-        val index2 = reader.selectString(options)
-        assertEquals(1, index2, "Should match 'name' at index 1")
+        val index2 = reader.selectString(options = options)
+        assertEquals(
+            expected = 1,
+            actual = index2,
+            message = "Should match 'name' at index 1"
+        )
     }
 
     @Test
@@ -38,7 +46,11 @@ class FieldTrieLogicTest {
         reader.beginObject()
 
         val options = JsonReaderOptions.of("id", "name")
-        val index = reader.selectString(options)
-        assertEquals(-2, index, "Should return -2 for unknown field (Industrial Constant)")
+        val index = reader.selectString(options = options)
+        assertEquals(
+            expected = -2,
+            actual = index,
+            message = "Should return -2 for unknown field (Industrial Constant)"
+        )
     }
 }

@@ -1,57 +1,74 @@
 package com.ghost.serialization.exception
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_COERCE_BOOLEANS
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_COERCION_DISABLED
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_DEPTH_EXCEEDED
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_ARRAY
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_NUMBER
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_OBJECT
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_STRING
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_INVALID_BASE64
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_INVALID_ENUM_VALUE
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_LEADING_ZEROS
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_MAX_COLLECTION_SIZE
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_MISSING_DISCRIMINATOR
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_NON_FINITE
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_PROTO_INT_RANGE
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_REQUIRED_FIELD
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNEXPECTED_COMMA
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNKNOWN_DISCRIMINATOR
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNKNOWN_ENUM
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNKNOWN_FIELD
+import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNTERMINATED
+import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+import com.ghost.serialization.proto.GhostProtoConstants as PC
 
 /**
  * Exception for JSON parsing/encoding errors.
  *
  * [line]/[column] are computed lazily: the parser can raise this in tight probing
  * loops, so the O(N) source scan only runs if a caller actually reads them.
+ * @param path JSONPath of the error (e.g. `$.user.addresses[1].zip`); `"$"` if root/unknown.
+ * @param hint Optional developer-facing fix suggestion.
  */
 class GhostJsonException @InternalGhostApi internal constructor(
     private val baseMessage: String,
     private val computeLineCol: () -> IntArray,
-    /** JSONPath of the error (e.g. `$.user.addresses[1].zip`); `"$"` if root/unknown. */
-    val path: String = "$",
-    /** Optional developer-facing fix suggestion. */
+    val path: String = ROOT_PATH,
     val hint: String? = null,
 ) : RuntimeException() {
 
-    private val lineCol: IntArray by lazy(LazyThreadSafetyMode.NONE) {
+    private val lineCol: IntArray by lazy(mode = LazyThreadSafetyMode.NONE) {
         computeLineCol()
     }
 
-    /** The 1-indexed line number in the JSON source where the error occurred. */
     val line: Int get() = lineCol[0]
 
-    /** The 1-indexed column number in the JSON source where the error occurred. */
     val column: Int get() = lineCol[1]
 
     override val message: String
-        get() {
-            val location = "[at line $line, col $column, path $path]"
-            return if (hint.isNullOrEmpty()) {
-                "$baseMessage $location"
-            } else {
-                "$baseMessage $location\nHint: $hint"
-            }
-        }
+        get() = "$baseMessage [at line $line, col $column, path $path]" +
+                if (hint.isNullOrEmpty()) "" else "$HINT_PREFIX$hint"
 
-    /** Constructs with an explicit line, column, path, and optional hint. */
     @OptIn(InternalGhostApi::class)
     constructor(
         message: String,
         line: Int = -1,
         column: Int = -1,
-        path: String = "$",
+        path: String = ROOT_PATH,
         hint: String? = null,
     ) : this(
-        message,
-        { intArrayOf(line, column) },
-        path,
-        hint,
+        baseMessage = message,
+        computeLineCol = { intArrayOf(line, column) },
+        path = path,
+        hint = hint,
     )
+
+    companion object {
+        private const val HINT_PREFIX = "\nHint: "
+        private const val ROOT_PATH = "$"
+    }
 }
 
 /**
@@ -59,81 +76,55 @@ class GhostJsonException @InternalGhostApi internal constructor(
  * Returns null when no actionable hint is known (keeps noise low).
  */
 @InternalGhostApi
-internal fun hintForJsonError(message: String): String? = when {
-    message.startsWith(C.STRICT_MODE_UNKNOWN_FIELD) ->
-        "Turn off strictMode, or add the field to the @GhostSerialization model " +
-            "(wire name via @SerialName / @GhostName)."
+internal fun String.hintForJsonError(): String? = when {
+    startsWith(prefix = EM.STRICT_MODE_UNKNOWN_FIELD) -> HINT_UNKNOWN_FIELD
 
-    message.startsWith(C.ERR_COERCION_DISABLED) ->
-        "Enable coerceStringsToNumbers: Ghost.deserialize(…) { it.coerceStringsToNumbers = true }."
+    startsWith(prefix = EM.ERR_COERCION_DISABLED) -> HINT_COERCION_DISABLED
 
-    message.startsWith(C.ERR_EXPECTED_BOOLEAN) ->
-        "If the API sends 0/1 or quoted booleans, enable coerceBooleans on the reader options."
+    startsWith(prefix = EM.ERR_EXPECTED_BOOLEAN) -> HINT_COERCE_BOOLEANS
 
-    message.startsWith(C.ERR_TRAILING_COMMA) ||
-        message.startsWith(C.ERR_UNEXPECTED_COMMA) ->
-        "Remove the extra comma, or keep strictMode=false only if you intentionally accept lenient JSON."
+    startsWith(prefix = EM.ERR_TRAILING_COMMA) ||
+            startsWith(prefix = EM.ERR_UNEXPECTED_COMMA) -> HINT_UNEXPECTED_COMMA
 
-    message.startsWith(C.ERR_NON_FINITE) ->
-        "JSON cannot encode NaN/Infinity — send null or a string sentinel and map it in a @GhostDecoder."
+    startsWith(prefix = EM.ERR_NON_FINITE) -> HINT_NON_FINITE
 
-    message.startsWith(C.ERR_LEADING_ZEROS) ->
-        "JSON numbers cannot have leading zeros (e.g. 01). Send an unpadded number or a quoted string."
+    startsWith(prefix = EM.ERR_LEADING_ZEROS) -> HINT_LEADING_ZEROS
 
-    message.startsWith(C.ERR_DEPTH_EXCEEDED) ->
-        "Reduce nesting, or raise maxDepth on the reader if this payload is intentionally deep."
+    startsWith(prefix = EM.ERR_DEPTH_EXCEEDED) -> HINT_DEPTH_EXCEEDED
 
-    message.startsWith(C.ERR_MAX_COLLECTION_SIZE) ->
-        "Raise ghost.maxCollectionSize / GhostHeuristics.maxCollectionSize if the list is legitimate."
+    startsWith(prefix = EM.ERR_MAX_COLLECTION_SIZE) -> HINT_MAX_COLLECTION_SIZE
 
-    message.startsWith(C.UNTERMINATED_STRING_ERROR) ||
-        message.startsWith(C.UNTERMINATED_ESCAPE_ERROR) ||
-        message.startsWith(C.UNTERMINATED_UNICODE_ERROR) ->
-        "Check for a missing closing quote or a truncated escape (\\uXXXX) at this path."
+    startsWith(prefix = EM.UNTERMINATED_STRING_ERROR) ||
+            startsWith(prefix = EM.UNTERMINATED_ESCAPE_ERROR) ||
+            startsWith(prefix = EM.UNTERMINATED_UNICODE_ERROR) -> HINT_UNTERMINATED
 
-    message.startsWith(C.ERR_EXPECTED_BEGIN_OBJ) ->
-        "Expected a JSON object `{…}` here — check the value type at this path."
+    startsWith(prefix = EM.ERR_EXPECTED_BEGIN_OBJ) -> HINT_EXPECTED_OBJECT
 
-    message.startsWith(C.ERR_EXPECTED_BEGIN_ARR) ->
-        "Expected a JSON array `[…]` here — check the value type at this path."
+    startsWith(prefix = EM.ERR_EXPECTED_BEGIN_ARR) -> HINT_EXPECTED_ARRAY
 
-    message.startsWith(C.ERR_EXPECTED_STRING) ||
-        message.startsWith(C.ERR_EXPECTED_KEY) ->
-        "Expected a quoted string/key — check for a missing `\"` or a wrong value type at this path."
+    startsWith(prefix = EM.ERR_EXPECTED_STRING) ||
+            startsWith(prefix = EM.ERR_EXPECTED_KEY) -> HINT_EXPECTED_STRING
 
-    message.startsWith(C.ERR_EXPECTED_NUMBER) ||
-        message.startsWith(C.ERR_EXPECTED_INT_PART) ||
-        message.startsWith(C.ERR_INT_OVERFLOW) ||
-        message.startsWith(C.ERR_LONG_OVERFLOW) ->
-        "Check the JSON type at this path (number vs string/object/bool). " +
-            "For numeric strings, enable coerceStringsToNumbers."
+    startsWith(prefix = EM.ERR_EXPECTED_NUMBER) ||
+            startsWith(prefix = EM.ERR_EXPECTED_INT_PART) ||
+            startsWith(prefix = EM.ERR_INT_OVERFLOW) ||
+            startsWith(prefix = EM.ERR_LONG_OVERFLOW) -> HINT_EXPECTED_NUMBER
 
-    message.startsWith(C.ERR_REQUIRED_FIELD_PREFIX) ->
-        "Add the field to the JSON, make the property nullable/defaulted, or check the wire name " +
-            "(@SerialName / @GhostName)."
+    startsWith(prefix = EM.ERR_REQUIRED_FIELD_PREFIX) -> HINT_REQUIRED_FIELD
 
-    message.startsWith(C.ERR_MISSING_DISCRIMINATOR) ->
-        "Include the sealed-class discriminator key in the JSON object " +
-            "(default `type`, or the key from @GhostDiscriminator)."
+    startsWith(prefix = EM.ERR_MISSING_DISCRIMINATOR) -> HINT_MISSING_DISCRIMINATOR
 
-    message.startsWith(C.ERR_UNKNOWN_DISCRIMINATOR_PREFIX) ->
-        "Add a matching @GhostSerialization subclass, or annotate one with @GhostFallback " +
-            "to absorb unknown variants."
+    startsWith(prefix = EM.ERR_UNKNOWN_DISCRIMINATOR_PREFIX) -> HINT_UNKNOWN_DISCRIMINATOR
 
-    message.startsWith(C.ERR_INVALID_ENUM_VALUE) ||
-        message.startsWith(C.ERR_UNEXPECTED_ENUM_INDEX_PREFIX) ->
-        "Fix the wire value, add an enum entry, or use @GhostFallback / an UNKNOWN entry " +
-            "(or @GhostResilient on the property)."
+    startsWith(prefix = EM.ERR_INVALID_ENUM_VALUE) ||
+            startsWith(prefix = EM.ERR_UNEXPECTED_ENUM_INDEX_PREFIX) -> HINT_INVALID_ENUM_VALUE
 
-    message.startsWith(C.ERR_UNKNOWN_ENUM) ->
-        "Map the enum wire value, or provide a fallback / UNKNOWN constant for proto enums."
+    startsWith(prefix = EM.ERR_UNKNOWN_ENUM) -> HINT_UNKNOWN_ENUM
 
-    message.startsWith(C.ERR_INVALID_BASE64) ->
-        "Proto bytes fields expect standard base64 (or base64url) without invalid characters."
+    startsWith(prefix = PC.ERR_INVALID_BASE64) -> HINT_INVALID_BASE64
 
-    message.startsWith(C.ERR_PROTO_UINT32_OVERFLOW) ||
-        message.startsWith(C.ERR_PROTO_FRACTIONAL_INT) ->
-        "Proto integer fields reject fractions and values outside the target wire range."
+    startsWith(prefix = PC.ERR_PROTO_UINT32_OVERFLOW) ||
+            startsWith(prefix = PC.ERR_PROTO_FRACTIONAL_INT) -> HINT_PROTO_INT_RANGE
 
     else -> null
 }

@@ -27,7 +27,7 @@ class GhostProtoRetrofitTest {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        Ghost.addRegistry(ProtoRetrofitTestRegistry)
+        Ghost.addRegistry(registry = ProtoRetrofitTestRegistry)
 
         val retrofit = Retrofit.Builder()
             .baseUrl(mockWebServer.url("/"))
@@ -48,12 +48,12 @@ class GhostProtoRetrofitTest {
             MockResponse()
                 .setResponseCode(200)
                 .setBody("""{"deviceId":"9223372036854775807","label":"sensor-1"}""")
-                .addHeader("Content-Type", "application/json")
+                .addHeader(GhostRetrofitMediaTypes.CONTENT_TYPE_HEADER, GhostRetrofitMediaTypes.APPLICATION_JSON)
         )
 
         val event = apiService.getEvent()
-        assertEquals(Long.MAX_VALUE, event.deviceId)
-        assertEquals("sensor-1", event.label)
+        assertEquals(expected = Long.MAX_VALUE, actual = event.deviceId)
+        assertEquals(expected = "sensor-1", actual = event.label)
     }
 
     @Test
@@ -62,11 +62,11 @@ class GhostProtoRetrofitTest {
             MockResponse()
                 .setResponseCode(200)
                 .setBody("""{"deviceId":42,"label":"sensor-2"}""")
-                .addHeader("Content-Type", "application/json")
+                .addHeader(GhostRetrofitMediaTypes.CONTENT_TYPE_HEADER, GhostRetrofitMediaTypes.APPLICATION_JSON)
         )
 
         val event = apiService.getEvent()
-        assertEquals(42L, event.deviceId)
+        assertEquals(expected = 42L, actual = event.deviceId)
     }
 
     @Test
@@ -75,12 +75,12 @@ class GhostProtoRetrofitTest {
             MockResponse().setResponseCode(200).setBody("""{"deviceId":"1","label":"ack"}""")
         )
 
-        apiService.createEvent(ProtoDeviceEvent(deviceId = 123456789012345L, label = "sensor-3"))
+        apiService.createEvent(event = ProtoDeviceEvent(deviceId = 123456789012345L, label = "sensor-3"))
 
         val request = mockWebServer.takeRequest()
         assertEquals(
-            """{"deviceId":"123456789012345","label":"sensor-3"}""",
-            request.body.readUtf8()
+            expected = """{"deviceId":"123456789012345","label":"sensor-3"}""",
+            actual = request.body.readUtf8()
         )
     }
 
@@ -93,7 +93,7 @@ class GhostProtoRetrofitTest {
         )
 
         val events = apiService.getEvents()
-        assertEquals(2, events.size)
-        assertEquals(ProtoDeviceEvent(1L, "a"), events[0])
+        assertEquals(expected = 2, actual = events.size)
+        assertEquals(expected = ProtoDeviceEvent(deviceId = 1L, label = "a"), actual = events[0])
     }
 }

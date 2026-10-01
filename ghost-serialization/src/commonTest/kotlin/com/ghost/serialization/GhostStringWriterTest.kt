@@ -13,7 +13,7 @@ class GhostStringWriterTest {
 
     private fun writerToString(block: (GhostJsonStringWriter) -> Unit): String {
         val charWriter = FlatCharArrayWriter()
-        val writer = GhostJsonStringWriter(charWriter)
+        val writer = GhostJsonStringWriter(buffer = charWriter)
         block(writer)
         return charWriter.toString()
     }
@@ -21,105 +21,144 @@ class GhostStringWriterTest {
     @Test
     fun writesIntValue() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(42).endObject()
+            w.beginObject().name(key = "v").value(42).endObject()
         }
-        assertEquals("{\"v\":42}", json)
+        assertEquals(
+            expected = "{\"v\":42}",
+            actual = json
+        )
     }
 
     @Test
     fun writesLongMaxValue() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(Long.MAX_VALUE).endObject()
+            w.beginObject().name(key = "v").value(Long.MAX_VALUE).endObject()
         }
-        assertEquals("{\"v\":${Long.MAX_VALUE}}", json)
+        assertEquals(
+            expected = "{\"v\":${Long.MAX_VALUE}}",
+            actual = json
+        )
     }
 
     @Test
     fun writesLongMinValue() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(Long.MIN_VALUE).endObject()
+            w.beginObject().name(key = "v").value(Long.MIN_VALUE).endObject()
         }
-        assertEquals("{\"v\":${Long.MIN_VALUE}}", json)
+        assertEquals(
+            expected = "{\"v\":${Long.MIN_VALUE}}",
+            actual = json
+        )
     }
 
     @Test
     fun writesDoubleValue() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(3.14).endObject()
+            w.beginObject().name(key = "v").value(3.14).endObject()
         }
-        assertEquals("{\"v\":3.14}", json)
+        assertEquals(
+            expected = "{\"v\":3.14}",
+            actual = json
+        )
     }
 
     @Test
     fun writesFloatValue() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(2.5f).endObject()
+            w.beginObject().name(key = "v").value(2.5f).endObject()
         }
-        assertEquals("{\"v\":2.5}", json)
+        assertEquals(
+            expected = "{\"v\":2.5}",
+            actual = json
+        )
     }
 
     @Test
     fun writesBooleanTrue() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(true).endObject()
+            w.beginObject().name(key = "v").value(true).endObject()
         }
-        assertEquals("{\"v\":true}", json)
+        assertEquals(
+            expected = "{\"v\":true}",
+            actual = json
+        )
     }
 
     @Test
     fun writesBooleanFalse() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value(false).endObject()
+            w.beginObject().name(key = "v").value(false).endObject()
         }
-        assertEquals("{\"v\":false}", json)
+        assertEquals(
+            expected = "{\"v\":false}",
+            actual = json
+        )
     }
 
     @Test
     fun writesNull() {
         val json = writerToString { w ->
-            w.beginObject().name("v").nullValue().endObject()
+            w.beginObject().name(key = "v").nullValue().endObject()
         }
-        assertEquals("{\"v\":null}", json)
+        assertEquals(
+            expected = "{\"v\":null}",
+            actual = json
+        )
     }
 
     @Test
     fun escapesQuotesInString() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("say \"hello\"").endObject()
+            w.beginObject().name(key = "v").value("say \"hello\"").endObject()
         }
-        assertEquals("{\"v\":\"say \\\"hello\\\"\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"say \\\"hello\\\"\"}",
+            actual = json
+        )
     }
 
     @Test
     fun escapesBackslash() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("path\\to").endObject()
+            w.beginObject().name(key = "v").value("path\\to").endObject()
         }
-        assertEquals("{\"v\":\"path\\\\to\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"path\\\\to\"}",
+            actual = json
+        )
     }
 
     @Test
     fun escapesControlCharacters() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("a\nb\tc\rd").endObject()
+            w.beginObject().name(key = "v").value("a\nb\tc\rd").endObject()
         }
-        assertEquals("{\"v\":\"a\\nb\\tc\\rd\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"a\\nb\\tc\\rd\"}",
+            actual = json
+        )
     }
 
     @Test
     fun writesEmptyString() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("").endObject()
+            w.beginObject().name(key = "v").value("").endObject()
         }
-        assertEquals("{\"v\":\"\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"\"}",
+            actual = json
+        )
     }
 
     @Test
     fun writesUnicodeDirectly() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("漢字").endObject()
+            w.beginObject().name(key = "v").value("漢字").endObject()
         }
-        assertEquals("{\"v\":\"漢字\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"漢字\"}",
+            actual = json
+        )
     }
 
     @Test
@@ -127,37 +166,52 @@ class GhostStringWriterTest {
         // Non-ASCII BMP chars used to previously force the escape slow path unnecessarily.
         val value = "漢".repeat(200)
         val json = writerToString { w ->
-            w.beginObject().name("v").value(value).endObject()
+            w.beginObject().name(key = "v").value(value).endObject()
         }
-        assertEquals("{\"v\":\"$value\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"$value\"}",
+            actual = json
+        )
     }
 
     @Test
     fun escapesQuoteInsideUnicodeString() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("漢\"字").endObject()
+            w.beginObject().name(key = "v").value("漢\"字").endObject()
         }
-        assertEquals("{\"v\":\"漢\\\"字\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"漢\\\"字\"}",
+            actual = json
+        )
     }
 
     @Test
     fun writesSurrogatePairEmojiDirectly() {
         val json = writerToString { w ->
-            w.beginObject().name("v").value("😀").endObject()
+            w.beginObject().name(key = "v").value("😀").endObject()
         }
-        assertEquals("{\"v\":\"😀\"}", json)
+        assertEquals(
+            expected = "{\"v\":\"😀\"}",
+            actual = json
+        )
     }
 
     @Test
     fun writesEmptyObject() {
         val json = writerToString { w -> w.beginObject().endObject() }
-        assertEquals("{}", json)
+        assertEquals(
+            expected = "{}",
+            actual = json
+        )
     }
 
     @Test
     fun writesEmptyArray() {
         val json = writerToString { w -> w.beginArray().endArray() }
-        assertEquals("[]", json)
+        assertEquals(
+            expected = "[]",
+            actual = json
+        )
     }
 
     @Test
@@ -165,74 +219,95 @@ class GhostStringWriterTest {
         val json = writerToString { w ->
             w.beginArray().value(1).value(2).value(3).endArray()
         }
-        assertEquals("[1,2,3]", json)
+        assertEquals(
+            expected = "[1,2,3]",
+            actual = json
+        )
     }
 
     @Test
     fun writesNestedObjects() {
         val json = writerToString { w ->
             w.beginObject()
-                .name("outer")
+                .name(key = "outer")
                 .beginObject()
-                .name("inner").value("deep")
+                .name(key = "inner").value("deep")
                 .endObject()
                 .endObject()
         }
-        assertEquals("{\"outer\":{\"inner\":\"deep\"}}", json)
+        assertEquals(
+            expected = "{\"outer\":{\"inner\":\"deep\"}}",
+            actual = json
+        )
     }
 
     @Test
     fun writesArrayInsideObject() {
         val json = writerToString { w ->
             w.beginObject()
-                .name("items")
+                .name(key = "items")
                 .beginArray()
                 .value("a")
                 .value("b")
                 .endArray()
                 .endObject()
         }
-        assertEquals("{\"items\":[\"a\",\"b\"]}", json)
+        assertEquals(
+            expected = "{\"items\":[\"a\",\"b\"]}",
+            actual = json
+        )
     }
 
     @Test
     fun writesMultipleFieldsWithCommas() {
         val json = writerToString { w ->
             w.beginObject()
-                .name("a").value(1)
-                .name("b").value(2)
-                .name("c").value(3)
+                .name(key = "a").value(1)
+                .name(key = "b").value(2)
+                .name(key = "c").value(3)
                 .endObject()
         }
-        assertEquals("{\"a\":1,\"b\":2,\"c\":3}", json)
+        assertEquals(
+            expected = "{\"a\":1,\"b\":2,\"c\":3}",
+            actual = json
+        )
     }
 
     @Test
     fun writerRespectsMaxDepth() {
         val charWriter = FlatCharArrayWriter()
-        val writer = GhostJsonStringWriter(charWriter)
+        val writer = GhostJsonStringWriter(buffer = charWriter)
         assertThrowsGhostException {
-            repeat(300) { writer.beginObject().name("a") }
+            repeat(300) { writer.beginObject().name(key = "a") }
         }
     }
 
     @Test
     fun writesZeroInt() {
-        val json = writerToString { w -> w.beginObject().name("v").value(0).endObject() }
-        assertEquals("{\"v\":0}", json)
+        val json = writerToString { w -> w.beginObject().name(key = "v").value(0).endObject() }
+        assertEquals(
+            expected = "{\"v\":0}",
+            actual = json
+        )
     }
 
     @Test
     fun writesNegativeInt() {
-        val json = writerToString { w -> w.beginObject().name("v").value(-999).endObject() }
-        assertEquals("{\"v\":-999}", json)
+        val json = writerToString { w -> w.beginObject().name(key = "v").value(-999).endObject() }
+        assertEquals(
+            expected = "{\"v\":-999}",
+            actual = json
+        )
     }
 
     @Test
     fun writesWithZeroCapacityWriter() {
-        val writer = FlatCharArrayWriter(0)
-        writer.writeChar('A'.code)
-        assertEquals("A", writer.toString())
+        val writer = FlatCharArrayWriter(initialCapacity = 0)
+        writer.writeChar(charAsInt = 'A'.code)
+        assertEquals(
+            expected = "A",
+            actual = writer.toString()
+        )
     }
 
     private inline fun assertThrowsGhostException(block: () -> Unit) {

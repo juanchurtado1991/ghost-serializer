@@ -1,10 +1,9 @@
 @file:OptIn(InternalGhostApi::class)
-@file:Suppress("NOTHING_TO_INLINE")
 
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.proto.GhostProtoConstants as PC
 
 /**
  * A signed, fixed-length span of time as seconds + fractional nanoseconds, independent of
@@ -12,8 +11,9 @@ import com.ghost.serialization.parser.common.GhostJsonConstants as C
  */
 data class ProtoDuration(val seconds: Long, val nanos: Int) {
     init {
-        if ((seconds > 0 && nanos < 0) || (seconds < 0 && nanos > 0)) {
-            throw IllegalArgumentException(C.ERR_DURATION_SIGN)
+        val hasMismatchedSign = (seconds > 0 && nanos < 0) || (seconds < 0 && nanos > 0)
+        if (hasMismatchedSign) {
+            throw IllegalArgumentException(PC.ERR_DURATION_SIGN)
         }
     }
 }

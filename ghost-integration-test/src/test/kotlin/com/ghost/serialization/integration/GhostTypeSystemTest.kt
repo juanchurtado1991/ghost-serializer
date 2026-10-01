@@ -22,67 +22,67 @@ class GhostTypeSystemTest {
                 mapOf("d" to 4)
             )
         )
-        val model = NestedGenericModel(data)
+        val model = NestedGenericModel(data = data)
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<NestedGenericModel>(json)
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testCollectionOfNullsRoundTrip() {
-        val model = CollectionOfNulls(listOf("a", null, "b", null))
+        val model = CollectionOfNulls(items = listOf("a", null, "b", null))
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<CollectionOfNulls>(json)
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testRecursiveGraphDeep() {
         val root = RecursiveGraphNode(
-            "1",
-            RecursiveGraphNode(
-                "2",
-                RecursiveGraphNode(
-                    "3",
-                    RecursiveGraphNode("4")
+            name = "1",
+            next = RecursiveGraphNode(
+                name = "2",
+                next = RecursiveGraphNode(
+                    name = "3",
+                    next = RecursiveGraphNode(name = "4")
                 )
             )
         )
         val json = Ghost.serialize(root)
         val decoded = Ghost.deserialize<RecursiveGraphNode>(json)
-        assertEquals(root, decoded)
+        assertEquals(expected = root, actual = decoded)
     }
 
     @Test
     fun testEmptyCollections() {
-        val model = NestedGenericModel(emptyMap())
+        val model = NestedGenericModel(data = emptyMap())
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<NestedGenericModel>(json)
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testNullablePrimitivesRoundTrip() {
-        val model = NullablePrimitives(1, 2L, true, 3.14, "hi")
+        val model = NullablePrimitives(i = 1, l = 2L, b = true, d = 3.14, s = "hi")
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<NullablePrimitives>(json)
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testAllNullPrimitives() {
-        val model = NullablePrimitives(null, null, null, null, null)
+        val model = NullablePrimitives(i = null, l = null, b = null, d = null, s = null)
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<NullablePrimitives>(json)
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testSchemaEvolutionMissingOptional() {
         val json = "{\"required\": \"must-have\"}"
         val decoded = Ghost.deserialize<EvolutionModel>(json)
-        assertEquals("must-have", decoded.required)
-        assertEquals("default", decoded.optional)
+        assertEquals(expected = "must-have", actual = decoded.required)
+        assertEquals(expected = "default", actual = decoded.optional)
     }
 
     @Test
@@ -90,6 +90,6 @@ class GhostTypeSystemTest {
         val json = "{\"required\": \"val\", \"unknown\": 123, \"nested\": {\"a\": 1}}"
         // Ghost should ignore unknown fields by default (unless strict mode is on)
         val decoded = Ghost.deserialize<EvolutionModel>(json)
-        assertEquals("val", decoded.required)
+        assertEquals(expected = "val", actual = decoded.required)
     }
 }

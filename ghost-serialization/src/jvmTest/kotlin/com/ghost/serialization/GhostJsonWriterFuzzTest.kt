@@ -39,10 +39,10 @@ class GhostJsonWriterFuzzTest {
 
     @FuzzTest
     fun fuzzJsonStringValueRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostJsonWriter(byteWriter).beginObject().name("v").value(expected).endObject()
+        GhostJsonWriter(byteWriter).beginObject().name(key = "v").value(expected).endObject()
 
         val reader = GhostJsonReader(byteWriter.toByteArray())
         reader.beginObject()
@@ -59,10 +59,10 @@ class GhostJsonWriterFuzzTest {
 
     @FuzzTest
     fun fuzzJsonKeyRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostJsonWriter(byteWriter).beginObject().name(expected).value(1).endObject()
+        GhostJsonWriter(byteWriter).beginObject().name(key = expected).value(1).endObject()
 
         val reader = GhostJsonReader(byteWriter.toByteArray())
         reader.beginObject()

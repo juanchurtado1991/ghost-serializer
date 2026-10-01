@@ -12,35 +12,6 @@ import java.lang.reflect.Type
 @ControllerAdvice
 class GhostRequestBodyAdvice : RequestBodyAdvice {
 
-    override fun supports(
-        methodParameter: MethodParameter,
-        targetType: Type,
-        converterType: Class<out HttpMessageConverter<*>>
-    ): Boolean {
-        return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType) ||
-                GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)
-    }
-
-    override fun beforeBodyRead(
-        inputMessage: HttpInputMessage,
-        parameter: MethodParameter,
-        targetType: Type,
-        converterType: Class<out HttpMessageConverter<*>>
-    ): HttpInputMessage {
-        val hasStrict = parameter.hasParameterAnnotation(GhostStrict::class.java) ||
-                parameter.hasMethodAnnotation(GhostStrict::class.java) ||
-                parameter.containingClass.isAnnotationPresent(GhostStrict::class.java)
-
-        val hasCoerce = parameter.hasParameterAnnotation(GhostCoerce::class.java) ||
-                parameter.hasMethodAnnotation(GhostCoerce::class.java) ||
-                parameter.containingClass.isAnnotationPresent(GhostCoerce::class.java)
-
-        GhostSpringConfig.strict.set(hasStrict)
-        GhostSpringConfig.coerce.set(hasCoerce)
-
-        return inputMessage
-    }
-
     override fun afterBodyRead(
         body: Any,
         inputMessage: HttpInputMessage,
@@ -51,6 +22,18 @@ class GhostRequestBodyAdvice : RequestBodyAdvice {
         GhostSpringConfig.strict.remove()
         GhostSpringConfig.coerce.remove()
         return body
+    }
+
+    override fun beforeBodyRead(
+        inputMessage: HttpInputMessage,
+        parameter: MethodParameter,
+        targetType: Type,
+        converterType: Class<out HttpMessageConverter<*>>
+    ): HttpInputMessage {
+        GhostSpringConfig.strict.set(parameter.isAnnotatedAnywhere(annotation = GhostStrict::class.java))
+        GhostSpringConfig.coerce.set(parameter.isAnnotatedAnywhere(annotation = GhostCoerce::class.java))
+
+        return inputMessage
     }
 
     override fun handleEmptyBody(
@@ -64,4 +47,19 @@ class GhostRequestBodyAdvice : RequestBodyAdvice {
         GhostSpringConfig.coerce.remove()
         return body
     }
+
+    override fun supports(
+        methodParameter: MethodParameter,
+        targetType: Type,
+        converterType: Class<out HttpMessageConverter<*>>
+    ): Boolean {
+        return GhostHttpMessageConverter::class.java.isAssignableFrom(converterType) ||
+                GhostYamlHttpMessageConverter::class.java.isAssignableFrom(converterType)
+    }
+
+    /** True if [annotation] is on the parameter itself, its method, or the declaring controller class. */
+    private fun MethodParameter.isAnnotatedAnywhere(annotation: Class<out Annotation>): Boolean =
+        hasParameterAnnotation(annotation) ||
+                hasMethodAnnotation(annotation) ||
+                containingClass.isAnnotationPresent(annotation)
 }

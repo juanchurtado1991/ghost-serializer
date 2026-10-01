@@ -1,7 +1,8 @@
 package com.ghost.serialization.parser.bytes
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.BYTE_MASK
+import com.ghost.serialization.parser.common.AbstractGhostSource
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
@@ -15,7 +16,7 @@ import okio.ByteString
  * [decodeJsonStringRange] with a faster ASCII decoder; other platforms use it directly.
  */
 @InternalGhostApi
-open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {
+open class ByteArrayGhostSource(var data: ByteArray) : AbstractGhostSource() {
 
     override val size: Int get() = data.size
 
@@ -25,21 +26,12 @@ open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {
 
     override val rawSourceData: ByteArray get() = data
 
-    override fun decodeToString(
-        start: Int,
-        end: Int
-    ): String = data.decodeToString(
-        startIndex = start,
-        endIndex = end
-    )
-
     override fun contentEquals(
         start: Int,
         expected: ByteString
     ): Boolean {
-        if (start + expected.size > size) {
+        if (start + expected.size > size)
             return false
-        }
 
         return expected.rangeEquals(
             offset = 0,
@@ -49,43 +41,33 @@ open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {
         )
     }
 
-    override fun findNextNonWhitespace(
-        position: Int,
-        limit: Int
-    ): Int {
+    override fun contentEqualsString(start: Int, length: Int, expected: String): Boolean {
         val localData = data
-        return findNextNonWhitespaceImpl(position, limit) {
+        return contentEqualsStringImpl(start = start, length = length, targetString = expected) {
             localData[it].toInt() and BYTE_MASK
         }
     }
 
-    override fun findClosingQuote(
-        position: Int,
-        limit: Int
-    ): Int {
+    override fun decodeToString(start: Int, end: Int): String = data
+        .decodeToString(startIndex = start, endIndex = end)
+
+    override fun findClosingQuote(position: Int, limit: Int): Int {
         val localData = data
-        return findClosingQuoteImpl(position, limit) {
+        return findClosingQuoteImpl(position = position, limit = limit) {
             localData[it].toInt() and BYTE_MASK
         }
     }
 
-    override fun scanString(
-        start: Int,
-        limit: Int
-    ): Long {
+    override fun findNextNonWhitespace(position: Int, limit: Int): Int {
         val localData = data
-        return scanStringImpl(start, limit) {
+        return findNextNonWhitespaceImpl(position = position, limit = limit) {
             localData[it].toInt() and BYTE_MASK
         }
     }
 
-    override fun contentEqualsString(
-        start: Int,
-        length: Int,
-        expected: String
-    ): Boolean {
+    override fun scanString(start: Int, limit: Int): Long {
         val localData = data
-        return contentEqualsStringImpl(start, length, targetString = expected) {
+        return scanStringImpl(start = start, limit = limit) {
             localData[it].toInt() and BYTE_MASK
         }
     }

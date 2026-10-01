@@ -2,7 +2,7 @@ package com.ghost.serialization.proto
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 
 /**
@@ -29,7 +29,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextInt(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextInt()
+            GhostProtoJsonFlatReader(rawData = bytes).nextInt()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -39,7 +39,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextLong(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextLong()
+            GhostProtoJsonFlatReader(rawData = bytes).nextLong()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -49,7 +49,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextFloat(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextFloat()
+            GhostProtoJsonFlatReader(rawData = bytes).nextFloat()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -59,7 +59,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextDouble(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextDouble()
+            GhostProtoJsonFlatReader(rawData = bytes).nextDouble()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -69,7 +69,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextProtoUInt32(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextProtoUInt32()
+            GhostProtoJsonFlatReader(rawData = bytes).nextProtoUInt32()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -79,7 +79,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextProtoUInt64(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextProtoUInt64()
+            GhostProtoJsonFlatReader(rawData = bytes).nextProtoUInt64()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -89,7 +89,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextProtoBytes(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextProtoBytes()
+            GhostProtoJsonFlatReader(rawData = bytes).nextProtoBytes()
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }
@@ -99,7 +99,7 @@ class GhostProtoJsonFlatReaderFuzzTest {
     fun fuzzNextProtoEnum(data: FuzzedDataProvider) {
         val bytes = data.consumeRemainingAsBytes()
         try {
-            GhostProtoJsonFlatReader(bytes).nextProtoEnum(JsonReaderOptions.of("A", "B", "C"))
+            GhostProtoJsonFlatReader(rawData = bytes).nextProtoEnum(options = JsonReaderOptions.of("A", "B", "C"))
         } catch (_: Exception) {
             // Expected for malformed input — see class KDoc.
         }

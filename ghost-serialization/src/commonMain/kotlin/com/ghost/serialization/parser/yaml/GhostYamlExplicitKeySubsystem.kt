@@ -1,6 +1,6 @@
 package com.ghost.serialization.parser.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
 /**
  * Handles YAML's explicit block-mapping keys (`? key` / `: value`). Unlike an implicit
@@ -10,13 +10,8 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
 
 /** True if position is at a `?` explicit-key indicator (must be followed by whitespace/EOL). */
 internal fun GhostYamlFlatReader.isExplicitKeyIndicator(): Boolean {
-    if (position >= limit || rawData[position] != C.QUESTION_BYTE) return false
-    val nextPosition = position + 1
-    return nextPosition >= limit ||
-        rawData[nextPosition] == C.SPACE_BYTE ||
-        rawData[nextPosition] == C.NEWLINE_BYTE ||
-        rawData[nextPosition] == C.CR_BYTE ||
-        rawData[nextPosition] == C.TAB_BYTE
+    if (position >= limit || rawData[position] != TOK.QUESTION_BYTE) return false
+    return isFollowedByIndicatorTerminator(nextPosition = position + 1)
 }
 
 /**
@@ -29,14 +24,18 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
     val localRawData = rawData
     val localLimit = limit
 
-    val keyNode = if (position >= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {
+    val isKeyOnLaterLine = position >= localLimit ||
+        localRawData[position] == TOK.NEWLINE_BYTE || localRawData[position] == TOK.CR_BYTE
+    val keyNode = if (isKeyOnLaterLine) {
         // Key on later line(s): mirrors value-after-':' resolution, including the exception
         // that a '-' sequence entry may sit at exactly blockIndent (e.g. "?\n- a\n- b").
         advanceLine()
         skipWhitespaceAndComments()
         val continuesAsSequenceEntry =
-            position < localLimit && localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry()
-        if (position >= localLimit || (currentIndent <= blockIndent && !(currentIndent == blockIndent && continuesAsSequenceEntry))) {
+            position < localLimit && localRawData[position] == TOK.DASH_BYTE && isBlockSequenceEntry()
+        val staysAtOrAboveBlockIndent = currentIndent > blockIndent ||
+            (currentIndent == blockIndent && continuesAsSequenceEntry)
+        if (position >= localLimit || !staysAtOrAboveBlockIndent) {
             null
         } else {
             readValue(currentIndent, inFlow = false)
@@ -50,7 +49,7 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
         // (spec example 8.19). allowMappingRedirect stays at its default (true) here.
         readValue(blockIndent, inFlow = false, strictDedent = true)
     }
-    val key = stringifyExplicitMappingKey(keyNode)
+    val key = stringifyExplicitMappingKey(keyNode = keyNode)
 
     // Look for ':'. On the key's own line it's always valid regardless of column; the
     // indentation check only matters once we've crossed onto a later line.
@@ -59,15 +58,18 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
     var crossedLine = false
     var scanPos = positionBeforeGap
     while (scanPos < position) {
-        if (localRawData[scanPos] == C.NEWLINE_BYTE || localRawData[scanPos] == C.CR_BYTE) {
+        if (localRawData[scanPos] == TOK.NEWLINE_BYTE || localRawData[scanPos] == TOK.CR_BYTE) {
             crossedLine = true
             break
         }
         scanPos++
     }
-    val value = if (position < localLimit && isExplicitValueIndicator() && (!crossedLine || currentIndent == blockIndent)) {
+    val isValidExplicitColon = position < localLimit &&
+        isExplicitValueIndicator() &&
+        (!crossedLine || currentIndent == blockIndent)
+    val value = if (isValidExplicitColon) {
         position++ // consume ':'
-        resolveValueAfterColon(blockIndent)
+        resolveValueAfterColon(blockIndent = blockIndent)
     } else {
         null
     }
@@ -76,14 +78,17 @@ internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair<St
 
 /** True if position is at a `:` explicit-value indicator (must be followed by whitespace/EOL). */
 private fun GhostYamlFlatReader.isExplicitValueIndicator(): Boolean {
-    if (rawData[position] != C.COLON_BYTE) return false
-    val nextPosition = position + 1
-    return nextPosition >= limit ||
-        rawData[nextPosition] == C.SPACE_BYTE ||
-        rawData[nextPosition] == C.NEWLINE_BYTE ||
-        rawData[nextPosition] == C.CR_BYTE ||
-        rawData[nextPosition] == C.TAB_BYTE
+    if (rawData[position] != TOK.COLON_BYTE) return false
+    return isFollowedByIndicatorTerminator(nextPosition = position + 1)
 }
+
+/** True if [nextPosition] is past the end, or a whitespace/line-break byte. */
+private fun GhostYamlFlatReader.isFollowedByIndicatorTerminator(nextPosition: Int): Boolean =
+    nextPosition >= limit ||
+        rawData[nextPosition] == TOK.SPACE_BYTE ||
+        rawData[nextPosition] == TOK.NEWLINE_BYTE ||
+        rawData[nextPosition] == TOK.CR_BYTE ||
+        rawData[nextPosition] == TOK.TAB_BYTE
 
 /**
  * Converts a node read as an explicit key into the String [GhostYamlFlatReader]'s

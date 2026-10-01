@@ -18,6 +18,8 @@ import kotlin.test.assertSame
  */
 class GhostSpringTypeSerializersTest {
 
+    private val typeSerializers = GhostSpringTypeSerializers()
+
     private interface Holder {
         fun strings(): List<String>
         fun ints(): List<Int>
@@ -29,65 +31,65 @@ class GhostSpringTypeSerializersTest {
 
     @Test
     fun topLevelStringIsExcluded() {
-        assertNull(GhostSpringTypeSerializers.getJsonSerializer(String::class.java))
+        assertNull(actual = typeSerializers.getJsonSerializer(String::class.java))
     }
 
     @Test
     fun topLevelBoxedIntIsExcluded() {
-        assertNull(GhostSpringTypeSerializers.getJsonSerializer(Int::class.javaObjectType))
+        assertNull(actual = typeSerializers.getJsonSerializer(Int::class.javaObjectType))
     }
 
     @Test
     fun listOfStringResolves() {
         val type = Holder::class.java.getMethod("strings").genericReturnType
-        val serializer = GhostSpringTypeSerializers.getJsonSerializer(type)
-        assertNotNull(serializer)
+        val serializer = typeSerializers.getJsonSerializer(type)
+        assertNotNull(actual = serializer)
         assertIs<ListSerializer<*>>(serializer)
     }
 
     @Test
     fun listOfIntResolves() {
         val type = Holder::class.java.getMethod("ints").genericReturnType
-        assertNotNull(GhostSpringTypeSerializers.getJsonSerializer(type))
+        assertNotNull(actual = typeSerializers.getJsonSerializer(type))
     }
 
     @Test
     fun setOfStringResolves() {
         val type = Holder::class.java.getMethod("stringSet").genericReturnType
-        val serializer = GhostSpringTypeSerializers.getJsonSerializer(type)
-        assertNotNull(serializer)
+        val serializer = typeSerializers.getJsonSerializer(type)
+        assertNotNull(actual = serializer)
         assertIs<SetSerializer<*>>(serializer)
     }
 
     @Test
     fun mapStringStringResolves() {
         val type = Holder::class.java.getMethod("stringMap").genericReturnType
-        val serializer = GhostSpringTypeSerializers.getJsonSerializer(type)
-        assertNotNull(serializer)
+        val serializer = typeSerializers.getJsonSerializer(type)
+        assertNotNull(actual = serializer)
         assertIs<MapSerializer<*>>(serializer)
     }
 
     @Test
     fun mapStringHelloResolves() {
         val type = Holder::class.java.getMethod("helloMap").genericReturnType
-        assertNotNull(GhostSpringTypeSerializers.getJsonSerializer(type))
+        assertNotNull(actual = typeSerializers.getJsonSerializer(type))
     }
 
     @Test
     fun mapWithNonStringKeyIsDeclined() {
         val type = Holder::class.java.getMethod("intKeyMap").genericReturnType
-        assertNull(GhostSpringTypeSerializers.getJsonSerializer(type))
+        assertNull(actual = typeSerializers.getJsonSerializer(type))
     }
 
     @Test
     fun registeredHelloMessageStillResolves() {
-        val serializer = GhostSpringTypeSerializers.getJsonSerializer(HelloMessage::class.java)
-        assertNotNull(serializer)
-        assertSame(Ghost.getSerializer(HelloMessage::class) as Any?, serializer)
+        val serializer = typeSerializers.getJsonSerializer(HelloMessage::class.java)
+        assertNotNull(actual = serializer)
+        assertSame(expected = Ghost.getSerializer(HelloMessage::class) as Any?, actual = serializer)
     }
 
     @Test
     fun stringSerializerIsAvailableViaGhostForElements() {
-        assertSame(StringSerializer as Any?, Ghost.getSerializer(String::class))
+        assertSame(expected = StringSerializer as Any?, actual = Ghost.getSerializer(String::class))
     }
 }

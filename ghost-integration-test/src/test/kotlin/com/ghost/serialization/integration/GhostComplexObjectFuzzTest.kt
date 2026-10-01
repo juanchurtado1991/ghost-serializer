@@ -50,7 +50,7 @@ class GhostComplexObjectFuzzTest {
     fun fuzzComplexObjectDeserializeStringChannel(data: FuzzedDataProvider) {
         val text = data.consumeRemainingAsString()
         try {
-            ComplexObjectSerializer.deserialize(GhostJsonStringReader(text))
+            ComplexObjectSerializer.deserialize(GhostJsonStringReader(rawData = text))
         } catch (_: Exception) {
             // Expected for malformed/adversarial input — see class KDoc.
         }

@@ -1,6 +1,6 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.common.GhostJsonConstants.SCRATCH_BUFFER_SIZE
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.SCRATCH_BUFFER_SIZE
 
 private const val TIER_SMALL = 1024
 private const val TIER_MEDIUM = 16384
@@ -24,7 +24,9 @@ internal val SCRATCH_BUFFER_SIZE_INT = SCRATCH_BUFFER_SIZE
 
 /** Acquires a reusable buffer of at least [minSize] from the tiered pool, minimizing hot-path allocations. */
 @InternalGhostApi
-fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
+fun acquireScratchBuffer(
+    minSize: Int = SCRATCH_BUFFER_SIZE
+): ByteArray {
     val pool = getLocalPool()
     return when {
         minSize <= SCRATCH_BUFFER_SIZE_INT -> {
@@ -33,7 +35,7 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
                 pool.scratch = null
                 scratchLocal
             } else {
-                ByteArray(SCRATCH_BUFFER_SIZE_INT)
+                ByteArray(size = SCRATCH_BUFFER_SIZE_INT)
             }
         }
 
@@ -43,7 +45,7 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
                 pool.small = null
                 smallLocal
             } else {
-                ByteArray(TIER_SMALL)
+                ByteArray(size = TIER_SMALL)
             }
         }
 
@@ -53,7 +55,7 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
                 pool.medium = null
                 mediumLocal
             } else {
-                ByteArray(TIER_MEDIUM)
+                ByteArray(size = TIER_MEDIUM)
             }
         }
 
@@ -63,7 +65,7 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
                 pool.large = null
                 largeLocal
             } else {
-                ByteArray(TIER_LARGE)
+                ByteArray(size = TIER_LARGE)
             }
         }
 
@@ -73,7 +75,7 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
                 pool.xlarge = null
                 xlargeLocal
             } else {
-                ByteArray(TIER_XLARGE)
+                ByteArray(size = TIER_XLARGE)
             }
         }
 
@@ -83,11 +85,11 @@ fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
                 pool.xxlarge = null
                 xxlargeLocal
             } else {
-                ByteArray(TIER_XXLARGE)
+                ByteArray(size = TIER_XXLARGE)
             }
         }
 
-        else -> ByteArray(minSize)
+        else -> ByteArray(size = minSize)
     }
 }
 
@@ -104,4 +106,20 @@ fun releaseScratchBuffer(buffer: ByteArray) {
         TIER_XLARGE -> pool.xlarge = buffer
         TIER_XXLARGE -> pool.xxlarge = buffer
     }
+}
+
+/** Initial size (512 KiB) for response-body scratch buffers — equal to a pool tier, so it round-trips through the pool. */
+@InternalGhostApi
+const val RESPONSE_SCRATCH_INITIAL_SIZE = TIER_XLARGE
+
+/**
+ * Doubles [scratch]: acquires a buffer twice its size, copies the first [usedBytes] over, and
+ * returns the old one to the pool. Shared by the Retrofit/Ktor response-body read loops.
+ */
+@InternalGhostApi
+fun growScratchBuffer(scratch: ByteArray, usedBytes: Int): ByteArray {
+    val grown = acquireScratchBuffer(minSize = scratch.size * 2)
+    scratch.copyInto(grown, 0, 0, usedBytes)
+    releaseScratchBuffer(buffer = scratch)
+    return grown
 }

@@ -9,6 +9,8 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
@@ -22,14 +24,8 @@ internal class EnvelopeRouterEmitter(
 
     private val typedMappings = envelope.payloadMappings.filter { it.targetType != null }
 
-    private companion object {
-        val nullableAnyType = ClassName(C.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)
-        val rawJsonType = ClassName(C.PKG_TYPES, C.STR_RAW_JSON_TYPE).copy(nullable = true)
-        val ghostSerializerType = ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
-    }
-
     fun emit(typeSpecBuilder: TypeSpec.Builder) {
-        emitCachedTargetSerializers(typeSpecBuilder)
+        emitCachedTargetSerializers(typeSpecBuilder = typeSpecBuilder)
         typeSpecBuilder.addFunction(buildRoutePayloadFunction())
         typeSpecBuilder.addFunction(buildParsePayloadFunction())
 
@@ -37,36 +33,6 @@ internal class EnvelopeRouterEmitter(
             typeSpecBuilder.addFunction(buildRouteTypedFunction())
             typeSpecBuilder.addFunction(buildParseTypedFunction())
         }
-    }
-
-    private fun emitCachedTargetSerializers(typeSpecBuilder: TypeSpec.Builder) {
-        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST)
-        typedMappings.forEach { mapping ->
-            val targetType = mapping.targetType ?: return@forEach
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(
-                    targetSerializerPropertyName(mapping),
-                    ghostSerializerType.parameterizedBy(targetType)
-                )
-                    .addModifiers(KModifier.PRIVATE)
-                    .initializer(C.TEMPLATE_ENVELOPE_CACHED_SERIALIZER, ghostClass, targetType)
-                    .build()
-            )
-        }
-    }
-
-    private fun buildRoutePayloadFunction(): FunSpec {
-        val builder = FunSpec.builder(C.STR_FUN_ROUTE_PAYLOAD)
-            .addKdoc(C.STR_KDOC_ROUTE_PAYLOAD, originalClassName)
-            .addParameter(C.STR_PARAM_ENVELOPE, originalClassName)
-            .returns(rawJsonType)
-
-        if (envelope.isGenericMode && envelope.payloadMappings.isEmpty()) {
-            builder.addStatement(C.STR_ENVELOPE_RETURN_FIELD, envelope.genericDataKotlinName!!)
-        } else {
-            builder.addCode(buildRouteWhenBlock(typed = false))
-        }
-        return builder.build()
     }
 
     private fun buildParsePayloadFunction(): FunSpec {
@@ -85,20 +51,6 @@ internal class EnvelopeRouterEmitter(
             .build()
     }
 
-    private fun buildRouteTypedFunction(): FunSpec {
-        val builder = FunSpec.builder(C.STR_FUN_ROUTE_TYPED)
-            .addKdoc(C.STR_KDOC_ROUTE_TYPED, originalClassName)
-            .addParameter(C.STR_PARAM_ENVELOPE, originalClassName)
-            .returns(nullableAnyType)
-
-        if (envelope.isGenericMode && typedMappings.isEmpty()) {
-            builder.addStatement(C.STR_ENVELOPE_RETURN_FIELD, envelope.genericDataKotlinName!!)
-        } else {
-            builder.addCode(buildRouteWhenBlock(typed = true))
-        }
-        return builder.build()
-    }
-
     private fun buildParseTypedFunction(): FunSpec {
         return FunSpec.builder(C.STR_FUN_PARSE_TYPED)
             .addKdoc(C.STR_KDOC_PARSE_TYPED, originalClassName)
@@ -115,6 +67,34 @@ internal class EnvelopeRouterEmitter(
             .build()
     }
 
+    private fun buildRoutePayloadFunction(): FunSpec {
+        val builder = FunSpec.builder(C.STR_FUN_ROUTE_PAYLOAD)
+            .addKdoc(C.STR_KDOC_ROUTE_PAYLOAD, originalClassName)
+            .addParameter(C.STR_PARAM_ENVELOPE, originalClassName)
+            .returns(rawJsonType)
+
+        if (envelope.isGenericMode && envelope.payloadMappings.isEmpty()) {
+            builder.addStatement(C.STR_ENVELOPE_RETURN_FIELD, envelope.genericDataKotlinName!!)
+        } else {
+            builder.addCode(buildRouteWhenBlock(typed = false))
+        }
+        return builder.build()
+    }
+
+    private fun buildRouteTypedFunction(): FunSpec {
+        val builder = FunSpec.builder(C.STR_FUN_ROUTE_TYPED)
+            .addKdoc(C.STR_KDOC_ROUTE_TYPED, originalClassName)
+            .addParameter(C.STR_PARAM_ENVELOPE, originalClassName)
+            .returns(nullableAnyType)
+
+        if (envelope.isGenericMode && typedMappings.isEmpty()) {
+            builder.addStatement(C.STR_ENVELOPE_RETURN_FIELD, envelope.genericDataKotlinName!!)
+        } else {
+            builder.addCode(buildRouteWhenBlock(typed = true))
+        }
+        return builder.build()
+    }
+
     private fun buildRouteWhenBlock(typed: Boolean): CodeBlock {
         val builder = CodeBlock.builder()
             .add(C.STR_ENVELOPE_ROUTE_WHEN_OPEN, envelope.discriminatorKotlinName)
@@ -125,7 +105,7 @@ internal class EnvelopeRouterEmitter(
                 builder.add(
                     C.STR_ENVELOPE_BRANCH,
                     mapping.discriminatorValue,
-                    payloadExpression(mapping, dataField, typed)
+                    payloadExpression(mapping = mapping, fieldName = dataField, typed = typed)
                 )
             }
             builder.add(C.STR_ENVELOPE_ELSE_FALLBACK, dataField)
@@ -134,7 +114,7 @@ internal class EnvelopeRouterEmitter(
                 builder.add(
                     C.STR_ENVELOPE_BRANCH,
                     mapping.discriminatorValue,
-                    payloadExpression(mapping, mapping.kotlinName, typed)
+                    payloadExpression(mapping = mapping, fieldName = mapping.kotlinName, typed = typed)
                 )
             }
             val fallback = envelope.fallbackMapping
@@ -149,6 +129,22 @@ internal class EnvelopeRouterEmitter(
         return builder.build()
     }
 
+    private fun emitCachedTargetSerializers(typeSpecBuilder: TypeSpec.Builder) {
+        val ghostClass = ClassName(CC.PKG_GHOST, CG.STR_GHOST)
+        typedMappings.forEach { mapping ->
+            val targetType = mapping.targetType ?: return@forEach
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    targetSerializerPropertyName(mapping = mapping),
+                    ghostSerializerType.parameterizedBy(targetType)
+                )
+                    .addModifiers(KModifier.PRIVATE)
+                    .initializer(C.TEMPLATE_ENVELOPE_CACHED_SERIALIZER, ghostClass, targetType)
+                    .build()
+            )
+        }
+    }
+
     private fun payloadExpression(
         mapping: EnvelopePayloadMapping,
         fieldName: String,
@@ -161,8 +157,8 @@ internal class EnvelopeRouterEmitter(
             CodeBlock.of(
                 C.TEMPLATE_ENVELOPE_TYPED_SERIALIZER,
                 fieldName,
-                ClassName(C.PKG_TYPES, C.STR_RAW_JSON_DECODE),
-                targetSerializerPropertyName(mapping)
+                ClassName(CC.PKG_TYPES, CG.STR_RAW_JSON_DECODE),
+                targetSerializerPropertyName(mapping = mapping)
             )
         } else {
             CodeBlock.of(C.TEMPLATE_ENVELOPE_FIELD_ACCESS, fieldName)
@@ -171,4 +167,10 @@ internal class EnvelopeRouterEmitter(
 
     private fun targetSerializerPropertyName(mapping: EnvelopePayloadMapping): String =
         mapping.kotlinName + C.STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX
+
+    private companion object {
+        val nullableAnyType = ClassName(CC.PKG_KOTLIN, C.STR_TYPE_ANY).copy(nullable = true)
+        val rawJsonType = ClassName(CC.PKG_TYPES, CG.STR_RAW_JSON_TYPE).copy(nullable = true)
+        val ghostSerializerType = ClassName(CC.PKG_CONTRACT, CC.STR_GHOST_SERIALIZER)
+    }
 }

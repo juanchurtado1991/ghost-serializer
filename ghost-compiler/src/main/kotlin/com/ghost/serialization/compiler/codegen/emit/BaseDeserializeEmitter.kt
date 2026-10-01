@@ -6,18 +6,10 @@ import com.ghost.serialization.compiler.analysis.isGhost
 import com.ghost.serialization.compiler.analysis.isKotlinUnsignedPrimitive
 import com.ghost.serialization.compiler.analysis.isList
 import com.ghost.serialization.compiler.analysis.isMap
-import com.ghost.serialization.compiler.analysis.isPrimitiveBoolean
-import com.ghost.serialization.compiler.analysis.isPrimitiveByte
-import com.ghost.serialization.compiler.analysis.isPrimitiveChar
-import com.ghost.serialization.compiler.analysis.isPrimitiveDouble
-import com.ghost.serialization.compiler.analysis.isPrimitiveFloat
-import com.ghost.serialization.compiler.analysis.isPrimitiveInt
 import com.ghost.serialization.compiler.analysis.isPrimitiveLong
-import com.ghost.serialization.compiler.analysis.isPrimitiveShort
 import com.ghost.serialization.compiler.analysis.isPrimitiveULong
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
-import com.ghost.serialization.compiler.analysis.isString
 import com.ghost.serialization.compiler.analysis.isValueClassType
 import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 import com.ghost.serialization.compiler.analysis.serializerClassName
@@ -94,27 +86,18 @@ internal abstract class BaseDeserializeEmitter(
         masks
     }
 
-    /** Formats a bitmask as a literal; [Long.MIN_VALUE] can't be written as `-9223...L`, so it's special-cased. */
-    protected fun formatMaskString(mask: Long): String {
-        return if (mask == Long.MIN_VALUE) {
-            C.STR_BIT_MASK_MIN_LONG
-        } else {
-            C.FMT_LONG_LITERAL.format(mask)
-        }
-    }
-
     /** Builds the reader call for a property, dispatching on decoder/nullability/type. */
     protected fun buildCall(prop: GhostPropertyModel): CodeBlock {
         if (prop.customDecoder != null) {
-            return buildCustomDecoderCall(prop)
+            return buildCustomDecoderCall(prop = prop)
         }
         if (prop.isNullable) {
-            return buildNullableCall(prop)
+            return buildNullableCall(prop = prop)
         }
 
         return when {
             prop.isValueClass && prop.valueClassProperty != null -> {
-                buildCall(prop.valueClassProperty)
+                buildCall(prop = prop.valueClassProperty)
             }
 
             prop.isSealedClass -> CodeBlock.of(
@@ -124,17 +107,7 @@ internal abstract class BaseDeserializeEmitter(
 
             prop.isPrimitiveArray -> CodeBlock.of(
                 C.TEMPLATE_DESERIALIZE_T,
-                if (readerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
-                    ClassName(
-                        C.PKG_YAML_SERIALIZER,
-                        C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)
-                    )
-                } else {
-                    ClassName(
-                        C.STR_SERIALIZERS_PKG,
-                        "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
-                    )
-                }
+                primitiveArraySerializerClass(readerClass, prop.primitiveArrayType)
             )
 
             prop.isProto && prop.type.isPrimitiveLong() -> CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
@@ -144,29 +117,33 @@ internal abstract class BaseDeserializeEmitter(
             prop.isProto && prop.type.isByteArray() -> CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
 
             prop.isContextual -> {
-                val name = getContextualSerializerName(prop.type)
+                val name = getContextualSerializerName(type = prop.type)
                 CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
             }
 
-            else -> buildTypeReaderCall(prop.type, prop.isProto)
+            else -> buildTypeReaderCall(type = prop.type, isProto = prop.isProto)
         }
     }
 
-    /** Reader call for a nullable property, wrapped in a null check. */
+    protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
+        val coder = prop.customDecoder!!
+        if (usesDirectCustomDecoderCall(coder = coder)) {
+            return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
+        }
+        return when (readerClass.simpleName) {
+            C.STR_GHOST_JSON_FLAT_READER -> buildFlatReaderCustomDecoderBridge(coder = coder)
+            C.STR_GHOST_JSON_STRING_READER -> buildStringReaderCustomDecoderBridge(coder = coder)
+            else -> buildFlatReaderCustomDecoderBridge(coder = coder)
+        }
+    }
+
     protected fun buildNullableCall(prop: GhostPropertyModel): CodeBlock {
         // customDecoder is handled in buildCall before nullability — never reaches here.
         if (prop.isPrimitiveArray) {
-            val serializerClass = if (readerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {
-                ClassName(
-                    C.PKG_YAML_SERIALIZER,
-                    C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)
-                )
-            } else {
-                ClassName(
-                    C.STR_SERIALIZERS_PKG,
-                    "${prop.primitiveArrayType}${C.STR_SERIALIZER_SUFFIX}"
-                )
-            }
+            val serializerClass = primitiveArraySerializerClass(
+                channelClass = readerClass,
+                primitiveArrayType = prop.primitiveArrayType
+            )
             return nullGuarded(
                 CodeBlock.of(
                     C.TEMPLATE_DESERIALIZE_T,
@@ -187,29 +164,16 @@ internal abstract class BaseDeserializeEmitter(
             return CodeBlock.of(C.STR_DECODE_BASE64_STRING_CALL)
         }
 
-        return buildTypeReaderCall(prop.type, prop.isProto)
+        return buildTypeReaderCall(type = prop.type, isProto = prop.isProto)
     }
 
-    /** Reader call that bridges to a property's custom decoder. */
-    protected fun buildCustomDecoderCall(prop: GhostPropertyModel): CodeBlock {
-        val coder = prop.customDecoder!!
-        if (usesDirectCustomDecoderCall(coder)) {
-            return CodeBlock.of(C.TEMPLATE_L_READER, coder.provider, coder.functionName)
+    /** Formats a bitmask as a literal; [Long.MIN_VALUE] can't be written as `-9223...L`, so it's special-cased. */
+    protected fun formatMaskString(mask: Long): String {
+        return if (mask == Long.MIN_VALUE) {
+            C.STR_BIT_MASK_MIN_LONG
+        } else {
+            C.FMT_LONG_LITERAL.format(mask)
         }
-        return when (readerClass.simpleName) {
-            C.STR_GHOST_JSON_FLAT_READER -> buildFlatReaderCustomDecoderBridge(coder)
-            C.STR_GHOST_JSON_STRING_READER -> buildStringReaderCustomDecoderBridge(coder)
-            else -> buildFlatReaderCustomDecoderBridge(coder)
-        }
-    }
-
-    private fun usesDirectCustomDecoderCall(coder: CustomCoderModel): Boolean {
-        val channelKind = when (readerClass.simpleName) {
-            C.STR_GHOST_JSON_STRING_READER -> CustomCoderReaderKind.STRING
-            C.STR_GHOST_JSON_FLAT_READER -> CustomCoderReaderKind.FLAT
-            else -> CustomCoderReaderKind.BYTES
-        }
-        return coder.supports(channelKind)
     }
 
     private fun buildFlatReaderCustomDecoderBridge(coder: CustomCoderModel): CodeBlock {
@@ -235,6 +199,15 @@ internal abstract class BaseDeserializeEmitter(
             .build()
     }
 
+    private fun usesDirectCustomDecoderCall(coder: CustomCoderModel): Boolean {
+        val channelKind = when (readerClass.simpleName) {
+            C.STR_GHOST_JSON_STRING_READER -> CustomCoderReaderKind.STRING
+            C.STR_GHOST_JSON_FLAT_READER -> CustomCoderReaderKind.FLAT
+            else -> CustomCoderReaderKind.BYTES
+        }
+        return coder.supports(channelKind)
+    }
+
     /**
      * Recursively builds the reader call for a [KSType]: delegates to an existing serializer for
      * Ghost/enum types, maps primitives to optimized reader methods, recurses into collections.
@@ -243,10 +216,11 @@ internal abstract class BaseDeserializeEmitter(
      *   elements also get proto3 quoted-int64/Base64 decoding.
      */
     protected fun buildTypeReaderCall(type: KSType, isProto: Boolean = false): CodeBlock {
+        val scalar = ScalarReaderCalls.find(type = type)
         return when {
             type.isRawJson() -> {
                 val call = CodeBlock.of(C.STR_RAW_JSON_FROM_CAPTURE)
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
             type.isByteArray() -> {
@@ -255,22 +229,22 @@ internal abstract class BaseDeserializeEmitter(
                 } else {
                     CodeBlock.of(C.STR_CAPTURE_RAW_JSON_BYTES)
                 }
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
             type.isValueClassType() && !type.isKotlinUnsignedPrimitive() -> {
                 val innerType = type.resolveValueClassInnerType()
                 val call = if (innerType != null) {
-                    val constructorCall = buildTypeReaderCall(innerType, isProto)
+                    val constructorCall = buildTypeReaderCall(type = innerType, isProto = isProto)
                     val className =
                         type.declaration.qualifiedName?.asString()?.let { ClassName.bestGuess(it) }
                             ?: type.toTypeName()
                     CodeBlock.of(C.TEMPLATE_CONSTRUCTOR, className, constructorCall)
                 } else {
-                    val name = getContextualSerializerName(type)
+                    val name = getContextualSerializerName(type = type)
                     CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
                 }
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
             type.isGhost() || type.isEnum() -> {
@@ -278,97 +252,31 @@ internal abstract class BaseDeserializeEmitter(
                     C.TEMPLATE_DESERIALIZE_T,
                     type.serializerClassName()
                 )
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
-            type.isPrimitiveInt() -> scalarReaderCall(
-                C.STR_NEXT_INT,
-                C.STR_NEXT_INT_OR_NULL,
-                type.isMarkedNullable
-            )
-
-            type.isPrimitiveBoolean() -> scalarReaderCall(
-                C.STR_NEXT_BOOLEAN,
-                C.STR_NEXT_BOOLEAN_OR_NULL,
-                type.isMarkedNullable
-            )
-
-            type.isPrimitiveLong() -> if (isProto) {
-                // Quoted int64 coercion — keep generic null guard around the run block.
-                val call = CodeBlock.of(C.STR_NEXT_LONG_PROTO_COERCED)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            } else {
-                scalarReaderCall(
-                    C.STR_NEXT_LONG,
-                    C.STR_NEXT_LONG_OR_NULL,
-                    type.isMarkedNullable
-                )
-            }
-
-            type.isPrimitiveULong() -> if (isProto) {
-                val call = CodeBlock.of(C.STR_NEXT_ULONG_PROTO_COERCED)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            } else {
-                scalarReaderCall(
-                    C.STR_NEXT_ULONG,
-                    C.STR_NEXT_ULONG_OR_NULL,
-                    type.isMarkedNullable
-                )
-            }
-
-            type.isPrimitiveDouble() -> {
-                val call = CodeBlock.of(C.STR_NEXT_DOUBLE)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            }
-
-            type.isPrimitiveFloat() -> {
-                val call = CodeBlock.of(C.STR_NEXT_FLOAT)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            }
-
-            type.isPrimitiveByte() -> {
-                val call = CodeBlock.of(C.STR_NEXT_BYTE)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            }
-
-            type.isPrimitiveShort() -> {
-                val call = CodeBlock.of(C.STR_NEXT_SHORT)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            }
-
-            type.isPrimitiveChar() -> {
-                val call = CodeBlock.of(C.STR_NEXT_CHAR)
-                if (type.isMarkedNullable) nullGuarded(call) else call
-            }
+            scalar != null -> readScalar(scalar = scalar, type = type, isProto = isProto)
 
             type.isSet() -> {
                 val inner = type.arguments.firstOrNull()?.type?.resolve()
-                    ?: return scalarReaderCall(
-                        C.STR_NEXT_STRING,
-                        C.STR_NEXT_STRING_OR_NULL,
-                        type.isMarkedNullable
-                    )
+                    ?: return stringReaderFallback(type = type)
 
                 val call = CodeBlock.of(
                     C.STR_READ_SET_TEMPLATE,
                     buildTypeReaderCall(inner, isProto)
                 )
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
             type.isList() -> {
                 val inner = type.arguments.firstOrNull()?.type?.resolve()
-                    ?: return scalarReaderCall(
-                        C.STR_NEXT_STRING,
-                        C.STR_NEXT_STRING_OR_NULL,
-                        type.isMarkedNullable
-                    )
+                    ?: return stringReaderFallback(type = type)
 
                 val call = CodeBlock.of(
                     C.STR_READ_LIST_TEMPLATE,
                     buildTypeReaderCall(inner, isProto)
                 )
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
             type.isMap() -> {
@@ -376,49 +284,74 @@ internal abstract class BaseDeserializeEmitter(
                     .arguments
                     .getOrNull(1)
                     ?.type?.resolve()
-                    ?: return scalarReaderCall(
-                        C.STR_NEXT_STRING,
-                        C.STR_NEXT_STRING_OR_NULL,
-                        type.isMarkedNullable
-                    )
+                    ?: return stringReaderFallback(type = type)
 
                 val call = CodeBlock.of(
                     C.STR_READ_MAP_TEMPLATE,
                     buildTypeReaderCall(valueType, isProto)
                 )
-                if (type.isMarkedNullable) nullGuarded(call) else call
+                call.guardedIfNullable(type = type)
             }
 
             else -> {
-                if (type.isString()) {
-                    scalarReaderCall(
-                        C.STR_NEXT_STRING,
-                        C.STR_NEXT_STRING_OR_NULL,
-                        type.isMarkedNullable
-                    )
-                } else {
-                    val name = getContextualSerializerName(type)
-                    val call = CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name)
-                    if (type.isMarkedNullable) nullGuarded(call) else call
-                }
+                val name = getContextualSerializerName(type = type)
+                CodeBlock.of(C.TEMPLATE_DESERIALIZE_L, name).guardedIfNullable(type)
             }
         }
     }
 
-    /**
-     * Emits a fused `nextXOrNull()`/`nextX()` call, avoiding a separate
-     * `isNextNullValue` + `consumeNull` + `else nextX` branch for scalars.
-     */
-    private fun scalarReaderCall(
-        nonNullCall: String,
-        orNullCall: String,
-        nullable: Boolean
-    ): CodeBlock =
-        CodeBlock.of(if (nullable) orNullCall else nonNullCall)
-
     /** Unique variable name for a contextual serializer, e.g. "User" -> "contextualUserSerializer". */
     private fun getContextualSerializerName(type: KSType): String =
-        contextualSerializerRegistry.nameFor(type)
+        contextualSerializerRegistry.nameFor(type = type)
+
+    private fun CodeBlock.guardedIfNullable(type: KSType): CodeBlock =
+        if (type.isMarkedNullable) nullGuarded(inner = this) else this
+
+    /**
+     * Reads a table-driven scalar: proto3 overrides first, then the fused `nextXOrNull()` form for
+     * nullable types that have one (skipping a separate `isNextNullValue` + `consumeNull` + `else`
+     * branch), otherwise the plain call under a generic null guard.
+     */
+    private fun readScalar(
+        scalar: ScalarReaderCalls.Entry,
+        type: KSType,
+        isProto: Boolean
+    ): CodeBlock {
+        val protoCall = scalar.protoCall
+        if (isProto && protoCall != null) {
+            return CodeBlock.of(protoCall).guardedIfNullable(type = type)
+        }
+        val orNullCall = scalar.orNullCall
+        if (orNullCall != null) {
+            return CodeBlock.of(if (type.isMarkedNullable) orNullCall else scalar.nonNullCall)
+        }
+        return CodeBlock.of(scalar.nonNullCall).guardedIfNullable(type = type)
+    }
+
+    /** Collections with no resolvable type argument degrade to reading a plain string. */
+    private fun stringReaderFallback(type: KSType): CodeBlock = CodeBlock.of(
+        if (type.isMarkedNullable) C.STR_NEXT_STRING_OR_NULL else C.STR_NEXT_STRING
+    )
+
+    /** Registers a `MASK_DEFAULTS_N` constant for the copy-based default-value return path. */
+    protected fun emitDefaultMaskConstant(
+        typeSpecBuilder: TypeSpec.Builder,
+        maskIndex: Int,
+    ): String {
+        val defMask = defaultMasks[maskIndex]
+        val constName = "${C.STR_MASK_DEFAULTS_PREFIX}$maskIndex"
+        val isNewDefaultMaskConstant = defMask != C.VAL_ZERO_L &&
+            typeSpecBuilder.propertySpecs.none { it.name == constName }
+        if (isNewDefaultMaskConstant) {
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
+                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)
+                    .initializer(C.TEMPLATE_L, formatMaskString(mask = defMask))
+                    .build()
+            )
+        }
+        return constName
+    }
 
     /**
      * Registers named private bitmask constants for every property, avoiding magic numbers in
@@ -435,7 +368,7 @@ internal abstract class BaseDeserializeEmitter(
             val index = propertyIndices[prop]!!
             val bitIdx = index % C.MASK_SIZE_BITS.toInt()
             val bitMask = C.VAL_ONE_L shl bitIdx
-            val bitMaskStr = formatMaskString(bitMask)
+            val bitMaskStr = formatMaskString(mask = bitMask)
             val name = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
             if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                 typeSpecBuilder.addProperty(
@@ -454,7 +387,7 @@ internal abstract class BaseDeserializeEmitter(
         for (i in requiredMasks.indices) {
             val reqMask = requiredMasks[i]
             if (reqMask != C.VAL_ZERO_L) {
-                val reqMaskStr = formatMaskString(reqMask)
+                val reqMaskStr = formatMaskString(mask = reqMask)
                 val name = C.STR_MASK_REQUIRED_PREFIX + i
                 if (typeSpecBuilder.propertySpecs.none { it.name == name }) {
                     typeSpecBuilder.addProperty(
@@ -468,31 +401,10 @@ internal abstract class BaseDeserializeEmitter(
         }
     }
 
-    /** Registers a `MASK_DEFAULTS_N` constant for the copy-based default-value return path. */
-    protected fun emitDefaultMaskConstant(
-        typeSpecBuilder: TypeSpec.Builder,
-        maskIndex: Int,
-    ): String {
-        val defMask = defaultMasks[maskIndex]
-        val constName = "${C.STR_MASK_DEFAULTS_PREFIX}$maskIndex"
-        if (defMask != C.VAL_ZERO_L &&
-            typeSpecBuilder.propertySpecs.none { it.name == constName }
-        ) {
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(constName, com.squareup.kotlinpoet.LONG)
-                    .addModifiers(KModifier.PRIVATE, KModifier.CONST)
-                    .initializer(C.TEMPLATE_L, formatMaskString(defMask))
-                    .build()
-            )
-        }
-        return constName
-    }
-
     /** Injects private fields for contextual serializers, resolved at compile time instead of via reflection. */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) =
-        contextualSerializerRegistry.injectInto(typeSpecBuilder)
+        contextualSerializerRegistry.injectInto(typeSpecBuilder = typeSpecBuilder)
 
-    /** Wraps a reader call in `if (reader.isNextNullValue()) null else ...`. */
     protected fun nullGuarded(inner: CodeBlock): CodeBlock =
         CodeBlock.of(C.TEMPLATE_NULL_CHECK_L, inner)
 }

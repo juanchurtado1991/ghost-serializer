@@ -2,10 +2,8 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
-import com.ghost.serialization.parser.streaming.beginArray
-import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -42,27 +40,54 @@ class GhostReaderSelectNameTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        val firstIndex = reader.selectString(options)
-        assertEquals(1, firstIndex)
+        val firstIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = 1,
+            actual = firstIndex
+        )
         reader.consumeKeySeparator()
-        assertEquals(10, reader.nextInt())
+        assertEquals(
+            expected = 10,
+            actual = reader.nextInt()
+        )
 
-        val secondIndex = reader.selectString(options)
-        assertEquals(0, secondIndex)
+        val secondIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = 0,
+            actual = secondIndex
+        )
         reader.consumeKeySeparator()
-        assertEquals(5, reader.nextInt())
+        assertEquals(
+            expected = 5,
+            actual = reader.nextInt()
+        )
 
-        val thirdIndex = reader.selectString(options)
-        assertEquals(3, thirdIndex)
+        val thirdIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = 3,
+            actual = thirdIndex
+        )
         reader.consumeKeySeparator()
-        assertEquals("ns", reader.nextString())
+        assertEquals(
+            expected = "ns",
+            actual = reader.nextString()
+        )
 
-        val fourthIndex = reader.selectString(options)
-        assertEquals(2, fourthIndex)
+        val fourthIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = 2,
+            actual = fourthIndex
+        )
         reader.consumeKeySeparator()
-        assertEquals("n", reader.nextString())
+        assertEquals(
+            expected = "n",
+            actual = reader.nextString()
+        )
 
-        assertEquals(-1, reader.selectString(options))
+        assertEquals(
+            expected = -1,
+            actual = reader.selectString(options = options)
+        )
         reader.endObject()
     }
 
@@ -75,17 +100,29 @@ class GhostReaderSelectNameTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        val firstIndex = reader.selectString(options)
-        assertEquals(-2, firstIndex)
+        val firstIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = -2,
+            actual = firstIndex
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
 
-        val secondIndex = reader.selectString(options)
-        assertEquals(0, secondIndex)
+        val secondIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = 0,
+            actual = secondIndex
+        )
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
 
-        assertEquals(-1, reader.selectString(options))
+        assertEquals(
+            expected = -1,
+            actual = reader.selectString(options = options)
+        )
         reader.endObject()
     }
 
@@ -96,17 +133,29 @@ class GhostReaderSelectNameTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        val firstIndex = reader.selectString(options)
-        assertEquals(-2, firstIndex)
+        val firstIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = -2,
+            actual = firstIndex
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
 
-        val secondIndex = reader.selectString(options)
-        assertEquals(0, secondIndex)
+        val secondIndex = reader.selectString(options = options)
+        assertEquals(
+            expected = 0,
+            actual = secondIndex
+        )
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
 
-        assertEquals(-1, reader.selectString(options))
+        assertEquals(
+            expected = -1,
+            actual = reader.selectString(options = options)
+        )
         reader.endObject()
     }
 
@@ -118,7 +167,11 @@ class GhostReaderSelectNameTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(-123.456, reader.nextDouble(), 0.001)
+        assertEquals(
+            expected = -123.456,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 0.001
+        )
     }
 
     @Test
@@ -127,7 +180,11 @@ class GhostReaderSelectNameTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(0.000001, reader.nextDouble(), 1e-10)
+        assertEquals(
+            expected = 0.000001,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 1e-10
+        )
     }
 
     // ── K. WRITER→READER BYTE ROUNDTRIP ──────────────────────────────
@@ -137,12 +194,12 @@ class GhostReaderSelectNameTest {
         val buffer = Buffer()
         val writer = GhostJsonWriter(buffer)
         writer.beginObject()
-            .name("id").value(42)
-            .name("msg").value("hello\nworld")
-            .name("flag").value(true)
-            .name("score").value(3.14)
-            .name("nothing").nullValue()
-            .name("items")
+            .name(key = "id").value(42)
+            .name(key = "msg").value("hello\nworld")
+            .name(key = "flag").value(true)
+            .name(key = "score").value(3.14)
+            .name(key = "nothing").nullValue()
+            .name(key = "items")
             .beginArray().value(1).value(2).value(3).endArray().unused()
         writer.endObject().unused()
 
@@ -152,29 +209,45 @@ class GhostReaderSelectNameTest {
 
         reader.beginObject()
         reader.nextKey().unused(); reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
 
         reader.consumeArraySeparator()
         reader.nextKey().unused(); reader.consumeKeySeparator()
-        assertEquals("hello\nworld", reader.nextString())
+        assertEquals(
+            expected = "hello\nworld",
+            actual = reader.nextString()
+        )
 
         reader.consumeArraySeparator()
         reader.nextKey().unused(); reader.consumeKeySeparator()
-        assertEquals(true, reader.nextBoolean())
+        assertEquals(
+            expected = true,
+            actual = reader.nextBoolean()
+        )
 
         reader.consumeArraySeparator()
         reader.nextKey().unused(); reader.consumeKeySeparator()
-        assertEquals(3.14, reader.nextDouble(), 0.001)
+        assertEquals(
+            expected = 3.14,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 0.001
+        )
 
         reader.consumeArraySeparator()
         reader.nextKey().unused(); reader.consumeKeySeparator()
-        assertTrue(reader.isNextNullValue())
+        assertTrue(actual = reader.isNextNullValue())
         reader.consumeNull()
 
         reader.consumeArraySeparator()
         reader.nextKey().unused(); reader.consumeKeySeparator()
         val items = reader.readList { reader.nextInt() }
-        assertEquals(listOf(1, 2, 3), items)
+        assertEquals(
+            expected = listOf(1, 2, 3),
+            actual = items
+        )
 
         reader.endObject()
     }
@@ -188,17 +261,32 @@ class GhostReaderSelectNameTest {
         val reader = readerOf(json)
         reader.beginObject()
 
-        assertEquals(0, reader.selectString(options))
+        assertEquals(
+            expected = 0,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         val ints = reader.readList { reader.nextInt() }
-        assertEquals(listOf(1, 2), ints)
+        assertEquals(
+            expected = listOf(1, 2),
+            actual = ints
+        )
 
-        assertEquals(1, reader.selectString(options))
+        assertEquals(
+            expected = 1,
+            actual = reader.selectString(options = options)
+        )
         reader.consumeKeySeparator()
         val strings = reader.readList { reader.nextString() }
-        assertEquals(listOf("x", "y"), strings)
+        assertEquals(
+            expected = listOf("x", "y"),
+            actual = strings
+        )
 
-        assertEquals(-1, reader.selectString(options))
+        assertEquals(
+            expected = -1,
+            actual = reader.selectString(options = options)
+        )
         reader.endObject()
     }
 
@@ -208,37 +296,79 @@ class GhostReaderSelectNameTest {
     fun jsonReaderOptionsRespectsDynamicTableSizes() {
         val names = arrayOf("id", "name", "email")
         val options128 = JsonReaderOptions.of(0, 31, 128, *names)
-        assertEquals(128, options128.dispatch.size)
+        assertEquals(
+            expected = 128,
+            actual = options128.dispatch.size
+        )
 
         val options256 = JsonReaderOptions.of(0, 31, 256, *names)
-        assertEquals(256, options256.dispatch.size)
+        assertEquals(
+            expected = 256,
+            actual = options256.dispatch.size
+        )
 
         val json = "{\"email\":\"test@test.com\",\"id\":42,\"name\":\"ghost\"}"
 
         val reader1 = readerOf(json)
         reader1.beginObject()
-        assertEquals(2, reader1.selectString(options128)) // email
+        assertEquals(
+            expected = 2,
+            actual = reader1.selectString(options = options128)
+        ) // email
         reader1.consumeKeySeparator()
-        assertEquals("test@test.com", reader1.nextString())
-        assertEquals(0, reader1.selectString(options128)) // id
+        assertEquals(
+            expected = "test@test.com",
+            actual = reader1.nextString()
+        )
+        assertEquals(
+            expected = 0,
+            actual = reader1.selectString(options = options128)
+        ) // id
         reader1.consumeKeySeparator()
-        assertEquals(42, reader1.nextInt())
-        assertEquals(1, reader1.selectString(options128)) // name
+        assertEquals(
+            expected = 42,
+            actual = reader1.nextInt()
+        )
+        assertEquals(
+            expected = 1,
+            actual = reader1.selectString(options = options128)
+        ) // name
         reader1.consumeKeySeparator()
-        assertEquals("ghost", reader1.nextString())
+        assertEquals(
+            expected = "ghost",
+            actual = reader1.nextString()
+        )
         reader1.endObject()
 
         val reader2 = readerOf(json)
         reader2.beginObject()
-        assertEquals(2, reader2.selectString(options256)) // email
+        assertEquals(
+            expected = 2,
+            actual = reader2.selectString(options = options256)
+        ) // email
         reader2.consumeKeySeparator()
-        assertEquals("test@test.com", reader2.nextString())
-        assertEquals(0, reader2.selectString(options256)) // id
+        assertEquals(
+            expected = "test@test.com",
+            actual = reader2.nextString()
+        )
+        assertEquals(
+            expected = 0,
+            actual = reader2.selectString(options = options256)
+        ) // id
         reader2.consumeKeySeparator()
-        assertEquals(42, reader2.nextInt())
-        assertEquals(1, reader2.selectString(options256)) // name
+        assertEquals(
+            expected = 42,
+            actual = reader2.nextInt()
+        )
+        assertEquals(
+            expected = 1,
+            actual = reader2.selectString(options = options256)
+        ) // name
         reader2.consumeKeySeparator()
-        assertEquals("ghost", reader2.nextString())
+        assertEquals(
+            expected = "ghost",
+            actual = reader2.nextString()
+        )
         reader2.endObject()
     }
 }

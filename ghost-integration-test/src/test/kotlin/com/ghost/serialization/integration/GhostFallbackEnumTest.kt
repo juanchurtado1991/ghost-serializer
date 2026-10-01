@@ -19,29 +19,29 @@ class GhostFallbackEnumTest {
     fun autoUnknown_unrecognizedValueFallsBackToUnknown() {
         val json = """{"state":"REBOOTING","sync":"SYNCED"}"""
         val result = Ghost.deserialize<DeviceStateWrapper>(json)
-        assertEquals(DeviceState.UNKNOWN, result.state)
+        assertEquals(expected = DeviceState.UNKNOWN, actual = result.state)
     }
 
     @Test
     fun autoUnknown_knownValueDeserializesNormally() {
         val json = """{"state":"ONLINE","sync":"SYNCED"}"""
         val result = Ghost.deserialize<DeviceStateWrapper>(json)
-        assertEquals(DeviceState.ONLINE, result.state)
+        assertEquals(expected = DeviceState.ONLINE, actual = result.state)
     }
 
     @Test
     fun autoUnknown_bothEnumsHandleUnknownValues() {
         val json = """{"state":"UPLOADING","sync":"UPLOADING"}"""
         val result = Ghost.deserialize<DeviceStateWrapper>(json)
-        assertEquals(DeviceState.UNKNOWN, result.state)
-        assertEquals(SyncStatus.UNKNOWN, result.sync)
+        assertEquals(expected = DeviceState.UNKNOWN, actual = result.state)
+        assertEquals(expected = SyncStatus.UNKNOWN, actual = result.sync)
     }
 
     @Test
     fun autoUnknown_knownSyncValueDeserializesNormally() {
         val json = """{"state":"ONLINE","sync":"PENDING"}"""
         val result = Ghost.deserialize<DeviceStateWrapper>(json)
-        assertEquals(SyncStatus.PENDING, result.sync)
+        assertEquals(expected = SyncStatus.PENDING, actual = result.sync)
     }
 
     @Test
@@ -49,7 +49,7 @@ class GhostFallbackEnumTest {
         val original = DeviceStateWrapper(state = DeviceState.OFFLINE, sync = SyncStatus.SYNCED)
         val json = Ghost.serialize(original)
         val restored = Ghost.deserialize<DeviceStateWrapper>(json)
-        assertEquals(original.state, restored.state)
-        assertEquals(original.sync, restored.sync)
+        assertEquals(expected = original.state, actual = restored.state)
+        assertEquals(expected = original.sync, actual = restored.sync)
     }
 }

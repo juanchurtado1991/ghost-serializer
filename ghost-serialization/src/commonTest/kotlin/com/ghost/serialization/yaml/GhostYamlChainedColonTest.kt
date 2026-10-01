@@ -1,6 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,7 +15,7 @@ import kotlin.test.assertFailsWith
  */
 class GhostYamlChainedColonTest {
 
-    private fun readerOf(yaml: String) = GhostYamlFlatReader(yaml.encodeToByteArray())
+    private fun readerOf(yaml: String) = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
 
     @Test
     fun rejectsChainedColonOnSingleLine() {
@@ -33,7 +34,10 @@ class GhostYamlChainedColonTest {
     @Test
     fun allowsFreshLineNestedMapping() {
         val doc = readerOf("a:\n  b:\n    c: d").readDocument()
-        assertEquals(mapOf("a" to mapOf("b" to mapOf("c" to "d"))), doc)
+        assertEquals(
+            expected = mapOf("a" to mapOf("b" to mapOf("c" to "d"))),
+            actual = doc
+        )
     }
 
     @Test
@@ -41,6 +45,9 @@ class GhostYamlChainedColonTest {
         // "12:30" has no "colon + space/EOL" byte pattern anywhere, so it's never ambiguous with
         // a mapping key — must keep working unchanged.
         val doc = readerOf("a: 12:30").readDocument()
-        assertEquals(mapOf("a" to "12:30"), doc)
+        assertEquals(
+            expected = mapOf("a" to "12:30"),
+            actual = doc
+        )
     }
 }

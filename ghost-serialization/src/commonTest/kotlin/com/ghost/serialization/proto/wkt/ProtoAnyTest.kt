@@ -1,29 +1,34 @@
 package com.ghost.serialization.proto.wkt
 
+import com.ghost.serialization.Ghost
+import com.ghost.serialization.contract.AbstractGhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.proto.GhostProto
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
 
 class ProtoAnyTest {
 
     init {
-        val registry = object : com.ghost.serialization.contract.GhostRegistry {
+        val registry = object : AbstractGhostRegistry() {
             private val map =
-                mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
+                mapOf<kotlin.reflect.KClass<*>, GhostSerializer<*>>(
                     ProtoAny::class to ProtoAnySerializer
                 )
 
             @Suppress("UNCHECKED_CAST")
-            override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): com.ghost.serialization.contract.GhostSerializer<T>? {
-                return map[clazz] as? com.ghost.serialization.contract.GhostSerializer<T>
+            override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): GhostSerializer<T>? {
+                return map[clazz] as? GhostSerializer<T>
             }
 
-            override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>> {
+            override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> {
                 return map
             }
+
         }
-        com.ghost.serialization.Ghost.addRegistry(registry)
+        Ghost.addRegistry(registry = registry)
     }
 
     @Test
@@ -31,8 +36,14 @@ class ProtoAnyTest {
         val json =
             "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"10.5s\"}"
         val parsed = GhostProto.deserialize<ProtoAny>(json)
-        assertEquals("type.googleapis.com/google.protobuf.Duration", parsed.typeUrl)
-        assertEquals("\"10.5s\"", parsed.value.decodeToString())
+        assertEquals(
+            expected = "type.googleapis.com/google.protobuf.Duration",
+            actual = parsed.typeUrl
+        )
+        assertEquals(
+            expected = "\"10.5s\"",
+            actual = parsed.value.decodeToString()
+        )
     }
 
     @Test
@@ -42,22 +53,37 @@ class ProtoAnyTest {
         val json =
             "{\"@type\":\"type.googleapis.com/google.protobuf.Struct\",\"value\":{\"a\":1,\"b\":\"c\"}}"
         val parsed = GhostProto.deserialize<ProtoAny>(json)
-        assertEquals("{\"a\":1,\"b\":\"c\"}", parsed.value.decodeToString())
+        assertEquals(
+            expected = "{\"a\":1,\"b\":\"c\"}",
+            actual = parsed.value.decodeToString()
+        )
 
-        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(256)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
+        val flatBuffer = FlatByteArrayWriter(initialCapacity = 256)
+        val writer = GhostJsonWriter(flatBuffer)
         ProtoAnySerializer.serialize(writer, parsed)
-        assertEquals(json, flatBuffer.toStringUtf8())
+        assertEquals(
+            expected = json,
+            actual = flatBuffer.toStringUtf8()
+        )
 
         val reparsed = GhostProto.deserialize<ProtoAny>(flatBuffer.toStringUtf8())
-        assertEquals(parsed, reparsed)
+        assertEquals(
+            expected = parsed,
+            actual = reparsed
+        )
     }
 
     @Test
     fun testAnyWithoutValueKeyRoundtrips() {
         val json = "{\"@type\":\"type.googleapis.com/google.protobuf.Empty\"}"
         val parsed = GhostProto.deserialize<ProtoAny>(json)
-        assertEquals("type.googleapis.com/google.protobuf.Empty", parsed.typeUrl)
-        assertEquals(0, parsed.value.size)
+        assertEquals(
+            expected = "type.googleapis.com/google.protobuf.Empty",
+            actual = parsed.typeUrl
+        )
+        assertEquals(
+            expected = 0,
+            actual = parsed.value.size
+        )
     }
 }

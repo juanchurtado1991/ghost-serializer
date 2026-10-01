@@ -1,6 +1,6 @@
 package com.ghost.serialization.yaml
 
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
@@ -9,8 +9,9 @@ import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 internal object YamlWidgetSerializer :
-    GhostSerializer<YamlWidget>,
+    AbstractGhostSerializer<YamlWidget>(),
     GhostYamlSerializer<YamlWidget> {
+
     override val typeName: String = "YamlWidget"
 
     override fun serialize(
@@ -19,16 +20,16 @@ internal object YamlWidgetSerializer :
     ) = Unit
 
     override fun deserialize(reader: GhostJsonReader): YamlWidget =
-        YamlWidget("", 0)
+        YamlWidget(code = "", qty = 0)
 
     override fun deserialize(reader: GhostJsonStringReader): YamlWidget =
-        YamlWidget("", 0)
+        YamlWidget(code = "", qty = 0)
 
     override fun serialize(writer: GhostYamlWriter, value: YamlWidget) {
         writer.beginObject()
-        writer.name("code")
+        writer.name(key = "code")
         writer.value(value.code)
-        writer.name("qty")
+        writer.name(key = "qty")
         writer.value(value.qty)
         writer.endObject()
     }
@@ -45,6 +46,6 @@ internal object YamlWidgetSerializer :
             }
         }
         reader.endObject()
-        return YamlWidget(code, qty)
+        return YamlWidget(code = code, qty = qty)
     }
 }

@@ -3,6 +3,9 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import com.ghost.serialization.parser.streaming.beginObject
@@ -22,7 +25,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
-
 /**
  * Correctness guards for hot-path shortcuts shared by every reader: in-order field
  * prediction, SWAR whitespace skipping, and SWAR string scanning with a deferred pool
@@ -38,15 +40,15 @@ class HotPathOptimizationsTest {
     )
 
     private val drivers = listOf(
-        Driver("flat") { json, names ->
+        Driver(name = "flat") { json, names ->
             val reader = GhostJsonReader(json.encodeToByteArray())
             val options = JsonReaderOptions.of(*names)
             val result = LinkedHashMap<String, String>()
             reader.beginObject()
             while (true) {
-                val index = reader.selectNameAndConsume(options)
+                val index = reader.selectNameAndConsume(options = options)
                 if (index == -1) break
-                if (index == GhostJsonConstants.MATCH_NONE) {
+                if (index == GhostJsonScanConstants.MATCH_NONE) {
                     reader.skipValue()
                     continue
                 }
@@ -55,15 +57,15 @@ class HotPathOptimizationsTest {
             reader.endObject()
             result
         },
-        Driver("bytes") { json, names ->
+        Driver(name = "bytes") { json, names ->
             val reader = GhostJsonReader(json.encodeToByteArray())
             val options = JsonReaderOptions.of(*names)
             val result = LinkedHashMap<String, String>()
             reader.beginObject()
             while (true) {
-                val index = reader.selectNameAndConsume(options)
+                val index = reader.selectNameAndConsume(options = options)
                 if (index == -1) break
-                if (index == GhostJsonConstants.MATCH_NONE) {
+                if (index == GhostJsonScanConstants.MATCH_NONE) {
                     reader.skipValue()
                     continue
                 }
@@ -72,15 +74,15 @@ class HotPathOptimizationsTest {
             reader.endObject()
             result
         },
-        Driver("streaming") { json, names ->
+        Driver(name = "streaming") { json, names ->
             val reader = GhostJsonReader(Buffer().writeUtf8(json))
             val options = JsonReaderOptions.of(*names)
             val result = LinkedHashMap<String, String>()
             reader.beginObject()
             while (true) {
-                val index = reader.selectNameAndConsume(options)
+                val index = reader.selectNameAndConsume(options = options)
                 if (index == -1) break
-                if (index == GhostJsonConstants.MATCH_NONE) {
+                if (index == GhostJsonScanConstants.MATCH_NONE) {
                     reader.skipValue()
                     continue
                 }
@@ -89,15 +91,15 @@ class HotPathOptimizationsTest {
             reader.endObject()
             result
         },
-        Driver("string") { json, names ->
-            val reader = GhostJsonStringReader(json)
+        Driver(name = "string") { json, names ->
+            val reader = GhostJsonStringReader(rawData = json)
             val options = JsonReaderOptions.of(*names)
             val result = LinkedHashMap<String, String>()
             reader.beginObject()
             while (true) {
-                val index = reader.selectNameAndConsume(options)
+                val index = reader.selectNameAndConsume(options = options)
                 if (index == -1) break
-                if (index == GhostJsonConstants.MATCH_NONE) {
+                if (index == GhostJsonScanConstants.MATCH_NONE) {
                     reader.skipValue()
                     continue
                 }
@@ -114,7 +116,11 @@ class HotPathOptimizationsTest {
         expected: Map<String, String>
     ) {
         for (driver in drivers) {
-            assertEquals(expected, driver.read(json, options), "reader=${driver.name}")
+            assertEquals(
+                expected = expected,
+                actual = driver.read(json, options),
+                message = "reader=${driver.name}"
+            )
         }
     }
 
@@ -224,7 +230,11 @@ class HotPathOptimizationsTest {
         for (driver in drivers) {
             val first = driver.read(json, options)
             val second = driver.read(json, options)
-            assertEquals(first, second, "reader=${driver.name}")
+            assertEquals(
+                expected = first,
+                actual = second,
+                message = "reader=${driver.name}"
+            )
         }
     }
 
@@ -348,14 +358,29 @@ class HotPathOptimizationsTest {
     @Test
     fun byteOrEof_reportsEndOfInputInsteadOfThrowing() {
         val bytes = "{}".encodeToByteArray()
-        val array = createByteArraySource(bytes)
-        assertEquals('{'.code, array.byteOrEof(0))
-        assertEquals(GhostJsonConstants.MATCH_END, array.byteOrEof(bytes.size))
+        val array = createByteArraySource(data = bytes)
+        assertEquals(
+            expected = '{'.code,
+            actual = array.byteOrEof(index = 0)
+        )
+        assertEquals(
+            expected = GhostJsonScanConstants.MATCH_END,
+            actual = array.byteOrEof(index = bytes.size)
+        )
 
-        val stream = StreamingGhostSource(Buffer().writeUtf8("{}"))
-        assertEquals('{'.code, stream.byteOrEof(0))
-        assertEquals(GhostJsonConstants.MATCH_END, stream.byteOrEof(bytes.size))
-        assertEquals(GhostJsonConstants.MATCH_END, stream.byteOrEof(1_000))
+        val stream = StreamingGhostSource(okioSource = Buffer().writeUtf8("{}"))
+        assertEquals(
+            expected = '{'.code,
+            actual = stream.byteOrEof(index = 0)
+        )
+        assertEquals(
+            expected = GhostJsonScanConstants.MATCH_END,
+            actual = stream.byteOrEof(index = bytes.size)
+        )
+        assertEquals(
+            expected = GhostJsonScanConstants.MATCH_END,
+            actual = stream.byteOrEof(index = 1_000)
+        )
     }
 
     // ── Streaming window boundaries ───────────────────────────────────────────────────
@@ -372,13 +397,22 @@ class HotPathOptimizationsTest {
     ): String {
         val head = "{\"pad\":\""
         val mid = "\",\"$key\":\""
-        val boundary = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val boundary = GhostJsonWriterConstants.STREAMING_BUFFER_SIZE
         val padLength = boundary + overhang - head.length - mid.length - value.length
-        assertTrue(padLength > 0, "padding must be positive")
+        assertTrue(
+            actual = padLength > 0,
+            message = "padding must be positive"
+        )
         val json = head + "p".repeat(padLength) + mid + value + "\"}"
         val valueStart = head.length + padLength + mid.length
-        assertTrue(valueStart < boundary, "value must start inside the first window")
-        assertTrue(valueStart + value.length > boundary, "value must end past the boundary")
+        assertTrue(
+            actual = valueStart < boundary,
+            message = "value must start inside the first window"
+        )
+        assertTrue(
+            actual = valueStart + value.length > boundary,
+            message = "value must end past the boundary"
+        )
         return json
     }
 
@@ -387,20 +421,28 @@ class HotPathOptimizationsTest {
         // Short enough to be pool-eligible, so the deferred hash must be computed over a
         // span that is no longer contiguous in the buffered window.
         val value = "v".repeat(32)
-        val json = payloadStraddlingWindow("k", value, overhang = 5)
+        val json = payloadStraddlingWindow(key = "k", value = value, overhang = 5)
         val options = arrayOf("pad", "k")
         for (driver in drivers) {
-            assertEquals(value, driver.read(json, options)["k"], "reader=${driver.name}")
+            assertEquals(
+                expected = value,
+                actual = driver.read(json, options)["k"],
+                message = "reader=${driver.name}"
+            )
         }
     }
 
     @Test
     fun streaming_readsNonPoolableValueStraddlingTheWindowBoundary() {
         val value = "v".repeat(200)
-        val json = payloadStraddlingWindow("k", value, overhang = 64)
+        val json = payloadStraddlingWindow(key = "k", value = value, overhang = 64)
         val options = arrayOf("pad", "k")
         for (driver in drivers) {
-            assertEquals(value, driver.read(json, options)["k"], "reader=${driver.name}")
+            assertEquals(
+                expected = value,
+                actual = driver.read(json, options)["k"],
+                message = "reader=${driver.name}"
+            )
         }
     }
 
@@ -408,13 +450,17 @@ class HotPathOptimizationsTest {
     fun streaming_matchesPredictedKeyStraddlingTheWindowBoundary() {
         val key = "keyAcrossTheWindowBoundary"
         val head = "{\"pad\":\""
-        val boundary = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val boundary = GhostJsonWriterConstants.STREAMING_BUFFER_SIZE
         // Place the key so the boundary falls in its middle.
         val padLength = boundary - head.length - 3 - key.length / 2
         val json = head + "p".repeat(padLength) + "\",\"" + key + "\":\"v\"}"
         val options = arrayOf("pad", key)
         for (driver in drivers) {
-            assertEquals("v", driver.read(json, options)[key], "reader=${driver.name}")
+            assertEquals(
+                expected = "v",
+                actual = driver.read(json, options)[key],
+                message = "reader=${driver.name}"
+            )
         }
     }
 
@@ -422,13 +468,17 @@ class HotPathOptimizationsTest {
     fun streaming_fallsBackWhenKeysStraddlingTheBoundaryAreOutOfOrder() {
         val key = "keyAcrossTheWindowBoundary"
         val head = "{\"pad\":\""
-        val boundary = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val boundary = GhostJsonWriterConstants.STREAMING_BUFFER_SIZE
         val padLength = boundary - head.length - 3 - key.length / 2
         val json = head + "p".repeat(padLength) + "\",\"" + key + "\":\"v\"}"
         // Options declared in the opposite order: every key mispredicts.
         val options = arrayOf(key, "pad")
         for (driver in drivers) {
-            assertEquals("v", driver.read(json, options)[key], "reader=${driver.name}")
+            assertEquals(
+                expected = "v",
+                actual = driver.read(json, options)[key],
+                message = "reader=${driver.name}"
+            )
         }
     }
 }

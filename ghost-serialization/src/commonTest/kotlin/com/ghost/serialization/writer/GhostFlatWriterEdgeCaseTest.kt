@@ -31,54 +31,57 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun writesSingleDigitPositiveInt() {
         assertEquals(
-            """{"v":7}""",
-            writerToString { w -> w.beginObject().name("v").value(7).endObject() })
+            expected = """{"v":7}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(7).endObject() }
+        )
     }
 
     @Test
     fun writesSingleDigitNegativeInt() {
         assertEquals(
-            """{"v":-7}""",
-            writerToString { w -> w.beginObject().name("v").value(-7).endObject() })
+            expected = """{"v":-7}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(-7).endObject() }
+        )
     }
 
     @Test
     fun writesMultiDigitInt() {
         assertEquals(
-            """{"v":12345}""",
-            writerToString { w -> w.beginObject().name("v").value(12345).endObject() })
+            expected = """{"v":12345}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(12345).endObject() }
+        )
     }
 
     @Test
     fun writesIntMinValue() {
         assertEquals(
-            """{"v":${Int.MIN_VALUE}}""",
-            writerToString { w -> w.beginObject().name("v").value(Int.MIN_VALUE).endObject() }
+            expected = """{"v":${Int.MIN_VALUE}}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(Int.MIN_VALUE).endObject() }
         )
     }
 
     @Test
     fun writesLongMaxValue() {
         assertEquals(
-            """{"v":${Long.MAX_VALUE}}""",
-            writerToString { w -> w.beginObject().name("v").value(Long.MAX_VALUE).endObject() }
+            expected = """{"v":${Long.MAX_VALUE}}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(Long.MAX_VALUE).endObject() }
         )
     }
 
     @Test
     fun writesLongMinValue() {
         assertEquals(
-            """{"v":${Long.MIN_VALUE}}""",
-            writerToString { w -> w.beginObject().name("v").value(Long.MIN_VALUE).endObject() }
+            expected = """{"v":${Long.MIN_VALUE}}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(Long.MIN_VALUE).endObject() }
         )
     }
 
     @Test
     fun writesIntMinValueAsLong() {
         assertEquals(
-            """{"v":${Int.MIN_VALUE}}""",
-            writerToString { w ->
-                w.beginObject().name("v").value(Int.MIN_VALUE.toLong()).endObject()
+            expected = """{"v":${Int.MIN_VALUE}}""",
+            actual = writerToString { w ->
+                w.beginObject().name(key = "v").value(Int.MIN_VALUE.toLong()).endObject()
             }
         )
     }
@@ -86,57 +89,72 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun writesDoubleValue() {
         assertEquals(
-            """{"v":3.14}""",
-            writerToString { w -> w.beginObject().name("v").value(3.14).endObject() })
+            expected = """{"v":3.14}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(3.14).endObject() }
+        )
     }
 
     @Test
     fun writesWholeNumberDouble() {
         assertEquals(
-            """{"v":5.0}""",
-            writerToString { w -> w.beginObject().name("v").value(5.0).endObject() })
+            expected = """{"v":5.0}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(5.0).endObject() }
+        )
     }
 
     @Test
     fun writesLargeDoubleBeyondSafeIntegerRange() {
-        val json = writerToString { w -> w.beginObject().name("v").value(1e20).endObject() }
-        assertEquals("""{"v":""", json.substring(0, 5))
-        assertEquals('}', json.last())
-        assertEquals(1e20, json.substring(5, json.lastIndex).toDouble())
+        val json = writerToString { w -> w.beginObject().name(key = "v").value(1e20).endObject() }
+        assertEquals(
+            expected = """{"v":""",
+            actual = json.substring(0, 5)
+        )
+        assertEquals(
+            expected = '}',
+            actual = json.last()
+        )
+        assertEquals(
+            expected = 1e20,
+            actual = json.substring(5, json.lastIndex).toDouble()
+        )
     }
 
     @Test
     fun writesNegativeZeroDouble() {
         assertEquals(
-            """{"v":-0.0}""",
-            writerToString { w -> w.beginObject().name("v").value(-0.0).endObject() })
+            expected = """{"v":-0.0}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(-0.0).endObject() }
+        )
     }
 
     @Test
     fun writesFloatValue() {
         assertEquals(
-            """{"v":2.5}""",
-            writerToString { w -> w.beginObject().name("v").value(2.5f).endObject() })
+            expected = """{"v":2.5}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(2.5f).endObject() }
+        )
     }
 
     @Test
     fun writesWholeNumberFloat() {
         assertEquals(
-            """{"v":4.0}""",
-            writerToString { w -> w.beginObject().name("v").value(4.0f).endObject() })
+            expected = """{"v":4.0}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(4.0f).endObject() }
+        )
     }
 
     @Test
     fun writesNegativeZeroFloat() {
         assertEquals(
-            """{"v":-0.0}""",
-            writerToString { w -> w.beginObject().name("v").value(-0.0f).endObject() })
+            expected = """{"v":-0.0}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(-0.0f).endObject() }
+        )
     }
 
     @Test
     fun doubleValueThrowsGhostExceptionForNaN() {
         assertFailsWith<GhostJsonException> {
-            writerToString { w -> w.beginObject().name("v").value(Double.NaN).endObject() }
+            writerToString { w -> w.beginObject().name(key = "v").value(Double.NaN).endObject() }
         }
     }
 
@@ -144,7 +162,7 @@ class GhostFlatWriterEdgeCaseTest {
     fun doubleValueThrowsGhostExceptionForInfinity() {
         assertFailsWith<GhostJsonException> {
             writerToString { w ->
-                w.beginObject().name("v").value(Double.POSITIVE_INFINITY).endObject()
+                w.beginObject().name(key = "v").value(Double.POSITIVE_INFINITY).endObject()
             }
         }
     }
@@ -152,36 +170,40 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun floatValueThrowsGhostExceptionForNaN() {
         assertFailsWith<GhostJsonException> {
-            writerToString { w -> w.beginObject().name("v").value(Float.NaN).endObject() }
+            writerToString { w -> w.beginObject().name(key = "v").value(Float.NaN).endObject() }
         }
     }
 
     @Test
     fun writesBooleanTrue() {
         assertEquals(
-            """{"v":true}""",
-            writerToString { w -> w.beginObject().name("v").value(true).endObject() })
+            expected = """{"v":true}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(true).endObject() }
+        )
     }
 
     @Test
     fun writesBooleanFalse() {
         assertEquals(
-            """{"v":false}""",
-            writerToString { w -> w.beginObject().name("v").value(false).endObject() })
+            expected = """{"v":false}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(false).endObject() }
+        )
     }
 
     @Test
     fun writesNull() {
         assertEquals(
-            """{"v":null}""",
-            writerToString { w -> w.beginObject().name("v").nullValue().endObject() })
+            expected = """{"v":null}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").nullValue().endObject() }
+        )
     }
 
     @Test
     fun writesCharValue() {
         assertEquals(
-            """{"v":"x"}""",
-            writerToString { w -> w.beginObject().name("v").value('x').endObject() })
+            expected = """{"v":"x"}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value('x').endObject() }
+        )
     }
 
     // ── B. STRING ESCAPING ───────────────────────────────────────────
@@ -189,71 +211,74 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun writesEmptyString() {
         assertEquals(
-            """{"v":""}""",
-            writerToString { w -> w.beginObject().name("v").value("").endObject() })
+            expected = """{"v":""}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("").endObject() }
+        )
     }
 
     @Test
     fun escapesQuotesInString() {
         assertEquals(
-            "{\"v\":\"say \\\"hello\\\"\"}",
-            writerToString { w -> w.beginObject().name("v").value("say \"hello\"").endObject() }
+            expected = "{\"v\":\"say \\\"hello\\\"\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("say \"hello\"").endObject() }
         )
     }
 
     @Test
     fun escapesBackslash() {
         assertEquals(
-            "{\"v\":\"path\\\\to\"}",
-            writerToString { w -> w.beginObject().name("v").value("path\\to").endObject() }
+            expected = "{\"v\":\"path\\\\to\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("path\\to").endObject() }
         )
     }
 
     @Test
     fun escapesControlCharacters() {
         assertEquals(
-            "{\"v\":\"a\\nb\\tc\\rd\"}",
-            writerToString { w -> w.beginObject().name("v").value("a\nb\tc\rd").endObject() }
+            expected = "{\"v\":\"a\\nb\\tc\\rd\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("a\nb\tc\rd").endObject() }
         )
     }
 
     @Test
     fun escapesBackspaceAndFormFeed() {
         assertEquals(
-            "{\"v\":\"\\b\\f\"}",
-            writerToString { w -> w.beginObject().name("v").value("\u0008\u000C").endObject() }
+            expected = "{\"v\":\"\\b\\f\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("\u0008\u000C").endObject() }
         )
     }
 
     @Test
     fun writesUnicodeDirectly() {
         assertEquals(
-            """{"v":"漢字"}""",
-            writerToString { w -> w.beginObject().name("v").value("漢字").endObject() })
+            expected = """{"v":"漢字"}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("漢字").endObject() }
+        )
     }
 
     @Test
     fun writesAsciiPrefixThenUnicodeWithoutRescanLoss() {
         // Mixed string: ASCII run then BMP — exercises breakIndex preservation on the byte writer.
         assertEquals(
-            """{"v":"hello漢字"}""",
-            writerToString { w -> w.beginObject().name("v").value("hello漢字").endObject() }
+            expected = """{"v":"hello漢字"}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("hello漢字").endObject() }
         )
     }
 
     @Test
     fun writesAsciiPrefixThenEscapedQuote() {
         assertEquals(
-            "{\"v\":\"hi\\\"漢字\"}",
-            writerToString { w -> w.beginObject().name("v").value("hi\"漢字").endObject() }
+            expected = "{\"v\":\"hi\\\"漢字\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("hi\"漢字").endObject() }
         )
     }
 
     @Test
     fun writesEmojiSurrogatePairDirectly() {
         assertEquals(
-            """{"v":"🚀🔥"}""",
-            writerToString { w -> w.beginObject().name("v").value("🚀🔥").endObject() })
+            expected = """{"v":"🚀🔥"}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("🚀🔥").endObject() }
+        )
     }
 
     @Test
@@ -262,8 +287,8 @@ class GhostFlatWriterEdgeCaseTest {
         // "too big for scratch" branch and writeEscaped's "remaining > scratchSize" branch.
         val longStr = "a".repeat(600)
         assertEquals(
-            """{"v":"$longStr"}""",
-            writerToString { w -> w.beginObject().name("v").value(longStr).endObject() }
+            expected = """{"v":"$longStr"}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(longStr).endObject() }
         )
     }
 
@@ -272,8 +297,8 @@ class GhostFlatWriterEdgeCaseTest {
         val longStr = "a".repeat(600) + "\"quoted\""
         val expected = "a".repeat(600) + "\\\"quoted\\\""
         assertEquals(
-            "{\"v\":\"$expected\"}",
-            writerToString { w -> w.beginObject().name("v").value(longStr).endObject() }
+            expected = "{\"v\":\"$expected\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value(longStr).endObject() }
         )
     }
 
@@ -282,8 +307,8 @@ class GhostFlatWriterEdgeCaseTest {
         // Short + escape-needing: writeStringValueRawSlow's "fits in scratch" branch
         // (writeEscapedIntoScratch), distinct from the plain-ASCII fast path.
         assertEquals(
-            "{\"v\":\"a\\\"b\"}",
-            writerToString { w -> w.beginObject().name("v").value("a\"b").endObject() }
+            expected = "{\"v\":\"a\\\"b\"}",
+            actual = writerToString { w -> w.beginObject().name(key = "v").value("a\"b").endObject() }
         )
     }
 
@@ -291,27 +316,34 @@ class GhostFlatWriterEdgeCaseTest {
 
     @Test
     fun writesEmptyObject() {
-        assertEquals("{}", writerToString { w -> w.beginObject().endObject() })
+        assertEquals(
+            expected = "{}",
+            actual = writerToString { w -> w.beginObject().endObject() }
+        )
     }
 
     @Test
     fun writesEmptyArray() {
-        assertEquals("[]", writerToString { w -> w.beginArray().endArray() })
+        assertEquals(
+            expected = "[]",
+            actual = writerToString { w -> w.beginArray().endArray() }
+        )
     }
 
     @Test
     fun writesArrayWithMultipleValues() {
         assertEquals(
-            "[1,2,3]",
-            writerToString { w -> w.beginArray().value(1).value(2).value(3).endArray() })
+            expected = "[1,2,3]",
+            actual = writerToString { w -> w.beginArray().value(1).value(2).value(3).endArray() }
+        )
     }
 
     @Test
     fun writesNestedObjects() {
         assertEquals(
-            """{"outer":{"inner":"deep"}}""",
-            writerToString { w ->
-                w.beginObject().name("outer").beginObject().name("inner").value("deep").endObject()
+            expected = """{"outer":{"inner":"deep"}}""",
+            actual = writerToString { w ->
+                w.beginObject().name(key = "outer").beginObject().name(key = "inner").value("deep").endObject()
                     .endObject()
             }
         )
@@ -320,9 +352,9 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun writesMultipleFieldsWithCommas() {
         assertEquals(
-            """{"a":1,"b":2,"c":3}""",
-            writerToString { w ->
-                w.beginObject().name("a").value(1).name("b").value(2).name("c").value(3).endObject()
+            expected = """{"a":1,"b":2,"c":3}""",
+            actual = writerToString { w ->
+                w.beginObject().name(key = "a").value(1).name(key = "b").value(2).name(key = "c").value(3).endObject()
             }
         )
     }
@@ -334,7 +366,7 @@ class GhostFlatWriterEdgeCaseTest {
         assertFailsWith<GhostJsonException> {
             val byteWriter = FlatByteArrayWriter()
             val writer = GhostJsonWriter(byteWriter)
-            repeat(300) { writer.beginObject().name("a") }
+            repeat(300) { writer.beginObject().name(key = "a") }
         }
     }
 
@@ -343,9 +375,9 @@ class GhostFlatWriterEdgeCaseTest {
     @Test
     fun writesRawValueBytes() {
         assertEquals(
-            """{"v":{"nested":1}}""",
-            writerToString { w ->
-                w.beginObject().name("v").rawValue("""{"nested":1}""".encodeToByteArray())
+            expected = """{"v":{"nested":1}}""",
+            actual = writerToString { w ->
+                w.beginObject().name(key = "v").rawValue("""{"nested":1}""".encodeToByteArray())
                     .endObject()
             }
         )
@@ -355,17 +387,21 @@ class GhostFlatWriterEdgeCaseTest {
     fun writesRawValueBytesSlice() {
         val padded = "XX{\"nested\":1}YY".encodeToByteArray()
         assertEquals(
-            """{"v":{"nested":1}}""",
-            writerToString { w -> w.beginObject().name("v").rawValue(padded, 2, 12).endObject() }
+            expected = """{"v":{"nested":1}}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").rawValue(
+                bytes = padded,
+                offset = 2,
+                length = 12
+            ).endObject() }
         )
     }
 
     @Test
     fun writesRawValueFromRawJson() {
-        val raw = RawJson.fromString("""{"nested":2}""")
+        val raw = RawJson.fromString(json = """{"nested":2}""")
         assertEquals(
-            """{"v":{"nested":2}}""",
-            writerToString { w -> w.beginObject().name("v").rawValue(raw).endObject() }
+            expected = """{"v":{"nested":2}}""",
+            actual = writerToString { w -> w.beginObject().name(key = "v").rawValue(raw).endObject() }
         )
     }
 
@@ -373,8 +409,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writesPreEncodedByteStringFieldName() {
         val header = "\"id\":".encodeUtf8()
         assertEquals(
-            """{"id":1}""",
-            writerToString { w -> w.beginObject().name(header).value(1).endObject() }
+            expected = """{"id":1}""",
+            actual = writerToString { w -> w.beginObject().name(key = header).value(1).endObject() }
         )
     }
 
@@ -382,8 +418,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeNameRawDelegatesToByteStringName() {
         val header = "\"id\":".encodeUtf8()
         assertEquals(
-            """{"id":1}""",
-            writerToString { w -> w.beginObject().writeNameRaw(header).value(1).endObject() }
+            expected = """{"id":1}""",
+            actual = writerToString { w -> w.beginObject().writeNameRaw(header = header).value(1).endObject() }
         )
     }
 
@@ -393,8 +429,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeFieldFusesNameAndIntValue() {
         val header = "\"id\":".encodeUtf8()
         assertEquals(
-            """{"id":42}""",
-            writerToString { w -> w.beginObject().writeField(header, 42).endObject() }
+            expected = """{"id":42}""",
+            actual = writerToString { w -> w.beginObject().writeField(header = header, value = 42).endObject() }
         )
     }
 
@@ -402,8 +438,11 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeFieldFusesNameAndLongValue() {
         val header = "\"id\":".encodeUtf8()
         assertEquals(
-            """{"id":${Long.MAX_VALUE}}""",
-            writerToString { w -> w.beginObject().writeField(header, Long.MAX_VALUE).endObject() }
+            expected = """{"id":${Long.MAX_VALUE}}""",
+            actual = writerToString { w -> w.beginObject().writeField(
+                header = header,
+                value = Long.MAX_VALUE
+            ).endObject() }
         )
     }
 
@@ -411,8 +450,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeFieldFusesNameAndStringValue() {
         val header = "\"name\":".encodeUtf8()
         assertEquals(
-            """{"name":"ghost"}""",
-            writerToString { w -> w.beginObject().writeField(header, "ghost").endObject() }
+            expected = """{"name":"ghost"}""",
+            actual = writerToString { w -> w.beginObject().writeField(header = header, value = "ghost").endObject() }
         )
     }
 
@@ -420,8 +459,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeFieldFusesNameAndBooleanValue() {
         val header = "\"active\":".encodeUtf8()
         assertEquals(
-            """{"active":true}""",
-            writerToString { w -> w.beginObject().writeField(header, true).endObject() }
+            expected = """{"active":true}""",
+            actual = writerToString { w -> w.beginObject().writeField(header = header, value = true).endObject() }
         )
     }
 
@@ -429,8 +468,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeFieldFusesNameAndDoubleValue() {
         val header = "\"score\":".encodeUtf8()
         assertEquals(
-            """{"score":3.5}""",
-            writerToString { w -> w.beginObject().writeField(header, 3.5).endObject() }
+            expected = """{"score":3.5}""",
+            actual = writerToString { w -> w.beginObject().writeField(header = header, value = 3.5).endObject() }
         )
     }
 
@@ -438,8 +477,8 @@ class GhostFlatWriterEdgeCaseTest {
     fun writeFieldFusesNameAndFloatValue() {
         val header = "\"score\":".encodeUtf8()
         assertEquals(
-            """{"score":1.5}""",
-            writerToString { w -> w.beginObject().writeField(header, 1.5f).endObject() }
+            expected = """{"score":1.5}""",
+            actual = writerToString { w -> w.beginObject().writeField(header = header, value = 1.5f).endObject() }
         )
     }
 
@@ -450,12 +489,18 @@ class GhostFlatWriterEdgeCaseTest {
         val byteWriter = FlatByteArrayWriter()
         val writer = GhostJsonWriter(byteWriter)
 
-        writer.beginObject().name("a").value(1).endObject()
-        assertEquals("""{"a":1}""", byteWriter.toStringUtf8())
+        writer.beginObject().name(key = "a").value(1).endObject()
+        assertEquals(
+            expected = """{"a":1}""",
+            actual = byteWriter.toStringUtf8()
+        )
 
         writer.reset()
         byteWriter.reset()
-        writer.beginObject().name("b").value(2).endObject()
-        assertEquals("""{"b":2}""", byteWriter.toStringUtf8())
+        writer.beginObject().name(key = "b").value(2).endObject()
+        assertEquals(
+            expected = """{"b":2}""",
+            actual = byteWriter.toStringUtf8()
+        )
     }
 }

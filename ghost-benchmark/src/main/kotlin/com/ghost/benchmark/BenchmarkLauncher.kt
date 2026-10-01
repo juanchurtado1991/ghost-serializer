@@ -17,15 +17,15 @@ import kotlin.system.exitProcess
  * Suite selection is driven by the first CLI argument; see [BenchmarkSuite].
  */
 fun main(args: Array<String>) {
-    val suite = BenchmarkSuite.fromCliName(args.firstOrNull() ?: BenchmarkSuite.FULL.cliName)
-    BenchmarkEnvironment.printConfigHeader(suite)
+    val suite = BenchmarkSuite.fromCliName(name = args.firstOrNull() ?: BenchmarkSuite.FULL.cliName)
+    BenchmarkEnvironment.printConfigHeader(suite = suite)
     val threadBean = BenchmarkEnvironment.init() ?: exitProcess(1)
 
     val engines = BenchmarkEngines()
     val ok = when (suite) {
-        BenchmarkSuite.FULL -> runFullSuite(threadBean, engines)
-        BenchmarkSuite.SYNTHETIC -> runSyntheticSuite(threadBean, engines, regressionGate = true)
-        BenchmarkSuite.TWITTER -> runTwitterSuite(threadBean, regressionGate = true)
+        BenchmarkSuite.FULL -> runFullSuite(threadBean = threadBean, engines = engines)
+        BenchmarkSuite.SYNTHETIC -> runSyntheticSuite(threadBean = threadBean, engines = engines, regressionGate = true)
+        BenchmarkSuite.TWITTER -> runTwitterSuite(threadBean = threadBean, regressionGate = true)
         BenchmarkSuite.SPECIAL -> runSpecialSuite()
         BenchmarkSuite.RAWJSON -> runRawJsonSuite()
         BenchmarkSuite.YAML -> runYamlSuite()
@@ -39,41 +39,53 @@ fun main(args: Array<String>) {
 private fun runFullSuite(threadBean: ThreadMXBean, engines: BenchmarkEngines): Boolean {
     val payloads = BenchmarkPayloads.create()
 
-    BenchmarkProgress.logPhase(1, 5, "Cold start")
-    runAndPrintColdStart(payloads.smallBytes)
+    BenchmarkProgress.logPhase(phase = 1, totalPhases = 5, title = "Cold start")
+    runAndPrintColdStart(smallBytes = payloads.smallBytes)
 
     BenchmarkProgress.logPhase(
-        2,
-        5,
-        "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
+        phase = 2,
+        totalPhases = 5,
+        title = "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
     )
     performPhaseGc()
-    runWarmupPhase(engines, payloads.smallBytes, payloads.smallComplex)
-    TwitterBenchmark.warmupGlobal(BenchmarkStandard.WARMUP_ITERATIONS)
+    runWarmupPhase(engines = engines, smallBytes = payloads.smallBytes, smallComplex = payloads.smallComplex)
+    TwitterBenchmark.warmupGlobal(iterations = BenchmarkStandard.WARMUP_ITERATIONS)
 
     BenchmarkProgress.logPhase(
-        3,
-        5,
-        "Synthetic suite (${BenchmarkStandard.SYNTHETIC_SESSIONS} sessions × " +
+        phase = 3,
+        totalPhases = 5,
+        title = "Synthetic suite (${BenchmarkStandard.SYNTHETIC_SESSIONS} sessions × " +
                 "${BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION} samples)",
     )
     performPhaseGc()
-    val synthetic = runSyntheticBenchmarks(threadBean, engines, payloads)
-    printFinalResults(synthetic.aggregated, payloads)
+    val synthetic = runSyntheticBenchmarks(threadBean = threadBean, engines = engines, payloads = payloads)
+    printFinalResults(finalResults = synthetic.aggregated, payloads = payloads)
 
-    BenchmarkProgress.logPhase(4, 5, "Ghost special features + RawJson capture")
+    BenchmarkProgress.logPhase(phase = 4, totalPhases = 5, title = "Ghost special features + RawJson capture")
     performPhaseGc()
     GhostSpecialFeaturesBenchmark.run()
     RawJsonCaptureBenchmark.run()
 
-    BenchmarkProgress.logPhase(5, 5, "Twitter macro + regression check")
+    BenchmarkProgress.logPhase(phase = 5, totalPhases = 5, title = "Twitter macro + regression check")
     performPhaseGc()
     val twitterObs = TwitterBenchmark.run(threadBean)
 
     return RegressionCalculator.report(
-        syntheticObservations(synthetic) + twitterObs,
-        BenchmarkStandard.REGRESSION_TOLERANCE,
+        observed = syntheticObservations(run = synthetic) + twitterObs,
+        tolerance = BenchmarkStandard.REGRESSION_TOLERANCE,
     )
+}
+
+private fun runProtoSuite(): Boolean = GhostProtoBenchmark.run()
+
+private fun runRawJsonSuite(): Boolean {
+    RawJsonCaptureBenchmark.run()
+    return true
+}
+
+private fun runSpecialSuite(): Boolean {
+    GhostSpecialFeaturesBenchmark.run()
+    return true
 }
 
 @Suppress("SameParameterValue")
@@ -85,27 +97,27 @@ private fun runSyntheticSuite(
     val payloads = BenchmarkPayloads.create()
 
     BenchmarkProgress.logPhase(
-        1,
-        2,
-        "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
+        phase = 1,
+        totalPhases = 2,
+        title = "Global JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
     )
     performPhaseGc()
-    runWarmupPhase(engines, payloads.smallBytes, payloads.smallComplex)
+    runWarmupPhase(engines = engines, smallBytes = payloads.smallBytes, smallComplex = payloads.smallComplex)
 
     BenchmarkProgress.logPhase(
-        2,
-        2,
-        "Synthetic suite (${BenchmarkStandard.SYNTHETIC_SESSIONS} sessions × " +
+        phase = 2,
+        totalPhases = 2,
+        title = "Synthetic suite (${BenchmarkStandard.SYNTHETIC_SESSIONS} sessions × " +
                 "${BenchmarkStandard.SYNTHETIC_SAMPLES_PER_SESSION} samples)",
     )
     performPhaseGc()
-    val synthetic = runSyntheticBenchmarks(threadBean, engines, payloads)
-    printFinalResults(synthetic.aggregated, payloads)
+    val synthetic = runSyntheticBenchmarks(threadBean = threadBean, engines = engines, payloads = payloads)
+    printFinalResults(finalResults = synthetic.aggregated, payloads = payloads)
 
     return if (regressionGate) {
         RegressionCalculator.report(
-            syntheticObservations(synthetic),
-            BenchmarkStandard.REGRESSION_TOLERANCE,
+            observed = syntheticObservations(run = synthetic),
+            tolerance = BenchmarkStandard.REGRESSION_TOLERANCE,
         )
     } else {
         true
@@ -114,34 +126,22 @@ private fun runSyntheticSuite(
 
 private fun runTwitterSuite(threadBean: ThreadMXBean, regressionGate: Boolean): Boolean {
     BenchmarkProgress.logPhase(
-        1,
-        2,
-        "Twitter JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
+        phase = 1,
+        totalPhases = 2,
+        title = "Twitter JIT warmup (${BenchmarkStandard.WARMUP_ITERATIONS} iterations)"
     )
     performPhaseGc()
-    TwitterBenchmark.warmupGlobal(BenchmarkStandard.WARMUP_ITERATIONS)
+    TwitterBenchmark.warmupGlobal(iterations = BenchmarkStandard.WARMUP_ITERATIONS)
 
-    BenchmarkProgress.logPhase(2, 2, "Twitter macro + regression check")
+    BenchmarkProgress.logPhase(phase = 2, totalPhases = 2, title = "Twitter macro + regression check")
     performPhaseGc()
     val twitterObs = TwitterBenchmark.run(threadBean)
 
     return if (regressionGate) {
-        RegressionCalculator.report(twitterObs, BenchmarkStandard.REGRESSION_TOLERANCE)
+        RegressionCalculator.report(observed = twitterObs, tolerance = BenchmarkStandard.REGRESSION_TOLERANCE)
     } else {
         true
     }
 }
 
-private fun runSpecialSuite(): Boolean {
-    GhostSpecialFeaturesBenchmark.run()
-    return true
-}
-
-private fun runRawJsonSuite(): Boolean {
-    RawJsonCaptureBenchmark.run()
-    return true
-}
-
 private fun runYamlSuite(): Boolean = GhostYamlBenchmark.run()
-
-private fun runProtoSuite(): Boolean = GhostProtoBenchmark.run()

@@ -24,9 +24,9 @@ class GhostTriChannelFeaturesTest {
         val body = """{"nested":[1,2,3]}"""
         val model = RawJsonPayloadModel(
             id = "tri-channel",
-            body = RawJson.fromUtf8Bytes(body.encodeToByteArray())
+            body = RawJson.fromUtf8Bytes(bytes = body.encodeToByteArray())
         )
-        assertTriChannelRoundTrip(model)
+        assertTriChannelRoundTrip(expected = model)
     }
 
     @Test
@@ -34,12 +34,12 @@ class GhostTriChannelFeaturesTest {
         val rawJson = """{"nested":{"a":1}}"""
         val model = RawJsonPayloadModel(
             id = "payload-obj",
-            body = RawJson.fromUtf8Bytes(rawJson.encodeToByteArray())
+            body = RawJson.fromUtf8Bytes(bytes = rawJson.encodeToByteArray())
         )
-        assertTriChannelRoundTrip(model)
+        assertTriChannelRoundTrip(expected = model)
         assertEquals(
-            rawJson,
-            Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToString(model)).body.decodeToString()
+            expected = rawJson,
+            actual = Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToString(model)).body.decodeToString()
         )
     }
 
@@ -48,12 +48,12 @@ class GhostTriChannelFeaturesTest {
         val rawJson = """[1,2,3]"""
         val model = RawJsonPayloadModel(
             id = "payload-arr",
-            body = RawJson.fromUtf8Bytes(rawJson.encodeToByteArray())
+            body = RawJson.fromUtf8Bytes(bytes = rawJson.encodeToByteArray())
         )
-        assertTriChannelRoundTrip(model)
+        assertTriChannelRoundTrip(expected = model)
         assertEquals(
-            rawJson,
-            Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToBytes(model)).body.decodeToString()
+            expected = rawJson,
+            actual = Ghost.deserialize<RawJsonPayloadModel>(Ghost.encodeToBytes(model)).body.decodeToString()
         )
     }
 
@@ -61,20 +61,20 @@ class GhostTriChannelFeaturesTest {
     fun rawJsonAttributeStateRoundTripsOnAllChannels() {
         val metadata = """{"room":"kitchen"}"""
         val model = RawJsonAttributeState(
-            value = RawJson.fromUtf8Bytes("\"off\"".encodeToByteArray()),
-            data = mapOf("meta" to RawJson.fromUtf8Bytes(metadata.encodeToByteArray()))
+            value = RawJson.fromUtf8Bytes(bytes = "\"off\"".encodeToByteArray()),
+            data = mapOf("meta" to RawJson.fromUtf8Bytes(bytes = metadata.encodeToByteArray()))
         )
-        assertTriChannelRoundTrip(model)
+        assertTriChannelRoundTrip(expected = model)
         val restored = Ghost.deserialize<RawJsonAttributeState>(Ghost.encodeToString(model))
-        assertTrue(model.value!!.contentEquals(restored.value!!))
-        assertEquals(metadata, restored.data!!["meta"]!!.decodeToString())
+        assertTrue(actual = model.value!!.contentEquals(restored.value!!))
+        assertEquals(expected = metadata, actual = restored.data!!["meta"]!!.decodeToString())
     }
 
     @Test
     fun rawJsonListModelRoundTripsOnAllChannels() {
         val model = RawJsonListModel(
             items = listOf(
-                RawJson.fromUtf8Bytes("1".encodeToByteArray()),
+                RawJson.fromUtf8Bytes(bytes = "1".encodeToByteArray()),
                 RawJson.fromUtf8Bytes(""""hello"""".encodeToByteArray()),
                 RawJson.fromUtf8Bytes("""{"x":true}""".encodeToByteArray())
             )

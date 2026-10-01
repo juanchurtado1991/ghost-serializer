@@ -1,7 +1,7 @@
 package com.ghost.benchmark
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.beginObject
@@ -16,7 +16,7 @@ import com.sun.management.ThreadMXBean
 import java.lang.management.ManagementFactory
 
 /**
- * Happy-path overhead probe for [com.ghost.serialization.parser.common.GhostJsonPathTracker].
+ * Happy-path overhead probe for [com.ghost.serialization.parser.common.json.GhostJsonPathTracker].
  *
  * Confirms breadcrumbs (push/pop only) do not allocate on successful nested decode and that
  * a fixed nested walk stays in a stable ns/op band. Not a regression gate — Twitter Decode
@@ -48,17 +48,17 @@ object JsonPathTrackerBenchmark {
             reader.reset(bytes)
             reader.beginObject()
             while (true) {
-                when (reader.selectNameAndConsume(userOpts)) {
+                when (reader.selectNameAndConsume(options = userOpts)) {
                     0 -> {
                         reader.beginObject()
                         while (true) {
-                            when (reader.selectNameAndConsume(userInner)) {
+                            when (reader.selectNameAndConsume(options = userInner)) {
                                 0 -> {
                                     reader.beginArray()
                                     while (reader.hasNext()) {
                                         reader.beginObject()
                                         while (true) {
-                                            when (reader.selectNameAndConsume(addrOpts)) {
+                                            when (reader.selectNameAndConsume(options = addrOpts)) {
                                                 0 -> reader.nextString()
                                                 -1 -> break
                                                 else -> reader.skipValue()
@@ -90,7 +90,7 @@ object JsonPathTrackerBenchmark {
         }
 
         val reader = GhostJsonReader(bytes)
-        repeat(WARMUP) { walk(reader) }
+        repeat(WARMUP) { walk(reader = reader) }
 
         val threadId = Thread.currentThread().id
         System.gc()
@@ -98,7 +98,7 @@ object JsonPathTrackerBenchmark {
 
         val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
         val t0 = System.nanoTime()
-        repeat(ITERATIONS) { walk(reader) }
+        repeat(ITERATIONS) { walk(reader = reader) }
         val elapsedNs = System.nanoTime() - t0
         val allocAfter = threadBean.getThreadAllocatedBytes(threadId)
         val allocBytes = (allocAfter - allocBefore).coerceAtLeast(0)

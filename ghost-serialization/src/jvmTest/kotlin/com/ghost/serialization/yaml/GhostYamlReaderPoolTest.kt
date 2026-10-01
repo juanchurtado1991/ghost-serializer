@@ -4,7 +4,8 @@ package com.ghost.serialization.yaml
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.decodeFromYaml
 import com.ghost.serialization.encodeToYaml
@@ -30,7 +31,7 @@ class GhostYamlReaderPoolTest {
     private data class PoolWidget(val id: Int, val tag: String)
 
     private object PoolWidgetSerializer :
-        GhostSerializer<PoolWidget>,
+        AbstractGhostSerializer<PoolWidget>(),
         GhostYamlSerializer<PoolWidget> {
         override val typeName: String = "PoolWidget"
 
@@ -40,15 +41,15 @@ class GhostYamlReaderPoolTest {
         ) = Unit
 
         override fun deserialize(reader: GhostJsonReader): PoolWidget =
-            PoolWidget(0, "")
+            PoolWidget(id = 0, tag = "")
 
         override fun deserialize(reader: GhostJsonStringReader): PoolWidget =
-            PoolWidget(0, "")
+            PoolWidget(id = 0, tag = "")
 
         override fun serialize(writer: GhostYamlWriter, value: PoolWidget) {
             writer.beginObject()
-            writer.name("id").value(value.id)
-            writer.name("tag").value(value.tag)
+            writer.name(key = "id").value(value.id)
+            writer.name(key = "tag").value(value.tag)
             writer.endObject()
         }
 
@@ -64,13 +65,13 @@ class GhostYamlReaderPoolTest {
                 }
             }
             reader.endObject()
-            return PoolWidget(id, tag)
+            return PoolWidget(id = id, tag = tag)
         }
     }
 
     init {
         Ghost.addRegistry(
-            object : GhostRegistry {
+            registry = object : AbstractGhostRegistry() {
                 private val map = mapOf<kotlin.reflect.KClass<*>, GhostSerializer<*>>(
                     PoolWidget::class to PoolWidgetSerializer,
                 )
@@ -82,6 +83,7 @@ class GhostYamlReaderPoolTest {
 
                 override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> =
                     map
+
             },
         )
     }
@@ -92,7 +94,10 @@ class GhostYamlReaderPoolTest {
             id: 7
             tag: pooled
         """.trimIndent()
-        assertEquals(PoolWidget(7, "pooled"), Ghost.decodeFromYaml(yaml))
+        assertEquals(
+            expected = PoolWidget(id = 7, tag = "pooled"),
+            actual = Ghost.decodeFromYaml(yaml)
+        )
     }
 
     @Test
@@ -102,10 +107,14 @@ class GhostYamlReaderPoolTest {
         var second: GhostYamlFlatReader? = null
         val payload = "id: 1\ntag: a".encodeToByteArray()
 
-        ghostYamlInternalUseFlatReader(payload) { first = it }
-        ghostYamlInternalUseFlatReader(payload) { second = it }
+        ghostYamlInternalUseFlatReader(bytes = payload) { first = it }
+        ghostYamlInternalUseFlatReader(bytes = payload) { second = it }
 
-        assertEquals(first, second, "ThreadLocal pool should reuse GhostYamlFlatReader")
+        assertEquals(
+            expected = first,
+            actual = second,
+            message = "ThreadLocal pool should reuse GhostYamlFlatReader"
+        )
     }
 
     @Test
@@ -117,7 +126,11 @@ class GhostYamlReaderPoolTest {
         ghostYamlInternalUseFlatWriter { writer, _ -> first = writer }
         ghostYamlInternalUseFlatWriter { writer, _ -> second = writer }
 
-        assertEquals(first, second, "ThreadLocal pool should reuse GhostYamlWriter")
+        assertEquals(
+            expected = first,
+            actual = second,
+            message = "ThreadLocal pool should reuse GhostYamlWriter"
+        )
     }
 
     @Test
@@ -140,17 +153,20 @@ class GhostYamlReaderPoolTest {
         val kbPerOp = (after - before).toDouble() / 1_000.0 / 1024.0
 
         assertTrue(
-            kbPerOp < 4.0,
-            "Pooled Ghost.decodeFromYaml should stay under 4 KB/op steady-state; was $kbPerOp KB/op",
+            actual = kbPerOp < 4.0,
+            message = "Pooled Ghost.decodeFromYaml should stay under 4 KB/op steady-state; was $kbPerOp KB/op"
         )
     }
 
     @Test
     fun encodeToYamlReusesWriterWithoutLeakingPriorDocument() {
-        val first = Ghost.encodeToYaml(PoolWidget(1, "alpha"))
-        val second = Ghost.encodeToYaml(PoolWidget(2, "beta"))
-        assertTrue(first.contains("alpha"))
-        assertTrue(second.contains("beta"))
-        assertTrue(!second.contains("alpha"), second)
+        val first = Ghost.encodeToYaml(value = PoolWidget(id = 1, tag = "alpha"))
+        val second = Ghost.encodeToYaml(value = PoolWidget(id = 2, tag = "beta"))
+        assertTrue(actual = first.contains("alpha"))
+        assertTrue(actual = second.contains("beta"))
+        assertTrue(
+            actual = !second.contains("alpha"),
+            message = second
+        )
     }
 }

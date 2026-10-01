@@ -5,7 +5,7 @@ package com.ghost.serialization.parser.common
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.captureRawJson
+import com.ghost.serialization.parser.bytes.extensions.captureRawJson
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
@@ -26,12 +26,6 @@ class GhostWrappedKeysCapture(
 ) {
     private val values = arrayOfNulls<RawJson>(slotCount)
     private var presentMask = 0
-
-    /** Records a captured JSON value for [index] (position in the annotation `keys` array). */
-    fun put(index: Int, value: RawJson) {
-        values[index] = value
-        presentMask = presentMask or (1 shl index)
-    }
 
     /**
      * Builds UTF-8 bytes for a synthetic wrapper object, or `null` when [omitIfEmpty] /
@@ -77,7 +71,7 @@ class GhostWrappedKeysCapture(
             estimatedSize += presentCount - 1
         }
 
-        val scratch = acquireScratchBuffer(estimatedSize)
+        val scratch = acquireScratchBuffer(minSize = estimatedSize)
         var writePos = 0
         scratch[writePos++] = OPEN_BRACE
         var wroteAny = false
@@ -103,6 +97,12 @@ class GhostWrappedKeysCapture(
         }
         scratch[writePos++] = CLOSE_BRACE
         return scratch.copyOf(writePos)
+    }
+
+    /** Records a captured JSON value for [index] (position in the annotation `keys` array). */
+    fun put(index: Int, value: RawJson) {
+        values[index] = value
+        presentMask = presentMask or (1 shl index)
     }
 
     private fun hasNonNullValue(): Boolean {

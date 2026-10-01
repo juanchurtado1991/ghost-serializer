@@ -1,13 +1,13 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.consumeNull
+import com.ghost.serialization.parser.streaming.decodeResilient
 import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.isNextNullValue
@@ -17,14 +17,13 @@ import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.streaming.decodeResilient
 import com.ghost.serialization.parser.streaming.readList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 
 @OptIn(InternalGhostApi::class)
 class GhostReaderEdgeCaseTest {
@@ -41,7 +40,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     @Test
@@ -50,7 +52,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(Long.MIN_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MIN_VALUE,
+            actual = reader.nextLong()
+        )
     }
 
     @Test
@@ -59,7 +64,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(0, reader.nextInt())
+        assertEquals(
+            expected = 0,
+            actual = reader.nextInt()
+        )
     }
 
     @Test
@@ -68,7 +76,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(-42, reader.nextInt())
+        assertEquals(
+            expected = -42,
+            actual = reader.nextInt()
+        )
     }
 
     @Test
@@ -77,7 +88,11 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(1e10, reader.nextDouble(), 0.1)
+        assertEquals(
+            expected = 1e10,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 0.1
+        )
     }
 
     @Test
@@ -86,7 +101,11 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(1.23e-4, reader.nextDouble(), 1e-10)
+        assertEquals(
+            expected = 1.23e-4,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 1e-10
+        )
     }
 
     @Test
@@ -95,7 +114,11 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(100.0, reader.nextDouble(), 0.01)
+        assertEquals(
+            expected = 100.0,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 0.01
+        )
     }
 
     @Test
@@ -104,7 +127,11 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(1.234567890123456, reader.nextDouble(), 1e-15)
+        assertEquals(
+            expected = 1.234567890123456,
+            actual = reader.nextDouble(),
+            absoluteTolerance = 1e-15
+        )
     }
 
     @Test
@@ -142,7 +169,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.consumeArraySeparator()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
@@ -182,7 +212,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals("line1\nline2\ttab", reader.nextString())
+        assertEquals(
+            expected = "line1\nline2\ttab",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -191,7 +224,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals("back\\slash and \"quotes\"", reader.nextString())
+        assertEquals(
+            expected = "back\\slash and \"quotes\"",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -200,7 +236,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals("\b\u000C\n\r\t", reader.nextString())
+        assertEquals(
+            expected = "\b\u000C\n\r\t",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -209,7 +248,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals("A", reader.nextString())
+        assertEquals(
+            expected = "A",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -218,7 +260,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals("漢字テスト", reader.nextString())
+        assertEquals(
+            expected = "漢字テスト",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -227,7 +272,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals("", reader.nextString())
+        assertEquals(
+            expected = "",
+            actual = reader.nextString()
+        )
     }
 
     @Test
@@ -237,7 +285,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(emoji, reader.nextString())
+        assertEquals(
+            expected = emoji,
+            actual = reader.nextString()
+        )
     }
 
     // ── D. BOOLEANS & NULL ───────────────────────────────────────────
@@ -248,7 +299,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(true, reader.nextBoolean())
+        assertEquals(
+            expected = true,
+            actual = reader.nextBoolean()
+        )
     }
 
     @Test
@@ -257,7 +311,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(false, reader.nextBoolean())
+        assertEquals(
+            expected = false,
+            actual = reader.nextBoolean()
+        )
     }
 
     @Test
@@ -266,7 +323,7 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertTrue(reader.isNextNullValue())
+        assertTrue(actual = reader.isNextNullValue())
         reader.consumeNull()
     }
 
@@ -276,21 +333,30 @@ class GhostReaderEdgeCaseTest {
     fun readsArrayOfInts() {
         val reader = readerOf("[1,2,3]")
         val result = reader.readList { reader.nextInt() }
-        assertEquals(listOf(1, 2, 3), result)
+        assertEquals(
+            expected = listOf(1, 2, 3),
+            actual = result
+        )
     }
 
     @Test
     fun readsArrayOfStrings() {
         val reader = readerOf("[\"a\",\"b\",\"c\"]")
         val result = reader.readList { reader.nextString() }
-        assertEquals(listOf("a", "b", "c"), result)
+        assertEquals(
+            expected = listOf("a", "b", "c"),
+            actual = result
+        )
     }
 
     @Test
     fun readsEmptyArray() {
         val reader = readerOf("[]")
         val result = reader.readList { reader.nextInt() }
-        assertEquals(emptyList(), result)
+        assertEquals(
+            expected = emptyList(),
+            actual = result
+        )
     }
 
     // ── F. WHITESPACE RESILIENCE ─────────────────────────────────────
@@ -301,7 +367,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -312,7 +381,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(99, reader.nextInt())
+        assertEquals(
+            expected = 99,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -321,43 +393,64 @@ class GhostReaderEdgeCaseTest {
     @Test
     fun peeksObjectToken() {
         val reader = readerOf("{}")
-        assertEquals(GhostJsonConstants.OPEN_OBJ_INT, reader.peekNextToken())
+        assertEquals(
+            expected = TOK.OPEN_OBJ_INT,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
     fun peeksArrayToken() {
         val reader = readerOf("[]")
-        assertEquals(GhostJsonConstants.OPEN_ARR_INT, reader.peekNextToken())
+        assertEquals(
+            expected = TOK.OPEN_ARR_INT,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
     fun peeksStringToken() {
         val reader = readerOf("\"hello\"")
-        assertEquals(GhostJsonConstants.QUOTE_INT, reader.peekNextToken())
+        assertEquals(
+            expected = TOK.QUOTE_INT,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
     fun peeksNumberToken() {
         val reader = readerOf("42")
-        assertEquals('4'.code, reader.peekNextToken())
+        assertEquals(
+            expected = '4'.code,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
     fun peeksBooleanToken() {
         val reader = readerOf("true")
-        assertEquals(GhostJsonConstants.TRUE_CHAR_INT, reader.peekNextToken())
+        assertEquals(
+            expected = TOK.TRUE_CHAR_INT,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
     fun peeksNullToken() {
         val reader = readerOf("null")
-        assertEquals(GhostJsonConstants.NULL_CHAR_INT, reader.peekNextToken())
+        assertEquals(
+            expected = TOK.NULL_CHAR_INT,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
     fun peeksEndDocument() {
         val reader = readerOf("")
-        assertEquals(-1, reader.peekNextToken())
+        assertEquals(
+            expected = -1,
+            actual = reader.peekNextToken()
+        )
     }
 
     @Test
@@ -367,7 +460,10 @@ class GhostReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey().unused()
         reader.consumeKeySeparator()
-        assertEquals(1, reader.depth)
+        assertEquals(
+            expected = 1,
+            actual = reader.depth
+        )
 
         // Try parsing nested object's int value as a string (throws non-structural exception)
         val result = reader.decodeResilient {
@@ -377,9 +473,12 @@ class GhostReaderEdgeCaseTest {
             reader.nextString()
             reader.endObject()
         }
-        assertNull(result)
+        assertNull(actual = result)
         // Depth should be restored to 1 even after exception
-        assertEquals(1, reader.depth)
+        assertEquals(
+            expected = 1,
+            actual = reader.depth
+        )
     }
 
     @Test
@@ -395,18 +494,30 @@ class GhostReaderEdgeCaseTest {
 
     @Test
     fun testPoolTierCollision() {
-        val scratch = acquireScratchBuffer(48)
-        val small = acquireScratchBuffer(1024)
-        assertEquals(48, scratch.size)
-        assertEquals(1024, small.size)
+        val scratch = acquireScratchBuffer(minSize = 48)
+        val small = acquireScratchBuffer(minSize = 1024)
+        assertEquals(
+            expected = 48,
+            actual = scratch.size
+        )
+        assertEquals(
+            expected = 1024,
+            actual = small.size
+        )
 
-        releaseScratchBuffer(scratch)
-        releaseScratchBuffer(small)
+        releaseScratchBuffer(buffer = scratch)
+        releaseScratchBuffer(buffer = small)
 
-        val scratch2 = acquireScratchBuffer(48)
-        val small2 = acquireScratchBuffer(1024)
-        assertEquals(48, scratch2.size)
-        assertEquals(1024, small2.size)
+        val scratch2 = acquireScratchBuffer(minSize = 48)
+        val small2 = acquireScratchBuffer(minSize = 1024)
+        assertEquals(
+            expected = 48,
+            actual = scratch2.size
+        )
+        assertEquals(
+            expected = 1024,
+            actual = small2.size
+        )
     }
 
     @Test
@@ -414,21 +525,33 @@ class GhostReaderEdgeCaseTest {
         val reader1 = readerOf("{\"a\": 1 \"b\": 2}")
         reader1.strictMode = true
         reader1.beginObject()
-        assertEquals("a", reader1.nextKey())
+        assertEquals(
+            expected = "a",
+            actual = reader1.nextKey()
+        )
         reader1.consumeKeySeparator()
-        assertEquals(1, reader1.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader1.nextInt()
+        )
         assertFailsWith<GhostJsonException> { reader1.nextKey() }
 
         val reader2 = readerOf("[1 2 3]")
         reader2.strictMode = true
         reader2.beginArray()
-        assertEquals(1, reader2.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader2.nextInt()
+        )
         assertFailsWith<GhostJsonException> { reader2.consumeArraySeparator() }
     }
 
     @Test
     fun testLeadingZeroValidationCorrectness() {
         val reader = readerOf("0p")
-        assertEquals(0, reader.nextInt())
+        assertEquals(
+            expected = 0,
+            actual = reader.nextInt()
+        )
     }
 }

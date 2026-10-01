@@ -5,7 +5,7 @@ enum class RawJsonKind {
     /** `{` … `}` */
     OBJECT,
 
-    /** `[` … `]` */
+    /** `[`` … ``]` */
     ARRAY,
 
     /** `"` … `"` */

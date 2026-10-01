@@ -35,24 +35,26 @@ class GhostProtoConverterFactoryDirectTest {
 
     @BeforeEach
     fun setup() {
-        Ghost.addRegistry(ProtoRetrofitTestRegistry)
+        Ghost.addRegistry(registry = ProtoRetrofitTestRegistry)
         factory = GhostProtoConverterFactory.create()
         retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
     }
 
     @Test
     fun responseBodyConverter_returnsNullForUnregisteredType() {
-        assertNull(factory.responseBodyConverter(Unregistered::class.java, emptyArray(), retrofit))
+        assertNull(
+            actual = factory.responseBodyConverter(type = Unregistered::class.java, annotations = emptyArray(), retrofit = retrofit)
+        )
     }
 
     @Test
     fun requestBodyConverter_returnsNullForUnregisteredType() {
         assertNull(
-            factory.requestBodyConverter(
-                Unregistered::class.java,
-                emptyArray(),
-                emptyArray(),
-                retrofit
+            actual = factory.requestBodyConverter(
+                type = Unregistered::class.java,
+                parameterAnnotations = emptyArray(),
+                methodAnnotations = emptyArray(),
+                retrofit = retrofit
             )
         )
     }
@@ -60,88 +62,110 @@ class GhostProtoConverterFactoryDirectTest {
     @Test
     fun responseBodyConverter_resolvesParameterizedListType() {
         val genericType = ParameterizedHolder::class.java.getMethod("list").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )
             ?: error("Expected List<ProtoDeviceEvent> converter")
 
         val json = """[{"deviceId":"1","label":"a"},{"deviceId":"2","label":"b"}]"""
-        val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+        val body = json.toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
         val result = converter.convert(body) as List<ProtoDeviceEvent>
 
-        assertEquals(2, result.size)
-        assertEquals(ProtoDeviceEvent(1L, "a"), result[0])
+        assertEquals(expected = 2, actual = result.size)
+        assertEquals(expected = ProtoDeviceEvent(deviceId = 1L, label = "a"), actual = result[0])
     }
 
     @Test
     fun responseBodyConverter_resolvesParameterizedMapType() {
         val genericType = ParameterizedHolder::class.java.getMethod("map").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )
             ?: error("Expected Map converter")
 
         val json =
             """{"alpha":{"deviceId":"10","label":"A"},"beta":{"deviceId":"20","label":"B"}}"""
-        val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+        val body = json.toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
 
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(body) as Map<String, ProtoDeviceEvent>
 
-        assertEquals(ProtoDeviceEvent(10L, "A"), result["alpha"])
-        assertEquals(ProtoDeviceEvent(20L, "B"), result["beta"])
+        assertEquals(expected = ProtoDeviceEvent(deviceId = 10L, label = "A"), actual = result["alpha"])
+        assertEquals(expected = ProtoDeviceEvent(deviceId = 20L, label = "B"), actual = result["beta"])
     }
 
     @Test
     fun responseBodyConverter_resolvesParameterizedSetType() {
         val genericType = ParameterizedHolder::class.java.getMethod("set").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )
             ?: error("Expected Set<ProtoDeviceEvent> converter")
 
         val json = """[{"deviceId":"1","label":"a"}]"""
-        val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+        val body = json.toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(body) as Set<ProtoDeviceEvent>
-        assertEquals(setOf(ProtoDeviceEvent(1L, "a")), result)
+        assertEquals(expected = setOf(ProtoDeviceEvent(deviceId = 1L, label = "a")), actual = result)
     }
 
     @Test
     fun responseBodyConverter_returnsNullForNonStringKeyMap() {
         val genericType = ParameterizedHolder::class.java.getMethod("intKeyMap").genericReturnType
-        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
+        assertNull(
+            actual = factory.responseBodyConverter(type = genericType, annotations = emptyArray(), retrofit = retrofit)
+        )
     }
 
     @Test
     fun responseBodyConverter_parsesEmptyListBody() {
         val genericType = ParameterizedHolder::class.java.getMethod("list").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )!!
 
         val result = converter.convert("[]".toResponseBody()) as List<*>
-        assertEquals(0, result.size)
+        assertEquals(expected = 0, actual = result.size)
     }
 
     @Test
     fun responseBodyConverter_parsesBareInt64InsideListElements() {
         val genericType = ParameterizedHolder::class.java.getMethod("list").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )!!
 
         val json = """[{"deviceId":9223372036854775807,"label":"max"}]"""
         val result = converter.convert(json.toResponseBody()) as List<ProtoDeviceEvent>
-        assertEquals(Long.MAX_VALUE, result.single().deviceId)
+        assertEquals(expected = Long.MAX_VALUE, actual = result.single().deviceId)
     }
 
     @Test
     fun requestBodyConverter_serializesListWithQuotedInt64() {
         val genericType = ParameterizedHolder::class.java.getMethod("list").genericReturnType
         val converter = factory.requestBodyConverter(
-            genericType,
-            emptyArray(),
-            emptyArray(),
-            retrofit,
+            type = genericType,
+            parameterAnnotations = emptyArray(),
+            methodAnnotations = emptyArray(),
+            retrofit = retrofit,
         ) as Converter<List<ProtoDeviceEvent>, RequestBody>
 
         val body = converter.convert(
             listOf(ProtoDeviceEvent(deviceId = 99L, label = "batch")),
         )!!
         assertEquals(
-            """[{"deviceId":"99","label":"batch"}]""",
-            Buffer().apply { body.writeTo(this) }.readUtf8()
+            expected = """[{"deviceId":"99","label":"batch"}]""",
+            actual = Buffer().apply { body.writeTo(this) }.readUtf8()
         )
     }
 
@@ -150,12 +174,16 @@ class GhostProtoConverterFactoryDirectTest {
         val longLabel = "n".repeat(600_000)
         val json = """{"deviceId":"42","label":"$longLabel"}"""
         val converter =
-            factory.responseBodyConverter(ProtoDeviceEvent::class.java, emptyArray(), retrofit)
+            factory.responseBodyConverter(
+                type = ProtoDeviceEvent::class.java,
+                annotations = emptyArray(),
+                retrofit = retrofit
+            )
                 ?: error("Expected a converter for a registered type")
 
-        val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+        val body = json.toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
         val result = converter.convert(body)
 
-        assertEquals(ProtoDeviceEvent(42L, longLabel), result)
+        assertEquals(expected = ProtoDeviceEvent(deviceId = 42L, label = longLabel), actual = result)
     }
 }

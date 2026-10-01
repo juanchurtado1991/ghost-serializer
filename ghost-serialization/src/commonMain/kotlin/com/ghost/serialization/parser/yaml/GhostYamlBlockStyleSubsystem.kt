@@ -1,6 +1,8 @@
 package com.ghost.serialization.parser.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
 /**
  * Reads a block mapping starting at the current position ("key: value" on a new line).
@@ -8,9 +10,9 @@ import com.ghost.serialization.yaml.GhostYamlConstants as C
  * @param blockIndent The indentation of the first key in this mapping.
  */
 internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map<String, Any?> {
-    if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
+    checkMaxNestingDepth()
     depth++
-    val result = LinkedHashMap<String, Any?>(C.DEFAULT_MAP_CAPACITY)
+    val result = LinkedHashMap<String, Any?>(SC.DEFAULT_MAP_CAPACITY)
     val localLimit = limit
     val localRawData = rawData
     try {
@@ -23,10 +25,10 @@ internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map<String,
             if (isDocumentMarker() || isDocumentEndMarker()) break
             // Tabs have no fixed column width, so they can't open/extend a block mapping's
             // indentation — harmless once inside an already-established scalar's own content.
-            if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_MAPPING_INDENT)
+            if (indentHasTab) yamlError(message = EM.ERR_TAB_IN_BLOCK_MAPPING_INDENT)
 
             if (isExplicitKeyIndicator()) {
-                val (key, value) = readExplicitKeyEntry(blockIndent)
+                val (key, value) = readExplicitKeyEntry(blockIndent = blockIndent)
                 result[key] = value
                 continue
             }
@@ -34,17 +36,17 @@ internal fun GhostYamlFlatReader.readBlockMapping(blockIndent: Int): Map<String,
             val key = readKey(inFlow = false) ?: break
             skipInlineWhitespace()
 
-            if (position >= localLimit || localRawData[position] != C.COLON_BYTE) {
-                yamlError("${C.ERR_EXPECTED_COLON_AFTER_KEY_PREFIX}$key${C.ERR_EXPECTED_COLON_AFTER_KEY_MID}$position")
+            if (position >= localLimit || localRawData[position] != TOK.COLON_BYTE) {
+                yamlError(message = "${EM.ERR_EXPECTED_COLON_AFTER_KEY_PREFIX}$key${EM.ERR_EXPECTED_COLON_AFTER_KEY_MID}$position")
             }
             position++ // consume ':'
             // An implicit pair's value can't redirect into a nested mapping while still inline
             // on this line — that's only legal via "compact notation" (explicit "?"/":" entries).
             // Without this, "a: b: c: d" would parse instead of being rejected (yaml-test-suite ZCZ6).
-            val value = resolveValueAfterColon(blockIndent, allowMappingRedirect = false)
+            val value = resolveValueAfterColon(blockIndent = blockIndent, allowMappingRedirect = false)
 
-            if (key == C.STR_MERGE_KEY) {
-                mergeInto(result, value)
+            if (key == TOK.STR_MERGE_KEY) {
+                mergeInto(target = result, value = value)
             } else {
                 result[key] = value
             }
@@ -66,21 +68,22 @@ internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowM
     skipInlineWhitespace()
     val localLimit = limit
     val localRawData = rawData
-    if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
+    if (position < localLimit && localRawData[position] == TOK.HASH_BYTE) {
         skipToEndOfLine()
     }
     return when {
         position >= localLimit -> null
-        localRawData[position] == C.NEWLINE_BYTE ||
-                localRawData[position] == C.CR_BYTE -> {
+        localRawData[position] == TOK.NEWLINE_BYTE ||
+                localRawData[position] == TOK.CR_BYTE -> {
             advanceLine()
             skipWhitespaceAndComments()
             if (position >= localLimit) null
             else {
                 val valueIndent = currentIndent
+                val continuesAsSequenceEntry = localRawData[position] == TOK.DASH_BYTE && isBlockSequenceEntry()
                 if (valueIndent < blockIndent) {
                     null
-                } else if (valueIndent == blockIndent && !(localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry())) {
+                } else if (valueIndent == blockIndent && !continuesAsSequenceEntry) {
                     null
                 } else {
                     // foldIndent = blockIndent (not valueIndent): a plain-scalar continuation
@@ -102,7 +105,7 @@ internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowM
  * @param seqIndent Indentation of the '-' markers.
  */
 internal fun GhostYamlFlatReader.readBlockSequence(seqIndent: Int): List<Any?> {
-    if (depth >= C.MAX_DEPTH) yamlError("${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}")
+    checkMaxNestingDepth()
     depth++
     val result = mutableListOf<Any?>()
     val localLimit = limit
@@ -117,27 +120,26 @@ internal fun GhostYamlFlatReader.readBlockSequence(seqIndent: Int): List<Any?> {
             if (!isBlockSequenceEntry()) break
             if (isDocumentMarker()) break
             // See the equivalent tab check in readBlockMapping.
-            if (indentHasTab) yamlError(C.ERR_TAB_IN_BLOCK_SEQUENCE_INDENT)
+            if (indentHasTab) yamlError(message = EM.ERR_TAB_IN_BLOCK_SEQUENCE_INDENT)
 
             position++ // '-'
 
-            // Element value indent is the '-' column plus 2 (the dash and its following space).
-            val elementIndent = lineIndent + 2
+            val elementIndent = lineIndent + SC.SEQUENCE_ENTRY_INDENT
 
-            if (position < localLimit && localRawData[position] == C.SPACE_BYTE) {
+            if (position < localLimit && localRawData[position] == TOK.SPACE_BYTE) {
                 position++
             }
 
             // A comment directly after "- " (e.g. "- # Empty") leaves no inline value, same
             // as after a mapping key's ':' (see resolveValueAfterColon).
-            if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
+            if (position < localLimit && localRawData[position] == TOK.HASH_BYTE) {
                 skipToEndOfLine()
             }
 
             val item: Any? = when {
                 position >= localLimit -> null
-                localRawData[position] == C.NEWLINE_BYTE ||
-                        localRawData[position] == C.CR_BYTE -> {
+                localRawData[position] == TOK.NEWLINE_BYTE ||
+                        localRawData[position] == TOK.CR_BYTE -> {
                     advanceLine()
                     skipWhitespaceAndComments()
                     if (position >= localLimit) null
@@ -158,4 +160,14 @@ internal fun GhostYamlFlatReader.readBlockSequence(seqIndent: Int): List<Any?> {
         depth--
     }
     return result
+}
+
+/**
+ * Rejects input past [SC.MAX_DEPTH] levels of nesting. Shared by every collection-entry point
+ * (block and flow, mapping and sequence) — same check, same message, regardless of style.
+ */
+internal fun GhostYamlFlatReader.checkMaxNestingDepth() {
+    if (depth >= SC.MAX_DEPTH) {
+        yamlError(message = "${EM.ERR_MAX_NESTING_DEPTH_PREFIX}${SC.MAX_DEPTH}${EM.ERR_MAX_NESTING_DEPTH_SUFFIX}")
+    }
 }

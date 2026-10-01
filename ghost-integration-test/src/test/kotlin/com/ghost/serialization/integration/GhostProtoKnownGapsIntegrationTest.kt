@@ -15,16 +15,16 @@ class GhostProtoKnownGapsIntegrationTest {
 
     @Test
     fun valueClassWrappingCollectionQuotesElementsAndOmitsEmptyOnSerialize() {
-        val empty = ProtoAccountIdsMessage(ProtoAccountIds(emptyList()))
-        assertEquals("{}", Ghost.encodeToString(empty))
+        val empty = ProtoAccountIdsMessage(account_ids = ProtoAccountIds(value = emptyList()))
+        assertEquals(expected = "{}", actual = Ghost.encodeToString(empty))
 
-        val populated = ProtoAccountIdsMessage(ProtoAccountIds(listOf(123L, 456L)))
+        val populated = ProtoAccountIdsMessage(account_ids = ProtoAccountIds(value = listOf(123L, 456L)))
         val json = Ghost.encodeToString(populated)
         assertTrue(json.contains("\"123\""), json)
         assertTrue(json.contains("\"456\""), json)
 
         val roundTrip = Ghost.deserialize<ProtoAccountIdsMessage>(json.encodeToByteArray())
-        assertEquals(populated, roundTrip)
+        assertEquals(expected = populated, actual = roundTrip)
     }
 
     @Test
@@ -32,25 +32,25 @@ class GhostProtoKnownGapsIntegrationTest {
         val json = """{"accountIds":[9223372036854775807,1]}"""
         val parsed = GhostProto.deserialize<ProtoAccountIdsMessage>(json)
         assertEquals(
-            ProtoAccountIdsMessage(
-                ProtoAccountIds(listOf(Long.MAX_VALUE, 1L)),
+            expected = ProtoAccountIdsMessage(
+                account_ids = ProtoAccountIds(value = listOf(Long.MAX_VALUE, 1L)),
             ),
-            parsed,
+            actual = parsed,
         )
     }
 
     @Test
     fun valueClassWrappingCollectionPreservesSingleElementList() {
-        val model = ProtoAccountIdsMessage(ProtoAccountIds(listOf(42L)))
+        val model = ProtoAccountIdsMessage(account_ids = ProtoAccountIds(value = listOf(42L)))
         val json = Ghost.encodeToString(model)
         assertTrue(json.contains("\"42\""), json)
         assertFalse(
-            json.contains(",\"42\""),
-            "single-element list must not duplicate values: $json"
+            actual = json.contains(",\"42\""),
+            message = "single-element list must not duplicate values: $json"
         )
 
         val roundTrip = Ghost.deserialize<ProtoAccountIdsMessage>(json.encodeToByteArray())
-        assertEquals(model, roundTrip)
+        assertEquals(expected = model, actual = roundTrip)
     }
 
     @Test
@@ -61,7 +61,7 @@ class GhostProtoKnownGapsIntegrationTest {
         assertTrue(json.contains("\"18446744073709551615\""), json)
 
         val viaProto = GhostProto.deserialize<ProtoUInt64FieldMessage>(json)
-        assertEquals(model, viaProto)
+        assertEquals(expected = model, actual = viaProto)
     }
 
     @Test
@@ -69,7 +69,7 @@ class GhostProtoKnownGapsIntegrationTest {
         // Bare JSON numbers take the int64 fast path — full uint64 range requires a quoted string.
         val json = """{"shardId":18446744073709551615}"""
         val parsed = GhostProto.deserialize<ProtoUInt64FieldMessage>(json)
-        assertEquals(Long.MAX_VALUE.toULong(), parsed.shard_id)
+        assertEquals(expected = Long.MAX_VALUE.toULong(), actual = parsed.shard_id)
     }
 
     @Test
@@ -78,8 +78,8 @@ class GhostProtoKnownGapsIntegrationTest {
         val json = Ghost.encodeToString(model)
         assertTrue(json.contains("\"9000000000000000001\""), json)
 
-        assertEquals(model, Ghost.deserialize(json.encodeToByteArray()))
-        assertEquals(model, GhostProto.deserialize(json))
+        assertEquals(expected = model, actual = Ghost.deserialize(json.encodeToByteArray()))
+        assertEquals(expected = model, actual = GhostProto.deserialize(json))
     }
 
     @Test
@@ -105,7 +105,7 @@ class GhostProtoKnownGapsIntegrationTest {
         assertTrue(json.contains("\"edge\""), json)
 
         val parsed = GhostProto.deserialize<List<ProtoDeviceEventListItem>>(json)
-        assertEquals(items, parsed)
+        assertEquals(expected = items, actual = parsed)
     }
 
     @Test
@@ -114,11 +114,11 @@ class GhostProtoKnownGapsIntegrationTest {
             """[{"deviceId":42,"label":"x"},{"deviceId":9223372036854775807,"label":"max"}]"""
         val parsed = GhostProto.deserialize<List<ProtoDeviceEventListItem>>(json)
         assertEquals(
-            listOf(
-                ProtoDeviceEventListItem(42L, "x"),
-                ProtoDeviceEventListItem(Long.MAX_VALUE, "max"),
+            expected = listOf(
+                ProtoDeviceEventListItem(device_id = 42L, label = "x"),
+                ProtoDeviceEventListItem(device_id = Long.MAX_VALUE, label = "max"),
             ),
-            parsed,
+            actual = parsed,
         )
     }
 }

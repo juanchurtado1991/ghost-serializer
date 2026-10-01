@@ -19,21 +19,21 @@ class GhostTextChannelPerModelIntegrationTest {
 
     @Test
     fun twitterMacroRoots_generateNativeStringDeserialize() {
-        assertGeneratedSourceDeclaresStringDeserialize(TWITTER_RESPONSE_SERIALIZER)
-        assertGeneratedSourceDeclaresStringDeserialize(TWITTER_SPECIAL_RESPONSE_SERIALIZER)
-        assertGeneratedSourceDeclaresStringDeserialize(TWITTER_WRAPPED_TWEET_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = TWITTER_RESPONSE_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = TWITTER_SPECIAL_RESPONSE_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = TWITTER_WRAPPED_TWEET_SERIALIZER)
     }
 
     @Test
     fun twitterMacroNestedTypes_inheritTextChannelFromGraph() {
-        assertGeneratedSourceDeclaresStringDeserialize(TWEET_SERIALIZER)
-        assertGeneratedSourceDeclaresStringDeserialize(USER_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = TWEET_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = USER_SERIALIZER)
     }
 
     @Test
     fun syntheticBenchmarkModels_useNativeStringDeserialize() {
-        assertGeneratedSourceDeclaresStringDeserialize(COMPLEX_RESPONSE_SERIALIZER)
-        assertGeneratedSourceDeclaresStringDeserialize(BENCH_USER_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = COMPLEX_RESPONSE_SERIALIZER)
+        assertGeneratedSourceDeclaresStringDeserialize(serializerFileName = BENCH_USER_SERIALIZER)
     }
 
     @Test
@@ -51,33 +51,33 @@ class GhostTextChannelPerModelIntegrationTest {
         )
         val json = Ghost.encodeToString(original)
         val restored = Ghost.deserialize<ComplexResponse>(json)
-        assertEquals(original.status, restored.status)
-        assertEquals(original.data, restored.data)
-        assertEquals(original.meta.lastLogin, restored.meta.lastLogin)
-        assertEquals(original.meta.role, restored.meta.role)
-        assertEquals(original.meta.tags, restored.meta.tags)
-        assertEquals(original.meta.precisionScore, restored.meta.precisionScore)
-        assertTrue(original.meta.accessHistory.contentEquals(restored.meta.accessHistory))
+        assertEquals(expected = original.status, actual = restored.status)
+        assertEquals(expected = original.data, actual = restored.data)
+        assertEquals(expected = original.meta.lastLogin, actual = restored.meta.lastLogin)
+        assertEquals(expected = original.meta.role, actual = restored.meta.role)
+        assertEquals(expected = original.meta.tags, actual = restored.meta.tags)
+        assertEquals(expected = original.meta.precisionScore, actual = restored.meta.precisionScore)
+        assertTrue(actual = original.meta.accessHistory.contentEquals(restored.meta.accessHistory))
     }
 
     @Test
     fun twitterResponse_deserializeString_usesNativeStringChannel() {
         val json = """{"statuses":[]}"""
         val restored = Ghost.deserialize<TwitterResponse>(json)
-        assertTrue(restored.statuses.isEmpty())
+        assertTrue(actual = restored.statuses.isEmpty())
     }
 
     private fun assertGeneratedSourceDeclaresStringDeserialize(serializerFileName: String) {
-        val source = readGeneratedSerializerSource(serializerFileName)
+        val source = readGeneratedSerializerSource(serializerFileName = serializerFileName)
         assertTrue(
-            NATIVE_STRING_DESERIALIZE_SIGNATURE in source,
-            "$serializerFileName must override deserialize(GhostJsonStringReader)",
+            actual = NATIVE_STRING_DESERIALIZE_SIGNATURE in source,
+            message = "$serializerFileName must override deserialize(GhostJsonStringReader)",
         )
     }
 
     private fun readGeneratedSerializerSource(serializerFileName: String): String {
         val file = File(GENERATED_SERIALIZER_DIR, serializerFileName)
-        assertTrue(file.exists(), "Missing generated serializer: ${file.absolutePath}")
+        assertTrue(actual = file.exists(), message = "Missing generated serializer: ${file.absolutePath}")
         return file.readText()
     }
 

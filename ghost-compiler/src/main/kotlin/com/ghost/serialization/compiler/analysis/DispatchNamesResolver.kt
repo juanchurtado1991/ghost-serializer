@@ -10,7 +10,7 @@ internal object DispatchNamesResolver {
     fun topLevelNames(
         properties: List<GhostPropertyModel>
     ): List<String> = properties.flatMap { prop ->
-        prop.wrappedSourceKeys ?: listOf(
+        prop.wrappedKeys?.sourceKeys ?: listOf(
             prop.flattenPath?.firstOrNull()
                 ?: prop.wrapPath?.firstOrNull()
                 ?: prop.jsonName,

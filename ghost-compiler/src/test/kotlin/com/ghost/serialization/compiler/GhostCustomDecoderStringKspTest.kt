@@ -13,6 +13,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import com.ghost.serialization.compiler.GhostEmitterTestConstants as T
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
@@ -23,15 +27,15 @@ class GhostCustomDecoderStringKspTest {
     @Test
     fun stringNativeDecoderGeneratesDirectCallOnStringChannel() {
         val generated = compileCustomDecoderModel(textChannel = true)
-        val stringDeserialize = extractStringDeserializeBlock(generated)
+        val stringDeserialize = extractStringDeserializeBlock(generated = generated)
 
         assertTrue(
-            DIRECT_DECODER_CALL in stringDeserialize,
-            "Expected direct string-native decoder call:\n$stringDeserialize"
+            actual = DIRECT_DECODER_CALL in stringDeserialize,
+            message = "Expected direct string-native decoder call:\n$stringDeserialize"
         )
         assertFalse(
-            "reader.rawData.encodeToByteArray()" in stringDeserialize,
-            "String-native decoder must not UTF-8 encode the full payload:\n$stringDeserialize"
+            actual = "reader.rawData.encodeToByteArray()" in stringDeserialize,
+            message = "String-native decoder must not UTF-8 encode the full payload:\n$stringDeserialize"
         )
     }
 
@@ -41,15 +45,15 @@ class GhostCustomDecoderStringKspTest {
             textChannel = true,
             decoderSource = bytesOnlyDecoderUtilsSource(),
         )
-        val stringDeserialize = extractStringDeserializeBlock(generated)
+        val stringDeserialize = extractStringDeserializeBlock(generated = generated)
 
         assertFalse(
-            "reader.rawData.encodeToByteArray()" in stringDeserialize,
-            "Legacy bridge must not re-encode rawData on every field:\n$stringDeserialize"
+            actual = "reader.rawData.encodeToByteArray()" in stringDeserialize,
+            message = "Legacy bridge must not re-encode rawData on every field:\n$stringDeserialize"
         )
         assertTrue(
-            C.STR_ENSURE_UTF8_BYTES in stringDeserialize,
-            "Bytes-only decoder should use cached UTF-8 bridge on string channel:\n$stringDeserialize"
+            actual = CG.STR_ENSURE_UTF8_BYTES in stringDeserialize,
+            message = "Bytes-only decoder should use cached UTF-8 bridge on string channel:\n$stringDeserialize"
         )
     }
 
@@ -73,7 +77,7 @@ class GhostCustomDecoderStringKspTest {
             inheritClassPath = true
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspProcessorOptions = mutableMapOf(
-                C.OPTION_TEXT_CHANNEL to if (textChannel) C.STR_TRUE else C.STR_FALSE
+                PC.OPTION_TEXT_CHANNEL to if (textChannel) CC.STR_TRUE else CC.STR_FALSE
             )
             kspWithCompilation = true
             languageVersion = "1.9"
@@ -110,11 +114,11 @@ class GhostCustomDecoderStringKspTest {
     private fun stringNativeDecoderUtilsSource(): String = """
         package fixtures
 
-        import ${C.STR_GHOST_JSON_READER_QUALIFIED}
-        import ${C.STR_GHOST_JSON_STRING_READER_QUALIFIED}
+        import ${AC.STR_GHOST_JSON_READER_QUALIFIED}
+        import ${AC.STR_GHOST_JSON_STRING_READER_QUALIFIED}
 
         object ${T.STR_TEST_DECODER_UTILS} {
-            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_READER}): String = ${T.STR_TEST_BYTES_RESULT.quote()}
+            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${CG.STR_GHOST_JSON_READER}): String = ${T.STR_TEST_BYTES_RESULT.quote()}
             fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_STRING_READER}): String = ${T.STR_TEST_NATIVE_RESULT.quote()}
         }
     """.trimIndent()
@@ -122,10 +126,10 @@ class GhostCustomDecoderStringKspTest {
     private fun bytesOnlyDecoderUtilsSource(): String = """
         package fixtures
 
-        import ${C.STR_GHOST_JSON_READER_QUALIFIED}
+        import ${AC.STR_GHOST_JSON_READER_QUALIFIED}
 
         object ${T.STR_TEST_DECODER_UTILS} {
-            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${C.STR_GHOST_JSON_READER}): String = ${T.STR_TEST_BYTES_RESULT.quote()}
+            fun ${T.STR_TEST_CUSTOM_DECODER_FN}(reader: ${CG.STR_GHOST_JSON_READER}): String = ${T.STR_TEST_BYTES_RESULT.quote()}
         }
     """.trimIndent()
 

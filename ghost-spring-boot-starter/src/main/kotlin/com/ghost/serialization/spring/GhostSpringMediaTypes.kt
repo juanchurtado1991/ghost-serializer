@@ -23,4 +23,9 @@ internal object GhostSpringMediaTypes {
     val MIME_APPLICATION_X_YAML: MimeType = MimeType(TYPE_APPLICATION, SUBTYPE_X_YAML)
     val MIME_TEXT_YAML: MimeType = MimeType(TYPE_TEXT, SUBTYPE_YAML)
     val MIME_APPLICATION_X_NDJSON: MimeType = MimeType(TYPE_APPLICATION, SUBTYPE_X_NDJSON)
+
+    /** Record separator of an NDJSON stream. */
+    const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
+
+    fun isNdJson(mimeType: MimeType?): Boolean = mimeType?.subtype?.contains(SUBTYPE_NDJSON_TOKEN) == true
 }

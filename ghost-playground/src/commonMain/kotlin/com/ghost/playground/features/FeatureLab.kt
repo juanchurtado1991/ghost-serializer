@@ -22,21 +22,9 @@ data class FeatureLab(
     val explainEn: (input: String, output: String) -> String,
     val explainEs: (input: String, output: String) -> String,
 ) {
-    fun inputLabel(strings: Strings): String = when (wireFormat) {
-        LabWireFormat.JSON -> strings.jsonInput
-        LabWireFormat.PROTO_JSON -> strings.protoJsonInput
-        LabWireFormat.YAML -> strings.yamlInput
-    }
+    fun inputLabel(strings: Strings): String = wireFormat.inputLabel(strings)
 
-    fun pipelineRunTitle(strings: Strings): String = when (wireFormat) {
-        LabWireFormat.JSON -> strings.pipelineStepRunTitle
-        LabWireFormat.PROTO_JSON -> strings.pipelineStepRunTitleProto
-        LabWireFormat.YAML -> strings.pipelineStepRunTitleYaml
-    }
+    fun pipelineRunDetail(strings: Strings): String = wireFormat.pipelineRunDetail(strings)
 
-    fun pipelineRunDetail(strings: Strings): String = when (wireFormat) {
-        LabWireFormat.JSON -> strings.pipelineStepRunDetail
-        LabWireFormat.PROTO_JSON -> strings.pipelineStepRunDetailProto
-        LabWireFormat.YAML -> strings.pipelineStepRunDetailYaml
-    }
+    fun pipelineRunTitle(strings: Strings): String = wireFormat.pipelineRunTitle(strings)
 }

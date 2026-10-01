@@ -63,7 +63,7 @@ internal fun DocLink(label: String, url: String, icon: PlaygroundIconKind, accen
                 RoundedCornerShape(12.dp)
             )
             .hoverable(interactionSource)
-            .clickable(interactionSource = interactionSource, indication = null) { openUrl(url) }
+            .clickable(interactionSource = interactionSource, indication = null) { openUrl(url = url) }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -72,7 +72,7 @@ internal fun DocLink(label: String, url: String, icon: PlaygroundIconKind, accen
             Modifier.size(30.dp).clip(CircleShape).background(accent.copy(0.14f)),
             contentAlignment = Alignment.Center,
         ) {
-            PlaygroundIcon(icon, tint = accent, size = 16.dp)
+            PlaygroundIcon(kind = icon, tint = accent, size = 16.dp)
         }
         Text(
             label,
@@ -81,6 +81,6 @@ internal fun DocLink(label: String, url: String, icon: PlaygroundIconKind, accen
             fontSize = 13.sp,
             modifier = Modifier.weight(1f)
         )
-        PlaygroundIcon(PlaygroundIconKind.RoundTrip, tint = InkMuted, size = 14.dp)
+        PlaygroundIcon(kind = PlaygroundIconKind.RoundTrip, tint = InkMuted, size = 14.dp)
     }
 }

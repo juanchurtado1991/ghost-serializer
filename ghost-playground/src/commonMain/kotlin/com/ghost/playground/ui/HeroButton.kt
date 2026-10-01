@@ -80,7 +80,7 @@ internal fun HeroButton(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            icon?.let { PlaygroundIcon(it, tint = Color.White, size = 22.dp) }
+            icon?.let { PlaygroundIcon(kind = it, tint = Color.White, size = 22.dp) }
             Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
         }
     }

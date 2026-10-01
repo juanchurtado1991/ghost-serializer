@@ -4,7 +4,7 @@ package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -38,8 +38,7 @@ class GhostKtorTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
                 return mapOf(KtorUser::class to KtorUserSerializer)
             }
@@ -55,11 +54,11 @@ class GhostKtorTest {
     @Test
     fun testSuccessfulSerializationAndDeserialization() = runTest {
         val mockEngine = MockEngine { request ->
-            assertEquals("/user", request.url.encodedPath)
+            assertEquals(expected = "/user", actual = request.url.encodedPath)
             respond(
                 content = """{"id": 42, "name": "John", "isActive": true}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -70,9 +69,9 @@ class GhostKtorTest {
         }
 
         val response: KtorUser = client.get("/user").body()
-        assertEquals(42, response.id)
-        assertEquals("John", response.name)
-        assertEquals(true, response.isActive)
+        assertEquals(expected = 42, actual = response.id)
+        assertEquals(expected = "John", actual = response.name)
+        assertEquals(expected = true, actual = response.isActive)
     }
 
     @Test
@@ -85,11 +84,11 @@ class GhostKtorTest {
 
                 else -> error("Unsupported body type: ${body::class}")
             }
-            assertEquals("""{"id":100,"name":"Alice","isActive":false}""", bodyText)
+            assertEquals(expected = """{"id":100,"name":"Alice","isActive":false}""", actual = bodyText)
             respond(
                 content = bodyText,
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -101,10 +100,10 @@ class GhostKtorTest {
 
         val response: KtorUser = client.post("/user") {
             contentType(ContentType.Application.Json)
-            setBody(KtorUser(100, "Alice", false))
+            setBody(KtorUser(id = 100, name = "Alice", isActive = false))
         }.body()
 
-        assertEquals(100, response.id)
+        assertEquals(expected = 100, actual = response.id)
     }
 
     @Test
@@ -113,7 +112,7 @@ class GhostKtorTest {
             respond(
                 content = """{"id": 42, "name": "John", "isActive": """, // incomplete
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -135,7 +134,7 @@ class GhostKtorTest {
             respond(
                 content = """{"id": 42}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -161,7 +160,7 @@ class GhostKtorTest {
             respond(
                 content = "",
                 status = HttpStatusCode.NoContent,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -183,7 +182,7 @@ class GhostKtorTest {
             respond(
                 content = """{"id":42 "name":"John", "isActive":true}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -206,7 +205,7 @@ class GhostKtorTest {
             respond(
                 content = """{"id":"42", "name":"John", "isActive":"true"}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -220,9 +219,9 @@ class GhostKtorTest {
         }
 
         val user: KtorUser = client.get("/user").body()
-        assertEquals(42, user.id)
-        assertEquals("John", user.name)
-        assertEquals(true, user.isActive)
+        assertEquals(expected = 42, actual = user.id)
+        assertEquals(expected = "John", actual = user.name)
+        assertEquals(expected = true, actual = user.isActive)
     }
 
     @Test
@@ -231,7 +230,7 @@ class GhostKtorTest {
             respond(
                 content = """{"id":999,"name":"Fallback"}""",
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }
 
@@ -249,7 +248,7 @@ class GhostKtorTest {
                 content: ByteReadChannel
             ): Any? {
                 if (typeInfo.type != UnregisteredUser::class) return null
-                return UnregisteredUser(999, "Fallback")
+                return UnregisteredUser(id = 999, name = "Fallback")
             }
         }
 
@@ -261,7 +260,7 @@ class GhostKtorTest {
         }
 
         val user: UnregisteredUser = client.get("/user").body()
-        assertEquals(999, user.id)
-        assertEquals("Fallback", user.name)
+        assertEquals(expected = 999, actual = user.id)
+        assertEquals(expected = "Fallback", actual = user.name)
     }
 }

@@ -25,11 +25,11 @@ class GeneratedCodeHygieneTest {
         """.trimIndent()
 
         val violations =
-            GeneratedCodeHygiene.analyzeUnusedMaskConstants(source, "DemoSerializer.kt")
+            GeneratedCodeHygiene.analyzeUnusedMaskConstants(source = source, fileLabel = "DemoSerializer.kt")
 
-        assertEquals(1, violations.size)
-        assertEquals(GeneratedCodeHygiene.Violation.Kind.UNUSED_CONSTANT, violations.single().kind)
-        assertTrue("MASK_REQUIRED_0" in violations.single().message)
+        assertEquals(expected = 1, actual = violations.size)
+        assertEquals(expected = GeneratedCodeHygiene.Violation.Kind.UNUSED_CONSTANT, actual = violations.single().kind)
+        assertTrue(actual = "MASK_REQUIRED_0" in violations.single().message)
     }
 
     @Test
@@ -47,7 +47,7 @@ class GeneratedCodeHygieneTest {
             }
         """.trimIndent()
 
-        val violations = GeneratedCodeHygiene.analyzeUnusedMaskConstants(source)
+        val violations = GeneratedCodeHygiene.analyzeUnusedMaskConstants(source = source)
         assertTrue(violations.isEmpty(), violations.joinToString { it.message })
     }
 
@@ -67,9 +67,9 @@ class GeneratedCodeHygieneTest {
         """.trimIndent()
 
         val violations = GeneratedCodeHygiene.analyze(source, "DemoSerializer.kt")
-        assertEquals(1, violations.size)
-        assertEquals(GeneratedCodeHygiene.Violation.Kind.UNUSED_IMPORT, violations.single().kind)
-        assertTrue("nextLong" in violations.single().message)
+        assertEquals(expected = 1, actual = violations.size)
+        assertEquals(expected = GeneratedCodeHygiene.Violation.Kind.UNUSED_IMPORT, actual = violations.single().kind)
+        assertTrue(actual = "nextLong" in violations.single().message)
     }
 
     @Test
@@ -84,9 +84,9 @@ class GeneratedCodeHygieneTest {
         """.trimIndent()
 
         val violations =
-            GeneratedCodeHygiene.analyzeLocalVariableNaming(source, "DemoSerializer.kt")
-        assertEquals(2, violations.size)
-        assertTrue(violations.all { it.kind == GeneratedCodeHygiene.Violation.Kind.BAD_LOCAL_NAME })
+            GeneratedCodeHygiene.analyzeLocalVariableNaming(source = source, fileLabel = "DemoSerializer.kt")
+        assertEquals(expected = 2, actual = violations.size)
+        assertTrue(actual = violations.all { it.kind == GeneratedCodeHygiene.Violation.Kind.BAD_LOCAL_NAME })
     }
 
     @Test
@@ -102,7 +102,7 @@ class GeneratedCodeHygieneTest {
             }
         """.trimIndent()
 
-        val violations = GeneratedCodeHygiene.analyzeLocalVariableNaming(source)
+        val violations = GeneratedCodeHygiene.analyzeLocalVariableNaming(source = source)
         assertTrue(violations.isEmpty(), violations.joinToString { it.message })
     }
 
@@ -117,9 +117,9 @@ class GeneratedCodeHygieneTest {
             }
         """.trimIndent()
 
-        val violations = GeneratedCodeHygiene.analyzeLineLength(source, "DemoSerializer.kt")
-        assertTrue(violations.isNotEmpty())
-        assertTrue(violations.all { it.kind == GeneratedCodeHygiene.Violation.Kind.LONG_LINE })
+        val violations = GeneratedCodeHygiene.analyzeLineLength(source = source, fileLabel = "DemoSerializer.kt")
+        assertTrue(actual = violations.isNotEmpty())
+        assertTrue(actual = violations.all { it.kind == GeneratedCodeHygiene.Violation.Kind.LONG_LINE })
     }
 
     @Test
@@ -135,7 +135,7 @@ class GeneratedCodeHygieneTest {
             }
         """.trimIndent()
 
-        val violations = GeneratedCodeHygiene.analyzeLineLength(source)
+        val violations = GeneratedCodeHygiene.analyzeLineLength(source = source)
         assertTrue(violations.isEmpty(), violations.joinToString { it.message })
     }
 }

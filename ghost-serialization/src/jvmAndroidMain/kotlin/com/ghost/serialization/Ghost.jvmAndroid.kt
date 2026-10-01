@@ -3,13 +3,12 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.common.prepareUtf8JsonSource
-import com.ghost.serialization.parser.common.withPreparedUtf8Json
+import com.ghost.serialization.parser.common.json.prepareUtf8JsonSource
+import com.ghost.serialization.parser.common.json.withPreparedUtf8Json
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.bytes.WriterSinkPair
-import com.ghost.serialization.writer.strings.FlatCharArrayWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import okio.BufferedSource
 import java.util.concurrent.ConcurrentHashMap
@@ -20,10 +19,6 @@ private val sourceReaderPool = ThreadLocal<GhostJsonReader>()
 
 @PublishedApi
 internal val writerPool = ThreadLocal<WriterSinkPair>()
-
-actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
-
-actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
 
 /** Per-thread [WriterSinkPair], reset for a fresh encode
  *  the buffer survives across calls so it only grows once and stays warm. */
@@ -37,11 +32,9 @@ internal fun acquireFlatWriterPair(): WriterSinkPair {
     return pair
 }
 
-@PublishedApi
-internal class WriterStringPair {
-    val charWriter = FlatCharArrayWriter()
-    val writer = GhostJsonStringWriter(charWriter)
-}
+actual fun <K, V> createAtomicMap(): MutableMap<K, V> = ConcurrentHashMap()
+
+actual fun <T> runSynchronized(lock: Any, block: () -> T): T = synchronized(lock, block)
 
 @PublishedApi
 internal val stringWriterPool = ThreadLocal<WriterStringPair>()
@@ -54,6 +47,30 @@ internal fun acquireStringWriterPair(): WriterStringPair {
     pair.writer.reset()
     pair.charWriter.reset()
     return pair
+}
+
+@InternalGhostApi
+actual inline fun ghostInternalEncodeAndDiscard(
+    crossinline block: (GhostJsonWriter) -> Unit
+) {
+    val pair = acquireFlatWriterPair()
+    block(pair.writer)
+    pair.byteWriter.reset()
+}
+
+@InternalGhostApi
+actual inline fun ghostInternalEncodeAndDrainTo(
+    sink: okio.BufferedSink,
+    crossinline block: (GhostJsonWriter) -> Unit
+) {
+    val pair = acquireFlatWriterPair()
+    block(pair.writer)
+    sink.write(
+        pair.byteWriter.array,
+        0,
+        pair.byteWriter.size
+    )
+    pair.byteWriter.reset()
 }
 
 @InternalGhostApi
@@ -82,41 +99,17 @@ actual inline fun ghostInternalEncodeWithWriter(
     return result
 }
 
-@InternalGhostApi
-actual inline fun ghostInternalEncodeAndDiscard(
-    crossinline block: (GhostJsonWriter) -> Unit
-) {
-    val pair = acquireFlatWriterPair()
-    block(pair.writer)
-    pair.byteWriter.reset()
-}
-
-@InternalGhostApi
-actual inline fun ghostInternalEncodeAndDrainTo(
-    sink: okio.BufferedSink,
-    crossinline block: (GhostJsonWriter) -> Unit
-) {
-    val pair = acquireFlatWriterPair()
-    block(pair.writer)
-    sink.write(
-        pair.byteWriter.array,
-        0,
-        pair.byteWriter.size
-    )
-    pair.byteWriter.reset()
-}
-
 actual fun <T> ghostInternalUseFlatReader(
     bytes: ByteArray,
     limit: Int,
     block: (GhostJsonFlatReader) -> T
 ): T {
-    return withPreparedUtf8Json(bytes, limit) { data, offset, length ->
+    return withPreparedUtf8Json(bytes = bytes, limit = limit) { data, offset, length ->
         val reader = flatReaderPool.get()
-            ?: GhostJsonFlatReader(data)
+            ?: GhostJsonFlatReader(rawData = data)
                 .also { flatReaderPool.set(it) }
 
-        reader.resetSlice(data, offset, length)
+        reader.resetSlice(buffer = data, offset = offset, length = length)
         block(reader)
     }
 }
@@ -129,7 +122,7 @@ actual fun <T> ghostInternalUseSource(
         ?: GhostJsonReader(source)
             .also { sourceReaderPool.set(it) }
 
-    reader.reset(prepareUtf8JsonSource(source))
+    reader.reset(prepareUtf8JsonSource(source = source))
     return block(reader)
 }
 
@@ -138,7 +131,7 @@ actual fun <T> ghostInternalUseStringReader(
     block: (GhostJsonStringReader) -> T
 ): T {
     val reader = stringReaderPool.get()
-        ?: GhostJsonStringReader(json)
+        ?: GhostJsonStringReader(rawData = json)
             .also { stringReaderPool.set(it) }
 
     reader.reset(json)

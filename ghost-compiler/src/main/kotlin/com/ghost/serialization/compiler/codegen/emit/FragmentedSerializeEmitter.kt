@@ -14,7 +14,7 @@ internal class FragmentedSerializeEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
     writerClass: ClassName
-) : BaseSerializeEmitter(properties, originalClassName, writerClass) {
+) : BaseSerializeEmitter(properties = properties, originalClassName = originalClassName, writerClass = writerClass) {
 
     fun emit(
         code: CodeBlock.Builder,
@@ -67,7 +67,7 @@ internal class FragmentedSerializeEmitter(
 
         val chunkCode = CodeBlock.builder()
         chunkProps.forEach { prop ->
-            emitProperty(chunkCode, prop)
+            emitProperty(code = chunkCode, prop = prop)
         }
 
         chunkFun.addCode(chunkCode.build())

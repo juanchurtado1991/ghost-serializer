@@ -1,6 +1,7 @@
 package com.ghost.serialization.spring
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
@@ -12,20 +13,25 @@ import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import kotlin.reflect.KClass
 
-private const val NDJSON_NEWLINE: Byte = '\n'.code.toByte()
-
 /**
  * Reactive Encoder for Ghost Serialization. Resolves serializers from the full
  * [ResolvableType] so collection bodies use the declared generic serializer, not
  * `value::class`.
+ *
+ * Resolves serializers through [registry] (defaults to the global [Ghost] singleton) rather than
+ * calling [Ghost] directly, so tests can substitute a fake [GhostRegistry].
  */
-class GhostReactiveEncoder : AbstractEncoder<Any>(
+class GhostReactiveEncoder(
+    private val registry: GhostRegistry = Ghost
+) : AbstractEncoder<Any>(
     MimeTypeUtils.APPLICATION_JSON,
     GhostSpringMediaTypes.MIME_APPLICATION_X_NDJSON
 ) {
+
+    private val typeSerializers = GhostSpringTypeSerializers(registry = registry)
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         return super.canEncode(elementType, mimeType) &&
-            GhostSpringTypeSerializers.getJsonSerializer(elementType) != null
+            typeSerializers.getJsonSerializer(elementType) != null
     }
 
     override fun encode(
@@ -35,11 +41,16 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Flux<DataBuffer> {
-        val isNdJson = isNdJson(mimeType)
-        val declaredSerializer = GhostSpringTypeSerializers.getJsonSerializer(elementType)
+        val isNdJson = GhostSpringMediaTypes.isNdJson(mimeType = mimeType)
+        val declaredSerializer = typeSerializers.getJsonSerializer(elementType)
 
         return Flux.from(inputStream).map { value ->
-            encodeValue(value, bufferFactory, isNdJson, declaredSerializer)
+            encodeValue(
+                value = value,
+                bufferFactory = bufferFactory,
+                isNdJson = isNdJson,
+                declaredSerializer = declaredSerializer
+            )
         }
     }
 
@@ -52,23 +63,19 @@ class GhostReactiveEncoder : AbstractEncoder<Any>(
         val serializer = declaredSerializer
             ?: run {
                 @Suppress("UNCHECKED_CAST")
-                Ghost.getSerializer(value::class as KClass<Any>)
+                registry.getSerializer(value::class as KClass<Any>)
             }
             ?: throw IllegalArgumentException(
                 "${Ghost.NOT_FOUND} ${value::class.simpleName}. ${Ghost.MISSING_ANN}"
             )
 
-        val encoded = Ghost.encodeToBytes(serializer, value)
+        val encoded = Ghost.encodeToBytes(serializer = serializer, value = value)
 
         if (!isNdJson) return bufferFactory.wrap(encoded)
 
         val bytes = ByteArray(encoded.size + 1)
         encoded.copyInto(bytes)
-        bytes[encoded.size] = NDJSON_NEWLINE
+        bytes[encoded.size] = GhostSpringMediaTypes.NDJSON_NEWLINE
         return bufferFactory.wrap(bytes)
-    }
-
-    private fun isNdJson(mimeType: MimeType?): Boolean {
-        return mimeType?.subtype?.contains(GhostSpringMediaTypes.SUBTYPE_NDJSON_TOKEN) == true
     }
 }

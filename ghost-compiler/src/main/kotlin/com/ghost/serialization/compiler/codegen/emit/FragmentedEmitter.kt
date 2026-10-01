@@ -15,6 +15,9 @@ import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
@@ -28,7 +31,7 @@ internal class FragmentedEmitter(
     originalClassName: ClassName,
     readerClass: ClassName,
     private val supportsResilience: Boolean = true,
-) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
+) : BaseDeserializeEmitter(properties = properties, originalClassName = originalClassName, readerClass = readerClass) {
 
     /** Builds the `DecodingContext`, chunk functions, and parse loop, then validates and instantiates the DTO. */
     fun emit(
@@ -36,36 +39,39 @@ internal class FragmentedEmitter(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean = false
     ) {
-        emitPropertyMaskConstants(typeSpecBuilder)
+        emitPropertyMaskConstants(typeSpecBuilder = typeSpecBuilder)
         val contextClassName = ClassName(
-            C.STR_EMPTY,
+            CC.STR_EMPTY,
             C.STR_CTX_CLASS
         )
         val chunkSize = C.DEFAULT_CHUNK_SIZE
         val chunks = properties.chunked(chunkSize)
 
-        buildDecodingContext(typeSpecBuilder, contextClassName, isFlatPath)
+        buildDecodingContext(
+            typeSpecBuilder = typeSpecBuilder,
+            contextClassName = contextClassName,
+            isFlatPath = isFlatPath
+        )
 
         chunks.forEachIndexed { chunkIdx, chunkProps ->
             emitChunkFunction(
-                chunkIdx,
-                chunkProps,
-                chunkSize,
-                contextClassName,
-                typeSpecBuilder
+                chunkIdx = chunkIdx,
+                chunkProps = chunkProps,
+                chunkSize = chunkSize,
+                contextClassName = contextClassName,
+                typeSpecBuilder = typeSpecBuilder
             )
         }
 
-        emitMainParseLoop(body, chunks, chunkSize)
+        emitMainParseLoop(body = body, chunks = chunks, chunkSize = chunkSize)
         // Validate before endObject so JSONPath still includes the current object frame.
-        emitValidation(body)
+        emitValidation(body = body)
         body.addStatement(C.STR_END_OBJECT)
-        emitReturn(body, typeSpecBuilder)
+        emitReturn(body = body, typeSpecBuilder = typeSpecBuilder)
 
-        emitValidationHelper(typeSpecBuilder, contextClassName)
+        emitValidationHelper(typeSpecBuilder = typeSpecBuilder, contextClassName = contextClassName)
     }
 
-    /** Registers the private `DecodingContext` class tracking properties and masks. */
     private fun buildDecodingContext(
         typeSpecBuilder: TypeSpec.Builder,
         contextClassName: ClassName,
@@ -95,7 +101,7 @@ internal class FragmentedEmitter(
                     com.squareup.kotlinpoet.LONG
                 )
                     .mutable(true)
-                    .initializer(C.STR_ZERO_L)
+                    .initializer(AC.STR_ZERO_L)
                     .build()
             )
         }
@@ -103,42 +109,6 @@ internal class FragmentedEmitter(
         if (!isFlatPath) {
             typeSpecBuilder.addType(contextBuilder.build())
         }
-    }
-
-    /** Maps selector indexes to their fragmented chunk-function calls. */
-    private fun emitMainParseLoop(
-        body: CodeBlock.Builder,
-        chunks: List<List<GhostPropertyModel>>,
-        chunkSize: Int
-    ) {
-        body.addStatement(C.STR_CTX_INIT)
-        body.addStatement(C.STR_BEGIN_OBJECT)
-        body.beginControlFlow(C.STR_WHILE_TRUE)
-        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
-        body.beginControlFlow(C.STR_WHEN_INDEX)
-
-        chunks.forEachIndexed { chunkIdx, chunkProps ->
-            val start = chunkIdx * chunkSize
-            val end = start + chunkProps.size - C.VAL_ONE
-            val chunkFunName = C.TEMPLATE_DECODE_CHUNK_NAME
-                .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
-
-            body.addStatement(
-                C.TEMPLATE_CHUNK_CALL,
-                start,
-                end,
-                chunkFunName
-            )
-        }
-
-        body.addStatement(C.STR_MINUS_ONE_BREAK)
-
-        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
-        body.addStatement(C.STR_SKIP_VALUE)
-        body.endControlFlow()
-        body.endControlFlow() // when
-        body.endControlFlow() // while
-        // endObject emitted after validation (see emit)
     }
 
     /** Chunk decoding helper mapping index selections to field/mask assignments, keeping methods small. */
@@ -163,7 +133,7 @@ internal class FragmentedEmitter(
         chunkBody.beginControlFlow(C.STR_WHEN_INDEX_PLAIN)
         chunkProps.forEachIndexed { innerIdx, prop ->
             val globalIndex = chunkIdx * chunkSize + innerIdx
-            val call = buildCall(prop)
+            val call = buildCall(prop = prop)
             val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()
             val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
@@ -184,6 +154,121 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(chunkFun.build())
     }
 
+    /** Maps selector indexes to their fragmented chunk-function calls. */
+    private fun emitMainParseLoop(
+        body: CodeBlock.Builder,
+        chunks: List<List<GhostPropertyModel>>,
+        chunkSize: Int
+    ) {
+        body.addStatement(C.STR_CTX_INIT)
+        body.addStatement(C.STR_BEGIN_OBJECT)
+        body.beginControlFlow(C.STR_WHILE_TRUE)
+        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
+        body.beginControlFlow(C.STR_WHEN_INDEX)
+
+        chunks.forEachIndexed { chunkIdx, chunkProps ->
+            val start = chunkIdx * chunkSize
+            val end = start + chunkProps.size - CC.VAL_ONE
+            val chunkFunName = C.TEMPLATE_DECODE_CHUNK_NAME
+                .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
+
+            body.addStatement(
+                C.TEMPLATE_CHUNK_CALL,
+                start,
+                end,
+                chunkFunName
+            )
+        }
+
+        body.addStatement(C.STR_MINUS_ONE_BREAK)
+
+        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
+        body.addStatement(C.STR_SKIP_VALUE)
+        body.endControlFlow()
+        body.endControlFlow() // when
+        body.endControlFlow() // while
+        // endObject emitted after validation (see emit)
+    }
+
+    /** Instantiates the target class from `DecodingContext` variables, using `.copy()` for default properties. */
+    private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
+        val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
+        val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
+            if (prop.isInConstructor && prop.hasDefaultValue) {
+                Pair(globalIdx, prop)
+            } else {
+                null
+            }
+        }
+
+        if (defaultPropsWithGlobalIndex.map { it.second }.allDefaultsHaveExpressions()) {
+            body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+            requiredProps.forEach { prop ->
+                body.addStatement(
+                    C.TEMPLATE_NAMED_ARG,
+                    prop.kotlinName,
+                    prop.getFragmentedReturnExpression()
+                )
+            }
+            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
+                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+                body.addStatement(
+                    C.TEMPLATE_NAMED_ARG,
+                    prop.kotlinName,
+                    prop.getFragmentedSingleShotDefaultArgExpression(maskIdx = maskIdx, bitMaskStr = constName)
+                )
+            }
+            body.addStatement(C.STR_PAREN)
+            body.addStatement(C.STR_RETURN_RESULT)
+            return
+        }
+
+        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+        requiredProps.forEach { prop ->
+            body.addStatement(
+                C.TEMPLATE_NAMED_ARG,
+                prop.kotlinName,
+                prop.getFragmentedReturnExpression()
+            )
+        }
+        body.addStatement(C.STR_PAREN)
+
+        if (defaultPropsWithGlobalIndex.isNotEmpty()) {
+            body.add(C.STR_IF_OPEN)
+            val conditions = mutableListOf<String>()
+            for (i in defaultMasks.indices) {
+                val defMask = defaultMasks[i]
+                if (defMask != C.VAL_ZERO_L) {
+                    val constName = emitDefaultMaskConstant(typeSpecBuilder = typeSpecBuilder, maskIndex = i)
+                    conditions.add(
+                        C.TEMPLATE_IF_MASK_MATCH_BIT_F
+                            .format(i, constName)
+                    )
+                }
+            }
+            body.add(conditions.joinToString(C.STR_OR))
+            body.beginControlFlow(CG.STR_CLOSE_PAREN_FLOW)
+
+            body.addStatement(C.STR_RETURN_RESULT_COPY)
+            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
+                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+                val valueExpr = prop.getFragmentedDefaultValueReturnExpression(
+                    maskIdx = maskIdx,
+                    bitMaskStr = constName
+                )
+                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
+            }
+            body.addStatement(C.STR_PAREN)
+            body.nextControlFlow(C.STR_ELSE)
+            body.addStatement(C.STR_RETURN_RESULT)
+            body.endControlFlow()
+        } else {
+            body.addStatement(C.STR_RETURN_RESULT)
+        }
+    }
+
     private fun emitValidation(body: CodeBlock.Builder) {
         val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
         if (hasRequired) {
@@ -196,7 +281,6 @@ internal class FragmentedEmitter(
         }
     }
 
-    /** Private helper that throws `GhostJsonException` for any required field missing from the bitmask. */
     private fun emitValidationHelper(
         typeSpecBuilder: TypeSpec.Builder,
         contextClassName: ClassName
@@ -226,11 +310,10 @@ internal class FragmentedEmitter(
 
                 var isFirst = true
                 properties.forEachIndexed { propIdx, prop ->
-                    if (
-                        !prop.isNullable &&
-                        !prop.hasDefaultValue
-                        && (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx
-                    ) {
+                    val isRequiredInThisMask = !prop.isNullable &&
+                        !prop.hasDefaultValue &&
+                        (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx
+                    if (isRequiredInThisMask) {
                         val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
 
                         if (isFirst) {
@@ -263,81 +346,5 @@ internal class FragmentedEmitter(
 
         funBuilder.addCode(funBody.build())
         typeSpecBuilder.addFunction(funBuilder.build())
-    }
-
-    /** Instantiates the target class from `DecodingContext` variables, using `.copy()` for default properties. */
-    private fun emitReturn(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val requiredProps = properties.filter { it.isInConstructor && !it.hasDefaultValue }
-        val defaultPropsWithGlobalIndex = properties.mapIndexedNotNull { globalIdx, prop ->
-            if (prop.isInConstructor && prop.hasDefaultValue) {
-                Pair(globalIdx, prop)
-            } else {
-                null
-            }
-        }
-
-        if (defaultPropsWithGlobalIndex.map { it.second }.allDefaultsHaveExpressions()) {
-            body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
-            requiredProps.forEach { prop ->
-                body.addStatement(
-                    C.TEMPLATE_NAMED_ARG,
-                    prop.kotlinName,
-                    prop.getFragmentedReturnExpression()
-                )
-            }
-            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
-                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
-                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
-                body.addStatement(
-                    C.TEMPLATE_NAMED_ARG,
-                    prop.kotlinName,
-                    prop.getFragmentedSingleShotDefaultArgExpression(maskIdx, constName)
-                )
-            }
-            body.addStatement(C.STR_PAREN)
-            body.addStatement(C.STR_RETURN_RESULT)
-            return
-        }
-
-        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
-        requiredProps.forEach { prop ->
-            body.addStatement(
-                C.TEMPLATE_NAMED_ARG,
-                prop.kotlinName,
-                prop.getFragmentedReturnExpression()
-            )
-        }
-        body.addStatement(C.STR_PAREN)
-
-        if (defaultPropsWithGlobalIndex.isNotEmpty()) {
-            body.add(C.STR_IF_OPEN)
-            val conditions = mutableListOf<String>()
-            for (i in defaultMasks.indices) {
-                val defMask = defaultMasks[i]
-                if (defMask != C.VAL_ZERO_L) {
-                    val constName = emitDefaultMaskConstant(typeSpecBuilder, i)
-                    conditions.add(
-                        C.TEMPLATE_IF_MASK_MATCH_BIT_F
-                            .format(i, constName)
-                    )
-                }
-            }
-            body.add(conditions.joinToString(C.STR_OR))
-            body.beginControlFlow(C.STR_CLOSE_PAREN_FLOW)
-
-            body.addStatement(C.STR_RETURN_RESULT_COPY)
-            defaultPropsWithGlobalIndex.forEach { (propIndex, prop) ->
-                val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
-                val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
-                val valueExpr = prop.getFragmentedDefaultValueReturnExpression(maskIdx, constName)
-                body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, valueExpr)
-            }
-            body.addStatement(C.STR_PAREN)
-            body.nextControlFlow(C.STR_ELSE)
-            body.addStatement(C.STR_RETURN_RESULT)
-            body.endControlFlow()
-        } else {
-            body.addStatement(C.STR_RETURN_RESULT)
-        }
     }
 }

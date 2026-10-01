@@ -3,37 +3,39 @@
 package com.ghost.serialization.parser.proto
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.bytes.nextDoubleExtension
-import com.ghost.serialization.parser.bytes.nextIntExtension
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.bytes.extensions.nextDoubleExtension
+import com.ghost.serialization.parser.bytes.extensions.nextIntExtension
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+import com.ghost.serialization.proto.GhostProtoConstants as PC
 
-
+/**
+ * Reads a proto3 JSON `int32` field. Per spec, a nonzero fractional portion is invalid
+ * ("1.0" parses as 1, "1.5" throws) — scans ahead for a `.` without allocating to decide
+ * whether to parse as a double (and validate the fraction) or go straight through the int
+ * fast path.
+ */
 internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
-    // Spec: nonzero fractional portions are not allowed ("1.0" ok, "1.5" error).
     val token = peekNextToken()
-    val isQuoted = token == C.QUOTE_INT
+    val isQuoted = token == TOK.QUOTE_INT
 
-    // Scan for a dot without allocating, to decide double vs. int parse path.
     var hasDot = false
     var scanPos = position
     if (isQuoted) scanPos++
-    // Skip optional minus
-    if (scanPos < limit && getByte(scanPos) == C.MINUS_INT) {
+    if (scanPos < limit && getByte(scanPos) == TOK.MINUS_INT) {
         scanPos++
     }
     while (scanPos < limit) {
         val tokenByte = getByte(scanPos)
-        if (tokenByte == C.DOT_INT) {
+        if (tokenByte == TOK.DOT_INT) {
             hasDot = true
             break
         }
-        if (
-            tokenByte == C.QUOTE_INT ||
-            tokenByte == C.COMMA_INT ||
-            tokenByte == C.CLOSE_OBJ_INT ||
-            tokenByte == C.CLOSE_ARR_INT ||
-            tokenByte <= C.SPACE_INT
-        ) {
+        val isValueTerminator = tokenByte == TOK.QUOTE_INT ||
+            tokenByte == TOK.COMMA_INT ||
+            tokenByte == TOK.CLOSE_OBJ_INT ||
+            tokenByte == TOK.CLOSE_ARR_INT ||
+            tokenByte <= TOK.SPACE_INT
+        if (isValueTerminator) {
             break
         }
         scanPos++
@@ -48,7 +50,7 @@ internal fun GhostProtoJsonFlatReader.nextProtoInt32(): Int {
             val doubleValue = nextDoubleExtension()
             val intValue = doubleValue.toInt()
             if (doubleValue != intValue.toDouble()) {
-                throwError(C.ERR_PROTO_FRACTIONAL_INT)
+                throwError(PC.ERR_PROTO_FRACTIONAL_INT)
             }
             return intValue
         }
