@@ -257,20 +257,21 @@ private inline fun simpleEscapeChar(escaped: Int): Char = when (escaped) {
  * Computes a cheap hash from the first four char code-points of the string content.
  * Uses the same algorithm as the byte flat reader for byte sources.
  */
+/**
+ * Hashes every char of a pool-eligible value (they are at most `maxStringPoolLength` long), so
+ * values sharing a prefix — URLs, dates, ids — land in different buckets instead of evicting each
+ * other. A bucket hit is still confirmed by [poolContentEquals].
+ */
 private fun GhostJsonStringReader.computeStringPoolHash(start: Int, length: Int): Int {
     val chars = rawChars
-    return if (length >= 4) {
-        chars[start].code or
-            (chars[start + 1].code shl SCN.SHIFT_8) or
-            (chars[start + 2].code shl SCN.SHIFT_16) or
-            (chars[start + 3].code shl SCN.SHIFT_24)
-    } else {
-        var key = 0
-        if (length >= 1) key = key or chars[start].code
-        if (length >= 2) key = key or (chars[start + 1].code shl SCN.SHIFT_8)
-        if (length >= 3) key = key or (chars[start + 2].code shl SCN.SHIFT_16)
-        key
+    var hash = 0
+    var index = start
+    val end = start + length
+    while (index < end) {
+        hash = hash * POOL_HASH_PRIME + chars[index].code
+        index++
     }
+    return hash
 }
 
 /**
@@ -285,3 +286,5 @@ private fun GhostJsonStringReader.poolContentEquals(start: Int, length: Int, cac
     }
     return true
 }
+
+private const val POOL_HASH_PRIME = 31
