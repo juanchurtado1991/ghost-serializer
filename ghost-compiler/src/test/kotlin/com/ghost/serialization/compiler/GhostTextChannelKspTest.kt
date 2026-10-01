@@ -11,6 +11,7 @@ import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -174,6 +175,7 @@ class GhostTextChannelKspTest {
         val compilation = KotlinCompilation().apply {
             sources = listOf(source)
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspProcessorOptions = mutableMapOf(
                 "ghost.textChannel" to if (textChannel) "true" else "false"
@@ -181,9 +183,6 @@ class GhostTextChannelKspTest {
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc can't read metadata from jars built with a newer
-            // Kotlin via inheritClassPath; this flag skips that version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

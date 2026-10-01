@@ -6,6 +6,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -142,11 +143,11 @@ class DefaultExpressionSingleShotKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -120,13 +121,11 @@ class GhostAnalyzerValidationKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's kotlinc (2.1.0) can't read metadata from newer-Kotlin (2.4.0) project
-            // jars via inheritClassPath — this flag skips the strict metadata-version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()
