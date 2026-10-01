@@ -4,8 +4,6 @@ package com.ghost.serialization.parser.bytes.extensions
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-import com.ghost.serialization.parser.bytes.ghostReadLong8
-import com.ghost.serialization.parser.bytes.ghostSWARLengthMasks
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
@@ -47,7 +45,7 @@ fun GhostJsonFlatReader.readQuotedString(): String {
             return result
         }
 
-        val rollingHash = poolHash(data = localData, start = start, length = length)
+        val rollingHash = rollingHashImpl(data = localData, start = start, length = length)
         val poolBucketIndex = rollingHash and (SCN.STR_POOL_SIZE - 1)
         if (stringPoolHashes[poolBucketIndex] == rollingHash) {
             val cachedString = stringPool[poolBucketIndex]
@@ -155,43 +153,3 @@ private fun GhostJsonFlatReader.parseUnicodeHex(currentPosition: Int): Int {
             (digitValue2 shl SCN.SHIFT_4) or
             digitValue3
 }
-
-/**
- * String-pool hash for the bytes channel: mixes the value 8 bytes at a time (plus one masked
- * partial word) instead of byte by byte, falling back to [rollingHashImpl] when the last word
- * would read past the array. Only this reader stores and looks up its own pool, so the hash just
- * has to be consistent here; a pool hit is still confirmed by a full content comparison.
- */
-@Suppress("NOTHING_TO_INLINE")
-private inline fun poolHash(
-    data: ByteArray,
-    start: Int,
-    length: Int
-): Int {
-    val fullWordsEnd = start + (length and LONG_BYTES_ALIGN_MASK)
-    val canReadWords = fullWordsEnd + SCN.LONG_BYTES <= data.size
-    if (!canReadWords) {
-        return rollingHashImpl(
-            data = data,
-            start = start,
-            length = length
-        )
-    }
-    var accumulator = length.toLong()
-    var index = start
-    while (index < fullWordsEnd) {
-        accumulator = (accumulator xor ghostReadLong8(data = data, index = index)) * POOL_HASH_MULTIPLIER
-        index += SCN.LONG_BYTES
-    }
-    val tailWord = ghostReadLong8(data = data, index = index) and ghostSWARLengthMasks[start + length - index]
-    accumulator = (accumulator xor tailWord) * POOL_HASH_MULTIPLIER
-    return (accumulator xor (accumulator ushr POOL_HASH_FOLD_SHIFT)).toInt()
-}
-
-/** Rounds a length down to a multiple of [SCN.LONG_BYTES]. */
-private const val LONG_BYTES_ALIGN_MASK = (SCN.LONG_BYTES - 1).inv()
-
-/** 64-bit golden-ratio multiplier (2^64 / φ), a standard multiplicative-hash constant. */
-private const val POOL_HASH_MULTIPLIER = -0x61c8864680b583ebL
-
-private const val POOL_HASH_FOLD_SHIFT = 32
