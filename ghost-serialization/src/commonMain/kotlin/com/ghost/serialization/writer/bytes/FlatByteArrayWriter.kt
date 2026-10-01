@@ -62,7 +62,14 @@ class FlatByteArrayWriter(
      * the current [size]. Capacity grows geometrically by [BUFFER_SCALE_FACTOR]
      * to amortize copy cost over many writes.
      */
-    private fun ensureCapacity(extraBytes: Int) {
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun ensureCapacity(extraBytes: Int) {
+        val requiredCapacity = size + extraBytes
+        val needsGrowth = requiredCapacity > array.size || requiredCapacity < 0
+        if (needsGrowth) grow(extraBytes = extraBytes)
+    }
+
+    private fun grow(extraBytes: Int) {
         val requiredCapacity = size + extraBytes
         if (requiredCapacity < 0) {
             throw IllegalStateException(EM.ERR_CAPACITY_OVERFLOW_PREFIX + "size=$size, extraBytes=$extraBytes")

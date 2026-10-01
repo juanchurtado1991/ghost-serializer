@@ -36,7 +36,14 @@ class FlatCharArrayWriter(private val initialCapacity: Int = INITIAL_WRITE_BUFFE
     var size: Int = 0
         private set
 
-    private fun ensureCapacity(extraChars: Int) {
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun ensureCapacity(extraChars: Int) {
+        val requiredCapacity = size + extraChars
+        val needsGrowth = requiredCapacity > array.size || requiredCapacity < 0
+        if (needsGrowth) grow(extraChars = extraChars)
+    }
+
+    private fun grow(extraChars: Int) {
         val requiredCapacity = size + extraChars
         if (requiredCapacity < 0) {
             throw IllegalStateException(ERR_CAPACITY_OVERFLOW_PREFIX + "size=$size, extraChars=$extraChars")
