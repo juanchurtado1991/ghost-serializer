@@ -117,6 +117,22 @@ class GhostJsonStringReader(
         if (cached != -1) {
             return cached
         }
+        val cursor = position
+        if (cursor + 1 < limit) {
+            val chars = rawChars
+            val firstChar = chars[cursor].code
+            if (firstChar > TOK.SPACE_INT) {
+                nextTokenByte = firstChar
+                return firstChar
+            }
+            val secondChar = chars[cursor + 1].code
+            val isSingleSpaceBeforeToken = firstChar == TOK.SPACE_INT && secondChar > TOK.SPACE_INT
+            if (isSingleSpaceBeforeToken) {
+                position = cursor + 1
+                nextTokenByte = secondChar
+                return secondChar
+            }
+        }
         skipWhitespace()
         return nextTokenByte
     }
