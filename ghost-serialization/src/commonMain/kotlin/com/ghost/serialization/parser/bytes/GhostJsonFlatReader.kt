@@ -233,6 +233,22 @@ open class GhostJsonFlatReader(
         val cached = nextTokenByte
         if (cached != -1) return cached
 
+        val cursor = position
+        if (cursor + 1 < limit) {
+            val data = rawData
+            val firstByte = data[cursor].toInt() and TOK.BYTE_MASK
+            if (firstByte > TOK.SPACE_INT) {
+                nextTokenByte = firstByte
+                return firstByte
+            }
+            val secondByte = data[cursor + 1].toInt() and TOK.BYTE_MASK
+            val isSingleSpaceBeforeToken = firstByte == TOK.SPACE_INT && secondByte > TOK.SPACE_INT
+            if (isSingleSpaceBeforeToken) {
+                position = cursor + 1
+                nextTokenByte = secondByte
+                return secondByte
+            }
+        }
         skipWhitespace()
         return nextTokenByte
     }
