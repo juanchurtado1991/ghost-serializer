@@ -32,6 +32,7 @@ internal class GhostModuleRegistryGenerator(
     private val codeGenerator: CodeGenerator,
     private val registryClassName: String,
     private val originatingFiles: Set<KSFile>,
+    private val emitJvmField: Boolean,
 ) {
 
     /** Generates the class-to-serializer registry, sharded into chunks to avoid JVM method limits when large. */
@@ -195,7 +196,7 @@ internal class GhostModuleRegistryGenerator(
                             PC.STR_INIT_INSTANCE,
                             ClassName(CC.STR_GENERATED_PKG, registryClassName)
                         )
-                        .addAnnotation(JvmField::class)
+                        .apply { if (emitJvmField) addAnnotation(JvmField::class) }
                         .build()
                 )
                 .build()

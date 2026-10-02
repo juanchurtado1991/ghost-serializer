@@ -28,7 +28,8 @@ import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
 class GhostSerializationProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
-    private val options: Map<String, String> = emptyMap()
+    private val options: Map<String, String> = emptyMap(),
+    private val emitJvmField: Boolean = true
 ) : SymbolProcessor {
 
     private val classToSerializer = mutableMapOf<ClassName, ClassName>()
@@ -111,7 +112,8 @@ class GhostSerializationProcessor(
             GhostModuleRegistryGenerator(
                 codeGenerator = codeGenerator,
                 registryClassName = registryClassName,
-                originatingFiles = originatingFiles
+                originatingFiles = originatingFiles,
+                emitJvmField = emitJvmField
             )
                 .generate(classToSerializer = classToSerializer)
             val buildTooling = GhostBuildToolingWriter(
