@@ -12,6 +12,9 @@ kotlin {
     android {
         namespace = "com.ghost.serialization.ktor"
         compileSdk = 36
+        aarMetadata {
+            minCompileSdk = libs.versions.android.min.compile.sdk.get().toInt()
+        }
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }

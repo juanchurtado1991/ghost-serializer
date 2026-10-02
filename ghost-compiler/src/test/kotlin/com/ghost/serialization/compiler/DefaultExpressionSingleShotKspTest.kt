@@ -130,6 +130,47 @@ class DefaultExpressionSingleShotKspTest {
         assertTrue("else \"x\"" in generated, generated)
     }
 
+    @Test
+    fun defaultsReferencingNestedClassesCompileInTheGeneratedSerializer() {
+        val generated = compileAndReadSerializer(
+            source = SourceFile.kotlin(
+                name = "LifecycleEvent.kt",
+                contents = """
+                package test
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class LifecycleEvent(
+                    val id: String,
+                    val kind: Kind = Kind.UNKNOWN,
+                    val lifecycleType: Lifecycle.Type = Lifecycle.Type.UNKNOWN,
+                    val ownerId: String? = null,
+                    val locationId: String? = null,
+                    val roomId: String? = null,
+                    val principal: String? = null,
+                ) {
+                    @GhostSerialization
+                    enum class Kind { CREATED, UNKNOWN }
+
+                    sealed class Lifecycle {
+                        @GhostSerialization
+                        enum class Type { CREATE, DELETE, UNKNOWN }
+                    }
+                }
+                """.trimIndent()
+            ),
+            serializerFileName = "LifecycleEventSerializer.kt"
+        )
+        assertTrue(
+            actual = "test.LifecycleEvent.Kind.UNKNOWN" in generated,
+            message = generated
+        )
+        assertTrue(
+            actual = "test.LifecycleEvent.Lifecycle.Type.UNKNOWN" in generated,
+            message = generated
+        )
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)

@@ -13,6 +13,9 @@ kotlin {
     android {
         namespace = "com.ghost.serialization"
         compileSdk = 36
+        aarMetadata {
+            minCompileSdk = libs.versions.android.min.compile.sdk.get().toInt()
+        }
         minSdk = 21
         optimization {
             consumerKeepRules.file("consumer-rules.pro")

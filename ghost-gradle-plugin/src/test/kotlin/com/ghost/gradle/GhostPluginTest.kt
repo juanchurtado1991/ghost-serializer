@@ -200,13 +200,13 @@ class GhostPluginTest {
 
         evaluated(project = project)
 
-        val kspJvmDeps = project.configurations.getByName("kspJvm").dependencies
+        val kspJvmDeps = project.configurations.getByName(T.CONFIG_KSP_JVM).dependencies
         assertTrue(
             actual = kspJvmDeps.any { it.name == T.ARTIFACT_COMPILER },
             message = "Should add ghost-compiler to kspJvm for the declared jvm() target"
         )
 
-        val kspCommonDeps = project.configurations.getByName("kspCommonMainMetadata").dependencies
+        val kspCommonDeps = project.configurations.getByName(T.CONFIG_KSP_COMMON_MAIN_METADATA).dependencies
         assertTrue(
             actual = kspCommonDeps.any { it.name == T.ARTIFACT_COMPILER },
             message = "Should add ghost-compiler to kspCommonMainMetadata for the implicit 'metadata' target"
@@ -251,6 +251,36 @@ class GhostPluginTest {
         assertFalse(
             actual = jvmPlugins.any { it.name == T.ARTIFACT_COMPILER_PLUGIN },
             message = "JVM compilations keep ServiceLoader discovery and must not get the compiler plugin"
+        )
+    }
+
+    @Test
+    fun `plugin skips per-target ksp when commonMain already includes the metadata output`() {
+        val project = ProjectBuilder.builder().build()
+
+        project.pluginManager.apply(T.PLUGIN_KOTLIN_MULTIPLATFORM)
+        project.pluginManager.apply(T.PLUGIN_KSP)
+        val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+        kotlin.jvm()
+        project.pluginManager.apply(GhostPlugin::class.java)
+        kotlin.sourceSets.getByName(T.SOURCE_SET_COMMON_MAIN).kotlin.srcDir(T.KSP_COMMON_METADATA_OUTPUT)
+
+        evaluated(project = project)
+
+        val kspJvmDeps = project.configurations.getByName(T.CONFIG_KSP_JVM).dependencies
+        val kspCommonDeps = project.configurations.getByName(T.CONFIG_KSP_COMMON_MAIN_METADATA).dependencies
+        assertFalse(
+            actual = kspJvmDeps.any { it.name == T.ARTIFACT_COMPILER },
+            message = "Serializers generated into commonMain must not be generated again for the jvm target"
+        )
+        assertTrue(
+            actual = kspCommonDeps.any { it.name == T.ARTIFACT_COMPILER },
+            message = "The common metadata compilation must still run ghost-compiler"
+        )
+        val commonMainResources = kotlin.sourceSets.getByName(T.SOURCE_SET_COMMON_MAIN).resources.srcDirs
+        assertTrue(
+            actual = commonMainResources.any { it.path.endsWith(T.KSP_COMMON_METADATA_RESOURCES) },
+            message = "JVM/Android need the metadata META-INF/services registry entry once targets stop running KSP"
         )
     }
 

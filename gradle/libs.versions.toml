@@ -3,12 +3,15 @@
 kotlin-sdk                      = "2.2.21"
 # Kotlin versions ghost-compiler-plugin is verified against (compat-tests/kotlin-consumer in CI).
 kotlin-plugin-tested            = "2.2.21,2.3.21,2.4.0"
+# Lowest compileSdk Ghost's AARs require from consumers (AAR metadata). Ghost uses no API above its
+# minSdk, so this must not follow compileSdk — AGP's default would force consumers onto compileSdk 36.
+android-min-compile-sdk         = "21"
 #noinspection AndroidGradlePluginVersion
 agp                             = "9.1.1"
 ksp                             = "2.3.12"
 kover                           = "0.9.9"
 compose-plugin                  = "1.10.3"
-publish-version                 = "1.3.2"
+publish-version                 = "1.3.3"
 publish-group                   = "com.ghostserializer"
 
 # Networking & Serialization

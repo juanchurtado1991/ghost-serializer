@@ -18,7 +18,9 @@ kotlin {
     jvm()
     android {
         namespace = "compat.consumer"
-        compileSdk = 36
+        // Below Ghost's own compileSdk on purpose: checkAndroidMainAarMetadata then fails if a Ghost AAR
+        // starts demanding a newer compileSdk from its consumers (1.3.0–1.3.2 required 36).
+        compileSdk = 35
         minSdk = 21
     }
     iosArm64()

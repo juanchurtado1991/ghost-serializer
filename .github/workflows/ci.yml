@@ -150,7 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           log="$(mktemp)"
-          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain iosSimulatorArm64Test wasmJsNodeTest --console=plain 2>&1 | tee "$log"
+          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain checkAndroidMainAarMetadata iosSimulatorArm64Test wasmJsNodeTest --console=plain 2>&1 | tee "$log"
           gradle_exit="${PIPESTATUS[0]}"
           if [[ "$gradle_exit" -ne 0 ]]; then
             echo "::error::Gradle exited with $gradle_exit"
@@ -191,7 +191,7 @@ jobs:
         run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-compiler-plugin:publishToMavenLocal :ghost-gradle-plugin:publishToMavenLocal :ghost-ktor:publishToMavenLocal -PskipTests --console=plain
 
       - name: Build and test the consumer on Kotlin ${{ matrix.kotlin }} (JVM, Android, Wasm, Native compile)
-        run: ./gradlew -p compat-tests/kotlin-consumer -PkotlinVersion=${{ matrix.kotlin }} jvmTest wasmJsNodeTest compileAndroidMain compileKotlinIosArm64 --console=plain
+        run: ./gradlew -p compat-tests/kotlin-consumer -PkotlinVersion=${{ matrix.kotlin }} jvmTest wasmJsNodeTest compileAndroidMain checkAndroidMainAarMetadata compileKotlinIosArm64 --console=plain
 
   test-wasm:
     name: Tests (WasmJs)
