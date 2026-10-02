@@ -256,6 +256,25 @@ class GhostPluginTest {
 
     @OptIn(ExperimentalWasmDsl::class)
     @Test
+    fun `compiler plugin is wired when the ghost plugin is applied before kotlin multiplatform`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(GhostPlugin::class.java)
+        project.pluginManager.apply(T.PLUGIN_KOTLIN_MULTIPLATFORM)
+        project.extensions.getByType(KotlinMultiplatformExtension::class.java).wasmJs {
+            nodejs()
+        }
+
+        evaluated(project = project)
+
+        val wasmPlugins = project.configurations.getByName(T.CONFIG_PLUGIN_CLASSPATH_WASM_MAIN).dependencies
+        assertTrue(
+            actual = wasmPlugins.any { it.name == T.ARTIFACT_COMPILER_PLUGIN },
+            message = "Applying the ghost plugin first must still add ghost-compiler-plugin to wasmJs compilations"
+        )
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    @Test
     fun `compiler plugin option follows autoRegistration`() {
         val project = kmpProjectWithJvmAndWasm()
         project.extensions.getByType(GhostExtension::class.java).autoRegistration.set(false)

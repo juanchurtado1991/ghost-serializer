@@ -12,7 +12,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
  * frame that stays until its value completes, and array elements advance the index — the same
  * frame lifecycle [GhostJsonPathTracker] follows when driven eagerly. A string or scalar still
  * open at `end` — or ending exactly there — means the error was raised while reading it, so its
- * owning key stays on the path.
+ * owning key stays on the path. The container stack grows past [INITIAL_SCAN_DEPTH] because a
+ * caller may raise the reader's `maxDepth`; this only runs once an error is already being thrown.
  */
 internal object GhostJsonPathReconstruction {
 
@@ -24,7 +25,7 @@ internal object GhostJsonPathReconstruction {
         decodeRange: (Int, Int) -> String
     ): GhostJsonPathTracker {
         tracker.reset()
-        val containers = IntArray(MAX_SCAN_DEPTH)
+        var containers = IntArray(INITIAL_SCAN_DEPTH)
         var depth = 0
         var index = start
         while (index < end) {
@@ -35,9 +36,10 @@ internal object GhostJsonPathReconstruction {
                     if (top == CONTAINER_ARRAY) tracker.enterArrayElement()
                     val isObject = byte == TOK.OPEN_OBJ_INT
                     if (isObject) tracker.pushObject() else tracker.pushArray()
-                    if (depth < MAX_SCAN_DEPTH) {
-                        containers[depth] = if (isObject) CONTAINER_OBJECT_KEY else CONTAINER_ARRAY
+                    if (depth == containers.size) {
+                        containers = containers.copyOf(newSize = containers.size * SCAN_DEPTH_GROWTH)
                     }
+                    containers[depth] = if (isObject) CONTAINER_OBJECT_KEY else CONTAINER_ARRAY
                     depth++
                     index++
                 }
@@ -174,7 +176,10 @@ internal object GhostJsonPathReconstruction {
     internal const val ESCAPE_PAIR_LENGTH = 2
 
     @PublishedApi
-    internal const val MAX_SCAN_DEPTH = 256
+    internal const val INITIAL_SCAN_DEPTH = 256
+
+    @PublishedApi
+    internal const val SCAN_DEPTH_GROWTH = 2
 
     private const val BACKSLASH_CHAR = '\\'
     private const val HEX_RADIX = 16

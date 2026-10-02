@@ -27,8 +27,8 @@ fun GhostJsonStringReader.readQuotedString(): String {
         // Fast path: no escape sequences — try string pool before allocating a new substring.
         if (length <= GhostHeuristics.maxStringPoolLength) {
             val hash = computeStringPoolHash(start = start, length = length)
-            // XOR length into bucket selection to disambiguate strings that share
-            // the same first-4-chars prefix but have different lengths.
+            // XOR the length into bucket selection so equal-hash values of different lengths
+            // still spread across buckets.
             val poolKey = hash xor (length * SCN.STR_POOL_HASH_MULTIPLIER)
             val bucketIndex = poolKey and (SCN.STR_POOL_SIZE - 1)
             if (stringPoolHashes[bucketIndex] == poolKey) {
@@ -253,10 +253,6 @@ private inline fun simpleEscapeChar(escaped: Int): Char = when (escaped) {
     else -> TOK.FF_CHAR
 }
 
-/**
- * Computes a cheap hash from the first four char code-points of the string content.
- * Uses the same algorithm as the byte flat reader for byte sources.
- */
 /**
  * Hashes every char of a pool-eligible value (they are at most `maxStringPoolLength` long), so
  * values sharing a prefix — URLs, dates, ids — land in different buckets instead of evicting each
