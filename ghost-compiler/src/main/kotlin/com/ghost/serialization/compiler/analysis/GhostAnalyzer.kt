@@ -171,7 +171,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             hasDefaultValue = param?.hasDefault ?: false,
             defaultExpression = param
                 ?.takeIf { it.hasDefault }
-                ?.let { DefaultExpressionExtractor.extract(param = it) },
+                ?.let { DefaultExpressionExtractor.extract(param = it) }
+                ?.let { expression ->
+                    DefaultExpressionQualifier.qualify(
+                        expression = expression,
+                        model = prop.parentDeclaration as? KSClassDeclaration
+                    )
+                },
             isInConstructor = param != null,
             isMap = isMap,
             mapValueType = mapValueType,
