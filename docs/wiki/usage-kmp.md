@@ -15,7 +15,7 @@ For the minimal setup, see the [Ghost Serializer Quick Start](quick-start.md).
 plugins {
     kotlin("multiplatform")
     id("com.google.devtools.ksp") version "2.3.12"
-    id("com.ghostserializer.ghost") version "1.4.0"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 
 kotlin {
@@ -223,7 +223,7 @@ routing {
 Internally:
 ```
 Ghost.getSerializer(T::class)              // O(1) cached lookup
-  → Ghost.encodeToBytes(serializer, value) // GhostJsonFlatWriter — pre-encoded field headers
+  → Ghost.encodeToBytes(serializer, value) // GhostJsonWriter over a pooled flat buffer — pre-encoded field headers
   → respond(ByteArrayContent(bytes, ContentType.Application.Json, status))
 ```
 

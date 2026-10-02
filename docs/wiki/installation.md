@@ -41,7 +41,7 @@ dependencyResolutionManagement {
 
 ```toml
 [versions]
-ghost = "1.4.0"
+ghost = "1.3.2"
 ksp = "2.3.12"
 
 [libraries]

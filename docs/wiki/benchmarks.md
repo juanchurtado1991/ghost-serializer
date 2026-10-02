@@ -189,7 +189,7 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 
 Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-generated `GhostYamlSerializer` on the integration [`YamlBenchUser`](../../ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/YamlBenchUser.kt) fixture via `Ghost.decodeFromYaml` / `encodeToYaml` / `encodeToYamlBytes`.
 
-**Fixture:** block-style YAML document (**90 B** full profile, **49 B** minimal round-trip). Parser: `GhostYamlFlatReader` · Writer: `GhostYamlFlatWriter`.
+**Fixture:** block-style YAML document (**90 B** full profile, **49 B** minimal round-trip). Parser: `GhostYamlFlatReader` · Writer: `GhostYamlWriter`.
 
 | Task | Profile | Regression gate |
 |:---|:---|:---:|
@@ -273,7 +273,7 @@ build if a tracked case ever regresses or a stale entry survives a snapshot refr
 
 ## 👻 YAML Writer Conformance (Ghost-only)
 
-The reader-side report above says nothing about the **writer** (`GhostYamlFlatWriter`). This report runs every
+The reader-side report above says nothing about the **writer** (`GhostYamlWriter`). This report runs every
 vendored yaml-test-suite case the reader can decode through `decode -> encode -> decode` and checks two things:
 does it reproduce the original tree (**round-trip**), and does a second, independent parser
 ([kaml](https://github.com/charleskorn/kaml)) accept Ghost's own re-encoded output (**kaml oracle**)? Same offline,

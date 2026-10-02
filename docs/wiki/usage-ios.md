@@ -2,7 +2,7 @@
 
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](usage-ios.md)
 
-Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Kotlin/Native has no `ServiceLoader`, so since 1.4.0 the Ghost Gradle plugin links every `@GhostSerialization` model to its serializer at compile time (a Kotlin compiler plugin plus associated objects): `Ghost.deserialize` works on iOS with no registration code.
+Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Kotlin/Native has no `ServiceLoader`, so since 1.3.2 the Ghost Gradle plugin links every `@GhostSerialization` model to its serializer at compile time (a Kotlin compiler plugin plus associated objects): `Ghost.deserialize` works on iOS with no registration code.
 
 Start with the shared-module setup in the [Quick Start](quick-start.md), then add the XCFramework export below.
 
@@ -15,7 +15,7 @@ Start with the shared-module setup in the [Quick Start](quick-start.md), then ad
 plugins {
     kotlin("multiplatform")
     id("com.google.devtools.ksp") version "2.3.12"
-    id("com.ghostserializer.ghost") version "1.4.0"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 
 kotlin {
@@ -24,21 +24,21 @@ kotlin {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.4.0")
+            export("com.ghostserializer:ghost-serialization:1.3.2")
         }
     }
     iosSimulatorArm64 {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.4.0")
+            export("com.ghostserializer:ghost-serialization:1.3.2")
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            api("com.ghostserializer:ghost-api:1.4.0")
-            api("com.ghostserializer:ghost-serialization:1.4.0")
+            api("com.ghostserializer:ghost-api:1.3.2")
+            api("com.ghostserializer:ghost-serialization:1.3.2")
         }
     }
 }

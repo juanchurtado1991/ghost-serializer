@@ -139,9 +139,11 @@ try {
 Use `@GhostDecoder` / `@GhostEncoder` for property-specific parsing logic — the generated code calls your function **directly** (no virtual dispatch, no boxing):
 
 ```kotlin
-import com.ghost.serialization.parser.GhostJsonReader
-import com.ghost.serialization.parser.GhostJsonStringReader
-import com.ghost.serialization.writer.GhostJsonFlatWriter
+import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 @GhostSerialization
 data class LegacyUser(
@@ -163,8 +165,8 @@ object LegacyUtils {
         return someDateParser(raw)
     }
 
-    // Signature: (GhostJsonFlatWriter, T) -> Unit
-    fun writeDate(writer: GhostJsonFlatWriter, value: Long) {
+    // Signature: (GhostJsonWriter, T) -> Unit
+    fun writeDate(writer: GhostJsonWriter, value: Long) {
         writer.value(someDateFormatter(value))
     }
 }
@@ -181,15 +183,18 @@ Register global serializers for types you don't own (e.g., `UUID`, `BigDecimal`,
 
 ```kotlin
 // 1. Define once
-object UUIDSerializer : GhostSerializer<UUID> {
+// AbstractGhostSerializer supplies the remaining channels (string writer/reader, flat reader,
+// Okio sink/source) by bridging to these two.
+object UUIDSerializer : AbstractGhostSerializer<UUID>() {
     override val typeName: String = "UUID"
-    override fun serialize(writer: GhostJsonWriter, value: UUID) = writer.value(value.toString())
-    override fun serialize(writer: GhostJsonFlatWriter, value: UUID) = writer.value(value.toString())
+    override fun serialize(writer: GhostJsonWriter, value: UUID) {
+        writer.value(value.toString())
+    }
     override fun deserialize(reader: GhostJsonReader): UUID = UUID.fromString(reader.nextString())
 }
 
 // 2. Register globally (e.g., in Application.onCreate or DI module)
-val appRegistry = object : GhostRegistry {
+val appRegistry = object : AbstractGhostRegistry() {
     override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
         if (clazz == UUID::class) UUIDSerializer as GhostSerializer<T> else null
     override fun getAllSerializers() = mapOf(UUID::class to UUIDSerializer)

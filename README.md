@@ -5,7 +5,7 @@
 Ghost is not a rewrite. It is the fast, low-allocation path for the models you opt in — and a softer landing when the backend ships messy JSON.
 
 [![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
+[![Version](https://img.shields.io/badge/version-1.3.2-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21%2B-blueviolet.png?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
@@ -74,7 +74,7 @@ Ghost.deserialize<User>(responseBytes)     // Ghost (bytes / adapters)
 
 Guides: [Quick Start](docs/wiki/quick-start.md) · [Ktor](docs/wiki/usage-kmp.md) · [Android / Retrofit](docs/wiki/usage-android.md) · [Spring](docs/wiki/usage-spring-boot.md)
 
-**Also:** Android · iOS · JVM · Wasm · YAML · Proto3 JSON · Kotlin **2.2.21+** / KSP **2.3.x** / Ktor **3.3.x+** → [Modules](docs/wiki/modules.md)
+**Also:** Android · iOS · JVM · Wasm (iOS/Wasm with no registration code, via the Gradle plugin) · YAML · Proto3 JSON · Kotlin **2.2.21+** / KSP **2.3.x** / Ktor **3.3.x+** → [Modules](docs/wiki/modules.md)
 
 ---
 

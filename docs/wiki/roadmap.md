@@ -17,6 +17,12 @@ Track progress in [GitHub Issues](https://github.com/juanchurtado1991/ghost-seri
 - Maven Central, reproducible benchmarks, [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/), wiki docs
 - `textChannel = true` by default; CI regression gates for benchmarks
 
+## Shipped in 1.3.2
+
+- **Kotlin 2.2.21 minimum** (down from 2.4.0), verified by a standalone consumer project in CI
+- **Automatic registration on iOS and Wasm** — no `Ghost.addRegistry` needed (`ghost-compiler-plugin`, applied by the Gradle plugin)
+- JSONPath + fix hints on JSON/YAML decode errors; round-trip-safe `Double`/`Float`
+
 ---
 
 ## 1. OpenAPI → Ghost DTO codegen
