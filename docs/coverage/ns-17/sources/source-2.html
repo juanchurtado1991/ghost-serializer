@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ProtoAnyRegistry</title>
+  <title>GhostSerialization Coverage Report > GhostJsonReaderCaptureKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.proto.wkt</a>
+    <a href="../index.html">com.ghost.serialization.parser.streaming</a>
 </div>
 
-<h1>Coverage Summary for Class: ProtoAnyRegistry (com.ghost.serialization.proto.wkt)</h1>
+<h1>Coverage Summary for Class: GhostJsonReaderCaptureKt (com.ghost.serialization.parser.streaming)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ProtoAnyRegistry</td>
+  <td class="name">GhostJsonReaderCaptureKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (13/13)
+    (4/4)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63.6%
+    83.3%
   </span>
   <span class="absValue">
-    (14/22)
+    (10/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.5%
+    100%
   </span>
   <span class="absValue">
-    (32/37)
+    (19/19)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    82.4%
+    97.8%
   </span>
   <span class="absValue">
-    (187/227)
+    (134/137)
   </span>
 </td>
 </tr>
@@ -101,141 +101,58 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;package com.ghost.serialization.proto.wkt
+&nbsp;package com.ghost.serialization.parser.streaming
 &nbsp;
-&nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
-&nbsp;import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.pack
-&nbsp;import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.register
-&nbsp;import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.unpack
-&nbsp;import com.ghost.serialization.proto.wkt.ProtoAnyRegistry.unpackDynamic
-&nbsp;import kotlin.reflect.KClass
-&nbsp;
+&nbsp;import com.ghost.serialization.parser.common.json.captureJsonValueScan
+&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
 &nbsp;
 &nbsp;/**
-&nbsp; * Maps `typeUrl` strings to the Kotlin types packed inside a [ProtoAny], so `pack`/`unpack`
-&nbsp; * work without the caller manually juggling bytes.
-&nbsp; *
-&nbsp; * Independent of [Ghost]&#39;s serializer registry — the type still needs a `GhostSerializer`
-&nbsp; * registered there too (e.g. via `@GhostProtoSerialization` + KSP). This registry only
-&nbsp; * remembers which `typeUrl` corresponds to which [KClass].
-&nbsp; *
-&nbsp; * ```kotlin
-&nbsp; * ProtoAnyRegistry.register&lt;DeviceRebooted&gt;(&quot;type.googleapis.com/myapp.DeviceRebooted&quot;)
-&nbsp; *
-&nbsp; * val any: ProtoAny = ProtoAnyRegistry.pack(DeviceRebooted(deviceId = 1))
-&nbsp; * val event: DeviceRebooted = ProtoAnyRegistry.unpack(any)
-&nbsp; * val dynamic: Any? = ProtoAnyRegistry.unpackDynamic(any) // resolved purely from any.typeUrl
-&nbsp; * ```
+&nbsp; * Captures the next complete JSON value as a [RawJson] view into this reader&#39;s buffer.
 &nbsp; */
-&nbsp;object ProtoAnyRegistry {
-&nbsp;
-<b class="fc">&nbsp;    private val typeUrlByClass = mutableMapOf&lt;KClass&lt;*&gt;, String&gt;()</b>
-<b class="fc">&nbsp;    private val classByTypeUrl = mutableMapOf&lt;String, KClass&lt;*&gt;&gt;()</b>
-&nbsp;
-&nbsp;    /** Registers the `typeUrl` a [ProtoAny] should carry for messages of type [kClass]. */
-&nbsp;    fun register(typeUrl: String, kClass: KClass&lt;*&gt;) {
-<b class="fc">&nbsp;        typeUrlByClass[kClass] = typeUrl</b>
-<b class="fc">&nbsp;        classByTypeUrl[typeUrl] = kClass</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /** Reified convenience for [register]. */
-&nbsp;    inline fun &lt;reified T : Any&gt; register(typeUrl: String) {
-<b class="fc">&nbsp;        register(typeUrl, T::class)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /** The `typeUrl` registered for [kClass], or `null` if none was registered. */
-<b class="fc">&nbsp;    fun typeUrlFor(kClass: KClass&lt;*&gt;): String? = typeUrlByClass[kClass]</b>
-&nbsp;
-&nbsp;    /** The [KClass] registered for [typeUrl], or `null` if none was registered. */
-<b class="fc">&nbsp;    fun classFor(typeUrl: String): KClass&lt;*&gt;? = classByTypeUrl[typeUrl]</b>
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Serializes [message] and wraps it in a [ProtoAny] using the `typeUrl` registered for
-&nbsp;     * [kClass] via [register].
-&nbsp;     *
-&nbsp;     * @throws IllegalArgumentException if no `typeUrl` was registered for [kClass], or if
-&nbsp;     *   [kClass] has no [GhostSerializer] registered with [Ghost] (e.g. missing
-&nbsp;     *   `@GhostProtoSerialization`/`@GhostSerialization`).
-&nbsp;     */
-&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
-&nbsp;    fun &lt;T : Any&gt; pack(message: T, kClass: KClass&lt;T&gt;): ProtoAny {
-<b class="fc">&nbsp;        val typeUrl = typeUrlByClass[kClass]</b>
-<b class="fc">&nbsp;            ?: Ghost.throwError(</b>
-<b class="fc">&nbsp;                &quot;No typeUrl registered for ${kClass.simpleName}. &quot; +</b>
-<b class="fc">&nbsp;                        &quot;Call ProtoAnyRegistry.register&lt;${kClass.simpleName}&gt;(typeUrl) first.&quot;</b>
-&nbsp;            )
-<b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) as? GhostSerializer&lt;T&gt;</b>
-<b class="nc">&nbsp;            ?: Ghost.throwError(&quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;)</b>
-<b class="fc">&nbsp;        val bytes = Ghost.encodeToBytes(serializer, message)</b>
-<b class="fc">&nbsp;        return ProtoAny(typeUrl, bytes)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /** Reified convenience for [pack]. */
-<b class="fc">&nbsp;    inline fun &lt;reified T : Any&gt; pack(message: T): ProtoAny = pack(message, T::class)</b>
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Decodes the payload captured in [any] as [kClass], using the [GhostSerializer] registered
-&nbsp;     * with [Ghost] for that type.
-&nbsp;     *
-&nbsp;     * When [kClass] or [any]&#39;s `typeUrl` is registered via [register], verifies that the wire
-&nbsp;     * `typeUrl` matches [kClass]; a mismatch throws. Use [unpackDynamic] when the target type is
-&nbsp;     * only known from the wire.
-&nbsp;     *
-&nbsp;     * @throws IllegalArgumentException if [kClass] has no [GhostSerializer] registered with [Ghost],
-&nbsp;     *   or if a registered `typeUrl` does not match [kClass].
-&nbsp;     */
-&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
-&nbsp;    fun &lt;T : Any&gt; unpack(any: ProtoAny, kClass: KClass&lt;T&gt;): T {
-<b class="fc">&nbsp;        val expectedTypeUrl = typeUrlFor(kClass)</b>
-<b class="pc">&nbsp;        if (expectedTypeUrl != null &amp;&amp; any.typeUrl != expectedTypeUrl) {</b>
-<b class="fc">&nbsp;            Ghost.throwError(</b>
-<b class="fc">&nbsp;                &quot;ProtoAny typeUrl mismatch: expected &#39;$expectedTypeUrl&#39; for ${kClass.simpleName}, &quot; +</b>
-<b class="fc">&nbsp;                        &quot;got &#39;${any.typeUrl}&#39;&quot;</b>
-&nbsp;            )
+&nbsp;fun GhostJsonReader.captureRawJson(): RawJson {
+<b class="fc">&nbsp;    skipWhitespace()</b>
+<b class="fc">&nbsp;    val start = position</b>
+<b class="fc">&nbsp;    val streaming = source as? StreamingGhostSource</b>
+&nbsp;    // Pin the value start: scanning advances [position] and may releaseStreamingPrefix,
+&nbsp;    // but we re-read [start, start+length) when materializing the owned byte copy.
+<b class="fc">&nbsp;    streaming?.pin(absoluteIndex = start)</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        captureReaderValueBytes()</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        val length = position - start</b>
+<b class="pc">&nbsp;        return if (streaming != null) {</b>
+<b class="fc">&nbsp;            RawJson.fromUtf8Bytes(bytes = captureReaderRangeBytes(start = start, length = length))</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            RawJson.fromBufferSlice(buffer = rawData, offset = start, length = length)</b>
 &nbsp;        }
-<b class="fc">&nbsp;        val registeredClass = classFor(any.typeUrl)</b>
-<b class="pc">&nbsp;        if (registeredClass != null &amp;&amp; registeredClass != kClass) {</b>
-<b class="nc">&nbsp;            Ghost.throwError(</b>
-<b class="nc">&nbsp;                &quot;ProtoAny typeUrl &#39;${any.typeUrl}&#39; is registered for ${registeredClass.simpleName}, &quot; +</b>
-<b class="nc">&nbsp;                        &quot;not ${kClass.simpleName}&quot;</b>
-&nbsp;            )
-&nbsp;        }
-<b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) as? GhostSerializer&lt;T&gt;</b>
-<b class="nc">&nbsp;            ?: Ghost.throwError(&quot;${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}&quot;)</b>
-<b class="fc">&nbsp;        return ghostProtoInternalUseFlatReader(any.value) { reader -&gt;</b>
-<b class="fc">&nbsp;            serializer.deserialize(reader)</b>
-&nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        streaming?.unpin()</b>
 &nbsp;    }
+&nbsp;}
 &nbsp;
-&nbsp;    /** Reified convenience for [unpack]. */
-<b class="fc">&nbsp;    inline fun &lt;reified T : Any&gt; unpack(any: ProtoAny): T = unpack(any, T::class)</b>
+&nbsp;/**
+&nbsp; * Captures the next complete JSON value as a raw [ByteArray] without decoding.
+&nbsp; *
+&nbsp; * Same semantics as `parser.bytes.captureRawJsonBytes` but operates on the
+&nbsp; * [GhostJsonReader] (non-flat) byte-array source. The reader must be positioned at
+&nbsp; * (or before) the first non-whitespace byte of the value.
+&nbsp; */
+<b class="fc">&nbsp;fun GhostJsonReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Resolves [any]&#39;s Kotlin type purely from its `typeUrl` (via [register]) and decodes the
-&nbsp;     * payload, without the caller needing to know the target type at compile time.
-&nbsp;     *
-&nbsp;     * @return The decoded message, or `null` if no [KClass] was registered for `any.typeUrl`.
-&nbsp;     */
-&nbsp;    fun unpackDynamic(any: ProtoAny): Any? {
-<b class="fc">&nbsp;        val kClass = classByTypeUrl[any.typeUrl] ?: return null</b>
-<b class="pc">&nbsp;        val serializer = Ghost.getSerializer(kClass) ?: return null</b>
-<b class="fc">&nbsp;        return ghostProtoInternalUseFlatReader(any.value) { reader -&gt;</b>
-<b class="fc">&nbsp;            serializer.deserialize(reader)</b>
-&nbsp;        }
+&nbsp;private fun GhostJsonReader.captureReaderValueBytes() {
+<b class="fc">&nbsp;    position = captureJsonValueScan(startPosition = position, limit = limit) { index -&gt; getByte(index) }</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostJsonReader.captureReaderRangeBytes(start: Int, length: Int): ByteArray {
+<b class="fc">&nbsp;    val result = ByteArray(length)</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="fc">&nbsp;    while (index &lt; length) {</b>
+<b class="fc">&nbsp;        result[index] = getByte(start + index).toByte()</b>
+<b class="fc">&nbsp;        index++</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Test hook: clears all registered typeUrl/KClass mappings to prevent cross-test pollution.
-&nbsp;     * Not for production use.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun resetForTest() {
-<b class="fc">&nbsp;        typeUrlByClass.clear()</b>
-<b class="fc">&nbsp;        classByTypeUrl.clear()</b>
-&nbsp;    }
+<b class="fc">&nbsp;    return result</b>
 &nbsp;}
 </code>
 </pre>
@@ -260,7 +177,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

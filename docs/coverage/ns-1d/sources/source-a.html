@@ -1,0 +1,368 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostFastPrimitiveArrayHelpersKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.serializers</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostFastPrimitiveArrayHelpersKt (com.ghost.serialization.serializers)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostFastPrimitiveArrayHelpersKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    77.9%
+  </span>
+  <span class="absValue">
+    (67/86)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.7%
+  </span>
+  <span class="absValue">
+    (98/108)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.5%
+  </span>
+  <span class="absValue">
+    (448/479)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.serializers
+&nbsp;
+&nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
+&nbsp;
+&nbsp;/** True when the [limit]-bounded bytes at [pos] match [literal] byte-for-byte. */
+&nbsp;@PublishedApi
+&nbsp;internal inline fun matchesLiteral(
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    pos: Int,
+&nbsp;    limit: Int,
+&nbsp;    literal: ByteString
+&nbsp;): Boolean {
+<b class="fc">&nbsp;    val size = literal.size</b>
+<b class="pc">&nbsp;    if (pos + size &gt; limit) return false</b>
+<b class="fc">&nbsp;    for (i in 0 until size) {</b>
+<b class="fc">&nbsp;        if (getByte(pos + i) != (literal[i].toInt() and TOK.BYTE_MASK)) return false</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return true</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fast path for a compact, comma-separated run of bare `true`/`false` literals — bypasses the
+&nbsp; * per-element `hasNext()`/comma-bookkeeping dispatch. Does not activate for coerced boolean
+&nbsp; * values (`1`/`0`, quoted strings); those fall back to the general loop.
+&nbsp; *
+&nbsp; * Precondition: same as [tryFastIntArrayCore].
+&nbsp; */
+&nbsp;internal inline fun tryFastBooleanArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;): BooleanArray? {
+<b class="fc">&nbsp;    var pos = startPosition</b>
+<b class="fc">&nbsp;    val list = GhostBooleanList()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        val value: Boolean</b>
+<b class="fc">&nbsp;        if (matchesLiteral(getByte = getByte, pos = pos, limit = limit, literal = WR.TRUE_BS)) {</b>
+<b class="fc">&nbsp;            value = true</b>
+<b class="fc">&nbsp;            pos += WR.TRUE_BS.size</b>
+<b class="fc">&nbsp;        } else if (matchesLiteral(getByte = getByte, pos = pos, limit = limit, literal = WR.FALSE_BS)) {</b>
+<b class="fc">&nbsp;            value = false</b>
+<b class="fc">&nbsp;            pos += WR.FALSE_BS.size</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            setPosition(startPosition)</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        list.add(value = value)</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == TOK.COMMA_INT -&gt; {</b>
+<b class="fc">&nbsp;                pos++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == TOK.CLOSE_ARR_INT -&gt; {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                return list.toArray()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                setPosition(startPosition)</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fast path for a compact, comma-separated run of bare `Double`/`Float` numbers. Unlike
+&nbsp; * [tryFastIntArrayCore], it doesn&#39;t reimplement number parsing — it just peeks that the next
+&nbsp; * byte plausibly starts a number and delegates the scan to [parseNext] (`nextDouble`/`nextFloat`),
+&nbsp; * the single source of truth for numeric grammar. Falls back to `false` (position reset to
+&nbsp; * [startPosition]) the moment the shape doesn&#39;t fit.
+&nbsp; *
+&nbsp; * Precondition: same as [tryFastIntArrayCore]; [parseNext] must read from, and leave the reader
+&nbsp; * positioned right after, whatever [getPosition] reports.
+&nbsp; */
+&nbsp;internal inline fun &lt;T&gt; tryFastDecimalArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    getPosition: () -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;    addTo: MutableList&lt;T&gt;,
+&nbsp;    parseNext: () -&gt; T,
+&nbsp;): Boolean {
+<b class="fc">&nbsp;    var checkPosition = startPosition</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="pc">&nbsp;        if (checkPosition &gt;= limit) {</b>
+<b class="nc">&nbsp;            setPosition(startPosition)</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val first = getByte(checkPosition)</b>
+<b class="pc">&nbsp;        val isInvalidNumberLead = first != TOK.MINUS_INT &amp;&amp; (first &lt; TOK.ZERO_INT || first &gt; TOK.NINE_INT)</b>
+<b class="fc">&nbsp;        if (isInvalidNumberLead) {</b>
+<b class="fc">&nbsp;            setPosition(startPosition)</b>
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        addTo.add(element = parseNext())</b>
+<b class="fc">&nbsp;        val afterPosition = getPosition()</b>
+<b class="pc">&nbsp;        if (afterPosition &lt; limit &amp;&amp; getByte(afterPosition) == TOK.COMMA_INT) {</b>
+<b class="fc">&nbsp;            checkPosition = afterPosition + 1</b>
+<b class="fc">&nbsp;            setPosition(checkPosition)</b>
+&nbsp;            continue
+&nbsp;        }
+<b class="pc">&nbsp;        if (afterPosition &lt; limit &amp;&amp; getByte(afterPosition) == TOK.CLOSE_ARR_INT) {</b>
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="nc">&nbsp;        setPosition(startPosition)</b>
+<b class="nc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Fast path for a compact, comma-separated run of bare integers inside `[...]` (the common,
+&nbsp; * dominant-cost shape for large numeric arrays). Falls back to `null` (position reset to
+&nbsp; * [startPosition]) on anything that doesn&#39;t fit — whitespace, decimal point/exponent, digit
+&nbsp; * overflow — so the general element-by-element loop remains the source of truth for overflow
+&nbsp; * and error messages. Like that loop, it does not enforce `maxCollectionSize`.
+&nbsp; *
+&nbsp; * Precondition: called right after `beginArray()` confirms a non-empty array, with
+&nbsp; * [startPosition] at that first byte. On success, position is left AT the closing `]` —
+&nbsp; * callers must still call `endArray()` themselves.
+&nbsp; */
+&nbsp;internal inline fun tryFastIntArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;): IntArray? {
+<b class="fc">&nbsp;    var pos = startPosition</b>
+<b class="fc">&nbsp;    val list = GhostIntList()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        var negative = false</b>
+<b class="pc">&nbsp;        if (pos &lt; limit &amp;&amp; getByte(pos) == TOK.MINUS_INT) {</b>
+<b class="fc">&nbsp;            negative = true</b>
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val digitsStart = pos</b>
+<b class="fc">&nbsp;        var value = 0</b>
+<b class="fc">&nbsp;        var digitCount = 0</b>
+<b class="pc">&nbsp;        while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;            val b = getByte(pos)</b>
+<b class="fc">&nbsp;            if (b &lt; TOK.ZERO_INT || b &gt; TOK.NINE_INT) break</b>
+<b class="fc">&nbsp;            if (digitCount &gt;= NUM.INT_SAFE_DIGITS) {</b>
+<b class="fc">&nbsp;                setPosition(startPosition)</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            value = value * WR.BASE_TEN + (b - TOK.ZERO_INT)</b>
+<b class="fc">&nbsp;            digitCount++</b>
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (pos == digitsStart) {</b>
+<b class="fc">&nbsp;            setPosition(startPosition)</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        list.add(value = if (negative) -value else value)</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == TOK.COMMA_INT -&gt; {</b>
+<b class="fc">&nbsp;                pos++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == TOK.CLOSE_ARR_INT -&gt; {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                return list.toArray()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="fc">&nbsp;                setPosition(startPosition)</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Same fast path as [tryFastIntArrayCore], for a run of bare `Long`s. */
+&nbsp;internal inline fun tryFastLongArrayCore(
+&nbsp;    startPosition: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;): LongArray? {
+<b class="fc">&nbsp;    var pos = startPosition</b>
+<b class="fc">&nbsp;    val list = GhostLongList()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        var negative = false</b>
+<b class="pc">&nbsp;        if (pos &lt; limit &amp;&amp; getByte(pos) == TOK.MINUS_INT) {</b>
+<b class="fc">&nbsp;            negative = true</b>
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val digitsStart = pos</b>
+<b class="fc">&nbsp;        var value = 0L</b>
+<b class="fc">&nbsp;        var digitCount = 0</b>
+<b class="pc">&nbsp;        while (pos &lt; limit) {</b>
+<b class="fc">&nbsp;            val b = getByte(pos)</b>
+<b class="fc">&nbsp;            if (b &lt; TOK.ZERO_INT || b &gt; TOK.NINE_INT) break</b>
+<b class="fc">&nbsp;            if (digitCount &gt;= NUM.LONG_SAFE_DIGITS) {</b>
+<b class="fc">&nbsp;                setPosition(startPosition)</b>
+<b class="fc">&nbsp;                return null</b>
+&nbsp;            }
+<b class="fc">&nbsp;            value = value * WR.BASE_TEN + (b - TOK.ZERO_INT)</b>
+<b class="fc">&nbsp;            digitCount++</b>
+<b class="fc">&nbsp;            pos++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (pos == digitsStart) {</b>
+<b class="nc">&nbsp;            setPosition(startPosition)</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        list.add(value = if (negative) -value else value)</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == TOK.COMMA_INT -&gt; {</b>
+<b class="fc">&nbsp;                pos++</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            pos &lt; limit &amp;&amp; getByte(pos) == TOK.CLOSE_ARR_INT -&gt; {</b>
+<b class="fc">&nbsp;                setPosition(pos)</b>
+<b class="fc">&nbsp;                return list.toArray()</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                setPosition(startPosition)</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Writes [size] elements via [writeAt]; separator bookkeeping is handled inside each
+&nbsp; * `writer.value(...)` overload, so this is pure iteration shared by every primitive array
+&nbsp; * serializer&#39;s write path.
+&nbsp; */
+&nbsp;internal inline fun writeArrayElements(
+&nbsp;    size: Int,
+&nbsp;    writeAt: (Int) -&gt; Unit
+&nbsp;) {
+<b class="fc">&nbsp;    for (i in 0 until size) writeAt(i)</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

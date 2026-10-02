@@ -158,19 +158,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.KModifier
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 &nbsp;
 &nbsp;
-&nbsp;/**
-&nbsp; * Generator that handles recursive emission of nested perfect hash lookup options
-&nbsp; * for flattened properties structures in a serializer type builder.
-&nbsp; */
+&nbsp;/** Emits nested perfect-hash lookup options for `@GhostFlatten` property structures. */
 &nbsp;internal object FlattenOptionsGenerator {
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Collects and triggers recursive generation of nested perfect hash lookup options
-&nbsp;     * for flattened properties structures.
-&nbsp;     */
 &nbsp;    fun generateNestedOptions(
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
 &nbsp;        properties: List&lt;GhostPropertyModel&gt;,
@@ -184,7 +178,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            var currentMap = rootNodes</b>
 <b class="fc">&nbsp;            path.forEachIndexed { index, segment -&gt;</b>
 <b class="fc">&nbsp;                val isLast = index == path.size - 1</b>
-<b class="fc">&nbsp;                val node = currentMap.getOrPut(segment) { FlattenNode(segment) }</b>
+<b class="fc">&nbsp;                val node = currentMap.getOrPut(segment) { FlattenNode(segment = segment) }</b>
 <b class="fc">&nbsp;                if (isLast) {</b>
 <b class="fc">&nbsp;                    node.properties.add(prop)</b>
 &nbsp;                } else {
@@ -199,16 +193,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                properties = properties,</b>
 <b class="fc">&nbsp;                fullPaths = fullPaths,</b>
 <b class="fc">&nbsp;                node = node,</b>
-<b class="fc">&nbsp;                parentPrefix = C.STR_EMPTY,</b>
+<b class="fc">&nbsp;                parentPrefix = CC.STR_EMPTY,</b>
 <b class="fc">&nbsp;                currentPath = listOf(node.segment),</b>
 <b class="fc">&nbsp;                textChannel = textChannel</b>
 &nbsp;            )
 <b class="fc">&nbsp;        }</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Recursively traverses nodes and emits private nested perfect hash options properties.
-&nbsp;     */
 &nbsp;    private fun emitNestedOptionsRecursive(
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
 &nbsp;        properties: List&lt;GhostPropertyModel&gt;,
@@ -225,9 +216,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        val currentPrefix = if (parentPrefix.isEmpty()) {</b>
 <b class="fc">&nbsp;            node.segment</b>
 &nbsp;        } else {
-<b class="fc">&nbsp;            parentPrefix + C.STR_UNDERSCORE + node.segment</b>
+<b class="fc">&nbsp;            parentPrefix + CC.STR_UNDERSCORE + node.segment</b>
 &nbsp;        }
-<b class="fc">&nbsp;        val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()</b>
+<b class="fc">&nbsp;        val optionsName = CG.STR_OPTIONS_PREFIX + currentPrefix.uppercase()</b>
 &nbsp;
 <b class="fc">&nbsp;        val depth = currentPath.size</b>
 <b class="fc">&nbsp;        val names = properties.mapIndexedNotNull { index, _ -&gt;</b>
@@ -239,9 +230,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            }</b>
 <b class="fc">&nbsp;        }.distinct()</b>
 &nbsp;
-<b class="fc">&nbsp;        val hashConfig = PerfectHashFinder.findPerfectHash(names)</b>
+<b class="fc">&nbsp;        val hashConfig = PerfectHashFinder.findPerfectHash(names = names)</b>
 &nbsp;
-<b class="fc">&nbsp;        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)</b>
+<b class="fc">&nbsp;        val optionsClass = ClassName(CC.PKG_PARSER_COMMON_JSON, CG.STR_OPTIONS_CLASS)</b>
 <b class="fc">&nbsp;        val optionsInitializer = GeneratedCallFormat.jsonReaderOptionsOf(</b>
 <b class="fc">&nbsp;            optionsClass = optionsClass,</b>
 <b class="fc">&nbsp;            shift = hashConfig.shift,</b>
@@ -272,9 +263,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        }</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Node descriptor representing a segment in a flattened path hierarchy tree.
-&nbsp;     */
 <b class="fc">&nbsp;    private class FlattenNode(val segment: String) {</b>
 <b class="fc">&nbsp;        val children = mutableMapOf&lt;String, FlattenNode&gt;()</b>
 <b class="fc">&nbsp;        val properties = mutableListOf&lt;GhostPropertyModel&gt;()</b>
@@ -303,7 +291,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

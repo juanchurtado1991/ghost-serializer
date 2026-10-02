@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > LongSerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlTagSubsystemKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: LongSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlTagSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,38 +49,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">LongSerializer</td>
+  <td class="name">GhostYamlTagSubsystemKt</td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/1)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/6)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/6)
+    (14/14)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    72.8%
   </span>
   <span class="absValue">
-    (0/18)
+    (123/169)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.2%
+  </span>
+  <span class="absValue">
+    (123/124)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.1%
+  </span>
+  <span class="absValue">
+    (719/748)
   </span>
 </td>
 </tr>
@@ -92,47 +99,236 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
-&nbsp;package com.ghost.serialization.serializers
-&nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextLong
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextLong
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Built-in serializer for Kotlin [Long] type.
+&nbsp; * Parses a `!tag` node: `!!name` (core-schema, or app-defined if `!!` was redefined by a `%TAG`
+&nbsp; * directive), `!&lt;verbose&gt;`, `!name`/`!handle!name` (namespaced via a `%TAG` directive), or a bare
+&nbsp; * `!` (YAML&#39;s non-specific tag, forcing string resolution). The resolved tag type then decides
+&nbsp; * whether the value itself is read as a sequence, mapping, or plain [readValue] dispatch.
 &nbsp; */
-&nbsp;object LongSerializer : GhostSerializer&lt;Long&gt; {
-<b class="nc">&nbsp;    override val typeName: String get() = C.TYPE_NAME_LONG</b>
+&nbsp;internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): Any? {
+<b class="fc">&nbsp;    position++ // consume &#39;!&#39;</b>
+<b class="pc">&nbsp;    if (position &gt;= limit) yamlError(message = EM.ERR_EOF_AFTER_TAG)</b>
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: Long) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+<b class="fc">&nbsp;    val isDoubleExcl = rawData[position] == TOK.EXCLAMATION_BYTE</b>
+<b class="fc">&nbsp;    if (isDoubleExcl) position++</b>
+&nbsp;
+<b class="fc">&nbsp;    val (resolvedTag, tagType) = if (isDoubleExcl) {</b>
+<b class="fc">&nbsp;        resolveDoubleExclamationTag(inFlow = inFlow)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        resolveCustomTag(inFlow = inFlow)</b>
 &nbsp;    }
 &nbsp;
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val valueIndent = resolveTaggedValueIndent(indent = indent)</b>
+<b class="fc">&nbsp;    val value = readTaggedCollectionOrValue(tagType = tagType, valueIndent = valueIndent, inFlow = inFlow)</b>
+<b class="fc">&nbsp;    attachResolvedTag(value = value, resolvedTag = resolvedTag)</b>
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Long) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+&nbsp;/** Resolves `!!name`: either a core-schema type (`tagType`) or an app-redefined `!!` (`resolvedTag`). */
+&nbsp;private fun GhostYamlFlatReader.resolveDoubleExclamationTag(inFlow: Boolean): Pair&lt;String?, Int&gt; {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val tagStart = position</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit &amp;&amp; !isTagNameTerminator(currByte = localRawData[position])) {</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val tagLen = position - tagStart</b>
+&nbsp;    // A %TAG directive redefining the secondary handle (&quot;!!&quot;) overrides the core schema —
+&nbsp;    // &quot;!!int&quot; under a redefined &quot;!!&quot; is the app&#39;s custom &quot;int&quot; tag, not YAML&#39;s integer
+&nbsp;    // type, so it must not be resolved (or type-coerced) as one.
+<b class="fc">&nbsp;    val customSecondaryPrefix = tagDirectives[TOK.STR_EXCLAMATION + TOK.STR_EXCLAMATION]</b>
+<b class="fc">&nbsp;    var resolvedTag: String? = null</b>
+<b class="fc">&nbsp;    var tagType = GhostYamlTags.TAG_NONE</b>
+<b class="fc">&nbsp;    if (customSecondaryPrefix != null) {</b>
+<b class="pc">&nbsp;        if (tagLen &gt; 0) {</b>
+<b class="fc">&nbsp;            resolvedTag = customSecondaryPrefix + localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
+&nbsp;        }
+<b class="pc">&nbsp;    } else if (tagLen &gt; 0) {</b>
+<b class="fc">&nbsp;        tagType = matchDoubleExclamationTag(localRawData = localRawData, start = tagStart, len = tagLen)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    requireValidTagTerminator(inFlow = inFlow)</b>
+<b class="fc">&nbsp;    return resolvedTag to tagType</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Resolves a verbose (`!&lt;Circle&gt;`) or short (`!Circle`/`!m!Circle`) custom tag. */
+&nbsp;private fun GhostYamlFlatReader.resolveCustomTag(inFlow: Boolean): Pair&lt;String?, Int&gt; {
+<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; rawData[position] == TOK.LT_BYTE) {</b>
+<b class="fc">&nbsp;        return resolveVerboseTag() to GhostYamlTags.TAG_NONE</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return resolveShortTag(inFlow = inFlow)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a verbose tag like `!&lt;Circle&gt;`, consuming its `&lt;`/`&gt;` delimiters. */
+&nbsp;private fun GhostYamlFlatReader.resolveVerboseTag(): String {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    position++ // consume &#39;&lt;&#39;</b>
+<b class="fc">&nbsp;    val tagStart = position</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit &amp;&amp; localRawData[position] != TOK.GT_BYTE) {</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val resolvedTag = localRawData.decodeToString(tagStart, position)</b>
+<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == TOK.GT_BYTE) {</b>
+<b class="fc">&nbsp;        position++ // consume &#39;&gt;&#39;</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return resolvedTag</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Reads a short tag like `!Circle` or `!m!Circle`, resolving any `%TAG` namespace prefix. */
+&nbsp;private fun GhostYamlFlatReader.resolveShortTag(inFlow: Boolean): Pair&lt;String?, Int&gt; {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val tagStart = position</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit &amp;&amp; !isTagNameTerminator(currByte = localRawData[position])) {</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    requireValidTagTerminator(inFlow = inFlow)</b>
+<b class="fc">&nbsp;    val tagLen = position - tagStart</b>
+<b class="fc">&nbsp;    if (tagLen == 0) {</b>
+&nbsp;        // Bare &quot;!&quot; with nothing else — YAML&#39;s &quot;non-specific tag&quot;, forcing the scalar to
+&nbsp;        // resolve as a string instead of running the usual null/bool/int/float cascade
+&nbsp;        // (e.g. &quot;! 12&quot; must decode to string &quot;12&quot;, not integer 12).
+<b class="fc">&nbsp;        return null to GhostYamlTags.TAG_STR</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
+<b class="fc">&nbsp;    return resolveTagNamespacePrefix(rawTagName = rawTagName) to GhostYamlTags.TAG_NONE</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Expands a short tag&#39;s `!handle!` namespace prefix via its `%TAG` directive, if it has one. */
+&nbsp;private fun GhostYamlFlatReader.resolveTagNamespacePrefix(rawTagName: String): String {
+<b class="fc">&nbsp;    val exclamationIdx = rawTagName.indexOf(&#39;!&#39;)</b>
+<b class="fc">&nbsp;    if (exclamationIdx == -1) return rawTagName</b>
+<b class="fc">&nbsp;    val handle = TOK.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)</b>
+<b class="fc">&nbsp;    val suffix = rawTagName.substring(exclamationIdx + 1)</b>
+<b class="fc">&nbsp;    val prefix = tagDirectives[handle]</b>
+<b class="fc">&nbsp;        ?: yamlError(message = &quot;${EM.ERR_TAG_HANDLE_UNDEFINED_PREFIX}$handle${EM.ERR_TAG_HANDLE_UNDEFINED_SUFFIX}&quot;)</b>
+<b class="fc">&nbsp;    return prefix + suffix</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Auto-detects the tagged value&#39;s indent when it starts on a following line. */
+&nbsp;private fun GhostYamlFlatReader.resolveTaggedValueIndent(indent: Int): Int {
+<b class="pc">&nbsp;    if (position &gt;= limit || !isLineBreakByte(byte = rawData[position])) return indent</b>
+<b class="fc">&nbsp;    advanceLine()</b>
+<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;    return currentIndent</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Dispatches to a sequence/mapping reader when the tag names one, else falls through to [readValue]. */
+&nbsp;private fun GhostYamlFlatReader.readTaggedCollectionOrValue(tagType: Int, valueIndent: Int, inFlow: Boolean): Any? =
+<b class="fc">&nbsp;    when (tagType) {</b>
+<b class="fc">&nbsp;        GhostYamlTags.TAG_SEQ -&gt; readTaggedSequence()</b>
+<b class="fc">&nbsp;        GhostYamlTags.TAG_MAP -&gt; readTaggedMapping()</b>
+<b class="fc">&nbsp;        else -&gt; readValue(valueIndent, inFlow = inFlow, expectedTag = tagType)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): Long {
-<b class="nc">&nbsp;        return reader.nextLong()</b>
+&nbsp;private fun GhostYamlFlatReader.readTaggedSequence(): List&lt;Any?&gt; =
+<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; rawData[position] == TOK.LEFT_BRACKET_BYTE) {</b>
+<b class="fc">&nbsp;        readFlowSequence()</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        readBlockSequence(seqIndent = currentIndent)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Long {
-<b class="nc">&nbsp;        return reader.nextLong()</b>
+&nbsp;private fun GhostYamlFlatReader.readTaggedMapping(): Map&lt;String, Any?&gt; =
+<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; rawData[position] == TOK.LEFT_BRACE_BYTE) {</b>
+<b class="fc">&nbsp;        readFlowMapping()</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        readBlockMapping(blockIndent = currentIndent)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Long {
-<b class="nc">&nbsp;        return reader.nextLong()</b>
+&nbsp;/** Stamps [resolvedTag] (a custom/verbose tag name) onto a mapping result, if there is one to attach. */
+&nbsp;private fun attachResolvedTag(value: Any?, resolvedTag: String?) {
+<b class="fc">&nbsp;    if (resolvedTag != null &amp;&amp; value is MutableMap&lt;*, *&gt;) {</b>
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;        val map = value as MutableMap&lt;String, Any?&gt;</b>
+<b class="fc">&nbsp;        map[TOK.STR_TAG_KEY] = resolvedTag</b>
 &nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Flow indicators (`,[]{}`) end a tag name like whitespace does — a tag name can never contain
+&nbsp; * one — but *stopping* there is only valid inside a flow collection (a tag-only entry like
+&nbsp; * `!!str,`); in block context a tag touching one with no separating whitespace is invalid.
+&nbsp; */
+&nbsp;private fun isTagNameTerminator(currByte: Byte): Boolean =
+<b class="pc">&nbsp;    currByte == TOK.SPACE_BYTE || currByte == TOK.TAB_BYTE || currByte == TOK.NEWLINE_BYTE || currByte == TOK.CR_BYTE ||</b>
+<b class="pc">&nbsp;        currByte == TOK.COMMA_BYTE || currByte == TOK.LEFT_BRACE_BYTE || currByte == TOK.RIGHT_BRACE_BYTE ||</b>
+<b class="pc">&nbsp;        currByte == TOK.LEFT_BRACKET_BYTE || currByte == TOK.RIGHT_BRACKET_BYTE</b>
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.requireValidTagTerminator(inFlow: Boolean) {
+<b class="pc">&nbsp;    if (position &gt;= limit) return</b>
+<b class="fc">&nbsp;    val currByte = rawData[position]</b>
+<b class="pc">&nbsp;    val isWhitespaceOrEol = currByte == TOK.SPACE_BYTE || currByte == TOK.TAB_BYTE ||</b>
+<b class="pc">&nbsp;        currByte == TOK.NEWLINE_BYTE || currByte == TOK.CR_BYTE</b>
+<b class="fc">&nbsp;    if (isWhitespaceOrEol) return</b>
+<b class="pc">&nbsp;    val isFlowIndicator = currByte == TOK.COMMA_BYTE || currByte == TOK.LEFT_BRACE_BYTE ||</b>
+<b class="nc">&nbsp;        currByte == TOK.RIGHT_BRACE_BYTE || currByte == TOK.LEFT_BRACKET_BYTE || currByte == TOK.RIGHT_BRACKET_BYTE</b>
+<b class="pc">&nbsp;    if (inFlow &amp;&amp; isFlowIndicator) return</b>
+<b class="fc">&nbsp;    yamlError(message = EM.ERR_INVALID_CHAR_AFTER_TAG)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Byte-length of the 3-char core-schema tag names: `str`/`int`/`seq`/`map`. */
+&nbsp;private const val THREE_CHAR_TAG_LEN = 3
+&nbsp;
+&nbsp;/** Byte-length of the 4-char core-schema tag names: `bool`/`null`. */
+&nbsp;private const val FOUR_CHAR_TAG_LEN = 4
+&nbsp;
+&nbsp;/** Byte-length of the 5-char core-schema tag name: `float`. */
+&nbsp;private const val FIVE_CHAR_TAG_LEN = 5
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(
+&nbsp;    localRawData: ByteArray,
+&nbsp;    start: Int,
+&nbsp;    len: Int
+&nbsp;): Int {
+<b class="fc">&nbsp;    if (len == THREE_CHAR_TAG_LEN) {</b>
+<b class="fc">&nbsp;        val isStrTag = localRawData[start] == TOK.LOWERCASE_S_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;            localRawData[start + 1] == TOK.LOWERCASE_T_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 2] == TOK.LOWERCASE_R_BYTE</b>
+<b class="fc">&nbsp;        if (isStrTag) return GhostYamlTags.TAG_STR</b>
+&nbsp;
+<b class="fc">&nbsp;        val isIntTag = localRawData[start] == TOK.CHAR_I_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 1] == TOK.LOWERCASE_N_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 2] == TOK.LOWERCASE_T_BYTE</b>
+<b class="fc">&nbsp;        if (isIntTag) return GhostYamlTags.TAG_INT</b>
+&nbsp;
+<b class="fc">&nbsp;        val isSeqTag = localRawData[start] == TOK.LOWERCASE_S_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 1] == TOK.LOWERCASE_E_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;            localRawData[start + 2] == TOK.CHAR_Q_BYTE</b>
+<b class="fc">&nbsp;        if (isSeqTag) return GhostYamlTags.TAG_SEQ</b>
+&nbsp;
+<b class="fc">&nbsp;        val isMapTag = localRawData[start] == TOK.CHAR_M_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 1] == TOK.LOWERCASE_A_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 2] == TOK.CHAR_P_BYTE</b>
+<b class="fc">&nbsp;        if (isMapTag) return GhostYamlTags.TAG_MAP</b>
+&nbsp;    } else if (len == FOUR_CHAR_TAG_LEN) {
+<b class="fc">&nbsp;        val isBoolTag = localRawData[start] == TOK.CHAR_B_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 1] == TOK.CHAR_O_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 2] == TOK.CHAR_O_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 3] == TOK.LOWERCASE_L_BYTE</b>
+<b class="fc">&nbsp;        if (isBoolTag) return GhostYamlTags.TAG_BOOL</b>
+&nbsp;
+<b class="fc">&nbsp;        val isNullTag = localRawData[start] == TOK.LOWERCASE_N_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 1] == TOK.LOWERCASE_U_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 2] == TOK.LOWERCASE_L_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 3] == TOK.LOWERCASE_L_BYTE</b>
+<b class="fc">&nbsp;        if (isNullTag) return GhostYamlTags.TAG_NULL</b>
+&nbsp;    } else if (len == FIVE_CHAR_TAG_LEN) {
+<b class="pc">&nbsp;        val isFloatTag = localRawData[start] == TOK.LOWERCASE_F_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 1] == TOK.LOWERCASE_L_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 2] == TOK.CHAR_O_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 3] == TOK.LOWERCASE_A_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;            localRawData[start + 4] == TOK.LOWERCASE_T_BYTE</b>
+<b class="pc">&nbsp;        if (isFloatTag) return GhostYamlTags.TAG_FLOAT</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return GhostYamlTags.TAG_NONE</b>
 &nbsp;}
 </code>
 </pre>
@@ -157,7 +353,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

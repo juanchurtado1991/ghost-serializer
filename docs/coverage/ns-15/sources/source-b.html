@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlTagSubsystemKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonUtf8InputKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,18 +19,15 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+    <a href="../index.html">com.ghost.serialization.parser.common.json</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlTagSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: GhostJsonUtf8InputKt (com.ghost.serialization.parser.common.json)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,49 +46,79 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlTagSubsystemKt</td>
+  <td class="name">GhostJsonUtf8InputKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (12/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    73.8%
   </span>
   <span class="absValue">
-    (4/4)
+    (135/183)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70.3%
+    94.5%
   </span>
   <span class="absValue">
-    (109/155)
+    (155/164)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    98.9%
+    91%
   </span>
   <span class="absValue">
-    (94/95)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    96.6%
-  </span>
-  <span class="absValue">
-    (624/646)
+    (824/905)
   </span>
 </td>
 </tr>
-
+  <tr>
+    <td class="name">GhostJsonUtf8InputKt$WhenMappings</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.8%
+  </span>
+  <span class="absValue">
+    (135/183)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.5%
+  </span>
+  <span class="absValue">
+    (155/164)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91%
+  </span>
+  <span class="absValue">
+    (824/905)
+  </span>
+</td>
+</tr>
 </table>
 
 <br/>
@@ -99,197 +126,304 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
 &nbsp;
-&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
+&nbsp;package com.ghost.serialization.parser.common.json
 &nbsp;
-&nbsp;internal object GhostYamlTags {
-&nbsp;    const val TAG_NONE = 0
-&nbsp;    const val TAG_STR = 1
-&nbsp;    const val TAG_INT = 2
-&nbsp;    const val TAG_FLOAT = 3
-&nbsp;    const val TAG_BOOL = 4
-&nbsp;    const val TAG_NULL = 5
-&nbsp;    const val TAG_SEQ = 6
-&nbsp;    const val TAG_MAP = 7
-&nbsp;}
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import okio.Buffer
+&nbsp;import okio.BufferedSource
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 &nbsp;
-&nbsp;internal fun GhostYamlFlatReader.readTaggedValue(indent: Int, inFlow: Boolean): Any? {
-<b class="fc">&nbsp;    position++ // consume &#39;!&#39;</b>
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
-<b class="pc">&nbsp;    if (position &gt;= localLimit) yamlError(C.ERR_EOF_AFTER_TAG)</b>
+&nbsp;/**
+&nbsp; * RFC 8259 §8.1: JSON text may be UTF-8, UTF-16, or UTF-32 (with or without BOM).
+&nbsp; * Ghost&#39;s parsers consume UTF-8 only; this layer normalizes at the byte entrypoint.
+&nbsp; *
+&nbsp; * Hot path (typical UTF-8, no BOM): a few byte comparisons and the same [ByteArray]
+&nbsp; * reference — no allocation and no copy.
+&nbsp; */
+&nbsp;internal inline fun &lt;T&gt; withPreparedUtf8Json(
+&nbsp;    bytes: ByteArray,
+&nbsp;    limit: Int,
+&nbsp;    block: (data: ByteArray, offset: Int, length: Int) -&gt; T
+&nbsp;): T {
+<b class="fc">&nbsp;    if (limit &lt;= 0) return block(bytes, 0, 0)</b>
 &nbsp;
-<b class="fc">&nbsp;    var isDoubleExcl = false</b>
-<b class="fc">&nbsp;    if (localRawData[position] == C.EXCLAMATION_BYTE) {</b>
-<b class="fc">&nbsp;        isDoubleExcl = true</b>
-<b class="fc">&nbsp;        position++</b>
+<b class="fc">&nbsp;    val firstByte = bytes[0].toInt() and TOK.BYTE_MASK</b>
+&nbsp;    // Fast path: UTF-8 JSON starts with an ASCII structural/value byte, not a BOM lead or
+&nbsp;    // NUL, followed by a non-NUL byte. UTF-16/32 always interleave NULs for ASCII code
+&nbsp;    // points, so this rules them out with a handful of comparisons, no allocation.
+<b class="fc">&nbsp;    val isBomlessUtf8 = firstByte != TOK.UTF8_BOM_0 &amp;&amp;</b>
+<b class="fc">&nbsp;        firstByte != TOK.UTF16_BE_BOM_0 &amp;&amp;</b>
+<b class="fc">&nbsp;        firstByte != TOK.UTF16_LE_BOM_0 &amp;&amp;</b>
+<b class="fc">&nbsp;        firstByte != TOK.NUL_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;        (limit &lt; TOK.UTF16_UNIT_SIZE || (bytes[1].toInt() and TOK.BYTE_MASK) != TOK.NUL_BYTE)</b>
+<b class="fc">&nbsp;    if (isBomlessUtf8) {</b>
+<b class="fc">&nbsp;        return block(bytes, 0, limit)</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    var resolvedTag: String? = null</b>
-<b class="fc">&nbsp;    var tagType = GhostYamlTags.TAG_NONE</b>
-&nbsp;
-<b class="fc">&nbsp;    if (isDoubleExcl) {</b>
-<b class="fc">&nbsp;        val tagStart = position</b>
-<b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; !isTagNameTerminator(localRawData[position])) {</b>
-<b class="fc">&nbsp;            position++</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val tagLen = position - tagStart</b>
-&nbsp;        // A %TAG directive redefining the secondary handle (&quot;!!&quot;) overrides the core schema —
-&nbsp;        // &quot;!!int&quot; under a redefined &quot;!!&quot; is the app&#39;s custom &quot;int&quot; tag, not YAML&#39;s integer
-&nbsp;        // type, so it must not be resolved (or type-coerced) as one.
-<b class="fc">&nbsp;        val customSecondaryPrefix = tagDirectives[C.STR_EXCLAMATION + C.STR_EXCLAMATION]</b>
-<b class="fc">&nbsp;        if (customSecondaryPrefix != null) {</b>
-<b class="pc">&nbsp;            if (tagLen &gt; 0) resolvedTag = customSecondaryPrefix + localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
-<b class="pc">&nbsp;        } else if (tagLen &gt; 0) {</b>
-<b class="fc">&nbsp;            tagType = matchDoubleExclamationTag(localRawData, tagStart, tagLen)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        requireValidTagTerminator(inFlow)</b>
-&nbsp;    } else {
-&nbsp;        // Custom tag
-<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LT_BYTE) {</b>
-&nbsp;            // Verbose tag like !&lt;Circle&gt;
-<b class="fc">&nbsp;            position++ // consume &#39;&lt;&#39;</b>
-<b class="fc">&nbsp;            val tagStart = position</b>
-<b class="pc">&nbsp;            while (position &lt; localLimit &amp;&amp; localRawData[position] != C.GT_BYTE) {</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            val tagLen = position - tagStart</b>
-<b class="fc">&nbsp;            resolvedTag = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
-<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.GT_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;&gt;&#39;</b>
-&nbsp;            }
-&nbsp;        } else {
-&nbsp;            // Short tag like !Circle or !m!Circle
-<b class="fc">&nbsp;            val tagStart = position</b>
-<b class="pc">&nbsp;            while (position &lt; localLimit &amp;&amp; !isTagNameTerminator(localRawData[position])) {</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            requireValidTagTerminator(inFlow)</b>
-<b class="fc">&nbsp;            val tagLen = position - tagStart</b>
-<b class="fc">&nbsp;            if (tagLen &gt; 0) {</b>
-<b class="fc">&nbsp;                val rawTagName = localRawData.decodeToString(tagStart, tagStart + tagLen)</b>
-&nbsp;                // Check for namespace prefix mapping (%TAG directive)
-<b class="fc">&nbsp;                val exclamationIdx = rawTagName.indexOf(&#39;!&#39;)</b>
-<b class="fc">&nbsp;                if (exclamationIdx != -1) {</b>
-<b class="fc">&nbsp;                    val handle = C.STR_EXCLAMATION + rawTagName.substring(0, exclamationIdx + 1)</b>
-<b class="fc">&nbsp;                    val suffix = rawTagName.substring(exclamationIdx + 1)</b>
-<b class="fc">&nbsp;                    val prefix = tagDirectives[handle]</b>
-<b class="fc">&nbsp;                        ?: yamlError(&quot;${C.ERR_TAG_HANDLE_UNDEFINED_PREFIX}$handle${C.ERR_TAG_HANDLE_UNDEFINED_SUFFIX}&quot;)</b>
-<b class="fc">&nbsp;                    resolvedTag = prefix + suffix</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    resolvedTag = rawTagName</b>
-&nbsp;                }
-&nbsp;            } else {
-&nbsp;                // Bare &quot;!&quot; with nothing else — YAML&#39;s &quot;non-specific tag&quot;, forcing the scalar to
-&nbsp;                // resolve as a string instead of running the usual null/bool/int/float cascade
-&nbsp;                // (e.g. &quot;! 12&quot; must decode to string &quot;12&quot;, not integer 12).
-<b class="fc">&nbsp;                tagType = GhostYamlTags.TAG_STR</b>
-&nbsp;            }
-&nbsp;        }
+<b class="fc">&nbsp;    val detected = detectJsonByteEncoding(bytes = bytes, offset = 0, length = limit)</b>
+<b class="fc">&nbsp;    val payloadOffset = detected.bomSize</b>
+<b class="fc">&nbsp;    val payloadLength = limit - detected.bomSize</b>
+<b class="fc">&nbsp;    if (detected.kind == JsonEncodingKind.UTF8) {</b>
+<b class="fc">&nbsp;        return block(bytes, payloadOffset, payloadLength)</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    // Skip inline space after tag
-<b class="fc">&nbsp;    skipInlineWhitespace()</b>
-&nbsp;
-&nbsp;    // If value is on next line, advance and use next line&#39;s indentation
-<b class="fc">&nbsp;    val valueIndent =</b>
-<b class="pc">&nbsp;        if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {</b>
-<b class="fc">&nbsp;            advanceLine()</b>
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;            currentIndent</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            indent</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;    val value = when (tagType) {</b>
-&nbsp;        GhostYamlTags.TAG_SEQ -&gt; {
-<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;                readFlowSequence()</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;                readBlockSequence(currentIndent)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        GhostYamlTags.TAG_MAP -&gt; {
-<b class="pc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.LEFT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;                readFlowMapping()</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;                readBlockMapping(currentIndent)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-&nbsp;        else -&gt; {
-<b class="fc">&nbsp;            readValue(valueIndent, inFlow = inFlow, expectedTag = tagType)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    // Inject tag into the Map if it&#39;s a custom tag and value is a Map
-<b class="fc">&nbsp;    if (resolvedTag != null &amp;&amp; value is MutableMap&lt;*, *&gt;) {</b>
-&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
-<b class="fc">&nbsp;        val map = value as MutableMap&lt;String, Any?&gt;</b>
-<b class="fc">&nbsp;        map[C.STR_TAG_KEY] = resolvedTag</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    return value</b>
+<b class="fc">&nbsp;    val utf8 = decodeNonUtf8ToUtf8(bytes = bytes, offset = payloadOffset, length = payloadLength, kind = detected.kind)</b>
+<b class="fc">&nbsp;    return block(utf8, 0, utf8.size)</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Flow indicators (`,[]{}`) end a tag name like whitespace does — a tag name can never contain
-&nbsp; * one — but *stopping* there is only valid inside a flow collection (a tag-only entry like
-&nbsp; * `!!str,`); in block context a tag touching one with no separating whitespace is invalid.
+&nbsp; * Ensures a streaming source yields UTF-8 JSON. UTF-8 (optional BOM skip) stays
+&nbsp; * streaming; UTF-16/32 loads the payload once and rewrites to UTF-8.
 &nbsp; */
-&nbsp;private fun isTagNameTerminator(currByte: Byte): Boolean =
-<b class="pc">&nbsp;    currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||</b>
-<b class="pc">&nbsp;        currByte == C.COMMA_BYTE || currByte == C.LEFT_BRACE_BYTE || currByte == C.RIGHT_BRACE_BYTE ||</b>
-<b class="pc">&nbsp;        currByte == C.LEFT_BRACKET_BYTE || currByte == C.RIGHT_BRACKET_BYTE</b>
+&nbsp;internal fun prepareUtf8JsonSource(source: BufferedSource): BufferedSource {
+<b class="pc">&nbsp;    if (!source.request(TOK.BOM_PROBE_MIN.toLong())) return source</b>
 &nbsp;
-&nbsp;private fun GhostYamlFlatReader.requireValidTagTerminator(inFlow: Boolean) {
-<b class="pc">&nbsp;    if (position &gt;= limit) return</b>
-<b class="fc">&nbsp;    val currByte = rawData[position]</b>
-<b class="pc">&nbsp;    val isWhitespaceOrEol = currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE ||</b>
-<b class="pc">&nbsp;        currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE</b>
-<b class="fc">&nbsp;    if (isWhitespaceOrEol) return</b>
-<b class="pc">&nbsp;    val isFlowIndicator = currByte == C.COMMA_BYTE || currByte == C.LEFT_BRACE_BYTE ||</b>
-<b class="nc">&nbsp;        currByte == C.RIGHT_BRACE_BYTE || currByte == C.LEFT_BRACKET_BYTE || currByte == C.RIGHT_BRACKET_BYTE</b>
-<b class="pc">&nbsp;    if (inFlow &amp;&amp; isFlowIndicator) return</b>
-<b class="fc">&nbsp;    yamlError(C.ERR_INVALID_CHAR_AFTER_TAG)</b>
+<b class="fc">&nbsp;    val sourceBuffer = source.buffer</b>
+<b class="fc">&nbsp;    val available = sourceBuffer.size.toInt().coerceAtMost(TOK.BOM_PROBE_SIZE)</b>
+<b class="fc">&nbsp;    val probe = ByteArray(available)</b>
+<b class="fc">&nbsp;    for (probeIndex in 0 until available) {</b>
+<b class="fc">&nbsp;        probe[probeIndex] = sourceBuffer[probeIndex.toLong()]</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val detected = detectJsonByteEncoding(bytes = probe, offset = 0, length = available)</b>
+<b class="fc">&nbsp;    if (detected.kind == JsonEncodingKind.UTF8) {</b>
+<b class="fc">&nbsp;        if (detected.bomSize &gt; 0) source.skip(detected.bomSize.toLong())</b>
+<b class="fc">&nbsp;        return source</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val raw = source.readByteArray()</b>
+<b class="fc">&nbsp;    val utf8 = decodeNonUtf8ToUtf8(</b>
+<b class="fc">&nbsp;        bytes = raw,</b>
+<b class="fc">&nbsp;        offset = detected.bomSize,</b>
+<b class="fc">&nbsp;        length = raw.size - detected.bomSize,</b>
+<b class="fc">&nbsp;        kind = detected.kind</b>
+&nbsp;    )
+<b class="fc">&nbsp;    return Buffer().write(utf8)</b>
 &nbsp;}
 &nbsp;
-&nbsp;private fun GhostYamlFlatReader.matchDoubleExclamationTag(
-&nbsp;    localRawData: ByteArray,
-&nbsp;    start: Int,
-&nbsp;    len: Int
-&nbsp;): Int {
-<b class="fc">&nbsp;    if (len == 3) {</b>
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_T_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_R_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_STR</b>
+&nbsp;internal fun detectJsonByteEncoding(
+&nbsp;    bytes: ByteArray,
+&nbsp;    offset: Int,
+&nbsp;    length: Int
+&nbsp;): DetectedJsonEncoding {
+<b class="pc">&nbsp;    if (length &lt;= 0) return DetectedJsonEncoding(kind = JsonEncodingKind.UTF8, bomSize = TOK.NO_BOM)</b>
+&nbsp;
+<b class="fc">&nbsp;    val byte0 = bytes[offset].toInt() and TOK.BYTE_MASK</b>
+<b class="pc">&nbsp;    val byte1 = if (length &gt; 1) bytes[offset + 1].toInt() and TOK.BYTE_MASK else TOK.ABSENT_BYTE</b>
+<b class="pc">&nbsp;    val byte2 = if (length &gt; 2) bytes[offset + 2].toInt() and TOK.BYTE_MASK else TOK.ABSENT_BYTE</b>
+<b class="fc">&nbsp;    val byte3 = if (length &gt; 3) bytes[offset + 3].toInt() and TOK.BYTE_MASK else TOK.ABSENT_BYTE</b>
+&nbsp;
+&nbsp;    // BOM detection (prefer longer matches first).
+<b class="fc">&nbsp;    val isUtf32BigEndianBom = length &gt;= TOK.UTF32_UNIT_SIZE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte0 == TOK.NUL_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte1 == TOK.NUL_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte2 == TOK.UTF16_BE_BOM_0 &amp;&amp;</b>
+<b class="pc">&nbsp;        byte3 == TOK.UTF16_LE_BOM_0</b>
+<b class="fc">&nbsp;    if (isUtf32BigEndianBom) {</b>
+<b class="fc">&nbsp;        return DetectedJsonEncoding(kind = JsonEncodingKind.UTF32_BE, bomSize = TOK.UTF32_UNIT_SIZE)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val isUtf32LittleEndianBom = length &gt;= TOK.UTF32_UNIT_SIZE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte0 == TOK.UTF16_LE_BOM_0 &amp;&amp;</b>
+<b class="pc">&nbsp;        byte1 == TOK.UTF16_BE_BOM_0 &amp;&amp;</b>
+<b class="fc">&nbsp;        byte2 == TOK.NUL_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte3 == TOK.NUL_BYTE</b>
+<b class="fc">&nbsp;    if (isUtf32LittleEndianBom) {</b>
+<b class="fc">&nbsp;        return DetectedJsonEncoding(kind = JsonEncodingKind.UTF32_LE, bomSize = TOK.UTF32_UNIT_SIZE)</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val isUtf16BigEndianBom = length &gt;= TOK.UTF16_UNIT_SIZE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte0 == TOK.UTF16_BE_BOM_0 &amp;&amp;</b>
+<b class="pc">&nbsp;        byte1 == TOK.UTF16_LE_BOM_0</b>
+<b class="fc">&nbsp;    if (isUtf16BigEndianBom) {</b>
+<b class="fc">&nbsp;        return DetectedJsonEncoding(kind = JsonEncodingKind.UTF16_BE, bomSize = TOK.UTF16_UNIT_SIZE)</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val isUtf16LittleEndianBom = length &gt;= TOK.UTF16_UNIT_SIZE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte0 == TOK.UTF16_LE_BOM_0 &amp;&amp;</b>
+<b class="pc">&nbsp;        byte1 == TOK.UTF16_BE_BOM_0</b>
+<b class="fc">&nbsp;    if (isUtf16LittleEndianBom) {</b>
+<b class="fc">&nbsp;        return DetectedJsonEncoding(kind = JsonEncodingKind.UTF16_LE, bomSize = TOK.UTF16_UNIT_SIZE)</b>
+&nbsp;    }
+<b class="pc">&nbsp;    val isUtf8Bom = length &gt;= TOK.UTF8_BOM_SIZE &amp;&amp;</b>
+<b class="fc">&nbsp;        byte0 == TOK.UTF8_BOM_0 &amp;&amp;</b>
+<b class="pc">&nbsp;        byte1 == TOK.UTF8_BOM_1 &amp;&amp;</b>
+<b class="pc">&nbsp;        byte2 == TOK.UTF8_BOM_2</b>
+<b class="fc">&nbsp;    if (isUtf8Bom) {</b>
+<b class="fc">&nbsp;        return DetectedJsonEncoding(kind = JsonEncodingKind.UTF8, bomSize = TOK.UTF8_BOM_SIZE)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    // BOM-less NUL-byte patterns (RFC 4627 / common practice).
+<b class="pc">&nbsp;    if (length &gt;= TOK.UTF32_UNIT_SIZE) {</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="pc">&nbsp;            byte0 == TOK.NUL_BYTE &amp;&amp; byte1 == TOK.NUL_BYTE &amp;&amp; byte2 == TOK.NUL_BYTE &amp;&amp; byte3 != TOK.NUL_BYTE -&gt;</b>
+<b class="fc">&nbsp;                return DetectedJsonEncoding(kind = JsonEncodingKind.UTF32_BE, bomSize = TOK.NO_BOM)</b>
+&nbsp;
+<b class="pc">&nbsp;            byte0 != TOK.NUL_BYTE &amp;&amp; byte1 == TOK.NUL_BYTE &amp;&amp; byte2 == TOK.NUL_BYTE &amp;&amp; byte3 == TOK.NUL_BYTE -&gt;</b>
+<b class="fc">&nbsp;                return DetectedJsonEncoding(kind = JsonEncodingKind.UTF32_LE, bomSize = TOK.NO_BOM)</b>
+&nbsp;
+<b class="pc">&nbsp;            byte0 == TOK.NUL_BYTE &amp;&amp; byte1 != TOK.NUL_BYTE &amp;&amp; byte2 == TOK.NUL_BYTE &amp;&amp; byte3 != TOK.NUL_BYTE -&gt;</b>
+<b class="fc">&nbsp;                return DetectedJsonEncoding(kind = JsonEncodingKind.UTF16_BE, bomSize = TOK.NO_BOM)</b>
+&nbsp;
+<b class="pc">&nbsp;            byte0 != TOK.NUL_BYTE &amp;&amp; byte1 == TOK.NUL_BYTE &amp;&amp; byte2 != TOK.NUL_BYTE &amp;&amp; byte3 == TOK.NUL_BYTE -&gt;</b>
+<b class="fc">&nbsp;                return DetectedJsonEncoding(kind = JsonEncodingKind.UTF16_LE, bomSize = TOK.NO_BOM)</b>
 &nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_I_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_T_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_INT</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_S_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_E_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_Q_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_SEQ</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_M_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_P_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_MAP</b>
-&nbsp;        }
-&nbsp;    } else if (len == 4) {
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_B_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_BOOL</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_N_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_U_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_L_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_NULL</b>
-&nbsp;        }
-&nbsp;    } else if (len == 5) {
-<b class="pc">&nbsp;        if (localRawData[start] == C.CHAR_F_BYTE &amp;&amp; localRawData[start + 1] == C.CHAR_L_BYTE &amp;&amp; localRawData[start + 2] == C.CHAR_O_BYTE &amp;&amp; localRawData[start + 3] == C.CHAR_A_BYTE &amp;&amp; localRawData[start + 4] == C.CHAR_T_BYTE) {</b>
-<b class="fc">&nbsp;            return GhostYamlTags.TAG_FLOAT</b>
+<b class="nc">&nbsp;    } else if (length &gt;= TOK.UTF16_UNIT_SIZE) {</b>
+<b class="nc">&nbsp;        when {</b>
+<b class="nc">&nbsp;            byte0 == TOK.NUL_BYTE &amp;&amp; byte1 != TOK.NUL_BYTE -&gt;</b>
+<b class="nc">&nbsp;                return DetectedJsonEncoding(kind = JsonEncodingKind.UTF16_BE, bomSize = TOK.NO_BOM)</b>
+&nbsp;
+<b class="nc">&nbsp;            byte0 != TOK.NUL_BYTE &amp;&amp; byte1 == TOK.NUL_BYTE -&gt;</b>
+<b class="nc">&nbsp;                return DetectedJsonEncoding(kind = JsonEncodingKind.UTF16_LE, bomSize = TOK.NO_BOM)</b>
 &nbsp;        }
 &nbsp;    }
-<b class="fc">&nbsp;    return GhostYamlTags.TAG_NONE</b>
+&nbsp;
+<b class="fc">&nbsp;    return DetectedJsonEncoding(kind = JsonEncodingKind.UTF8, bomSize = TOK.NO_BOM)</b>
 &nbsp;}
+&nbsp;
+&nbsp;internal fun utf16ToUtf8(
+&nbsp;    bytes: ByteArray,
+&nbsp;    offset: Int,
+&nbsp;    length: Int,
+&nbsp;    littleEndian: Boolean
+&nbsp;): ByteArray {
+<b class="pc">&nbsp;    if (length &lt;= 0) return TOK.EMPTY_BYTES</b>
+<b class="fc">&nbsp;    validateUnitAlignment(length = length, unitSize = TOK.UTF16_UNIT_SIZE)</b>
+<b class="fc">&nbsp;    val utf8Out = ByteArray(utf8MaxSizeFromUtf16(utf16ByteLength = length))</b>
+<b class="fc">&nbsp;    var outIndex = 0</b>
+<b class="fc">&nbsp;    var readIndex = offset</b>
+<b class="fc">&nbsp;    val end = offset + length</b>
+<b class="fc">&nbsp;    while (readIndex &lt; end) {</b>
+<b class="fc">&nbsp;        val codeUnit = readUtf16Unit(bytes = bytes, index = readIndex, littleEndian = littleEndian)</b>
+<b class="fc">&nbsp;        readIndex += TOK.UTF16_UNIT_SIZE</b>
+<b class="fc">&nbsp;        val codePoint = when {</b>
+<b class="pc">&nbsp;            codeUnit in TOK.HIGH_SURROGATE_START..TOK.HIGH_SURROGATE_END -&gt; {</b>
+<b class="fc">&nbsp;                if (readIndex &gt;= end) throw GhostJsonException(EM.ERR_INVALID_JSON_ENCODING)</b>
+<b class="fc">&nbsp;                val lowSurrogate = readUtf16Unit(bytes = bytes, index = readIndex, littleEndian = littleEndian)</b>
+<b class="fc">&nbsp;                readIndex += TOK.UTF16_UNIT_SIZE</b>
+<b class="pc">&nbsp;                if (lowSurrogate !in TOK.LOW_SURROGATE_START..TOK.LOW_SURROGATE_END) {</b>
+<b class="nc">&nbsp;                    throw GhostJsonException(EM.ERR_INVALID_JSON_ENCODING)</b>
+&nbsp;                }
+<b class="fc">&nbsp;                TOK.UNICODE_BASE +</b>
+<b class="fc">&nbsp;                        ((codeUnit - TOK.HIGH_SURROGATE_START) shl TOK.SHIFT_10) +</b>
+<b class="fc">&nbsp;                        (lowSurrogate - TOK.LOW_SURROGATE_START)</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            codeUnit in TOK.LOW_SURROGATE_START..TOK.LOW_SURROGATE_END -&gt;</b>
+<b class="nc">&nbsp;                throw GhostJsonException(EM.ERR_INVALID_JSON_ENCODING)</b>
+&nbsp;
+<b class="fc">&nbsp;            else -&gt; codeUnit</b>
+&nbsp;        }
+<b class="fc">&nbsp;        outIndex = writeUtf8CodePoint(out = utf8Out, offset = outIndex, codePoint = codePoint)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return trimToActualSize(buffer = utf8Out, actualSize = outIndex)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun utf32ToUtf8(
+&nbsp;    bytes: ByteArray,
+&nbsp;    offset: Int,
+&nbsp;    length: Int,
+&nbsp;    littleEndian: Boolean
+&nbsp;): ByteArray {
+<b class="pc">&nbsp;    if (length &lt;= 0) return TOK.EMPTY_BYTES</b>
+<b class="fc">&nbsp;    validateUnitAlignment(length = length, unitSize = TOK.UTF32_UNIT_SIZE)</b>
+<b class="fc">&nbsp;    val utf8Out = ByteArray((length / TOK.UTF32_UNIT_SIZE) * WR.UTF8_4BYTE_SIZE)</b>
+<b class="fc">&nbsp;    var outIndex = 0</b>
+<b class="fc">&nbsp;    var readIndex = offset</b>
+<b class="fc">&nbsp;    val end = offset + length</b>
+<b class="fc">&nbsp;    while (readIndex &lt; end) {</b>
+<b class="fc">&nbsp;        val codePoint = readUtf32CodePoint(bytes = bytes, index = readIndex, littleEndian = littleEndian)</b>
+<b class="fc">&nbsp;        readIndex += TOK.UTF32_UNIT_SIZE</b>
+<b class="pc">&nbsp;        val isInvalidCodePoint = codePoint !in 0..TOK.UNICODE_MAX_CODE_POINT ||</b>
+<b class="pc">&nbsp;            codePoint in TOK.HIGH_SURROGATE_START..TOK.LOW_SURROGATE_END</b>
+<b class="fc">&nbsp;        if (isInvalidCodePoint) {</b>
+<b class="fc">&nbsp;            throw GhostJsonException(EM.ERR_INVALID_JSON_ENCODING)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        outIndex = writeUtf8CodePoint(out = utf8Out, offset = outIndex, codePoint = codePoint)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return trimToActualSize(buffer = utf8Out, actualSize = outIndex)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Dispatches a non-UTF-8 payload to [utf16ToUtf8] / [utf32ToUtf8]; [kind] must not be [JsonEncodingKind.UTF8]. */
+&nbsp;private fun decodeNonUtf8ToUtf8(bytes: ByteArray, offset: Int, length: Int, kind: JsonEncodingKind): ByteArray =
+<b class="pc">&nbsp;    when (kind) {</b>
+<b class="fc">&nbsp;        JsonEncodingKind.UTF16_LE -&gt; utf16ToUtf8(bytes = bytes, offset = offset, length = length, littleEndian = true)</b>
+<b class="fc">&nbsp;        JsonEncodingKind.UTF16_BE -&gt; utf16ToUtf8(bytes = bytes, offset = offset, length = length, littleEndian = false)</b>
+<b class="fc">&nbsp;        JsonEncodingKind.UTF32_LE -&gt; utf32ToUtf8(bytes = bytes, offset = offset, length = length, littleEndian = true)</b>
+<b class="fc">&nbsp;        JsonEncodingKind.UTF32_BE -&gt; utf32ToUtf8(bytes = bytes, offset = offset, length = length, littleEndian = false)</b>
+<b class="nc">&nbsp;        JsonEncodingKind.UTF8 -&gt; bytes // unreachable: callers handle UTF8 separately</b>
+&nbsp;    }
+&nbsp;
+&nbsp;private inline fun readUtf16Unit(bytes: ByteArray, index: Int, littleEndian: Boolean): Int {
+<b class="fc">&nbsp;    val firstByte = bytes[index].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;    val secondByte = bytes[index + 1].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;    return if (littleEndian) {</b>
+<b class="fc">&nbsp;        firstByte or (secondByte shl SCN.SHIFT_8)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        (firstByte shl SCN.SHIFT_8) or secondByte</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private inline fun readUtf32CodePoint(bytes: ByteArray, index: Int, littleEndian: Boolean): Int {
+<b class="fc">&nbsp;    val byte0 = bytes[index].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;    val byte1 = bytes[index + 1].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;    val byte2 = bytes[index + 2].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;    val byte3 = bytes[index + 3].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;    return if (littleEndian) {</b>
+<b class="fc">&nbsp;        byte0 or (byte1 shl SCN.SHIFT_8) or (byte2 shl SCN.SHIFT_16) or (byte3 shl SCN.SHIFT_24)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        (byte0 shl SCN.SHIFT_24) or (byte1 shl SCN.SHIFT_16) or (byte2 shl SCN.SHIFT_8) or byte3</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Throws if [length] isn&#39;t a whole number of [unitSize]-byte code units. */
+&nbsp;private inline fun validateUnitAlignment(length: Int, unitSize: Int) {
+<b class="fc">&nbsp;    if (length % unitSize != 0) throw GhostJsonException(EM.ERR_INVALID_JSON_ENCODING)</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun writeUtf8CodePoint(out: ByteArray, offset: Int, codePoint: Int): Int {
+<b class="fc">&nbsp;    var writeOffset = offset</b>
+<b class="fc">&nbsp;    when {</b>
+<b class="fc">&nbsp;        codePoint &lt; WR.UTF8_1BYTE_LIMIT -&gt; {</b>
+<b class="fc">&nbsp;            out[writeOffset++] = codePoint.toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        codePoint &lt; WR.UTF8_2BYTE_LIMIT -&gt; {</b>
+<b class="fc">&nbsp;            out[writeOffset++] = (WR.UTF8_2BYTE_PREFIX or (codePoint shr WR.UTF8_SHIFT_6)).toByte()</b>
+<b class="fc">&nbsp;            out[writeOffset++] = (WR.UTF8_CONT_PREFIX or (codePoint and WR.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        codePoint &lt; TOK.UNICODE_BASE -&gt; {</b>
+<b class="fc">&nbsp;            out[writeOffset++] = (WR.UTF8_3BYTE_PREFIX or (codePoint shr WR.UTF8_SHIFT_12)).toByte()</b>
+<b class="fc">&nbsp;            out[writeOffset++] =</b>
+<b class="fc">&nbsp;                (WR.UTF8_CONT_PREFIX or ((codePoint shr WR.UTF8_SHIFT_6) and WR.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;            out[writeOffset++] = (WR.UTF8_CONT_PREFIX or (codePoint and WR.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        else -&gt; {
+<b class="fc">&nbsp;            out[writeOffset++] = (WR.UTF8_4BYTE_PREFIX or (codePoint shr WR.UTF8_SHIFT_18)).toByte()</b>
+<b class="fc">&nbsp;            out[writeOffset++] =</b>
+<b class="fc">&nbsp;                (WR.UTF8_CONT_PREFIX or ((codePoint shr WR.UTF8_SHIFT_12) and WR.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;            out[writeOffset++] =</b>
+<b class="fc">&nbsp;                (WR.UTF8_CONT_PREFIX or ((codePoint shr WR.UTF8_SHIFT_6) and WR.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;            out[writeOffset++] = (WR.UTF8_CONT_PREFIX or (codePoint and WR.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return writeOffset</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun utf8MaxSizeFromUtf16(utf16ByteLength: Int): Int {
+&nbsp;    // Worst case: every UTF-16 unit becomes a 3-byte UTF-8 sequence (BMP non-ASCII);
+&nbsp;    // surrogate pairs (2 units) become 4 UTF-8 bytes, which stays within this bound.
+<b class="fc">&nbsp;    return (utf16ByteLength / TOK.UTF16_UNIT_SIZE) * WR.UTF8_3BYTE_SIZE</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Returns [buffer] unchanged if fully used, otherwise a copy trimmed to [actualSize]. */
+&nbsp;private inline fun trimToActualSize(buffer: ByteArray, actualSize: Int): ByteArray =
+<b class="pc">&nbsp;    if (actualSize == buffer.size) buffer else buffer.copyOf(actualSize)</b>
 </code>
 </pre>
 </div>
@@ -313,7 +447,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

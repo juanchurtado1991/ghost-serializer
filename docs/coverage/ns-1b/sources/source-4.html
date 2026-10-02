@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > RawJsonKind</title>
+  <title>GhostSerialization Coverage Report > ProtoBoolValue</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.types</a>
+    <a href="../index.html">com.ghost.serialization.proto.wkt</a>
 </div>
 
-<h1>Coverage Summary for Class: RawJsonKind (com.ghost.serialization.types)</h1>
+<h1>Coverage Summary for Class: ProtoBoolValue (com.ghost.serialization.proto.wkt)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">RawJsonKind</td>
+  <td class="name">ProtoBoolValue</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (7/7)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (48/48)
+    (8/8)
   </span>
 </td>
 </tr>
@@ -92,31 +92,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.types
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;/** JSON value category of a [RawJson] payload (first-token classification). */
-&nbsp;enum class RawJsonKind {
-&nbsp;    /** `{` … `}` */
-<b class="fc">&nbsp;    OBJECT,</b>
+&nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
-&nbsp;    /** `[` … `]` */
-<b class="fc">&nbsp;    ARRAY,</b>
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import kotlin.jvm.JvmInline
 &nbsp;
-&nbsp;    /** `&quot;` … `&quot;` */
-<b class="fc">&nbsp;    STRING,</b>
-&nbsp;
-&nbsp;    /** JSON number (integer, fraction, or exponent form). */
-<b class="fc">&nbsp;    NUMBER,</b>
-&nbsp;
-&nbsp;    /** `true` or `false`. */
-<b class="fc">&nbsp;    BOOLEAN,</b>
-&nbsp;
-&nbsp;    /** `null`. */
-<b class="fc">&nbsp;    NULL,</b>
-&nbsp;
-&nbsp;    /** Empty, whitespace-only, or syntactically invalid at the first token. */
-<b class="fc">&nbsp;    INVALID,</b>
-&nbsp;}
+&nbsp;/** Wrapper message for `bool`; JSON representation is a JSON boolean. */
+&nbsp;@JvmInline
+<b class="fc">&nbsp;value class ProtoBoolValue(val value: Boolean)</b>
 </code>
 </pre>
 </div>
@@ -140,7 +125,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

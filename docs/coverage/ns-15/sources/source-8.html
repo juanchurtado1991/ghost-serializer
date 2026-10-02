@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlFlowStyleSubsystemKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonPathTracker</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,18 +19,15 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+    <a href="../index.html">com.ghost.serialization.parser.common.json</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlFlowStyleSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: GhostJsonPathTracker (com.ghost.serialization.parser.common.json)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,7 +46,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlFlowStyleSubsystemKt</td>
+  <td class="name">GhostJsonPathTracker</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.6%
+  </span>
+  <span class="absValue">
+    (22/26)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (48/48)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.5%
+  </span>
+  <span class="absValue">
+    (261/265)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostJsonPathTracker$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,35 +95,61 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (5/5)
+    (28/28)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    77%
+    100%
   </span>
   <span class="absValue">
-    (77/100)
+    (6/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.2%
+    100%
   </span>
   <span class="absValue">
-    (103/106)
+    (71/71)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.3%
+    92.6%
   </span>
   <span class="absValue">
-    (690/709)
+    (50/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (54/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.8%
+  </span>
+  <span class="absValue">
+    (332/336)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -99,218 +157,171 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
-&nbsp;
-&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
-&nbsp;
-&nbsp;/** Parses YAML Flow Style Mappings ({key: value}) and Sequences ([a, b, c]). */
-&nbsp;
-&nbsp;/** Parses flow-style mappings (`{key: value}`). */
-&nbsp;internal fun GhostYamlFlatReader.readFlowMapping(): Map&lt;String, Any?&gt; {
-<b class="fc">&nbsp;    position++ // consume &#39;{&#39;</b>
-<b class="fc">&nbsp;    val result = LinkedHashMap&lt;String, Any?&gt;(C.DEFAULT_MAP_CAPACITY)</b>
-<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
-&nbsp;
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
-&nbsp;
-<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;        position++</b>
-<b class="fc">&nbsp;        return result</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    // Flow collections recurse into readValue the same way block ones do, so they need the same
-&nbsp;    // depth guard — without it, deeply nested flow input has no bound on call-stack recursion.
-<b class="fc">&nbsp;    if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}&quot;)</b>
-<b class="fc">&nbsp;    depth++</b>
-&nbsp;    try {
-<b class="pc">&nbsp;        while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
-<b class="fc">&nbsp;            if (localRawData[position] == C.RIGHT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;                break
-&nbsp;            }
-<b class="fc">&nbsp;            if (localRawData[position] == C.COMMA_BYTE) {</b>
-<b class="fc">&nbsp;                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_MAPPING)</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            // A nested flow collection used as a key (e.g. &quot;[d, e]: f&quot;) must go through
-&nbsp;            // readValue — readKey()&#39;s bare-scalar scan has no bracket-nesting awareness, so a
-&nbsp;            // comma inside it would look identical to the entry separator.
-<b class="fc">&nbsp;            val key = if (localRawData[position] == C.LEFT_BRACKET_BYTE || localRawData[position] == C.LEFT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;                stringifyExplicitMappingKey(readValue(indent = 0, inFlow = true))</b>
-&nbsp;            } else {
-<b class="pc">&nbsp;                readKey(inFlow = true) ?: break</b>
-&nbsp;            }
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-&nbsp;
-&nbsp;            // A flow mapping entry can be just a key with no &#39;:&#39; (e.g. &quot;{ a, b }&quot;) — same
-&nbsp;            // empty-value shorthand as an explicit block key with nothing after it.
-<b class="pc">&nbsp;            val value = if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;:&#39;</b>
-<b class="fc">&nbsp;                skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;                readValue(indent = 0, inFlow = true)</b>
-<b class="pc">&nbsp;            } else if (position &lt; localLimit &amp;&amp; (localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACE_BYTE)) {</b>
-<b class="fc">&nbsp;                null</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                yamlError(&quot;${C.ERR_EXPECTED_COLON_AFTER_FLOW_KEY_PREFIX}$key&#39;&quot;)</b>
-&nbsp;            }
-<b class="pc">&nbsp;            if (key == C.STR_MERGE_KEY) {</b>
-<b class="nc">&nbsp;                mergeInto(result, value)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                result[key] = value</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COMMA_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;,&#39;</b>
-<b class="fc">&nbsp;            } else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACE_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;}&#39;</b>
-&nbsp;                break
-&nbsp;            } else {
-<b class="fc">&nbsp;                yamlError(C.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_MAP)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    } finally {
-<b class="fc">&nbsp;        depth--</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;/** Parses flow-style sequences (`[a, b, c]`). */
-&nbsp;internal fun GhostYamlFlatReader.readFlowSequence(): List&lt;Any?&gt; {
-<b class="fc">&nbsp;    position++ // consume &#39;[&#39;</b>
-<b class="fc">&nbsp;    val result = mutableListOf&lt;Any?&gt;()</b>
-<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
-&nbsp;
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
-&nbsp;
-<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;        position++</b>
-<b class="fc">&nbsp;        return result</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    // See the matching guard in readFlowMapping — flow collections recurse into readValue the
-&nbsp;    // same way block ones do and need the same bound on nesting depth.
-<b class="pc">&nbsp;    if (depth &gt;= C.MAX_DEPTH) yamlError(&quot;${C.ERR_MAX_NESTING_DEPTH_PREFIX}${C.MAX_DEPTH}${C.ERR_MAX_NESTING_DEPTH_SUFFIX}&quot;)</b>
-<b class="fc">&nbsp;    depth++</b>
-&nbsp;    try {
-<b class="pc">&nbsp;        while (position &lt; localLimit) {</b>
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="pc">&nbsp;            if (position &gt;= localLimit) break</b>
-<b class="fc">&nbsp;            if (localRawData[position] == C.RIGHT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;                position++</b>
-&nbsp;                break
-&nbsp;            }
-<b class="fc">&nbsp;            if (localRawData[position] == C.COMMA_BYTE) {</b>
-<b class="fc">&nbsp;                yamlError(C.ERR_UNEXPECTED_COMMA_FLOW_SEQUENCE)</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            val item = readFlowSequenceEntry()</b>
-<b class="fc">&nbsp;            result.add(item)</b>
-&nbsp;
-<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COMMA_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;,&#39;</b>
-<b class="fc">&nbsp;            } else if (position &lt; localLimit &amp;&amp; localRawData[position] == C.RIGHT_BRACKET_BYTE) {</b>
-<b class="fc">&nbsp;                position++ // consume &#39;]&#39;</b>
-&nbsp;                break
-&nbsp;            } else {
-<b class="fc">&nbsp;                yamlError(C.ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_SEQ)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;    } finally {
-<b class="fc">&nbsp;        depth--</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common.json
 &nbsp;
 &nbsp;/**
-&nbsp; * Reads one flow-sequence entry, which may be a plain value *or* an implicit single-pair
-&nbsp; * mapping (`[a: 1]` is really `[{a: 1}]`, per &quot;ns-flow-pair&quot;) — YAML lets an entry look like a
-&nbsp; * bare &quot;key: value&quot; without its own `{ }`. Also handles an empty-key pair (`[: value]`) or an
-&nbsp; * *explicit* key/value pair (`[? key\n bar : value]`, same `?`/`:` shape as a block mapping key).
+&nbsp; * Lightweight JSONPath breadcrumb stack for parse errors.
 &nbsp; *
-&nbsp; * The key may be a plain scalar, quoted string, or nested flow collection. For a plain scalar,
-&nbsp; * [GhostYamlFlatReader.readPlainScalarOrMapping] stops right before the &#39;:&#39; inside a flow
-&nbsp; * collection (instead of redirecting into a block mapping), so this only checks for a &#39;:&#39;
-&nbsp; * immediately after the value read.
+&nbsp; * Happy path: push/pop of ints + [String] refs only — no [StringBuilder] until [formatPath]
+&nbsp; * is called from [com.ghost.serialization.exception.GhostJsonException] construction.
+&nbsp; *
+&nbsp; * Segment kinds:
+&nbsp; * - **Key** — object field name, pushed by [pushKey] after a successful field select.
+&nbsp; * - **Object** — anonymous `{` frame, pushed by [pushObject] so a nested [finishObjectValue]
+&nbsp; *   does not pop a parent key.
+&nbsp; * - **Array** — element index (`-1` = before first element), pushed by [pushArray] and advanced
+&nbsp; *   by [enterArrayElement] before each element is read.
+&nbsp; *
+&nbsp; * Each stack frame packs its kind and (for array frames) its element index into one `Int`
+&nbsp; * (`slots[i]`) instead of two parallel arrays — bits 0-1 are the kind tag, bits 2-31 are the
+&nbsp; * array index biased by +1 (so the `-1` &quot;before first element&quot; sentinel maps to `0` and needs
+&nbsp; * no sign bit). `keys` stays a separate array since it holds references.
+&nbsp; *
+&nbsp; * [pushObject]/[pushArray] don&#39;t write `keys[size]`, and [pushKey]/[pushObject] leave the index
+&nbsp; * bits of `slots[size]` at zero — [formatPath] only ever reads `keys[i]` under a key frame and
+&nbsp; * the index bits under an array frame, so a stale value left over from a shallower frame at the
+&nbsp; * same stack depth is never observed; only the kind tag needs to be current for every push.
+&nbsp; *
+&nbsp; * Frame lifecycle after a value is fully read: [finishScalarValue] pops the owning key (if any)
+&nbsp; * after a scalar; [finishObjectValue] pops the `{` frame then the owning key; [finishArrayValue]
+&nbsp; * pops the array frame then the owning key.
 &nbsp; */
-&nbsp;internal fun GhostYamlFlatReader.readFlowSequenceEntry(): Any? {
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;@PublishedApi</b>
+<b class="fc">&nbsp;internal class GhostJsonPathTracker(initialCapacity: Int = 16) {</b>
+<b class="fc">&nbsp;    private var slots: IntArray = IntArray(initialCapacity)</b>
+<b class="fc">&nbsp;    private var keys: Array&lt;String?&gt; = arrayOfNulls(initialCapacity)</b>
+&nbsp;    private var size: Int = 0
 &nbsp;
-<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.QUESTION_BYTE &amp;&amp; isExplicitKeyIndicator()) {</b>
-<b class="fc">&nbsp;        return readExplicitFlowSequenceKeyEntry()</b>
+&nbsp;    @PublishedApi
+&nbsp;    internal fun enterArrayElement() {
+<b class="pc">&nbsp;        if (size == 0) return</b>
+<b class="fc">&nbsp;        val i = size - 1</b>
+<b class="fc">&nbsp;        val slot = slots[i]</b>
+<b class="fc">&nbsp;        if (slot and KIND_MASK != KIND_ARRAY) return</b>
+&nbsp;        // ushr (not shr): the biased index is logically unsigned and its top bit sets once it
+&nbsp;        // approaches MAX_BIASED_INDEX, which would sign-extend under an arithmetic shift.
+<b class="fc">&nbsp;        val biased = slot ushr INDEX_SHIFT</b>
+<b class="pc">&nbsp;        if (biased &lt; MAX_BIASED_INDEX) {</b>
+<b class="fc">&nbsp;            slots[i] = slot + INDEX_UNIT</b>
+&nbsp;        }
+&nbsp;        // else: clamp — stop advancing rather than wrap; formatPath renders the capped index.
 &nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE &amp;&amp; isFlowPairColon()) {</b>
-<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;        val value = readValue(indent = 0, inFlow = true)</b>
-<b class="fc">&nbsp;        return linkedMapOf(&quot;&quot; to value)</b>
+&nbsp;    @PublishedApi
+&nbsp;    internal fun finishArrayValue() {
+<b class="fc">&nbsp;        popFrameIfKind(kind = KIND_ARRAY)</b>
+<b class="fc">&nbsp;        popFrameIfKind(kind = KIND_KEY)</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    val keyOrValue = readValue(indent = 0, inFlow = true)</b>
-&nbsp;    // Inline whitespace only — an implicit key&#39;s &#39;:&#39; must be on the same line as the key
-&nbsp;    // (crossing a newline would misread &quot;[ key\n  : value ]&quot; as a pair).
-<b class="fc">&nbsp;    skipInlineWhitespace()</b>
-<b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE) {</b>
-<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;        val value = readValue(indent = 0, inFlow = true)</b>
-<b class="fc">&nbsp;        return linkedMapOf(stringifyExplicitMappingKey(keyOrValue) to value)</b>
+&nbsp;    fun finishObjectValue() {
+<b class="fc">&nbsp;        popFrameIfKind(kind = KIND_OBJECT)</b>
+<b class="fc">&nbsp;        popFrameIfKind(kind = KIND_KEY)</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return keyOrValue</b>
-&nbsp;}
 &nbsp;
-&nbsp;/**
-&nbsp; * Reads an explicit key/value flow-sequence entry (`? key\n bar : value`) — same `?`/`:` shape
-&nbsp; * as a block mapping key ([GhostYamlFlatReader.readExplicitKeyEntry]), but no indentation to
-&nbsp; * track since it&#39;s inside a flow collection. The leading `?` is confirmed via
-&nbsp; * [isExplicitKeyIndicator] but not yet consumed.
-&nbsp; */
-&nbsp;private fun GhostYamlFlatReader.readExplicitFlowSequenceKeyEntry(): Any? {
-<b class="fc">&nbsp;    position++ // consume &#39;?&#39;</b>
-<b class="fc">&nbsp;    skipWhitespaceAndComments() // the key may start on the next line</b>
-&nbsp;
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
-<b class="pc">&nbsp;    val keyNode = if (position &gt;= localLimit ||</b>
-<b class="pc">&nbsp;        localRawData[position] == C.COMMA_BYTE || localRawData[position] == C.RIGHT_BRACKET_BYTE ||</b>
-<b class="pc">&nbsp;        localRawData[position] == C.COLON_BYTE</b>
-&nbsp;    ) {
-<b class="nc">&nbsp;        null</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        readValue(indent = 0, inFlow = true)</b>
+&nbsp;    @PublishedApi
+&nbsp;    internal fun finishScalarValue() {
+<b class="fc">&nbsp;        popFrameIfKind(kind = KIND_KEY)</b>
 &nbsp;    }
-<b class="fc">&nbsp;    val key = stringifyExplicitMappingKey(keyNode)</b>
 &nbsp;
-<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
-<b class="pc">&nbsp;    val value = if (position &lt; localLimit &amp;&amp; localRawData[position] == C.COLON_BYTE) {</b>
-<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;        readValue(indent = 0, inFlow = true)</b>
-&nbsp;    } else {
-<b class="nc">&nbsp;        null</b>
+&nbsp;    fun formatPath(): String {
+<b class="fc">&nbsp;        if (size == 0) return ROOT</b>
+<b class="fc">&nbsp;        val sb = StringBuilder(ROOT)</b>
+<b class="fc">&nbsp;        for (i in 0 until size) {</b>
+<b class="fc">&nbsp;            val slot = slots[i]</b>
+<b class="fc">&nbsp;            when (slot and KIND_MASK) {</b>
+&nbsp;                KIND_KEY -&gt; {
+<b class="pc">&nbsp;                    val name = keys[i] ?: continue</b>
+<b class="fc">&nbsp;                    if (isSimpleName(name = name)) {</b>
+<b class="fc">&nbsp;                        sb.append(KEY_DOT).append(name)</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        sb.append(KEY_BRACKET_OPEN).append(name).append(KEY_BRACKET_CLOSE)</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                KIND_ARRAY -&gt; {
+<b class="fc">&nbsp;                    val biased = slot ushr INDEX_SHIFT</b>
+<b class="fc">&nbsp;                    if (biased &gt; 0) {</b>
+<b class="fc">&nbsp;                        sb.append(INDEX_BRACKET_OPEN).append(biased - INDEX_BIAS).append(INDEX_BRACKET_CLOSE)</b>
+&nbsp;                    }
+&nbsp;                }
+&nbsp;                // KIND_OBJECT: no path segment
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        return sb.toString()</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return linkedMapOf(key to value)</b>
-&nbsp;}
 &nbsp;
-&nbsp;/**
-&nbsp; * True if the &#39;:&#39; at the current position is a genuine flow-pair separator (followed by
-&nbsp; * whitespace or EOF) rather than the first character of a plain scalar starting with &#39;:&#39;
-&nbsp; * (e.g. &quot;::vector&quot; or &quot;:x&quot;, both valid YAML strings).
-&nbsp; */
-&nbsp;private fun GhostYamlFlatReader.isFlowPairColon(): Boolean {
-<b class="fc">&nbsp;    val nextPosition = position + 1</b>
-<b class="pc">&nbsp;    return nextPosition &gt;= limit ||</b>
-<b class="fc">&nbsp;        rawData[nextPosition] == C.SPACE_BYTE ||</b>
-<b class="pc">&nbsp;        rawData[nextPosition] == C.NEWLINE_BYTE ||</b>
-<b class="pc">&nbsp;        rawData[nextPosition] == C.CR_BYTE ||</b>
-<b class="pc">&nbsp;        rawData[nextPosition] == C.TAB_BYTE</b>
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal fun mark(): Int = size</b>
+&nbsp;
+&nbsp;    fun pushArray() {
+<b class="fc">&nbsp;        ensureCapacity()</b>
+<b class="fc">&nbsp;        slots[size] = KIND_ARRAY // biased index 0 == actual index -1</b>
+<b class="fc">&nbsp;        size++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun pushKey(name: String) {
+<b class="fc">&nbsp;        ensureCapacity()</b>
+<b class="fc">&nbsp;        slots[size] = KIND_KEY</b>
+<b class="fc">&nbsp;        keys[size] = name</b>
+<b class="fc">&nbsp;        size++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun pushObject() {
+<b class="fc">&nbsp;        ensureCapacity()</b>
+<b class="fc">&nbsp;        slots[size] = KIND_OBJECT</b>
+<b class="fc">&nbsp;        size++</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun reset() {
+<b class="fc">&nbsp;        size = 0</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PublishedApi
+&nbsp;    internal fun resetTo(mark: Int) {
+<b class="pc">&nbsp;        size = if (mark &lt; 0) 0 else mark.coerceAtMost(size)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ensureCapacity() {
+<b class="fc">&nbsp;        if (size &lt; slots.size) return</b>
+<b class="fc">&nbsp;        val newSize = slots.size * 2</b>
+<b class="fc">&nbsp;        slots = slots.copyOf(newSize)</b>
+<b class="fc">&nbsp;        keys = keys.copyOf(newSize)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Pops the top frame if it matches [kind]; no-op on an empty stack or a kind mismatch. */
+&nbsp;    private fun popFrameIfKind(kind: Int) {
+<b class="fc">&nbsp;        if (size &gt; 0 &amp;&amp; (slots[size - 1] and KIND_MASK) == kind) {</b>
+<b class="fc">&nbsp;            size--</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private companion object {
+&nbsp;        const val KIND_MASK = 0b11
+&nbsp;        const val INDEX_SHIFT = 2
+&nbsp;        const val INDEX_UNIT = 1 shl INDEX_SHIFT
+&nbsp;        const val INDEX_BIAS = 1
+&nbsp;        const val KIND_KEY = 0
+&nbsp;        const val KIND_ARRAY = 1
+&nbsp;        const val KIND_OBJECT = 2
+&nbsp;        const val MAX_BIASED_INDEX = (1 shl (Int.SIZE_BITS - INDEX_SHIFT)) - 1
+&nbsp;        const val ROOT = &quot;$&quot;
+&nbsp;
+&nbsp;        const val KEY_DOT = &#39;.&#39;
+&nbsp;        const val KEY_BRACKET_OPEN = &quot;[&#39;&quot;
+&nbsp;        const val KEY_BRACKET_CLOSE = &quot;&#39;]&quot;
+&nbsp;        const val INDEX_BRACKET_OPEN = &#39;[&#39;
+&nbsp;        const val INDEX_BRACKET_CLOSE = &#39;]&#39;
+&nbsp;
+&nbsp;        fun isSimpleName(name: String): Boolean {
+<b class="fc">&nbsp;            if (name.isEmpty()) return false</b>
+<b class="fc">&nbsp;            for (i in name.indices) {</b>
+<b class="fc">&nbsp;                val c = name[i]</b>
+<b class="fc">&nbsp;                val ok = c in &#39;a&#39;..&#39;z&#39; || c in &#39;A&#39;..&#39;Z&#39; || c in &#39;0&#39;..&#39;9&#39; || c == &#39;_&#39; || c == &#39;$&#39;</b>
+<b class="fc">&nbsp;                if (!ok) return false</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -335,7 +346,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

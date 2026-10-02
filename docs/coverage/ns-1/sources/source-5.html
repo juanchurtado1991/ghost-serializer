@@ -1,0 +1,97 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostExtension</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.gradle</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostExtension (com.ghost.gradle)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostExtension</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.gradle
+&nbsp;
+&nbsp;import org.gradle.api.provider.Property
+&nbsp;
+&nbsp;/**
+&nbsp; * Gradle extension for configuring the Ghost Serialization plugin, registered under the `ghost`
+&nbsp; * block when [GhostPlugin] is applied.
+&nbsp; *
+&nbsp; * @property autoRegistration Links each `@GhostSerialization` class to its generated serializer on
+&nbsp; *   Kotlin/Native and Kotlin/Wasm (via `ghost-compiler-plugin`), so no `Ghost.addRegistry` call is
+&nbsp; *   needed there. Default `true`; set `false` to register modules manually.
+&nbsp; * @property autoInjectKtor Adds `ghost-ktor` when a Ktor client dependency is detected on the
+&nbsp; *   classpath. Default `true`.
+&nbsp; * @property autoInjectRetrofit Adds `ghost-retrofit` when Retrofit is detected on the classpath.
+&nbsp; *   Default `true`.
+&nbsp; * @property version Ghost artifact version for runtime, API, compiler, and adapter dependencies.
+&nbsp; *   Defaults to the plugin release version.
+&nbsp; */
+&nbsp;interface GhostExtension {
+&nbsp;    val autoInjectKtor: Property&lt;Boolean&gt;
+&nbsp;    val autoInjectRetrofit: Property&lt;Boolean&gt;
+&nbsp;    val autoRegistration: Property&lt;Boolean&gt;
+&nbsp;    val version: Property&lt;String&gt;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

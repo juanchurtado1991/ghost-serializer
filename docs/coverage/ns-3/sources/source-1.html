@@ -66,13 +66,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     (2/2)
   </span>
 </td>
-    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    50%
   </span>
   <span class="absValue">
-    (5/5)
+    (1/2)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.5%
+  </span>
+  <span class="absValue">
+    (29/31)
   </span>
 </td>
 </tr>
@@ -95,19 +102,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler
 &nbsp;
 &nbsp;import com.ghost.serialization.compiler.ksp.GhostSerializationProcessor
+&nbsp;import com.google.devtools.ksp.processing.JvmPlatformInfo
 &nbsp;import com.google.devtools.ksp.processing.SymbolProcessor
 &nbsp;import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 &nbsp;import com.google.devtools.ksp.processing.SymbolProcessorProvider
 &nbsp;
 &nbsp;/**
 &nbsp; * Entry point for the KSP plugin.
+&nbsp; *
+&nbsp; * `@JvmField` is only emitted when the KSP run includes JVM or is a shared (multi-platform)
+&nbsp; * metadata run: it is an `@OptionalExpectation`, which a single-platform Kotlin/Native or
+&nbsp; * Kotlin/Wasm compilation (per-target KSP, e.g. `kspWasmJs`) rejects.
 &nbsp; */
 <b class="fc">&nbsp;class GhostSerializationProvider : SymbolProcessorProvider {</b>
 &nbsp;    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+<b class="fc">&nbsp;        val platforms = environment.platforms</b>
+<b class="pc">&nbsp;        val emitJvmField = platforms.size != 1 || platforms.any { it is JvmPlatformInfo }</b>
 <b class="fc">&nbsp;        return GhostSerializationProcessor(</b>
 <b class="fc">&nbsp;            codeGenerator = environment.codeGenerator,</b>
 <b class="fc">&nbsp;            logger = environment.logger,</b>
-<b class="fc">&nbsp;            options = environment.options</b>
+<b class="fc">&nbsp;            options = environment.options,</b>
+<b class="fc">&nbsp;            emitJvmField = emitJvmField</b>
 &nbsp;        )
 &nbsp;    }
 &nbsp;}
@@ -134,7 +149,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

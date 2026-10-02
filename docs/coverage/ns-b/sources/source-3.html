@@ -1,0 +1,171 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostCompilerPluginConstants</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.plugin</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostCompilerPluginConstants (com.ghost.serialization.compiler.plugin)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostCompilerPluginConstants</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (48/48)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.plugin
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.config.CompilerConfigurationKey
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.FqName
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;
+&nbsp;/**
+&nbsp; * Identifiers shared by the Ghost compiler plugin: its id and command-line option (which must
+&nbsp; * match what `ghost-gradle-plugin` passes), and the runtime/annotation declarations it links.
+&nbsp; * [SERIALIZER_SUFFIX] and [NESTED_NAME_SEPARATOR] mirror the KSP processor&#39;s naming convention
+&nbsp; * for generated serializers (`&lt;package&gt;.&lt;Outer_Inner&gt;Serializer`).
+&nbsp; */
+&nbsp;internal object GhostCompilerPluginConstants {
+&nbsp;    const val PLUGIN_ID = &quot;com.ghostserializer.ghost&quot;
+&nbsp;
+&nbsp;    const val OPTION_ENABLED = &quot;enabled&quot;
+&nbsp;    const val OPTION_ENABLED_DESCRIPTION =
+&nbsp;        &quot;Links each @GhostSerialization class to its generated serializer for Kotlin/Native and Kotlin/Wasm lookup&quot;
+&nbsp;    const val OPTION_ENABLED_VALUE_DESCRIPTION = &quot;&lt;true|false&gt;&quot;
+&nbsp;    const val UNKNOWN_OPTION_PREFIX = &quot;Unknown Ghost compiler plugin option: &quot;
+&nbsp;
+&nbsp;    private const val KEY_ENABLED_NAME = &quot;ghost.enabled&quot;
+<b class="fc">&nbsp;    val KEY_ENABLED = CompilerConfigurationKey&lt;Boolean&gt;(KEY_ENABLED_NAME)</b>
+&nbsp;
+&nbsp;    private const val ANNOTATIONS_PACKAGE = &quot;com.ghost.serialization.annotations&quot;
+&nbsp;    private const val CONTRACT_PACKAGE = &quot;com.ghost.serialization.contract&quot;
+&nbsp;
+<b class="fc">&nbsp;    val GHOST_PROTO_SERIALIZATION_ID = ClassId(</b>
+<b class="fc">&nbsp;        packageFqName = FqName(fqName = ANNOTATIONS_PACKAGE),</b>
+<b class="fc">&nbsp;        topLevelName = Name.identifier(&quot;GhostProtoSerialization&quot;)</b>
+&nbsp;    )
+<b class="fc">&nbsp;    val GHOST_SERIALIZATION_ID = ClassId(</b>
+<b class="fc">&nbsp;        packageFqName = FqName(fqName = ANNOTATIONS_PACKAGE),</b>
+<b class="fc">&nbsp;        topLevelName = Name.identifier(&quot;GhostSerialization&quot;)</b>
+&nbsp;    )
+<b class="fc">&nbsp;    val SERIALIZER_LINK_ID = ClassId(</b>
+<b class="fc">&nbsp;        packageFqName = FqName(fqName = CONTRACT_PACKAGE),</b>
+<b class="fc">&nbsp;        topLevelName = Name.identifier(&quot;GhostSerializerLink&quot;)</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    const val NESTED_NAME_SEPARATOR = &quot;_&quot;
+&nbsp;    const val SERIALIZER_SUFFIX = &quot;Serializer&quot;
+&nbsp;
+&nbsp;    const val MISSING_SERIALIZER_PREFIX = &quot;Ghost: generated serializer &quot;
+&nbsp;    const val MISSING_SERIALIZER_INFIX = &quot; not found for &quot;
+&nbsp;    const val MISSING_SERIALIZER_SUFFIX =
+&nbsp;        &quot;; automatic Kotlin/Native and Kotlin/Wasm registration is skipped for this class. &quot; +
+&nbsp;            &quot;Check that KSP runs for this source set, or register the module with Ghost.addRegistry.&quot;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > FloatSerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlExplicitKeySubsystemKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: FloatSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlExplicitKeySubsystemKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">FloatSerializer</td>
+  <td class="name">GhostYamlExplicitKeySubsystemKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    100%
   </span>
   <span class="absValue">
-    (2/6)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    33.3%
-  </span>
-  <span class="absValue">
-    (2/6)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    77.6%
   </span>
   <span class="absValue">
-    (6/18)
+    (45/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98%
+  </span>
+  <span class="absValue">
+    (48/49)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.4%
+  </span>
+  <span class="absValue">
+    (248/252)
   </span>
 </td>
 </tr>
@@ -92,41 +99,107 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
-&nbsp;package com.ghost.serialization.serializers
-&nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextFloat
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextFloat
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Built-in serializer for Kotlin [Float] type.
+&nbsp; * Handles YAML&#39;s explicit block-mapping keys (`? key` / `: value`). Unlike an implicit
+&nbsp; * &quot;key: value&quot; pair, the key may be any node — not just plain scalar text — and the value is
+&nbsp; * entirely optional; a bare `? key` maps to null.
 &nbsp; */
-&nbsp;object FloatSerializer : GhostSerializer&lt;Float&gt; {
-<b class="nc">&nbsp;    override val typeName: String get() = C.TYPE_NAME_FLOAT</b>
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: Float) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+&nbsp;/** True if position is at a `?` explicit-key indicator (must be followed by whitespace/EOL). */
+&nbsp;internal fun GhostYamlFlatReader.isExplicitKeyIndicator(): Boolean {
+<b class="pc">&nbsp;    if (position &gt;= limit || rawData[position] != TOK.QUESTION_BYTE) return false</b>
+<b class="fc">&nbsp;    return isFollowedByIndicatorTerminator(nextPosition = position + 1)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads one &quot;? key&quot; / &quot;: value&quot; entry, with [GhostYamlFlatReader.position] at the &quot;?&quot;. If a &quot;:&quot;
+&nbsp; * doesn&#39;t follow at [blockIndent], the value is null and nothing past the key is consumed.
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair&lt;String, Any?&gt; {
+<b class="fc">&nbsp;    position++ // consume &#39;?&#39;</b>
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;
+<b class="pc">&nbsp;    val isKeyOnLaterLine = position &gt;= localLimit ||</b>
+<b class="pc">&nbsp;        localRawData[position] == TOK.NEWLINE_BYTE || localRawData[position] == TOK.CR_BYTE</b>
+<b class="fc">&nbsp;    val keyNode = if (isKeyOnLaterLine) {</b>
+&nbsp;        // Key on later line(s): mirrors value-after-&#39;:&#39; resolution, including the exception
+&nbsp;        // that a &#39;-&#39; sequence entry may sit at exactly blockIndent (e.g. &quot;?\n- a\n- b&quot;).
+<b class="fc">&nbsp;        advanceLine()</b>
+<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;        val continuesAsSequenceEntry =</b>
+<b class="pc">&nbsp;            position &lt; localLimit &amp;&amp; localRawData[position] == TOK.DASH_BYTE &amp;&amp; isBlockSequenceEntry()</b>
+<b class="pc">&nbsp;        val staysAtOrAboveBlockIndent = currentIndent &gt; blockIndent ||</b>
+<b class="pc">&nbsp;            (currentIndent == blockIndent &amp;&amp; continuesAsSequenceEntry)</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit || !staysAtOrAboveBlockIndent) {</b>
+<b class="nc">&nbsp;            null</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            readValue(currentIndent, inFlow = false)</b>
+&nbsp;        }
+<b class="fc">&nbsp;    } else if (isExplicitValueIndicator()) {</b>
+&nbsp;        // Nothing between &#39;?&#39; and &#39;:&#39; (e.g. &quot;? : x&quot;) — an empty/null key.
+<b class="fc">&nbsp;        null</b>
+&nbsp;    } else {
+&nbsp;        // Unlike an implicit pair&#39;s value, explicit-key content supports YAML&#39;s &quot;compact
+&nbsp;        // notation&quot; — a nested block mapping/sequence starting inline right after &quot;?&quot;/&quot;:&quot;
+&nbsp;        // (spec example 8.19). allowMappingRedirect stays at its default (true) here.
+<b class="fc">&nbsp;        readValue(blockIndent, inFlow = false, strictDedent = true)</b>
 &nbsp;    }
+<b class="fc">&nbsp;    val key = stringifyExplicitMappingKey(keyNode = keyNode)</b>
 &nbsp;
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Float) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+&nbsp;    // Look for &#39;:&#39;. On the key&#39;s own line it&#39;s always valid regardless of column; the
+&nbsp;    // indentation check only matters once we&#39;ve crossed onto a later line.
+<b class="fc">&nbsp;    val positionBeforeGap = position</b>
+<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;    var crossedLine = false</b>
+<b class="fc">&nbsp;    var scanPos = positionBeforeGap</b>
+<b class="fc">&nbsp;    while (scanPos &lt; position) {</b>
+<b class="pc">&nbsp;        if (localRawData[scanPos] == TOK.NEWLINE_BYTE || localRawData[scanPos] == TOK.CR_BYTE) {</b>
+<b class="fc">&nbsp;            crossedLine = true</b>
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        scanPos++</b>
 &nbsp;    }
+<b class="fc">&nbsp;    val isValidExplicitColon = position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;        isExplicitValueIndicator() &amp;&amp;</b>
+<b class="pc">&nbsp;        (!crossedLine || currentIndent == blockIndent)</b>
+<b class="fc">&nbsp;    val value = if (isValidExplicitColon) {</b>
+<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
+<b class="fc">&nbsp;        resolveValueAfterColon(blockIndent = blockIndent)</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        null</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return key to value</b>
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonReader): Float = reader.nextFloat()</b>
+&nbsp;/** True if position is at a `:` explicit-value indicator (must be followed by whitespace/EOL). */
+&nbsp;private fun GhostYamlFlatReader.isExplicitValueIndicator(): Boolean {
+<b class="fc">&nbsp;    if (rawData[position] != TOK.COLON_BYTE) return false</b>
+<b class="fc">&nbsp;    return isFollowedByIndicatorTerminator(nextPosition = position + 1)</b>
+&nbsp;}
 &nbsp;
-<b class="nc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Float = reader.nextFloat()</b>
+&nbsp;/** True if [nextPosition] is past the end, or a whitespace/line-break byte. */
+&nbsp;private fun GhostYamlFlatReader.isFollowedByIndicatorTerminator(nextPosition: Int): Boolean =
+<b class="pc">&nbsp;    nextPosition &gt;= limit ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == TOK.SPACE_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == TOK.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;        rawData[nextPosition] == TOK.CR_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[nextPosition] == TOK.TAB_BYTE</b>
 &nbsp;
-<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Float = reader.nextFloat()</b>
+&nbsp;/**
+&nbsp; * Converts a node read as an explicit key into the String [GhostYamlFlatReader]&#39;s
+&nbsp; * `Map&lt;String, Any?&gt;` representation needs. Non-scalar keys have no clean string form, but no
+&nbsp; * yaml-test-suite case using one has a JSON fixture to match against either.
+&nbsp; */
+<b class="fc">&nbsp;internal fun stringifyExplicitMappingKey(keyNode: Any?): String = when (keyNode) {</b>
+<b class="fc">&nbsp;    null -&gt; &quot;&quot;</b>
+<b class="fc">&nbsp;    is String -&gt; keyNode</b>
+<b class="fc">&nbsp;    else -&gt; keyNode.toString()</b>
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +224,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

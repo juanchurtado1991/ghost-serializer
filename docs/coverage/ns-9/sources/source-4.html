@@ -1,0 +1,327 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlEligibility</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.ksp</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlEligibility (com.ghost.serialization.compiler.ksp)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlEligibility</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57%
+  </span>
+  <span class="absValue">
+    (57/100)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.8%
+  </span>
+  <span class="absValue">
+    (60/86)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.3%
+  </span>
+  <span class="absValue">
+    (314/401)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostYamlEligibility$reportOrphanGhostYamlSerialization$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57%
+  </span>
+  <span class="absValue">
+    (57/100)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    69.8%
+  </span>
+  <span class="absValue">
+    (60/86)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.3%
+  </span>
+  <span class="absValue">
+    (314/401)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.ksp
+&nbsp;
+&nbsp;import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
+&nbsp;import com.ghost.serialization.compiler.analysis.isByteArray
+&nbsp;import com.ghost.serialization.compiler.analysis.isRawJson
+&nbsp;import com.ghost.serialization.compiler.model.GhostEnvelopeModel
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.google.devtools.ksp.processing.KSPLogger
+&nbsp;import com.google.devtools.ksp.processing.Resolver
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.Modifier
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Decides whether a class gets YAML codegen and reports misuse of `@GhostYamlSerialization` —
+&nbsp; * the compatibility rules (resilient, sealed, envelope, inferred, custom codecs, structural
+&nbsp; * annotations, nested ghosts, ...). Split out of [GhostSerializationProcessor] since these rules
+&nbsp; * change whenever YAML&#39;s supported surface changes, independently of how KSP symbols are visited
+&nbsp; * or how the registry is generated.
+&nbsp; */
+<b class="fc">&nbsp;internal class GhostYamlEligibility(private val logger: KSPLogger) {</b>
+&nbsp;
+&nbsp;    fun reportOrphanGhostYamlSerialization(resolver: Resolver) {
+<b class="fc">&nbsp;        resolver.getSymbolsWithAnnotation(CC.STR_ANNOTATION_YAML_SERIALIZATION)</b>
+<b class="fc">&nbsp;            .filterIsInstance&lt;KSClassDeclaration&gt;()</b>
+<b class="fc">&nbsp;            .forEach { classDeclaration -&gt;</b>
+<b class="fc">&nbsp;                val hasGhostSerialization = classDeclaration.annotations.any {</b>
+<b class="fc">&nbsp;                    it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val hasProtoSerialization = classDeclaration.annotations.any {</b>
+<b class="fc">&nbsp;                    it.shortName.asString() == CC.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
+&nbsp;                }
+<b class="fc">&nbsp;                if (!hasGhostSerialization &amp;&amp; !hasProtoSerialization) {</b>
+<b class="fc">&nbsp;                    logger.error(PC.STR_ERR_YAML_ORPHAN, classDeclaration)</b>
+&nbsp;                }
+<b class="fc">&nbsp;            }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun shouldGenerateYaml(
+&nbsp;        resolver: Resolver,
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        propertiesModel: List&lt;GhostPropertyModel&gt;,
+&nbsp;        envelopeModel: GhostEnvelopeModel?,
+&nbsp;    ): Boolean {
+<b class="fc">&nbsp;        val hasYamlAnnotation = classDeclaration.annotations.any {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == CC.ANNOTATION_GHOST_YAML_SERIALIZATION</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (!hasYamlAnnotation) {</b>
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (resolver.getClassDeclarationByName(</b>
+<b class="fc">&nbsp;                resolver.getKSNameFromString(PC.STR_YAML_SERIALIZER_FQN)</b>
+&nbsp;            ) == null
+&nbsp;        ) {
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val hasGhostSerialization = classDeclaration.annotations.any {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val hasProtoSerialization = classDeclaration.annotations.any {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == CC.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (!hasGhostSerialization &amp;&amp; !hasProtoSerialization) {</b>
+<b class="nc">&nbsp;            logger.error(PC.STR_ERR_YAML_ORPHAN, classDeclaration)</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (classHasResilient(classDeclaration = classDeclaration, propertiesModel = propertiesModel)) {</b>
+<b class="fc">&nbsp;            logger.error(PC.STR_ERR_YAML_RESILIENT, classDeclaration)</b>
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {</b>
+<b class="nc">&nbsp;            logger.error(PC.STR_ERR_YAML_SEALED, classDeclaration)</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (envelopeModel != null) {</b>
+<b class="nc">&nbsp;            logger.error(PC.STR_ERR_YAML_ENVELOPE, classDeclaration)</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val isInferred = classDeclaration.annotations</b>
+<b class="fc">&nbsp;            .find { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }</b>
+<b class="fc">&nbsp;            ?.arguments</b>
+<b class="pc">&nbsp;            ?.find { it.name?.asString() == PC.ARG_INFERRED }</b>
+<b class="pc">&nbsp;            ?.value as? Boolean</b>
+<b class="fc">&nbsp;            ?: false</b>
+<b class="pc">&nbsp;        if (isInferred) {</b>
+<b class="nc">&nbsp;            logger.error(PC.STR_ERR_YAML_INFERRED, classDeclaration)</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        propertiesModel.forEach { prop -&gt;</b>
+<b class="fc">&nbsp;            if (propertyDisablesYamlCodegen(prop = prop)) {</b>
+<b class="fc">&nbsp;                logger.error(</b>
+<b class="pc">&nbsp;                    yamlIncompatibilityReason(prop = prop) ?: PC.STR_ERR_YAML_NESTED_GHOST,</b>
+<b class="fc">&nbsp;                    classDeclaration,</b>
+&nbsp;                )
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        return propertiesModel.none { propertyDisablesYamlCodegen(prop = it) }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun classHasResilient(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        propertiesModel: List&lt;GhostPropertyModel&gt;,
+&nbsp;    ): Boolean {
+<b class="fc">&nbsp;        if (classDeclaration.annotations.any { it.shortName.asString() == AC.GHOST_RESILIENT }) {</b>
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return propertiesModel.any { it.isResilient }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun propertyDisablesYamlCodegen(prop: GhostPropertyModel): Boolean {
+<b class="pc">&nbsp;        val hasCustomCoder = prop.isContextual || prop.customDecoder != null || prop.customEncoder != null</b>
+<b class="fc">&nbsp;        if (hasCustomCoder) {</b>
+<b class="fc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        val hasStructuralMapping = prop.wrappedKeys != null || prop.flattenPath != null || prop.wrapPath != null</b>
+<b class="pc">&nbsp;        if (hasStructuralMapping) {</b>
+<b class="nc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (prop.isSealedClass) {</b>
+<b class="nc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (prop.isGhost) {</b>
+<b class="nc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (prop.listInnerIsGhost || prop.mapValueIsGhost) {</b>
+<b class="nc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (prop.type.containsYamlIncompatibleType(isProto = prop.isProto)) {</b>
+<b class="nc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val valueClassProperty = prop.valueClassProperty</b>
+<b class="pc">&nbsp;        val isValueClassOfIncompatibleType = valueClassProperty != null &amp;&amp;</b>
+<b class="nc">&nbsp;            valueClassProperty.type.containsYamlIncompatibleType(isProto = prop.isProto)</b>
+<b class="pc">&nbsp;        if (isValueClassOfIncompatibleType) {</b>
+<b class="nc">&nbsp;            return true</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun yamlIncompatibilityReason(prop: GhostPropertyModel): String? {
+<b class="pc">&nbsp;        val hasCustomCoder = prop.isContextual || prop.customDecoder != null || prop.customEncoder != null</b>
+<b class="pc">&nbsp;        if (hasCustomCoder) {</b>
+<b class="fc">&nbsp;            return PC.STR_ERR_YAML_CUSTOM_CODEC</b>
+&nbsp;        }
+<b class="nc">&nbsp;        val hasStructuralMapping = prop.wrappedKeys != null || prop.flattenPath != null || prop.wrapPath != null</b>
+<b class="nc">&nbsp;        if (hasStructuralMapping) {</b>
+<b class="nc">&nbsp;            return PC.STR_ERR_YAML_STRUCTURAL</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (prop.type.isRawJson()) {</b>
+<b class="nc">&nbsp;            return PC.STR_ERR_YAML_RAW_JSON</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (!prop.isProto &amp;&amp; prop.type.isByteArray()) {</b>
+<b class="nc">&nbsp;            return PC.STR_ERR_YAML_BYTE_ARRAY</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (prop.isGhost) {</b>
+<b class="nc">&nbsp;            return PC.STR_ERR_YAML_NESTED_GHOST</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

@@ -94,7 +94,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SCRATCH_BUFFER_SIZE
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.SCRATCH_BUFFER_SIZE
 &nbsp;
 &nbsp;private const val TIER_SMALL = 1024
 &nbsp;private const val TIER_MEDIUM = 16384
@@ -118,7 +118,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;/** Acquires a reusable buffer of at least [minSize] from the tiered pool, minimizing hot-path allocations. */
 &nbsp;@InternalGhostApi
-&nbsp;fun acquireScratchBuffer(minSize: Int = SCRATCH_BUFFER_SIZE): ByteArray {
+&nbsp;fun acquireScratchBuffer(
+&nbsp;    minSize: Int = SCRATCH_BUFFER_SIZE
+&nbsp;): ByteArray {
 &nbsp;    val pool = getLocalPool()
 &nbsp;    return when {
 &nbsp;        minSize &lt;= SCRATCH_BUFFER_SIZE_INT -&gt; {
@@ -127,7 +129,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                pool.scratch = null
 &nbsp;                scratchLocal
 &nbsp;            } else {
-&nbsp;                ByteArray(SCRATCH_BUFFER_SIZE_INT)
+&nbsp;                ByteArray(size = SCRATCH_BUFFER_SIZE_INT)
 &nbsp;            }
 &nbsp;        }
 &nbsp;
@@ -137,7 +139,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                pool.small = null
 &nbsp;                smallLocal
 &nbsp;            } else {
-&nbsp;                ByteArray(TIER_SMALL)
+&nbsp;                ByteArray(size = TIER_SMALL)
 &nbsp;            }
 &nbsp;        }
 &nbsp;
@@ -147,7 +149,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                pool.medium = null
 &nbsp;                mediumLocal
 &nbsp;            } else {
-&nbsp;                ByteArray(TIER_MEDIUM)
+&nbsp;                ByteArray(size = TIER_MEDIUM)
 &nbsp;            }
 &nbsp;        }
 &nbsp;
@@ -157,7 +159,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                pool.large = null
 &nbsp;                largeLocal
 &nbsp;            } else {
-&nbsp;                ByteArray(TIER_LARGE)
+&nbsp;                ByteArray(size = TIER_LARGE)
 &nbsp;            }
 &nbsp;        }
 &nbsp;
@@ -167,7 +169,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                pool.xlarge = null
 &nbsp;                xlargeLocal
 &nbsp;            } else {
-&nbsp;                ByteArray(TIER_XLARGE)
+&nbsp;                ByteArray(size = TIER_XLARGE)
 &nbsp;            }
 &nbsp;        }
 &nbsp;
@@ -177,11 +179,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;                pool.xxlarge = null
 &nbsp;                xxlargeLocal
 &nbsp;            } else {
-&nbsp;                ByteArray(TIER_XXLARGE)
+&nbsp;                ByteArray(size = TIER_XXLARGE)
 &nbsp;            }
 &nbsp;        }
 &nbsp;
-&nbsp;        else -&gt; ByteArray(minSize)
+&nbsp;        else -&gt; ByteArray(size = minSize)
 &nbsp;    }
 &nbsp;}
 &nbsp;
@@ -198,6 +200,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        TIER_XLARGE -&gt; pool.xlarge = buffer
 &nbsp;        TIER_XXLARGE -&gt; pool.xxlarge = buffer
 &nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Initial size (512 KiB) for response-body scratch buffers — equal to a pool tier, so it round-trips through the pool. */
+&nbsp;@InternalGhostApi
+&nbsp;const val RESPONSE_SCRATCH_INITIAL_SIZE = TIER_XLARGE
+&nbsp;
+&nbsp;/**
+&nbsp; * Doubles [scratch]: acquires a buffer twice its size, copies the first [usedBytes] over, and
+&nbsp; * returns the old one to the pool. Shared by the Retrofit/Ktor response-body read loops.
+&nbsp; */
+&nbsp;@InternalGhostApi
+&nbsp;fun growScratchBuffer(scratch: ByteArray, usedBytes: Int): ByteArray {
+&nbsp;    val grown = acquireScratchBuffer(minSize = scratch.size * 2)
+&nbsp;    scratch.copyInto(grown, 0, 0, usedBytes)
+&nbsp;    releaseScratchBuffer(buffer = scratch)
+&nbsp;    return grown
 &nbsp;}
 </code>
 </pre>
@@ -222,7 +240,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

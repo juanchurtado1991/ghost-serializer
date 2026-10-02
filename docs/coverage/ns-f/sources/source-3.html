@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostKtorBuffers</title>
+  <title>GhostSerialization Coverage Report > ApiEventDefault</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.ktor</a>
+    <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostKtorBuffers (com.ghost.serialization.ktor)</h1>
+<h1>Coverage Summary for Class: ApiEventDefault (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 
@@ -46,7 +46,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostKtorBuffers</td>
+  <td class="name">ApiEventDefault</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -57,10 +66,30 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    100%
   </span>
   <span class="absValue">
-    (4/8)
+    (2/2)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ApiEventDefault$Login</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
@@ -68,21 +97,37 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (13/13)
+    (8/8)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ApiEventDefault$Logout</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    98.8%
+    100%
   </span>
   <span class="absValue">
-    (160/162)
+    (8/8)
   </span>
 </td>
-</tr>
-  <tr>
-    <td class="name">GhostKtorBuffers$readToScratch$1</td>
-    <td class="coverageStat"/>
   </tr>
 <tr>
   <td class="name"><strong>Total</strong></td>
@@ -91,15 +136,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (3/3)
   </span>
 </td>
+    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    100%
   </span>
   <span class="absValue">
-    (4/8)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
@@ -107,15 +153,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (13/13)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    98.8%
-  </span>
-  <span class="absValue">
-    (160/162)
+    (18/18)
   </span>
 </td>
 </tr>
@@ -126,49 +164,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.ktor
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.acquireScratchBuffer
-&nbsp;import com.ghost.serialization.releaseScratchBuffer
-&nbsp;import io.ktor.utils.io.ByteReadChannel
-&nbsp;import io.ktor.utils.io.readAvailable
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-&nbsp;/**
-&nbsp; * Shared scratch-buffer grow/read loop for Ktor content converters.
-&nbsp; */
-&nbsp;@OptIn(InternalGhostApi::class)
-&nbsp;internal object GhostKtorBuffers {
-&nbsp;    const val INITIAL_SIZE = 524288
+<b class="fc">&nbsp;@GhostSerialization</b>
+&nbsp;sealed class ApiEventDefault {
+<b class="fc">&nbsp;    @GhostSerialization</b>
+<b class="fc">&nbsp;    data class Login(val userId: String) : ApiEventDefault()</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Reads [content] into a pooled scratch buffer that doubles when full.
-&nbsp;     * Invokes [block] with the buffer and filled length, then releases the scratch.
-&nbsp;     */
-&nbsp;    suspend inline fun &lt;T&gt; readToScratch(
-&nbsp;        content: ByteReadChannel,
-&nbsp;        block: (buffer: ByteArray, length: Int) -&gt; T
-&nbsp;    ): T {
-<b class="fc">&nbsp;        var scratch = acquireScratchBuffer(INITIAL_SIZE)</b>
-&nbsp;        try {
-<b class="fc">&nbsp;            var offset = 0</b>
-<b class="fc">&nbsp;            while (true) {</b>
-<b class="pc">&nbsp;                if (offset == scratch.size) {</b>
-<b class="fc">&nbsp;                    val grown = acquireScratchBuffer(scratch.size * 2)</b>
-<b class="fc">&nbsp;                    scratch.copyInto(grown, 0, 0, offset)</b>
-<b class="fc">&nbsp;                    releaseScratchBuffer(scratch)</b>
-<b class="fc">&nbsp;                    scratch = grown</b>
-&nbsp;                }
-&nbsp;
-<b class="fc">&nbsp;                val read = content.readAvailable(scratch, offset, scratch.size - offset)</b>
-<b class="pc">&nbsp;                if (read == -1) break</b>
-<b class="fc">&nbsp;                offset += read</b>
-&nbsp;            }
-<b class="fc">&nbsp;            return block(scratch, offset)</b>
-&nbsp;        } finally {
-<b class="fc">&nbsp;            releaseScratchBuffer(scratch)</b>
-&nbsp;        }
-&nbsp;    }
+<b class="fc">&nbsp;    @GhostSerialization</b>
+<b class="fc">&nbsp;    data class Logout(val sessionId: String) : ApiEventDefault()</b>
 &nbsp;}
 </code>
 </pre>
@@ -193,7 +199,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

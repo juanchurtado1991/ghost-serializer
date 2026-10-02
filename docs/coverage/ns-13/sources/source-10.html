@@ -1,0 +1,90 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostHeuristicDefaults</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.common</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostHeuristicDefaults (com.ghost.serialization.parser.common)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostHeuristicDefaults</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
+&nbsp;
+&nbsp;/**
+&nbsp; * Baseline values behind [GhostHeuristics]&#39;s per-platform `actual`s. Platforms that need no special
+&nbsp; * tuning (Native, Wasm) use these directly; JVM and Android name only the values they deviate on.
+&nbsp; */
+&nbsp;internal object GhostHeuristicDefaults {
+&nbsp;    const val BYTES_PER_KIB = 1024
+&nbsp;    const val BYTES_PER_MIB = 1024 * BYTES_PER_KIB
+&nbsp;
+&nbsp;    const val INITIAL_COLLECTION_CAPACITY = 10
+&nbsp;    const val MAX_STRING_POOL_LENGTH = 64
+&nbsp;    const val MAX_COLLECTION_SIZE = 500_000
+&nbsp;    const val MAX_DISCRIMINATOR_PEEK_DISTANCE = 1024
+&nbsp;    const val MAX_WARM_WRITE_BUFFER_CAPACITY = BYTES_PER_MIB
+&nbsp;    const val MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = 512 * BYTES_PER_KIB
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

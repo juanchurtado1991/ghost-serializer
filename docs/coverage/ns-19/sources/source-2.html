@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > BooleanSerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlAnchorSubsystemKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: BooleanSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlAnchorSubsystemKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,38 +49,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">BooleanSerializer</td>
+  <td class="name">GhostYamlAnchorSubsystemKt</td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/1)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/6)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/6)
+    (7/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    80.6%
   </span>
   <span class="absValue">
-    (0/18)
+    (100/124)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99%
+  </span>
+  <span class="absValue">
+    (95/96)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.5%
+  </span>
+  <span class="absValue">
+    (546/560)
   </span>
 </td>
 </tr>
@@ -92,45 +99,211 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
-&nbsp;package com.ghost.serialization.serializers
+&nbsp;import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
+&nbsp;import com.ghost.serialization.yaml.exception.GhostYamlException
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextBoolean
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextBoolean
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;/** Parses/manages YAML Anchors (&amp;anchor), Aliases (*alias), and Merge Keys (&lt;&lt;). */
 &nbsp;
 &nbsp;/**
-&nbsp; * Built-in serializer for Kotlin [Boolean] type.
+&nbsp; * Entry point for [GhostYamlFlatReader.readValue]&#39;s `&amp;` dispatch. A block-context anchor is
+&nbsp; * ambiguous on sight: it may anchor a *value* (`key: &amp;a value`) or the *key* of an implicit
+&nbsp; * mapping entry (`&amp;a a: &amp;b b` — the anchor belongs to bare key &quot;a&quot;, not the whole mapping), and
+&nbsp; * [readAnchoredValue] alone only handles the value shape.
+&nbsp; *
+&nbsp; * Resolved by speculatively reparsing with [GhostYamlFlatReader.readKey] (commit 9812d08c /
+&nbsp; * case SU74) to check for a following `:`, then rewinding and re-dispatching for real:
+&nbsp; * [GhostYamlFlatReader.readBlockMapping] if it looked like a key line, else [readAnchoredValue].
+&nbsp; * Flow context has no such ambiguity (a flow key is delimited by `{`/`,`/`}`, not indentation).
 &nbsp; */
-&nbsp;object BooleanSerializer : GhostSerializer&lt;Boolean&gt; {
-<b class="nc">&nbsp;    override val typeName: String get() = C.TYPE_NAME_BOOLEAN</b>
+&nbsp;internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(
+&nbsp;    indent: Int,
+&nbsp;    inFlow: Boolean,
+&nbsp;    strictDedent: Boolean
+&nbsp;): Any? {
+<b class="fc">&nbsp;    if (inFlow) return readAnchoredValue(indent = indent, inFlow = inFlow, strictDedent = strictDedent)</b>
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: Boolean) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;
+&nbsp;    // Non-mutating lookahead: skip &quot;&amp;anchor name&quot; + inline whitespace to see what follows the
+&nbsp;    // anchor prefix, without touching `position` yet.
+<b class="fc">&nbsp;    var lookahead = startPosition + 1 // &#39;&amp;&#39;</b>
+<b class="pc">&nbsp;    while (lookahead &lt; localLimit &amp;&amp; !isAnchorNameTerminator(byte = localRawData[lookahead])) {</b>
+<b class="fc">&nbsp;        lookahead++</b>
+&nbsp;    }
+<b class="pc">&nbsp;    while (lookahead &lt; localLimit &amp;&amp; isInlineWhitespaceByte(byte = localRawData[lookahead])) {</b>
+<b class="fc">&nbsp;        lookahead++</b>
+&nbsp;    }
+&nbsp;    // A flow collection right after the anchor can&#39;t safely go through readKey&#39;s plain-text scan:
+&nbsp;    // it has no bracket-depth awareness, so &quot;&amp;ORIGIN {x: 73, y: 129}&quot; would falsely look like a
+&nbsp;    // key at its first *inner* &#39;:&#39; (case C4HZ). readKey handles a quoted scalar fine, so only
+&nbsp;    // flow collections need excluding — readAnchoredValue&#39;s own readValue() dispatch
+&nbsp;    // (readFlowCollectionOrMappingKey) correctly resolves those as key or value.
+<b class="pc">&nbsp;    val followedByFlowCollection = lookahead &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;        (localRawData[lookahead] == TOK.LEFT_BRACE_BYTE || localRawData[lookahead] == TOK.LEFT_BRACKET_BYTE)</b>
+&nbsp;
+<b class="fc">&nbsp;    val looksLikeMappingKey = !followedByFlowCollection &amp;&amp; try {</b>
+<b class="fc">&nbsp;        val key = readKey(inFlow = false)</b>
+<b class="pc">&nbsp;        key != null &amp;&amp; looksLikeMappingKeyColon()</b>
+&nbsp;    } catch (e: GhostYamlException) {
+&nbsp;        // A legitimate anchored value that doesn&#39;t parse as a sensible key (e.g.
+&nbsp;        // &quot;&amp;anchor:\n  nested: mapping&quot;) must fall through to readAnchoredValue cleanly,
+&nbsp;        // not propagate this speculative attempt&#39;s error.
+<b class="fc">&nbsp;        false</b>
+&nbsp;    } finally {
+&nbsp;        // Undo the peek — readBlockMapping/readAnchoredValue below re-reads this text for real.
+&nbsp;        // (readKey may have already bound the anchor as a side effect of the peek; harmless,
+&nbsp;        // since whichever real path runs next overwrites it with the correct binding.)
+<b class="fc">&nbsp;        position = startPosition</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Boolean) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+<b class="fc">&nbsp;    return if (looksLikeMappingKey) {</b>
+<b class="fc">&nbsp;        readBlockMapping(blockIndent = indent.coerceAtLeast(0))</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        readAnchoredValue(indent = indent, inFlow = inFlow, strictDedent = strictDedent)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Whether [byte] terminates an anchor/alias name (whitespace, newline, or a flow delimiter). */
+&nbsp;private fun isAnchorNameTerminator(byte: Byte): Boolean =
+<b class="pc">&nbsp;    byte == TOK.SPACE_BYTE || byte == TOK.TAB_BYTE || byte == TOK.NEWLINE_BYTE || byte == TOK.CR_BYTE ||</b>
+<b class="pc">&nbsp;        byte == TOK.COMMA_BYTE || byte == TOK.RIGHT_BRACE_BYTE || byte == TOK.RIGHT_BRACKET_BYTE</b>
+&nbsp;
+&nbsp;/** Whether the byte at [GhostYamlFlatReader.position] is a `:` that ends a mapping key (not part of a scalar). */
+&nbsp;private fun GhostYamlFlatReader.looksLikeMappingKeyColon(): Boolean {
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    return position &lt; localLimit &amp;&amp; localRawData[position] == TOK.COLON_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;        (position + 1 &gt;= localLimit ||</b>
+<b class="fc">&nbsp;            localRawData[position + 1] == TOK.SPACE_BYTE ||</b>
+<b class="pc">&nbsp;            localRawData[position + 1] == TOK.NEWLINE_BYTE ||</b>
+<b class="nc">&nbsp;            localRawData[position + 1] == TOK.CR_BYTE ||</b>
+<b class="pc">&nbsp;            localRawData[position + 1] == TOK.TAB_BYTE)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean, strictDedent: Boolean): Any? {
+<b class="fc">&nbsp;    position++ // consume &#39;&amp;&#39;</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;
+<b class="fc">&nbsp;    val start = position</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit &amp;&amp; !isAnchorNameTerminator(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;        position++</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): Boolean {
-<b class="nc">&nbsp;        return reader.nextBoolean()</b>
+<b class="fc">&nbsp;    val anchorName = localRawData.decodeToString(start, position)</b>
+&nbsp;
+&nbsp;    // Skip inline whitespace, then a same-line trailing comment (e.g. &quot;top: &amp;node # comment&quot;) —
+&nbsp;    // leaves no inline value, same as a bare newline would.
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="pc">&nbsp;    if (position &lt; localLimit &amp;&amp; localRawData[position] == TOK.HASH_BYTE) {</b>
+<b class="fc">&nbsp;        skipToEndOfLine()</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Boolean {
-<b class="nc">&nbsp;        return reader.nextBoolean()</b>
+&nbsp;    // An anchor can&#39;t directly wrap an alias reference — it anchors actual node content, not
+&nbsp;    // a reference to something else.
+<b class="pc">&nbsp;    val isAliasAtPosition = !inFlow &amp;&amp; position &lt; localLimit &amp;&amp; localRawData[position] == TOK.ASTERISK_BYTE</b>
+<b class="fc">&nbsp;    if (isAliasAtPosition) {</b>
+<b class="fc">&nbsp;        yamlError(message = &quot;${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}&quot;)</b>
+&nbsp;    }
+&nbsp;    // Nor can a block sequence entry start inline on the same line — &quot;&amp;anchor - item&quot; is
+&nbsp;    // invalid, the &quot;-&quot; needs its own line.
+<b class="fc">&nbsp;    val isBlockSequenceDash = !inFlow &amp;&amp;</b>
+<b class="pc">&nbsp;        position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;        localRawData[position] == TOK.DASH_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;        isBlockSequenceEntry()</b>
+<b class="fc">&nbsp;    if (isBlockSequenceDash) {</b>
+<b class="fc">&nbsp;        yamlError(message = &quot;${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${EM.ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX}&quot;)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Boolean {
-<b class="nc">&nbsp;        return reader.nextBoolean()</b>
+<b class="fc">&nbsp;    val positionBeforeLineBreak = position</b>
+<b class="pc">&nbsp;    val isAtLineBreak = position &lt; localLimit &amp;&amp;</b>
+<b class="pc">&nbsp;        (localRawData[position] == TOK.NEWLINE_BYTE || localRawData[position] == TOK.CR_BYTE)</b>
+<b class="fc">&nbsp;    val value =</b>
+<b class="fc">&nbsp;        if (isAtLineBreak) {</b>
+<b class="fc">&nbsp;            advanceLine()</b>
+<b class="fc">&nbsp;            skipWhitespaceAndComments()</b>
+<b class="fc">&nbsp;            val nextLineIndent = currentIndent</b>
+<b class="fc">&nbsp;            val continuesAsSequenceEntry =</b>
+<b class="fc">&nbsp;                position &lt; localLimit &amp;&amp; localRawData[position] == TOK.DASH_BYTE &amp;&amp; isBlockSequenceEntry()</b>
+&nbsp;            // Mirrors readBlockMapping/readBlockSequence&#39;s &quot;is there nested content&quot; check: a
+&nbsp;            // mapping value must indent *more* than its key (strictDedent), a sequence item&#39;s
+&nbsp;            // inline value may continue at exactly its element indent (not strictDedent).
+<b class="fc">&nbsp;            val isDedent = if (strictDedent) nextLineIndent &lt;= indent else nextLineIndent &lt; indent</b>
+<b class="pc">&nbsp;            val endsBlockContext = !inFlow &amp;&amp; (position &gt;= localLimit || (isDedent &amp;&amp; !continuesAsSequenceEntry))</b>
+<b class="fc">&nbsp;            if (endsBlockContext) {</b>
+&nbsp;                // Next line dedents back to a sibling (or nothing&#39;s left) — this anchor&#39;s value
+&nbsp;                // is empty/null. Rewind past the line break so the caller&#39;s loop sees that line
+&nbsp;                // fresh, same as a plain &quot;key:&quot; with no value.
+<b class="fc">&nbsp;                position = positionBeforeLineBreak</b>
+<b class="fc">&nbsp;                null</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                readValue(nextLineIndent, inFlow)</b>
+&nbsp;            }
+&nbsp;        } else {
+<b class="fc">&nbsp;            readValue(indent, inFlow)</b>
+&nbsp;        }
+<b class="fc">&nbsp;    anchorTable[anchorName] = value</b>
+<b class="fc">&nbsp;    return value</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads an alias, then checks whether a `:` follows: an alias&#39;s resolved value can itself be a
+&nbsp; * block-mapping key (e.g. `top3: &amp;node3\n  *alias1 : scalar3`), not just a value.
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.readAliasOrMappingKey(indent: Int, inFlow: Boolean): Any? {
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val value = readAlias()</b>
+<b class="fc">&nbsp;    if (inFlow) return value</b>
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    if (!looksLikeMappingKeyColon()) return value</b>
+<b class="fc">&nbsp;    position = startPosition</b>
+<b class="fc">&nbsp;    return readBlockMapping(blockIndent = indent.coerceAtLeast(0))</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readAlias(): Any? {
+<b class="fc">&nbsp;    position++ // consume &#39;*&#39;</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+&nbsp;
+<b class="fc">&nbsp;    val start = position</b>
+<b class="fc">&nbsp;    while (position &lt; localLimit &amp;&amp; !isAnchorNameTerminator(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val aliasName = localRawData.decodeToString(start, position)</b>
+&nbsp;    // anchorTable[aliasName] ?: error(...) would be wrong: a Map lookup returns null both when
+&nbsp;    // the key is absent and when present with a null value (e.g. &quot;a: &amp;anchor\nb: *anchor&quot;),
+&nbsp;    // so the two cases must be told apart explicitly.
+<b class="fc">&nbsp;    if (!anchorTable.containsKey(key = aliasName)) {</b>
+<b class="fc">&nbsp;        yamlError(message = &quot;${EM.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${EM.ERR_ANCHOR_NOT_FOUND_SUFFIX}&quot;)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return anchorTable[aliasName]</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.mergeInto(target: MutableMap&lt;String, Any?&gt;, value: Any?) {
+<b class="fc">&nbsp;    when (value) {</b>
+<b class="fc">&nbsp;        is Map&lt;*, *&gt; -&gt; {</b>
+<b class="fc">&nbsp;            for ((k, v) in value) {</b>
+<b class="pc">&nbsp;                val keyStr = k as? String ?: continue</b>
+<b class="fc">&nbsp;                if (!target.containsKey(key = keyStr)) {</b>
+<b class="fc">&nbsp;                    target[keyStr] = v</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        is List&lt;*&gt; -&gt; {</b>
+<b class="fc">&nbsp;            var index = 0</b>
+<b class="fc">&nbsp;            val size = value.size</b>
+<b class="fc">&nbsp;            while (index &lt; size) {</b>
+<b class="fc">&nbsp;                mergeInto(target = target, value = value[index])</b>
+<b class="fc">&nbsp;                index++</b>
+&nbsp;            }
+&nbsp;        }
 &nbsp;    }
 &nbsp;}
 </code>
@@ -156,7 +329,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

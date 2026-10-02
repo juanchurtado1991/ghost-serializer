@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > Ghost_jvmKt</title>
+  <title>GhostSerialization Coverage Report > GhostSerializerLookupKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization</a>
 </div>
 
-<h1>Coverage Summary for Class: Ghost_jvmKt (com.ghost.serialization)</h1>
+<h1>Coverage Summary for Class: GhostSerializerLookupKt (com.ghost.serialization)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,29 +49,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">Ghost_jvmKt</td>
+  <td class="name">GhostSerializerLookupKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/8)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    73.3%
-  </span>
-  <span class="absValue">
-    (11/15)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -76,92 +63,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.1%
+  </span>
+  <span class="absValue">
+    (38/52)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (47/47)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.1%
+  </span>
+  <span class="absValue">
+    (323/403)
   </span>
 </td>
 </tr>
-  <tr>
-    <td class="name">Ghost_jvmKt$discoverRegistries$$inlined$Iterable$1</td>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/2)
-  </span>
-</td>
-    <td class="coverageStat"/>
-  </tr>
-  <tr>
-    <td class="name">Ghost_jvmKt$discoverRegistries$1$1</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    61.8%
-  </span>
-  <span class="absValue">
-    (21/34)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    94.1%
-  </span>
-  <span class="absValue">
-    (32/34)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    90.4%
-  </span>
-  <span class="absValue">
-    (161/178)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    75%
-  </span>
-  <span class="absValue">
-    (6/8)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    50%
-  </span>
-  <span class="absValue">
-    (21/42)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    87.8%
-  </span>
-  <span class="absValue">
-    (43/49)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    90.7%
-  </span>
-  <span class="absValue">
-    (165/182)
-  </span>
-</td>
-</tr>
+
 </table>
 
 <br/>
@@ -169,61 +99,149 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization
 &nbsp;
-&nbsp;package com.ghost.serialization
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoAny
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoAnySerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoBoolValue
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoBoolValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoBytesValue
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoBytesValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoDoubleValue
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoDoubleValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoDuration
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoDurationSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoEmpty
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoEmptySerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoFieldMask
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoFieldMaskSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoFloatValue
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoFloatValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoInt32Value
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoInt32ValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoInt64Value
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoInt64ValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoStringValue
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoStringValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoTimestamp
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoTimestampSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoUInt32Value
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoUInt32ValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoUInt64Value
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoUInt64ValueSerializer
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoValue
+&nbsp;import com.ghost.serialization.proto.wkt.ProtoValueSerializer
+&nbsp;import com.ghost.serialization.serializers.BooleanArraySerializer
+&nbsp;import com.ghost.serialization.serializers.BooleanSerializer
+&nbsp;import com.ghost.serialization.serializers.ByteSerializer
+&nbsp;import com.ghost.serialization.serializers.CharSerializer
+&nbsp;import com.ghost.serialization.serializers.DoubleArraySerializer
+&nbsp;import com.ghost.serialization.serializers.DoubleSerializer
+&nbsp;import com.ghost.serialization.serializers.FloatArraySerializer
+&nbsp;import com.ghost.serialization.serializers.FloatSerializer
+&nbsp;import com.ghost.serialization.serializers.IntArraySerializer
+&nbsp;import com.ghost.serialization.serializers.IntSerializer
+&nbsp;import com.ghost.serialization.serializers.LongArraySerializer
+&nbsp;import com.ghost.serialization.serializers.LongSerializer
+&nbsp;import com.ghost.serialization.serializers.ShortSerializer
+&nbsp;import com.ghost.serialization.serializers.StringSerializer
+&nbsp;import com.ghost.serialization.types.RawJson
+&nbsp;import com.ghost.serialization.types.RawJsonSerializer
+&nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
+&nbsp;import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
+&nbsp;import com.ghost.serialization.yaml.serializer.GhostYamlDoubleArraySerializer
+&nbsp;import com.ghost.serialization.yaml.serializer.GhostYamlFloatArraySerializer
+&nbsp;import com.ghost.serialization.yaml.serializer.GhostYamlIntArraySerializer
+&nbsp;import com.ghost.serialization.yaml.serializer.GhostYamlLongArraySerializer
+&nbsp;import kotlin.reflect.KClass
 &nbsp;
-&nbsp;import com.ghost.serialization.contract.GhostRegistry
-&nbsp;import java.util.ServiceLoader
+&nbsp;/**
+&nbsp; * [Ghost.getSerializer]&#39;s lookup tables: fast-path dispatch for primitives, protobuf well-known
+&nbsp; * types, manually/service-loader-registered [com.ghost.serialization.contract.GhostRegistry]
+&nbsp; * modules and, last, serializers linked by the Ghost compiler plugin ([findLinkedSerializer]). Split out of `Ghost.kt` since none of these are called by name from outside it.
+&nbsp; */
 &nbsp;
-&nbsp;
-<b class="fc">&nbsp;actual fun discoverRegistries(): Iterable&lt;GhostRegistry&gt; = Iterable {</b>
-<b class="fc">&nbsp;    object : Iterator&lt;GhostRegistry&gt; {</b>
-&nbsp;        private var fastRegistries: MutableList&lt;GhostRegistry&gt;? = null
-<b class="fc">&nbsp;        private var fastIterator: Iterator&lt;GhostRegistry&gt;? = null</b>
-<b class="fc">&nbsp;        private var fastChecked = false</b>
-<b class="fc">&nbsp;        private var slow: Iterator&lt;GhostRegistry&gt;? = null</b>
-&nbsp;
-&nbsp;        override fun hasNext(): Boolean {
-<b class="fc">&nbsp;            if (!fastChecked) {</b>
-<b class="fc">&nbsp;                fastChecked = true</b>
-<b class="fc">&nbsp;                val names = listOf(</b>
-<b class="pc">&nbsp;                    Ghost.DEFAULT_REGISTRY_NAME,</b>
-<b class="fc">&nbsp;                    Ghost.TEST_REGISTRY_NAME</b>
-<b class="fc">&nbsp;                )</b>
-<b class="fc">&nbsp;                val registries = names.mapNotNull { name -&gt;</b>
-<b class="pc">&nbsp;                    runCatching {</b>
-<b class="fc">&nbsp;                        Class.forName(name)</b>
-<b class="fc">&nbsp;                            .getField(Ghost.INSTANCE_FIELD)</b>
-<b class="pc">&nbsp;                            .get(null) as GhostRegistry</b>
-<b class="fc">&nbsp;                    }.getOrNull()</b>
-<b class="fc">&nbsp;                }.toMutableList()</b>
-<b class="pc">&nbsp;                fastRegistries = registries</b>
-<b class="fc">&nbsp;                fastIterator = registries.iterator()</b>
-<b class="fc">&nbsp;            }</b>
-&nbsp;
-<b class="pc">&nbsp;            if (fastIterator?.hasNext() == true) return true</b>
-&nbsp;
-<b class="fc">&nbsp;            val slowIterator = slow ?: runCatching {</b>
-<b class="nc">&nbsp;                ServiceLoader</b>
-<b class="fc">&nbsp;                    .load(GhostRegistry::class.java)</b>
-<b class="pc">&nbsp;                    .iterator()</b>
-<b class="nc">&nbsp;            }</b>
-<b class="pc">&nbsp;                .getOrDefault(</b>
-<b class="pc">&nbsp;                    emptyList&lt;GhostRegistry&gt;()</b>
-<b class="fc">&nbsp;                        .iterator()</b>
-<b class="fc">&nbsp;                ).also { slow = it }</b>
-<b class="fc">&nbsp;            return slowIterator.hasNext()</b>
-&nbsp;        }
-&nbsp;
-&nbsp;        override fun next(): GhostRegistry {
-<b class="pc">&nbsp;            if (!hasNext()) throw NoSuchElementException()</b>
-<b class="fc">&nbsp;            val fast = fastIterator</b>
-<b class="pc">&nbsp;            if (fast != null &amp;&amp; fast.hasNext()) return fast.next()</b>
-<b class="pc">&nbsp;            return checkNotNull(slow).next()</b>
-<b class="fc">&nbsp;        }</b>
-<b class="fc">&nbsp;    }</b>
+&nbsp;/** Fast path serializer lookup for native primitive types. */
+&nbsp;@Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;internal fun &lt;T : Any&gt; Ghost.getPrimitiveSerializer(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;? {
+<b class="fc">&nbsp;    return when (clazz) {</b>
+<b class="fc">&nbsp;        String::class -&gt; StringSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        Int::class -&gt; IntSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        Long::class -&gt; LongSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        Boolean::class -&gt; BooleanSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        Double::class -&gt; DoubleSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        Float::class -&gt; FloatSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        Byte::class -&gt; ByteSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        Short::class -&gt; ShortSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        Char::class -&gt; CharSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        IntArray::class -&gt; IntArraySerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        LongArray::class -&gt; LongArraySerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        FloatArray::class -&gt; FloatArraySerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        DoubleArray::class -&gt; DoubleArraySerializer as GhostSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        BooleanArray::class -&gt; BooleanArraySerializer as GhostSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        RawJson::class -&gt; RawJsonSerializer as GhostSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
 &nbsp;}
+&nbsp;
+&nbsp;internal fun &lt;T : Any&gt; Ghost.getSerializerFromRegistries(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;? {
+<b class="fc">&nbsp;    for (registry in mutableRegistries) {</b>
+<b class="pc">&nbsp;        registry.getSerializer(clazz = clazz)?.let { return it }</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val disc = discoveredRegistries ?: discoverRegistries().also { discoveredRegistries = it }</b>
+&nbsp;
+<b class="fc">&nbsp;    for (registry in disc) {</b>
+<b class="fc">&nbsp;        registry.getSerializer(clazz = clazz)?.let { return it }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="fc">&nbsp;    return findLinkedSerializer(clazz = clazz) as GhostSerializer&lt;T&gt;?</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * YAML entry-point lookup for primitive arrays. Kept separate from [getPrimitiveSerializer]
+&nbsp; * so JSON resolution continues to return the JSON `*ArraySerializer` instances.
+&nbsp; */
+&nbsp;@PublishedApi
+&nbsp;@Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;internal fun &lt;T : Any&gt; Ghost.getYamlPrimitiveSerializer(clazz: KClass&lt;T&gt;): GhostYamlSerializer&lt;T&gt;? {
+<b class="fc">&nbsp;    return when (clazz) {</b>
+<b class="fc">&nbsp;        IntArray::class -&gt; GhostYamlIntArraySerializer as GhostYamlSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        LongArray::class -&gt; GhostYamlLongArraySerializer as GhostYamlSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        FloatArray::class -&gt; GhostYamlFloatArraySerializer as GhostYamlSerializer&lt;T&gt;</b>
+<b class="pc">&nbsp;        DoubleArray::class -&gt; GhostYamlDoubleArraySerializer as GhostYamlSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        BooleanArray::class -&gt; GhostYamlBooleanArraySerializer as GhostYamlSerializer&lt;T&gt;</b>
+<b class="fc">&nbsp;        else -&gt; null</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/** Single source of truth for [getWktSerializer] — adding a new protobuf well-known type is one
+&nbsp; * map entry here instead of a new `when` branch. */
+<b class="fc">&nbsp;private val wktSerializers: Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt; = mapOf(</b>
+<b class="fc">&nbsp;    ProtoTimestamp::class to ProtoTimestampSerializer,</b>
+<b class="fc">&nbsp;    ProtoDuration::class to ProtoDurationSerializer,</b>
+<b class="fc">&nbsp;    ProtoEmpty::class to ProtoEmptySerializer,</b>
+<b class="fc">&nbsp;    ProtoFieldMask::class to ProtoFieldMaskSerializer,</b>
+<b class="fc">&nbsp;    ProtoAny::class to ProtoAnySerializer,</b>
+&nbsp;    // ProtoStruct is a typealias for Map&lt;String, ProtoValue&gt; — KClass erases to Map.
+<b class="fc">&nbsp;    ProtoValue::class to ProtoValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoBoolValue::class to ProtoBoolValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoStringValue::class to ProtoStringValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoBytesValue::class to ProtoBytesValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoDoubleValue::class to ProtoDoubleValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoFloatValue::class to ProtoFloatValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoInt32Value::class to ProtoInt32ValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoInt64Value::class to ProtoInt64ValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoUInt32Value::class to ProtoUInt32ValueSerializer,</b>
+<b class="fc">&nbsp;    ProtoUInt64Value::class to ProtoUInt64ValueSerializer</b>
+&nbsp;)
+&nbsp;
+&nbsp;/** Built-in serializers for protobuf well-known types (WKT). */
+&nbsp;@Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;internal fun &lt;T : Any&gt; Ghost.getWktSerializer(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;? =
+<b class="fc">&nbsp;    wktSerializers[clazz] as? GhostSerializer&lt;T&gt;</b>
 </code>
 </pre>
 </div>
@@ -247,7 +265,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

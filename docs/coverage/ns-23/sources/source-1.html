@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlArraySerializerHelpersKt</title>
+  <title>GhostSerialization Coverage Report > CharArrayCopyKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.yaml.serializer</a>
+    <a href="../index.html">com.ghost.serialization.writer.strings</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlArraySerializerHelpersKt (com.ghost.serialization.yaml.serializer)</h1>
+<h1>Coverage Summary for Class: CharArrayCopyKt (com.ghost.serialization.writer.strings)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,45 +49,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlArraySerializerHelpersKt</td>
+  <td class="name">CharArrayCopyKt</td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (1/1)
+    (0/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (2/2)
+    (0/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (4/4)
+    (0/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (12/12)
+    (0/4)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    0%
   </span>
   <span class="absValue">
-    (40/40)
+    (0/16)
   </span>
 </td>
 </tr>
@@ -99,42 +99,40 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml.serializer
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.strings
+&nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Shared array-loop kernels for the primitive YAML array serializers. Each caller stays
-&nbsp; * specialized per primitive type — no `reified`/generic boxing beyond the existing
-&nbsp; * `ArrayList&lt;T&gt;` intermediate on the read side.
+&nbsp; * Copies characters from [this] string in the range [startIndex, endIndex) into [dest],
+&nbsp; * starting at [destOffset].
+&nbsp; *
+&nbsp; * On JVM and Android this delegates to the native [String.toCharArray] overload that writes
+&nbsp; * directly into an existing CharArray — no temporary array is allocated.
+&nbsp; * On other targets a manual loop is used (also zero-allocation).
 &nbsp; */
+&nbsp;internal expect fun String.copyRangeToCharArray(
+&nbsp;    dest: CharArray,
+&nbsp;    destOffset: Int,
+&nbsp;    startIndex: Int,
+&nbsp;    endIndex: Int
+&nbsp;)
 &nbsp;
-&nbsp;internal inline fun writeYamlArrayCore(
-&nbsp;    size: Int,
-&nbsp;    beginArray: () -&gt; Unit,
-&nbsp;    writeElement: (index: Int) -&gt; Unit,
-&nbsp;    endArray: () -&gt; Unit,
+&nbsp;/**
+&nbsp; * Zero-allocation manual loop behind the native and Wasm actuals of [copyRangeToCharArray].
+&nbsp; * `inline` so each actual keeps the loop in its own body, as when it was copied per platform.
+&nbsp; */
+&nbsp;@Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;internal inline fun String.copyRangeToCharArrayByLoop(
+&nbsp;    dest: CharArray,
+&nbsp;    destOffset: Int,
+&nbsp;    startIndex: Int,
+&nbsp;    endIndex: Int
 &nbsp;) {
-<b class="fc">&nbsp;    beginArray()</b>
-<b class="fc">&nbsp;    var index = 0</b>
-<b class="fc">&nbsp;    while (index &lt; size) {</b>
-<b class="fc">&nbsp;        writeElement(index)</b>
-<b class="fc">&nbsp;        index++</b>
+<b class="nc">&nbsp;    var index = startIndex</b>
+<b class="nc">&nbsp;    var destIndex = destOffset</b>
+<b class="nc">&nbsp;    while (index &lt; endIndex) {</b>
+<b class="nc">&nbsp;        dest[destIndex++] = this[index++]</b>
 &nbsp;    }
-<b class="fc">&nbsp;    endArray()</b>
-&nbsp;}
-&nbsp;
-&nbsp;internal inline fun &lt;T&gt; readYamlArrayCore(
-&nbsp;    beginArray: () -&gt; Unit,
-&nbsp;    hasNextArrayElement: () -&gt; Boolean,
-&nbsp;    readElement: () -&gt; T,
-&nbsp;    endArray: () -&gt; Unit,
-&nbsp;): ArrayList&lt;T&gt; {
-<b class="fc">&nbsp;    beginArray()</b>
-<b class="fc">&nbsp;    val list = ArrayList&lt;T&gt;()</b>
-<b class="fc">&nbsp;    while (hasNextArrayElement()) {</b>
-<b class="fc">&nbsp;        list.add(readElement())</b>
-&nbsp;    }
-<b class="fc">&nbsp;    endArray()</b>
-<b class="fc">&nbsp;    return list</b>
 &nbsp;}
 </code>
 </pre>
@@ -159,7 +157,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

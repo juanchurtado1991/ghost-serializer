@@ -1,0 +1,253 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > Ghost_jvmKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization</a>
+</div>
+
+<h1>Coverage Summary for Class: Ghost_jvmKt (com.ghost.serialization)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">Ghost_jvmKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.3%
+  </span>
+  <span class="absValue">
+    (11/15)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Ghost_jvmKt$discoverRegistries$$inlined$Iterable$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">Ghost_jvmKt$discoverRegistries$1$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    61.8%
+  </span>
+  <span class="absValue">
+    (21/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.1%
+  </span>
+  <span class="absValue">
+    (32/34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.4%
+  </span>
+  <span class="absValue">
+    (161/178)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (6/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (21/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.8%
+  </span>
+  <span class="absValue">
+    (43/49)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.7%
+  </span>
+  <span class="absValue">
+    (165/182)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;
+&nbsp;package com.ghost.serialization
+&nbsp;
+&nbsp;import com.ghost.serialization.contract.GhostRegistry
+&nbsp;import java.util.ServiceLoader
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;actual fun discoverRegistries(): Iterable&lt;GhostRegistry&gt; = Iterable {</b>
+<b class="fc">&nbsp;    object : Iterator&lt;GhostRegistry&gt; {</b>
+&nbsp;        private var fastRegistries: MutableList&lt;GhostRegistry&gt;? = null
+<b class="fc">&nbsp;        private var fastIterator: Iterator&lt;GhostRegistry&gt;? = null</b>
+<b class="fc">&nbsp;        private var fastChecked = false</b>
+<b class="fc">&nbsp;        private var slow: Iterator&lt;GhostRegistry&gt;? = null</b>
+&nbsp;
+&nbsp;        override fun hasNext(): Boolean {
+<b class="fc">&nbsp;            if (!fastChecked) {</b>
+<b class="fc">&nbsp;                fastChecked = true</b>
+<b class="fc">&nbsp;                val names = listOf(</b>
+<b class="pc">&nbsp;                    Ghost.DEFAULT_REGISTRY_NAME,</b>
+<b class="fc">&nbsp;                    Ghost.TEST_REGISTRY_NAME</b>
+<b class="fc">&nbsp;                )</b>
+<b class="fc">&nbsp;                val registries = names.mapNotNull { name -&gt;</b>
+<b class="pc">&nbsp;                    runCatching {</b>
+<b class="fc">&nbsp;                        Class.forName(name)</b>
+<b class="fc">&nbsp;                            .getField(Ghost.INSTANCE_FIELD)</b>
+<b class="pc">&nbsp;                            .get(null) as GhostRegistry</b>
+<b class="fc">&nbsp;                    }.getOrNull()</b>
+<b class="fc">&nbsp;                }.toMutableList()</b>
+<b class="pc">&nbsp;                fastRegistries = registries</b>
+<b class="fc">&nbsp;                fastIterator = registries.iterator()</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;
+<b class="pc">&nbsp;            if (fastIterator?.hasNext() == true) return true</b>
+&nbsp;
+<b class="fc">&nbsp;            val slowIterator = slow ?: runCatching {</b>
+<b class="nc">&nbsp;                ServiceLoader</b>
+<b class="fc">&nbsp;                    .load(GhostRegistry::class.java)</b>
+<b class="pc">&nbsp;                    .iterator()</b>
+<b class="nc">&nbsp;            }</b>
+<b class="pc">&nbsp;                .getOrDefault(</b>
+<b class="pc">&nbsp;                    defaultValue = emptyList&lt;GhostRegistry&gt;()</b>
+<b class="fc">&nbsp;                        .iterator()</b>
+<b class="fc">&nbsp;                ).also { slow = it }</b>
+<b class="fc">&nbsp;            return slowIterator.hasNext()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        override fun next(): GhostRegistry {
+<b class="pc">&nbsp;            if (!hasNext()) throw NoSuchElementException()</b>
+<b class="fc">&nbsp;            val fast = fastIterator</b>
+<b class="pc">&nbsp;            if (fast != null &amp;&amp; fast.hasNext()) return fast.next()</b>
+<b class="pc">&nbsp;            return checkNotNull(value = slow).next()</b>
+<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;    }</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

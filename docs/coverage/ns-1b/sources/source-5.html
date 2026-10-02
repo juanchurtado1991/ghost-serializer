@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > RawJsonSerializer</title>
+  <title>GhostSerialization Coverage Report > ProtoBoolValueSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.types</a>
+    <a href="../index.html">com.ghost.serialization.proto.wkt</a>
 </div>
 
-<h1>Coverage Summary for Class: RawJsonSerializer (com.ghost.serialization.types)</h1>
+<h1>Coverage Summary for Class: ProtoBoolValueSerializer (com.ghost.serialization.proto.wkt)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">RawJsonSerializer</td>
+  <td class="name">ProtoBoolValueSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    50%
   </span>
   <span class="absValue">
-    (6/7)
+    (3/6)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    50%
   </span>
   <span class="absValue">
-    (6/9)
+    (3/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    33.3%
+    44.4%
   </span>
   <span class="absValue">
-    (17/51)
+    (8/18)
   </span>
 </td>
 </tr>
@@ -94,52 +94,37 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;package com.ghost.serialization.types
+&nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.contract.AbstractGhostSerializer
 &nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.bytes.captureRawJson
 &nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
+&nbsp;import com.ghost.serialization.parser.streaming.nextBoolean
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.captureRawJson
+&nbsp;import com.ghost.serialization.parser.strings.nextBoolean
 &nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
 &nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.proto.GhostProtoConstants as PC
 &nbsp;
+&nbsp;object ProtoBoolValueSerializer : AbstractGhostSerializer&lt;ProtoBoolValue&gt;() {
+<b class="fc">&nbsp;    override val typeName: String get() = PC.WKT_BOOL_VALUE_TYPE</b>
 &nbsp;
-&nbsp;/** Built-in serializer for [RawJson] opaque JSON passthrough. */
-&nbsp;object RawJsonSerializer : GhostSerializer&lt;RawJson&gt; {
-<b class="fc">&nbsp;    override val typeName: String = C.TYPE_NAME_RAW_JSON</b>
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoBoolValue =
+<b class="nc">&nbsp;        ProtoBoolValue(value = reader.nextBoolean())</b>
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): RawJson =
-<b class="fc">&nbsp;        reader.captureRawJson()</b>
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoBoolValue =
+<b class="fc">&nbsp;        ProtoBoolValue(value = reader.nextBoolean())</b>
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): RawJson =
-<b class="fc">&nbsp;        reader.captureRawJson()</b>
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoBoolValue =
+<b class="nc">&nbsp;        ProtoBoolValue(value = reader.nextBoolean())</b>
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonStringReader): RawJson =
-<b class="fc">&nbsp;        reader.captureRawJson()</b>
-&nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: RawJson) {
-<b class="fc">&nbsp;        writer.rawValue(value)</b>
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoBoolValue) {
+<b class="nc">&nbsp;        writer.value(value = value.value)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: RawJson) {
-<b class="fc">&nbsp;        writer.rawValue(value)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun warmUp() {
-<b class="nc">&nbsp;        val sample = C.WARM_RAW_JSON_PAYLOAD.encodeToByteArray()</b>
-&nbsp;        try {
-<b class="nc">&nbsp;            deserialize(GhostJsonReader(sample))</b>
-&nbsp;        } catch (_: Exception) {
-&nbsp;        }
-&nbsp;        try {
-<b class="nc">&nbsp;            deserialize(GhostJsonFlatReader(sample))</b>
-&nbsp;        } catch (_: Exception) {
-&nbsp;        }
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBoolValue) {
+<b class="fc">&nbsp;        writer.value(value = value.value)</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -165,7 +150,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.7%
+    72.5%
   </span>
   <span class="absValue">
-    (154/209)
+    (140/193)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.2%
+    86.6%
   </span>
   <span class="absValue">
-    (260/305)
+    (240/277)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    82.3%
+    84.1%
   </span>
   <span class="absValue">
-    (1742/2117)
+    (1603/1906)
   </span>
 </td>
 </tr>
@@ -116,13 +116,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;import com.squareup.kotlinpoet.CodeBlock
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * Abstract base class for all serialization emitters within the Ghost compiler. Manages shared
-&nbsp; * state (contextual serializers) and provides code generation utilities for properties,
-&nbsp; * collections, primitives, value/inline classes, and custom-encoded fields.
+&nbsp; * Base class for serialization emitters; manages contextual serializers and generates code for
+&nbsp; * properties, collections, primitives, value/inline classes, and custom-encoded fields.
 &nbsp; */
 <b class="fc">&nbsp;internal abstract class BaseSerializeEmitter(</b>
 <b class="fc">&nbsp;    protected val properties: List&lt;GhostPropertyModel&gt;,</b>
@@ -132,35 +134,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    private val contextualSerializerRegistry = ContextualSerializerRegistry()</b>
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Counter for unique loop variable names (`sizeN`, `iN`, `keyN`, `valN`) within a single
-&nbsp;     * serialization function. Nesting depth alone isn&#39;t enough — sibling list/map fields at the
-&nbsp;     * same depth would otherwise collide on `size0`, `i0`, etc.
+&nbsp;     * Counter for unique loop variable names (`sizeN`, `iN`, `keyN`, `valN`). Nesting depth alone
+&nbsp;     * isn&#39;t enough — sibling list/map fields at the same depth would collide on `size0`, `i0`, etc.
 &nbsp;     */
 &nbsp;    private var loopCounter = 0
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Whether the property is a primitive/basic type that can be written with a fused
-&nbsp;     * fast-path writer method directly, skipping [emitValue].
-&nbsp;     */
+&nbsp;    /** Whether the property can be written with a fused fast-path writer method, skipping [emitValue]. */
 &nbsp;    protected fun isFusedType(prop: GhostPropertyModel): Boolean {
 <b class="fc">&nbsp;        if (prop.customEncoder != null) {</b>
 <b class="fc">&nbsp;            return false</b>
 &nbsp;        }
 <b class="pc">&nbsp;        val type = prop.type.declaration.qualifiedName?.asString()</b>
-&nbsp;        // Proto3 JSON mapping requires int64 fields on the wire as quoted decimal strings —
-&nbsp;        // route Long through emitValue()&#39;s dedicated proto branch instead of the fused
-&nbsp;        // writer.writeField(header, Long) fast path, which always writes a bare number.
-<b class="fc">&nbsp;        if (prop.isProto &amp;&amp; (type == C.K_LONG || type == C.K_ULONG)) {</b>
+&nbsp;        // Proto3 requires int64 on the wire as a quoted string, so route Long through emitValue&#39;s
+&nbsp;        // proto branch instead of the fused fast path, which always writes a bare number.
+<b class="fc">&nbsp;        val isProtoLongType = prop.isProto &amp;&amp; (type == AC.K_LONG || type == AC.K_ULONG)</b>
+<b class="fc">&nbsp;        if (isProtoLongType) {</b>
 <b class="fc">&nbsp;            return false</b>
 &nbsp;        }
 <b class="pc">&nbsp;        return when (type) {</b>
-&nbsp;            C.K_INT,
-&nbsp;            C.K_LONG,
-&nbsp;            C.K_ULONG,
-&nbsp;            C.K_STRING,
-&nbsp;            C.K_BOOLEAN,
-&nbsp;            C.K_DOUBLE,
-&nbsp;            C.K_FLOAT -&gt; {
+&nbsp;            AC.K_INT,
+&nbsp;            AC.K_LONG,
+&nbsp;            AC.K_ULONG,
+&nbsp;            AC.K_STRING,
+&nbsp;            AC.K_BOOLEAN,
+&nbsp;            AC.K_DOUBLE,
+&nbsp;            AC.K_FLOAT -&gt; {
 <b class="fc">&nbsp;                true</b>
 &nbsp;            }
 &nbsp;
@@ -171,9 +169,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * proto3 canonical JSON mapping omits scalar fields holding their type&#39;s zero value
-&nbsp;     * (`0`, `&quot;&quot;`, `false`, an empty collection) on non-nullable properties of a
-&nbsp;     * `@GhostProtoSerialization` class. Nested Ghost/enum/RawJson/contextual types are left
+&nbsp;     * proto3 canonical JSON omits non-nullable scalar/collection fields holding their zero value
+&nbsp;     * (`0`, `&quot;&quot;`, `false`, empty). Nested Ghost/enum/RawJson/contextual types are left
 &nbsp;     * unconditional since there&#39;s no reliable &quot;is this the default instance&quot; check.
 &nbsp;     *
 &nbsp;     * @return The guard condition, or `null` if this property isn&#39;t subject to omission.
@@ -194,128 +191,61 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 <b class="fc">&nbsp;        val (targetProp, targetAccessor) = effective</b>
 &nbsp;
-<b class="pc">&nbsp;        if (targetProp.isList || targetProp.isSet || targetProp.isMap) {</b>
+<b class="pc">&nbsp;        val isCollectionProperty = targetProp.isList || targetProp.isSet || targetProp.isMap</b>
+<b class="fc">&nbsp;        if (isCollectionProperty) {</b>
 <b class="fc">&nbsp;            return CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
 &nbsp;        }
 <b class="pc">&nbsp;        val typeName = targetProp.type.declaration.qualifiedName?.asString()</b>
 <b class="pc">&nbsp;        return when (typeName) {</b>
-<b class="fc">&nbsp;            C.K_INT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_INT, targetAccessor)</b>
-<b class="fc">&nbsp;            C.K_LONG -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_LONG, targetAccessor)</b>
-<b class="fc">&nbsp;            C.K_ULONG -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_ULONG, targetAccessor)</b>
-<b class="nc">&nbsp;            C.K_DOUBLE -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_DOUBLE, targetAccessor)</b>
-<b class="nc">&nbsp;            C.K_FLOAT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, targetAccessor)</b>
-<b class="nc">&nbsp;            C.K_SHORT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, targetAccessor)</b>
-<b class="nc">&nbsp;            C.K_BYTE -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, targetAccessor)</b>
-<b class="fc">&nbsp;            C.K_BOOLEAN -&gt; CodeBlock.of(C.TEMPLATE_L, targetAccessor)</b>
-<b class="fc">&nbsp;            C.K_STRING -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
-<b class="fc">&nbsp;            C.K_BYTE_ARRAY -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
+<b class="fc">&nbsp;            AC.K_INT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_INT, targetAccessor)</b>
+<b class="fc">&nbsp;            AC.K_LONG -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_LONG, targetAccessor)</b>
+<b class="fc">&nbsp;            AC.K_ULONG -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_ULONG, targetAccessor)</b>
+<b class="nc">&nbsp;            AC.K_DOUBLE -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_DOUBLE, targetAccessor)</b>
+<b class="nc">&nbsp;            AC.K_FLOAT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_FLOAT, targetAccessor)</b>
+<b class="nc">&nbsp;            AC.K_SHORT -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_SHORT, targetAccessor)</b>
+<b class="nc">&nbsp;            AC.K_BYTE -&gt; CodeBlock.of(C.TEMPLATE_NEQ_ZERO_BYTE, targetAccessor)</b>
+<b class="fc">&nbsp;            AC.K_BOOLEAN -&gt; CodeBlock.of(C.TEMPLATE_L, targetAccessor)</b>
+<b class="fc">&nbsp;            AC.K_STRING -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
+<b class="fc">&nbsp;            AC.K_BYTE_ARRAY -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
 <b class="nc">&nbsp;            else -&gt; null</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Generates a single property serialization step: writes the key name, resolves nullable
-&nbsp;     * checks and proto3 default-omission, and delegates value writing to [emitValue].
-&nbsp;     */
+&nbsp;    /** Writes a property&#39;s key, applies nullable/proto3-omission checks, then delegates to [emitValue]. */
 &nbsp;    fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
-<b class="fc">&nbsp;        if (prop.wrappedSourceKeys != null) {</b>
-<b class="fc">&nbsp;            emitWrappedKeysProperty(code, prop)</b>
+<b class="fc">&nbsp;        if (prop.wrappedKeys != null) {</b>
+<b class="fc">&nbsp;            emitWrappedKeysProperty(code = code, prop = prop)</b>
 &nbsp;            return
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        val cleanName = prop.jsonName</b>
-<b class="fc">&nbsp;            .replace(C.STR_DOT, C.STR_UNDERSCORE)</b>
+<b class="fc">&nbsp;            .replace(CC.STR_DOT, CC.STR_UNDERSCORE)</b>
 <b class="fc">&nbsp;            .uppercase()</b>
 &nbsp;
 <b class="fc">&nbsp;        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER</b>
 <b class="fc">&nbsp;        val headerName = if (isStringWriter) {</b>
-<b class="fc">&nbsp;            C.STR_HS_PREFIX + cleanName</b>
+<b class="fc">&nbsp;            CG.STR_HS_PREFIX + cleanName</b>
 &nbsp;        } else {
-<b class="fc">&nbsp;            C.STR_H_VAL_PREFIX + cleanName</b>
+<b class="fc">&nbsp;            CG.STR_H_VAL_PREFIX + cleanName</b>
 &nbsp;        }
 <b class="fc">&nbsp;        val accessor = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)</b>
 &nbsp;
 <b class="fc">&nbsp;        if (!prop.isNullable) {</b>
-<b class="fc">&nbsp;            val nonDefaultCondition = buildProtoNonDefaultCondition(prop, accessor)</b>
+<b class="fc">&nbsp;            val nonDefaultCondition = buildProtoNonDefaultCondition(prop = prop, accessor = accessor)</b>
 <b class="fc">&nbsp;            if (nonDefaultCondition != null) {</b>
 <b class="fc">&nbsp;                code.beginControlFlow(C.TEMPLATE_IF_L, nonDefaultCondition)</b>
-<b class="fc">&nbsp;                emitNonNullProperty(code, prop, headerName, accessor)</b>
+<b class="fc">&nbsp;                emitNonNullProperty(code = code, prop = prop, headerName = headerName, accessor = accessor)</b>
 <b class="fc">&nbsp;                code.endControlFlow()</b>
 &nbsp;                return
 &nbsp;            }
 &nbsp;        }
 &nbsp;
 <b class="fc">&nbsp;        if (prop.isNullable) {</b>
-<b class="fc">&nbsp;            emitNullableProperty(code, prop, headerName, accessor)</b>
+<b class="fc">&nbsp;            emitNullableProperty(code = code, prop = prop, headerName = headerName, accessor = accessor)</b>
 &nbsp;            return
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        emitNonNullProperty(code, prop, headerName, accessor)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Unwraps a `@GhostWrappedKeys`
-&nbsp;     * property by writing each wire field at the current JSON object level.
-&nbsp;     */
-&nbsp;    private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
-<b class="fc">&nbsp;        val accessorRoot = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)</b>
-<b class="fc">&nbsp;        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER</b>
-<b class="fc">&nbsp;        val prefix = if (isStringWriter) {</b>
-<b class="fc">&nbsp;            C.STR_HS_PREFIX</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            C.STR_H_VAL_PREFIX</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (prop.isNullable || prop.wrappedOmitIfEmpty) {</b>
-<b class="nc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessorRoot)</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        prop.wrappedUnwrapFields.forEach { field -&gt;</b>
-<b class="fc">&nbsp;            val headerName =</b>
-<b class="fc">&nbsp;                prefix + field.jsonName.replace(C.STR_DOT, C.STR_UNDERSCORE).uppercase()</b>
-&nbsp;
-&nbsp;            // proto3 oneof: this wire key lives on one sealed subclass of the wrapped type, not
-&nbsp;            // on the wrapped (sealed parent) type itself — guard with an `is` smart-cast instead
-&nbsp;            // of a plain path accessor.
-<b class="fc">&nbsp;            if (field.sealedSubclassName != null) {</b>
-<b class="fc">&nbsp;                val accessor = buildSealedSubclassFieldAccessor(</b>
-<b class="fc">&nbsp;                    prop.kotlinName,</b>
-<b class="fc">&nbsp;                    field.sealedSubclassName,</b>
-<b class="fc">&nbsp;                    field.kotlinPath</b>
-&nbsp;                )
-<b class="fc">&nbsp;                code.beginControlFlow(</b>
-<b class="fc">&nbsp;                    C.TEMPLATE_IF_L,</b>
-<b class="fc">&nbsp;                    CodeBlock.of(C.TEMPLATE_IS_INSTANCE, accessorRoot, field.sealedSubclassName)</b>
-&nbsp;                )
-<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
-<b class="fc">&nbsp;                emitTypeValue(code, field.type, accessor, skipNullCheck = true)</b>
-<b class="fc">&nbsp;                code.endControlFlow()</b>
-&nbsp;                return@forEach
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            val accessor = buildWrappedPathAccessor(prop.kotlinName, field.kotlinPath)</b>
-<b class="fc">&nbsp;            if (field.isNullable) {</b>
-<b class="fc">&nbsp;                code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)</b>
-<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
-<b class="fc">&nbsp;                emitTypeValue(code, field.type, accessor, skipNullCheck = true)</b>
-<b class="fc">&nbsp;                code.endControlFlow()</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
-<b class="fc">&nbsp;                emitTypeValue(code, field.type, accessor, skipNullCheck = true)</b>
-&nbsp;            }
-<b class="fc">&nbsp;        }</b>
-&nbsp;
-<b class="pc">&nbsp;        if (prop.isNullable || prop.wrappedOmitIfEmpty) {</b>
-<b class="nc">&nbsp;            code.endControlFlow()</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun buildWrappedPathAccessor(wrapperName: String, path: List&lt;String&gt;): CodeBlock {
-<b class="fc">&nbsp;        var expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, C.STR_PARAM_VALUE, wrapperName)</b>
-<b class="fc">&nbsp;        for (segment in path) {</b>
-<b class="fc">&nbsp;            expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, expr, segment)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        return expr</b>
+<b class="fc">&nbsp;        emitNonNullProperty(code = code, prop = prop, headerName = headerName, accessor = accessor)</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    private fun buildSealedSubclassFieldAccessor(
@@ -331,23 +261,43 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return expr</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Helper to serialize a nullable property.
-&nbsp;     */
+&nbsp;    private fun buildWrappedPathAccessor(wrapperName: String, path: List&lt;String&gt;): CodeBlock {
+<b class="fc">&nbsp;        var expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, C.STR_PARAM_VALUE, wrapperName)</b>
+<b class="fc">&nbsp;        for (segment in path) {</b>
+<b class="fc">&nbsp;            expr = CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, expr, segment)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return expr</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun emitNonNullProperty(
+&nbsp;        code: CodeBlock.Builder,
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        headerName: String,
+&nbsp;        accessor: CodeBlock
+&nbsp;    ) {
+<b class="fc">&nbsp;        val canUseFused = isFusedType(prop = prop) &amp;&amp; !prop.isContextual</b>
+<b class="fc">&nbsp;        if (canUseFused) {</b>
+<b class="fc">&nbsp;            code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
+<b class="fc">&nbsp;            emitValue(code = code, prop = prop, accessor = accessor)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
 &nbsp;    private fun emitNullableProperty(
 &nbsp;        code: CodeBlock.Builder,
 &nbsp;        prop: GhostPropertyModel,
 &nbsp;        headerName: String,
 &nbsp;        accessor: CodeBlock
 &nbsp;    ) {
-<b class="fc">&nbsp;        val canUseFused = isFusedType(prop) &amp;&amp; !prop.isContextual</b>
+<b class="fc">&nbsp;        val canUseFused = isFusedType(prop = prop) &amp;&amp; !prop.isContextual</b>
 <b class="fc">&nbsp;        if (prop.hasDefaultValue) {</b>
 <b class="fc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)</b>
 <b class="fc">&nbsp;            if (canUseFused) {</b>
 <b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)</b>
 &nbsp;            } else {
 <b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
-<b class="fc">&nbsp;                emitValue(code, prop, accessor)</b>
+<b class="fc">&nbsp;                emitValue(code = code, prop = prop, accessor = accessor)</b>
 &nbsp;            }
 <b class="fc">&nbsp;            code.endControlFlow()</b>
 &nbsp;        } else {
@@ -360,7 +310,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            } else {
 <b class="nc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
 <b class="nc">&nbsp;                code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)</b>
-<b class="nc">&nbsp;                emitValue(code, prop, accessor)</b>
+<b class="nc">&nbsp;                emitValue(code = code, prop = prop, accessor = accessor)</b>
 <b class="nc">&nbsp;                code.nextControlFlow(C.STR_ELSE)</b>
 <b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_NULL_VAL)</b>
 <b class="fc">&nbsp;                code.endControlFlow()</b>
@@ -368,33 +318,167 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Helper to serialize a non-nullable property.
-&nbsp;     */
-&nbsp;    private fun emitNonNullProperty(
-&nbsp;        code: CodeBlock.Builder,
-&nbsp;        prop: GhostPropertyModel,
-&nbsp;        headerName: String,
-&nbsp;        accessor: CodeBlock
-&nbsp;    ) {
-<b class="fc">&nbsp;        val canUseFused = isFusedType(prop) &amp;&amp; !prop.isContextual</b>
-<b class="fc">&nbsp;        if (canUseFused) {</b>
-<b class="fc">&nbsp;            code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)</b>
+&nbsp;    /** Unwraps a `@GhostWrappedKeys` property, writing each wire field at the current JSON object level. */
+&nbsp;    private fun emitWrappedKeysProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
+<b class="fc">&nbsp;        val accessorRoot = CodeBlock.of(C.TEMPLATE_ACCESSOR, C.STR_PARAM_VALUE, prop.kotlinName)</b>
+<b class="fc">&nbsp;        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER</b>
+<b class="fc">&nbsp;        val prefix = if (isStringWriter) {</b>
+<b class="fc">&nbsp;            CG.STR_HS_PREFIX</b>
 &nbsp;        } else {
-<b class="fc">&nbsp;            code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
-<b class="fc">&nbsp;            emitValue(code, prop, accessor)</b>
+<b class="fc">&nbsp;            CG.STR_H_VAL_PREFIX</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (prop.isNullable || prop.wrappedKeys?.omitIfEmpty == true) {</b>
+<b class="nc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessorRoot)</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        prop.wrappedKeys?.unwrapFields.orEmpty().forEach { field -&gt;</b>
+<b class="fc">&nbsp;            val headerName =</b>
+<b class="fc">&nbsp;                prefix + field.jsonName.replace(CC.STR_DOT, CC.STR_UNDERSCORE).uppercase()</b>
+&nbsp;
+&nbsp;            // proto3 oneof: this wire key lives on one sealed subclass, not the parent — guard
+&nbsp;            // with an `is` smart-cast instead of a plain path accessor.
+<b class="fc">&nbsp;            if (field.sealedSubclassName != null) {</b>
+<b class="fc">&nbsp;                val accessor = buildSealedSubclassFieldAccessor(</b>
+<b class="fc">&nbsp;                    wrapperName = prop.kotlinName,</b>
+<b class="fc">&nbsp;                    subclassName = field.sealedSubclassName,</b>
+<b class="fc">&nbsp;                    path = field.kotlinPath</b>
+&nbsp;                )
+<b class="fc">&nbsp;                code.beginControlFlow(</b>
+<b class="fc">&nbsp;                    C.TEMPLATE_IF_L,</b>
+<b class="fc">&nbsp;                    CodeBlock.of(C.TEMPLATE_IS_INSTANCE, accessorRoot, field.sealedSubclassName)</b>
+&nbsp;                )
+<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
+<b class="fc">&nbsp;                emitTypeValue(code = code, type = field.type, accessor = accessor, skipNullCheck = true)</b>
+<b class="fc">&nbsp;                code.endControlFlow()</b>
+&nbsp;                return@forEach
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            val accessor = buildWrappedPathAccessor(wrapperName = prop.kotlinName, path = field.kotlinPath)</b>
+<b class="fc">&nbsp;            if (field.isNullable) {</b>
+<b class="fc">&nbsp;                code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)</b>
+<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
+<b class="fc">&nbsp;                emitTypeValue(code = code, type = field.type, accessor = accessor, skipNullCheck = true)</b>
+<b class="fc">&nbsp;                code.endControlFlow()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                code.addStatement(C.STR_WRITE_NAME_RAW, headerName)</b>
+<b class="fc">&nbsp;                emitTypeValue(code = code, type = field.type, accessor = accessor, skipNullCheck = true)</b>
+&nbsp;            }
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="pc">&nbsp;        if (prop.isNullable || prop.wrappedKeys?.omitIfEmpty == true) {</b>
+<b class="nc">&nbsp;            code.endControlFlow()</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
 &nbsp;    /**
-&nbsp;     * Emits the value serialization statement for a property — value classes, sealed classes,
-&nbsp;     * custom encoders, contextual serializers, and primitives.
+&nbsp;     * Recursively resolves the serialization call for a [KSType].
+&nbsp;     *
+&nbsp;     * @param skipNullCheck True if the outer check has already guaranteed a non-null value.
+&nbsp;     * @param isProto Propagated into collection element recursion so nested `Long`/`ByteArray`
+&nbsp;     *   elements also get proto3 quoting/Base64 treatment.
 &nbsp;     */
+&nbsp;    protected fun emitTypeValue(
+&nbsp;        code: CodeBlock.Builder,
+&nbsp;        type: KSType,
+&nbsp;        accessor: Any,
+<b class="nc">&nbsp;        skipNullCheck: Boolean = false,</b>
+<b class="fc">&nbsp;        isProto: Boolean = false</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        val isNullable = type.isMarkedNullable</b>
+<b class="pc">&nbsp;        if (isNullable &amp;&amp; !skipNullCheck) {</b>
+<b class="nc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)</b>
+<b class="nc">&nbsp;            code.addStatement(C.STR_WRITER_NULL_VAL)</b>
+<b class="nc">&nbsp;            code.nextControlFlow(C.STR_ELSE)</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (type.isValueClassType() &amp;&amp; !type.isKotlinUnsignedPrimitive()) {</b>
+<b class="fc">&nbsp;            val innerType = type.resolveValueClassInnerType()</b>
+<b class="pc">&nbsp;            if (innerType != null) {</b>
+<b class="fc">&nbsp;                val valueClassProperty =</b>
+<b class="pc">&nbsp;                    (type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration)</b>
+<b class="pc">&nbsp;                        ?.primaryConstructor?.parameters?.firstOrNull()?.name?.asString()</b>
+<b class="pc">&nbsp;                if (valueClassProperty != null) {</b>
+<b class="fc">&nbsp;                    val innerAccessor =</b>
+<b class="fc">&nbsp;                        CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, accessor, valueClassProperty)</b>
+<b class="fc">&nbsp;                    emitTypeValue(</b>
+<b class="fc">&nbsp;                        code = code,</b>
+<b class="fc">&nbsp;                        type = innerType,</b>
+<b class="fc">&nbsp;                        accessor = innerAccessor,</b>
+<b class="fc">&nbsp;                        skipNullCheck = true,</b>
+<b class="fc">&nbsp;                        isProto = isProto</b>
+&nbsp;                    )
+<b class="pc">&nbsp;                    if (isNullable &amp;&amp; !skipNullCheck) {</b>
+<b class="nc">&nbsp;                        code.endControlFlow()</b>
+&nbsp;                    }
+&nbsp;                    return
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val scalarTemplate = ScalarWriteTemplates.templateFor(</b>
+<b class="pc">&nbsp;            qualifiedName = type.declaration.qualifiedName?.asString(),</b>
+<b class="fc">&nbsp;            isProto = isProto</b>
+&nbsp;        )
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            type.isRawJson() -&gt; {</b>
+<b class="fc">&nbsp;                code.addStatement(</b>
+<b class="fc">&nbsp;                    C.STR_WRITER_RAW_VALUE_SLICE,</b>
+<b class="fc">&nbsp;                    accessor,</b>
+<b class="fc">&nbsp;                    accessor,</b>
+<b class="fc">&nbsp;                    accessor</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            type.isGhost() -&gt; {</b>
+<b class="fc">&nbsp;                code.addStatement(</b>
+<b class="fc">&nbsp;                    C.STR_T_SERIALIZE_WRITER_ACC,</b>
+<b class="fc">&nbsp;                    type.serializerClassName(),</b>
+<b class="fc">&nbsp;                    accessor</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            type.isEnum() -&gt; {</b>
+<b class="nc">&nbsp;                code.addStatement(</b>
+<b class="nc">&nbsp;                    C.STR_T_SERIALIZE_WRITER_ACC,</b>
+<b class="nc">&nbsp;                    type.serializerClassName(),</b>
+<b class="nc">&nbsp;                    accessor</b>
+&nbsp;                )
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            scalarTemplate != null -&gt; {</b>
+<b class="fc">&nbsp;                code.addStatement(scalarTemplate, accessor)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            type.isList() -&gt; {</b>
+<b class="fc">&nbsp;                emitList(code = code, type = type, accessor = accessor, isProto = isProto)</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            type.isSet() -&gt; {</b>
+<b class="fc">&nbsp;                emitSet(code = code, type = type, accessor = accessor, isProto = isProto)</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;            type.isMap() -&gt; {</b>
+<b class="fc">&nbsp;                emitMap(code = code, type = type, accessor = accessor, isProto = isProto)</b>
+&nbsp;            }
+&nbsp;
+&nbsp;            else -&gt; {
+<b class="nc">&nbsp;                val name = getContextualSerializerName(type = type)</b>
+<b class="fc">&nbsp;                code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (isNullable &amp;&amp; !skipNullCheck) {</b>
+<b class="nc">&nbsp;            code.endControlFlow()</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Emits the value-write statement for a property, dispatching by kind (custom encoder, value class, sealed, etc). */
 &nbsp;    fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
 <b class="fc">&nbsp;        if (prop.customEncoder != null) {</b>
 <b class="fc">&nbsp;            if (writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER) {</b>
-<b class="fc">&nbsp;                val flatWriter = ClassName(C.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER)</b>
-<b class="fc">&nbsp;                val flatBuffer = ClassName(C.PKG_WRITER_BYTES, C.STR_FLAT_BYTE_ARRAY_WRITER)</b>
+<b class="fc">&nbsp;                val flatWriter = ClassName(CC.PKG_WRITER_BYTES, C.STR_GHOST_JSON_WRITER)</b>
+<b class="fc">&nbsp;                val flatBuffer = ClassName(CC.PKG_WRITER_BYTES, C.STR_FLAT_BYTE_ARRAY_WRITER)</b>
 <b class="fc">&nbsp;                val bridgeWriterName = C.STR_TEMP_FLAT_WRITER</b>
 <b class="fc">&nbsp;                val bridgeBufferName = C.STR_TEMP_FLAT_BUFFER</b>
 <b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_TEMP_FLAT_BUFFER_DECL, bridgeBufferName, flatBuffer)</b>
@@ -429,7 +513,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                    accessor,</b>
 <b class="fc">&nbsp;                    prop.valueClassProperty.kotlinName</b>
 &nbsp;                )
-<b class="fc">&nbsp;                emitValue(code, prop.valueClassProperty, innerAccessor)</b>
+<b class="fc">&nbsp;                emitValue(code = code, prop = prop.valueClassProperty, accessor = innerAccessor)</b>
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            prop.isSealedClass -&gt; {</b>
@@ -441,47 +525,38 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;            }
 &nbsp;
 <b class="fc">&nbsp;            prop.isPrimitiveArray -&gt; {</b>
-<b class="fc">&nbsp;                val serializerClass =</b>
-<b class="fc">&nbsp;                    if (writerClass.simpleName.startsWith(C.STR_GHOST_YAML_PREFIX)) {</b>
-<b class="fc">&nbsp;                        ClassName(</b>
-<b class="fc">&nbsp;                            C.PKG_YAML_SERIALIZER,</b>
-<b class="fc">&nbsp;                            C.TEMPLATE_YAML_ARRAY_SERIALIZER.format(prop.primitiveArrayType)</b>
-&nbsp;                        )
-&nbsp;                    } else {
-<b class="fc">&nbsp;                        ClassName(</b>
-<b class="fc">&nbsp;                            C.STR_SERIALIZERS_PKG,</b>
-<b class="fc">&nbsp;                            prop.primitiveArrayType + C.STR_SERIALIZER_SUFFIX</b>
-&nbsp;                        )
-&nbsp;                    }
 <b class="fc">&nbsp;                code.addStatement(</b>
 <b class="fc">&nbsp;                    C.STR_T_SERIALIZE_WRITER_ACC,</b>
-<b class="fc">&nbsp;                    serializerClass,</b>
+<b class="fc">&nbsp;                    primitiveArraySerializerClass(</b>
+<b class="fc">&nbsp;                        channelClass = writerClass,</b>
+<b class="fc">&nbsp;                        primitiveArrayType = prop.primitiveArrayType</b>
+&nbsp;                    ),
 <b class="fc">&nbsp;                    accessor</b>
 &nbsp;                )
 &nbsp;            }
 &nbsp;
 <b class="pc">&nbsp;            prop.isContextual -&gt; {</b>
-<b class="nc">&nbsp;                val name = getContextualSerializerName(prop.type)</b>
+<b class="nc">&nbsp;                val name = getContextualSerializerName(type = prop.type)</b>
 <b class="nc">&nbsp;                code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)</b>
 &nbsp;            }
 &nbsp;
-<b class="pc">&nbsp;            prop.isProto &amp;&amp; prop.type.declaration.qualifiedName?.asString() == C.K_LONG -&gt; {</b>
+<b class="pc">&nbsp;            prop.isProto &amp;&amp; prop.type.declaration.qualifiedName?.asString() == AC.K_LONG -&gt; {</b>
 <b class="fc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)</b>
 &nbsp;            }
 &nbsp;
-<b class="pc">&nbsp;            prop.isProto &amp;&amp; prop.type.declaration.qualifiedName?.asString() == C.K_ULONG -&gt; {</b>
+<b class="pc">&nbsp;            prop.isProto &amp;&amp; prop.type.declaration.qualifiedName?.asString() == AC.K_ULONG -&gt; {</b>
 <b class="fc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)</b>
 &nbsp;            }
 &nbsp;
-<b class="pc">&nbsp;            prop.isProto &amp;&amp; prop.type.declaration.qualifiedName?.asString() == C.K_BYTE_ARRAY -&gt; {</b>
+<b class="pc">&nbsp;            prop.isProto &amp;&amp; prop.type.declaration.qualifiedName?.asString() == AC.K_BYTE_ARRAY -&gt; {</b>
 <b class="fc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_BYTES_AS_BASE64, accessor)</b>
 &nbsp;            }
 &nbsp;
 &nbsp;            else -&gt; {
 <b class="fc">&nbsp;                emitTypeValue(</b>
-<b class="fc">&nbsp;                    code,</b>
-<b class="fc">&nbsp;                    prop.type,</b>
-<b class="fc">&nbsp;                    accessor,</b>
+<b class="fc">&nbsp;                    code = code,</b>
+<b class="fc">&nbsp;                    type = prop.type,</b>
+<b class="fc">&nbsp;                    accessor = accessor,</b>
 <b class="fc">&nbsp;                    skipNullCheck = true,</b>
 <b class="fc">&nbsp;                    isProto = prop.isProto</b>
 &nbsp;                )
@@ -489,162 +564,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Recursively resolves the serialization call for a [KSType].
-&nbsp;     *
-&nbsp;     * @param skipNullCheck True if the outer check has already guaranteed a non-null value.
-&nbsp;     * @param isProto True when the enclosing class is `@GhostProtoSerialization` — propagated
-&nbsp;     *   into `List`/`Set`/`Map` element recursion so `Long`/`ByteArray` elements also get
-&nbsp;     *   proto3 quoting/Base64 treatment.
-&nbsp;     */
-&nbsp;    protected fun emitTypeValue(
-&nbsp;        code: CodeBlock.Builder,
-&nbsp;        type: KSType,
-&nbsp;        accessor: Any,
-<b class="nc">&nbsp;        skipNullCheck: Boolean = false,</b>
-<b class="fc">&nbsp;        isProto: Boolean = false</b>
-&nbsp;    ) {
-<b class="fc">&nbsp;        val isNullable = type.isMarkedNullable</b>
-<b class="pc">&nbsp;        if (isNullable &amp;&amp; !skipNullCheck) {</b>
-<b class="nc">&nbsp;            code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)</b>
-<b class="nc">&nbsp;            code.addStatement(C.STR_WRITER_NULL_VAL)</b>
-<b class="nc">&nbsp;            code.nextControlFlow(C.STR_ELSE)</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (type.isValueClassType() &amp;&amp; !type.isKotlinUnsignedPrimitive()) {</b>
-<b class="fc">&nbsp;            val innerType = type.resolveValueClassInnerType()</b>
-<b class="pc">&nbsp;            if (innerType != null) {</b>
-<b class="fc">&nbsp;                val valueClassProperty =</b>
-<b class="pc">&nbsp;                    (type.declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration)</b>
-<b class="pc">&nbsp;                        ?.primaryConstructor?.parameters?.firstOrNull()?.name?.asString()</b>
-<b class="pc">&nbsp;                if (valueClassProperty != null) {</b>
-<b class="fc">&nbsp;                    val innerAccessor =</b>
-<b class="fc">&nbsp;                        CodeBlock.of(C.TEMPLATE_CHAINED_MEMBER, accessor, valueClassProperty)</b>
-<b class="fc">&nbsp;                    emitTypeValue(</b>
-<b class="fc">&nbsp;                        code,</b>
-<b class="fc">&nbsp;                        innerType,</b>
-<b class="fc">&nbsp;                        innerAccessor,</b>
-<b class="fc">&nbsp;                        skipNullCheck = true,</b>
-<b class="fc">&nbsp;                        isProto = isProto</b>
-&nbsp;                    )
-<b class="pc">&nbsp;                    if (isNullable &amp;&amp; !skipNullCheck) {</b>
-<b class="nc">&nbsp;                        code.endControlFlow()</b>
-&nbsp;                    }
-&nbsp;                    return
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        val typeName = type.declaration.qualifiedName?.asString()</b>
-<b class="fc">&nbsp;        when {</b>
-<b class="fc">&nbsp;            type.isRawJson() -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(</b>
-<b class="fc">&nbsp;                    C.STR_WRITER_RAW_VALUE_SLICE,</b>
-<b class="fc">&nbsp;                    accessor,</b>
-<b class="fc">&nbsp;                    accessor,</b>
-<b class="fc">&nbsp;                    accessor</b>
-&nbsp;                )
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            type.isGhost() -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(</b>
-<b class="fc">&nbsp;                    C.STR_T_SERIALIZE_WRITER_ACC,</b>
-<b class="fc">&nbsp;                    type.serializerClassName(),</b>
-<b class="fc">&nbsp;                    accessor</b>
-&nbsp;                )
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            type.isEnum() -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(</b>
-<b class="nc">&nbsp;                    C.STR_T_SERIALIZE_WRITER_ACC,</b>
-<b class="nc">&nbsp;                    type.serializerClassName(),</b>
-<b class="nc">&nbsp;                    accessor</b>
-&nbsp;                )
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            typeName == C.K_INT -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            typeName == C.K_LONG -&gt; {</b>
-<b class="fc">&nbsp;                if (isProto) {</b>
-<b class="fc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            typeName == C.K_ULONG -&gt; {</b>
-<b class="nc">&nbsp;                if (isProto) {</b>
-<b class="nc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_LONG_AS_STRING, accessor)</b>
-&nbsp;                } else {
-<b class="nc">&nbsp;                    code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            typeName == C.K_STRING -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            typeName == C.K_BOOLEAN -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            typeName == C.K_DOUBLE -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            typeName == C.K_FLOAT -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            typeName == C.K_BYTE -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_TO_INT, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            typeName == C.K_SHORT -&gt; {</b>
-<b class="nc">&nbsp;                code.addStatement(C.STR_WRITER_VAL_TO_INT, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            typeName == C.K_CHAR -&gt; {</b>
-<b class="fc">&nbsp;                code.addStatement(C.TEMPLATE_WRITER_VALUE, accessor)</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            typeName == C.K_BYTE_ARRAY -&gt; {</b>
-<b class="fc">&nbsp;                if (isProto) {</b>
-<b class="fc">&nbsp;                    code.addStatement(C.STR_WRITER_VAL_BYTES_AS_BASE64, accessor)</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    code.addStatement(C.STR_WRITER_RAW_VALUE_L, accessor)</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            type.isList() -&gt; {</b>
-<b class="fc">&nbsp;                emitList(code, type, accessor, isProto)</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            type.isSet() -&gt; {</b>
-<b class="fc">&nbsp;                emitSet(code, type, accessor, isProto)</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            type.isMap() -&gt; {</b>
-<b class="fc">&nbsp;                emitMap(code, type, accessor, isProto)</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            else -&gt; {
-<b class="nc">&nbsp;                val name = getContextualSerializerName(type)</b>
-<b class="fc">&nbsp;                code.addStatement(C.STR_SERIALIZE_CALL, name, accessor)</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (isNullable &amp;&amp; !skipNullCheck) {</b>
-<b class="nc">&nbsp;            code.endControlFlow()</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits list collection serialization statements, using [loopCounter] to name loop
-&nbsp;     * variables uniquely (e.g. `size2`, `i2`, `item2`).
-&nbsp;     */
 &nbsp;    private fun emitList(
 &nbsp;        code: CodeBlock.Builder,
 &nbsp;        type: KSType,
@@ -662,7 +581,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="pc">&nbsp;        val innerType = type.arguments.firstOrNull()?.type?.resolve()</b>
 &nbsp;
 <b class="pc">&nbsp;        if (innerType != null) {</b>
-<b class="fc">&nbsp;            emitTypeValue(code, innerType, itemVar, skipNullCheck = false, isProto = isProto)</b>
+<b class="fc">&nbsp;            emitTypeValue(code = code, type = innerType, accessor = itemVar, skipNullCheck = false, isProto = isProto)</b>
 &nbsp;        } else {
 <b class="nc">&nbsp;            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)</b>
 &nbsp;        }
@@ -670,34 +589,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        code.addStatement(C.STR_WRITER_END_ARR)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Emits set collection serialization — iterates elements without materializing a [List].
-&nbsp;     */
-&nbsp;    private fun emitSet(
-&nbsp;        code: CodeBlock.Builder,
-&nbsp;        type: KSType,
-&nbsp;        accessor: Any,
-<b class="nc">&nbsp;        isProto: Boolean = false</b>
-&nbsp;    ) {
-<b class="fc">&nbsp;        val slot = loopCounter++</b>
-<b class="fc">&nbsp;        val itemVar = C.STR_ITEM_PREFIX + slot</b>
-<b class="fc">&nbsp;        code.addStatement(C.STR_WRITER_BEGIN_ARR)</b>
-<b class="fc">&nbsp;        code.beginControlFlow(&quot;for (%L in %L)&quot;, itemVar, accessor)</b>
-<b class="pc">&nbsp;        val innerType = type.arguments.firstOrNull()?.type?.resolve()</b>
-&nbsp;
-<b class="pc">&nbsp;        if (innerType != null) {</b>
-<b class="fc">&nbsp;            emitTypeValue(code, innerType, itemVar, skipNullCheck = false, isProto = isProto)</b>
-&nbsp;        } else {
-<b class="nc">&nbsp;            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        code.endControlFlow()</b>
-<b class="fc">&nbsp;        code.addStatement(C.STR_WRITER_END_ARR)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Emits map collection serialization statements, using [loopCounter] to name loop
-&nbsp;     * variables uniquely (e.g. `key2`, `val2`).
-&nbsp;     */
 &nbsp;    private fun emitMap(
 &nbsp;        code: CodeBlock.Builder,
 &nbsp;        type: KSType,
@@ -712,7 +603,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        code.addStatement(C.TEMPLATE_WRITER_NAME, keyVar)</b>
 <b class="pc">&nbsp;        val valueType = type.arguments.getOrNull(1)?.type?.resolve()</b>
 <b class="pc">&nbsp;        if (valueType != null) {</b>
-<b class="fc">&nbsp;            emitTypeValue(code, valueType, valVar, skipNullCheck = false, isProto = isProto)</b>
+<b class="fc">&nbsp;            emitTypeValue(code = code, type = valueType, accessor = valVar, skipNullCheck = false, isProto = isProto)</b>
 &nbsp;        } else {
 <b class="nc">&nbsp;            code.addStatement(C.TEMPLATE_WRITER_VALUE, valVar)</b>
 &nbsp;        }
@@ -720,17 +611,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        code.addStatement(C.STR_WRITER_END_OBJ)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Registers and caches the contextual serializer for the target type.
-&nbsp;     */
-&nbsp;    protected fun getContextualSerializerName(type: KSType): String =
-<b class="nc">&nbsp;        contextualSerializerRegistry.nameFor(type)</b>
+&nbsp;    /** Emits set serialization, iterating elements without materializing a [List]. */
+&nbsp;    private fun emitSet(
+&nbsp;        code: CodeBlock.Builder,
+&nbsp;        type: KSType,
+&nbsp;        accessor: Any,
+<b class="nc">&nbsp;        isProto: Boolean = false</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        val slot = loopCounter++</b>
+<b class="fc">&nbsp;        val itemVar = C.STR_ITEM_PREFIX + slot</b>
+<b class="fc">&nbsp;        code.addStatement(C.STR_WRITER_BEGIN_ARR)</b>
+<b class="fc">&nbsp;        code.beginControlFlow(&quot;for (%L in %L)&quot;, itemVar, accessor)</b>
+<b class="pc">&nbsp;        val innerType = type.arguments.firstOrNull()?.type?.resolve()</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Injects the required private fields for all resolved contextual serializers.
-&nbsp;     */
+<b class="pc">&nbsp;        if (innerType != null) {</b>
+<b class="fc">&nbsp;            emitTypeValue(code = code, type = innerType, accessor = itemVar, skipNullCheck = false, isProto = isProto)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            code.addStatement(C.TEMPLATE_WRITER_VALUE, itemVar)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        code.endControlFlow()</b>
+<b class="fc">&nbsp;        code.addStatement(C.STR_WRITER_END_ARR)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    protected fun getContextualSerializerName(type: KSType): String =
+<b class="nc">&nbsp;        contextualSerializerRegistry.nameFor(type = type)</b>
+&nbsp;
+&nbsp;    /** Injects private fields for all resolved contextual serializers. */
 &nbsp;    fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) =
-<b class="nc">&nbsp;        contextualSerializerRegistry.injectInto(typeSpecBuilder)</b>
+<b class="nc">&nbsp;        contextualSerializerRegistry.injectInto(typeSpecBuilder = typeSpecBuilder)</b>
 &nbsp;}
 </code>
 </pre>
@@ -755,7 +663,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

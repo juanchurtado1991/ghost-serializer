@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > MapSerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlValueReadingKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: MapSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlValueReadingKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">MapSerializer</td>
+  <td class="name">GhostYamlValueReadingKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    71.4%
+    100%
   </span>
   <span class="absValue">
-    (5/7)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    68.8%
+    98.8%
   </span>
   <span class="absValue">
-    (11/16)
+    (79/80)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.9%
+    100%
   </span>
   <span class="absValue">
-    (40/52)
+    (87/87)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    76.9%
+    100%
   </span>
   <span class="absValue">
-    (143/186)
+    (361/361)
   </span>
 </td>
 </tr>
@@ -99,128 +99,177 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
 &nbsp;
-&nbsp;package com.ghost.serialization.serializers
+&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.beginObject
-&nbsp;import com.ghost.serialization.parser.streaming.consumeKeySeparator
-&nbsp;import com.ghost.serialization.parser.streaming.endObject
-&nbsp;import com.ghost.serialization.parser.streaming.nextKey
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.beginObject
-&nbsp;import com.ghost.serialization.parser.strings.consumeKeySeparator
-&nbsp;import com.ghost.serialization.parser.strings.endObject
-&nbsp;import com.ghost.serialization.parser.strings.nextKey
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Serializer implementation for standard Kotlin [Map] collections with String keys.
+&nbsp; * Reads the next YAML value at the current position.
+&nbsp; *
+&nbsp; * @param indent The indentation level of the enclosing context (INDENT_UNSET for root).
+&nbsp; * @param inFlow Whether we are inside a flow collection `{...}` or `[...]`.
 &nbsp; */
-<b class="fc">&nbsp;class MapSerializer&lt;V&gt;(</b>
-<b class="fc">&nbsp;    private val valueSerializer: GhostSerializer&lt;V&gt;</b>
-&nbsp;) : GhostSerializer&lt;Map&lt;String, V&gt;&gt; {
-&nbsp;
-&nbsp;    override val typeName: String
-&nbsp;        get() =
-<b class="nc">&nbsp;            &quot;${C.TYPE_NAME_MAP_STRING_PREFIX}${valueSerializer.typeName}${C.TYPE_NAME_GENERIC_SUFFIX}&quot;</b>
-&nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: GhostJsonWriter,
-&nbsp;        value: Map&lt;String, V&gt;
-&nbsp;    ) {
-<b class="fc">&nbsp;        writer.beginObject()</b>
-<b class="fc">&nbsp;        for (entry in value.entries) {</b>
-<b class="fc">&nbsp;            writer.name(entry.key)</b>
-<b class="fc">&nbsp;            valueSerializer.serialize(writer, entry.value)</b>
-&nbsp;        }
-<b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;internal fun GhostYamlFlatReader.readValue(
+&nbsp;    indent: Int,
+&nbsp;    inFlow: Boolean,
+<b class="fc">&nbsp;    expectedTag: Int = GhostYamlTags.TAG_NONE,</b>
+<b class="fc">&nbsp;    strictDedent: Boolean = false,</b>
+<b class="fc">&nbsp;    allowMappingRedirect: Boolean = true,</b>
+&nbsp;    // Distinct from `indent`: if this value is a plain scalar, later lines must indent more
+&nbsp;    // than *this* to keep folding into it. Normally equals `indent`, but diverges for a
+&nbsp;    // mapping value starting on its own line: `indent` there is this value&#39;s auto-detected
+&nbsp;    // column (needed if it turns out to be a nested block collection), while a plain
+&nbsp;    // scalar&#39;s fold boundary per spec is the *enclosing mapping&#39;s* indent, not the value&#39;s.
+<b class="fc">&nbsp;    foldIndent: Int = indent</b>
+&nbsp;): Any? {
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    if (position &gt;= localLimit) {</b>
+&nbsp;        // A bare &quot;!!str&quot; with nothing after it, even at EOF, still resolves to an empty
+&nbsp;        // string, not &quot;no value at all&quot; — same as trailing whitespace/newline instead of EOF.
+<b class="fc">&nbsp;        return if (expectedTag == GhostYamlTags.TAG_STR) &quot;&quot; else null</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: GhostJsonStringWriter,
-&nbsp;        value: Map&lt;String, V&gt;
-&nbsp;    ) {
-<b class="nc">&nbsp;        writer.beginObject()</b>
-<b class="nc">&nbsp;        for (entry in value.entries) {</b>
-<b class="nc">&nbsp;            writer.name(entry.key)</b>
-<b class="nc">&nbsp;            valueSerializer.serialize(writer, entry.value)</b>
+<b class="fc">&nbsp;    return when (val currentByte = rawData[position]) {</b>
+<b class="fc">&nbsp;        TOK.PIPE_BYTE, TOK.GT_BYTE -&gt; readBlockScalar(indicator = currentByte, indent = indent)</b>
+<b class="fc">&nbsp;        TOK.LEFT_BRACE_BYTE -&gt; readFlowCollectionOrMappingKey(indent = indent, inFlow = inFlow) { readFlowMapping() }</b>
+<b class="fc">&nbsp;        TOK.LEFT_BRACKET_BYTE -&gt; readFlowCollectionOrMappingKey(indent = indent, inFlow = inFlow) { readFlowSequence() }</b>
+<b class="fc">&nbsp;        TOK.EXCLAMATION_BYTE -&gt; readTaggedValue(indent = indent, inFlow = inFlow)</b>
+<b class="fc">&nbsp;        TOK.AMPERSAND_BYTE -&gt; readAnchoredValueOrMappingKey(</b>
+<b class="fc">&nbsp;            indent = indent,</b>
+<b class="fc">&nbsp;            inFlow = inFlow,</b>
+<b class="fc">&nbsp;            strictDedent = strictDedent</b>
+&nbsp;        )
+<b class="fc">&nbsp;        TOK.ASTERISK_BYTE -&gt; readAliasOrMappingKey(indent = indent, inFlow = inFlow)</b>
+<b class="fc">&nbsp;        TOK.DOUBLE_QUOTE_BYTE -&gt; readQuotedScalarOrMappingKey(</b>
+<b class="fc">&nbsp;            indent = indent,</b>
+<b class="fc">&nbsp;            inFlow = inFlow</b>
+<b class="fc">&nbsp;        ) { readDoubleQuotedString() }</b>
+<b class="fc">&nbsp;        TOK.SINGLE_QUOTE_BYTE -&gt; readQuotedScalarOrMappingKey(</b>
+<b class="fc">&nbsp;            indent = indent,</b>
+<b class="fc">&nbsp;            inFlow = inFlow</b>
+<b class="fc">&nbsp;        ) { readSingleQuotedString() }</b>
+<b class="fc">&nbsp;        TOK.DOT_BYTE -&gt; if (isDocumentEndMarker()) {</b>
+<b class="fc">&nbsp;            null</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            readPlainScalarOrMapping(</b>
+<b class="fc">&nbsp;                indent = indent,</b>
+<b class="fc">&nbsp;                inFlow = inFlow,</b>
+<b class="fc">&nbsp;                expectedTag = expectedTag,</b>
+<b class="fc">&nbsp;                allowMappingRedirect = allowMappingRedirect,</b>
+<b class="fc">&nbsp;                foldIndent = foldIndent</b>
+&nbsp;            )
 &nbsp;        }
-<b class="nc">&nbsp;        writer.endObject()</b>
-&nbsp;    }
+&nbsp;        // &#39;%&#39; is reserved for directives, never a plain scalar start (no &quot;followed by a safe
+&nbsp;        // character&quot; exception like &#39;-&#39;/&#39;?&#39;/&#39;:&#39; get) — a directive-shaped line where a value
+&nbsp;        // is expected is invalid, not a scalar starting with &#39;%&#39;.
+<b class="fc">&nbsp;        TOK.PERCENT_BYTE -&gt; yamlError(message = EM.ERR_PLAIN_SCALAR_PERCENT)</b>
+<b class="fc">&nbsp;        TOK.QUESTION_BYTE -&gt;</b>
+<b class="fc">&nbsp;            if (!inFlow &amp;&amp; isExplicitKeyIndicator()) readBlockMapping(blockIndent = indent.coerceAtLeast(0))</b>
+<b class="fc">&nbsp;            else readPlainScalarOrMapping(</b>
+<b class="fc">&nbsp;                indent = indent,</b>
+<b class="fc">&nbsp;                inFlow = inFlow,</b>
+<b class="fc">&nbsp;                expectedTag = expectedTag,</b>
+<b class="fc">&nbsp;                allowMappingRedirect = allowMappingRedirect,</b>
+<b class="fc">&nbsp;                foldIndent = foldIndent</b>
+&nbsp;            )
+<b class="fc">&nbsp;        TOK.DASH_BYTE -&gt; {</b>
+&nbsp;            // Negative number &quot;-42&quot;, block sequence &quot;- item&quot;, or doc separator &quot;---&quot;.
+<b class="fc">&nbsp;            val nextByte = if (position + 1 &lt; localLimit) rawData[position + 1] else 0</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                expectedTag != GhostYamlTags.TAG_STR &amp;&amp; isDigit(nextByte) -&gt; readNumber()</b>
+<b class="fc">&nbsp;                nextByte == TOK.SPACE_BYTE || isLineBreakByte(byte = nextByte) ||</b>
+<b class="fc">&nbsp;                    nextByte == TOK.TAB_BYTE || position + 1 &gt;= localLimit -&gt;</b>
+<b class="fc">&nbsp;                    readBlockSequence(seqIndent = indent)</b>
 &nbsp;
-&nbsp;    override fun deserialize(
-&nbsp;        reader: GhostJsonReader
-&nbsp;    ): Map&lt;String, V&gt; {
-<b class="fc">&nbsp;        reader.beginObject()</b>
-<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_OBJ) {</b>
-<b class="nc">&nbsp;            reader.endObject()</b>
-<b class="nc">&nbsp;            return emptyMap()</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return buildMap {</b>
-<b class="fc">&nbsp;            while (true) {</b>
-<b class="fc">&nbsp;                val key = reader.nextKey() ?: break</b>
-<b class="fc">&nbsp;                reader.consumeKeySeparator()</b>
-<b class="fc">&nbsp;                put(</b>
-<b class="fc">&nbsp;                    key,</b>
-<b class="fc">&nbsp;                    valueSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;                isDocumentMarker() -&gt; null</b>
+<b class="fc">&nbsp;                else -&gt; readPlainScalar(</b>
+<b class="fc">&nbsp;                    indent = indent,</b>
+<b class="fc">&nbsp;                    inFlow = inFlow,</b>
+<b class="fc">&nbsp;                    expectedTag = expectedTag,</b>
+<b class="fc">&nbsp;                    allowMappingRedirect = allowMappingRedirect</b>
 &nbsp;                )
 &nbsp;            }
-<b class="fc">&nbsp;            reader.endObject()</b>
-<b class="fc">&nbsp;        }</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(
-&nbsp;        reader: GhostJsonFlatReader
-&nbsp;    ): Map&lt;String, V&gt; {
-<b class="fc">&nbsp;        reader.beginObject()</b>
-<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_OBJ) {</b>
-<b class="nc">&nbsp;            reader.endObject()</b>
-<b class="nc">&nbsp;            return emptyMap()</b>
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        return buildMap {</b>
-<b class="fc">&nbsp;            while (true) {</b>
-<b class="fc">&nbsp;                val key = reader.nextKey() ?: break</b>
-<b class="fc">&nbsp;                reader.consumeKeySeparator()</b>
-<b class="fc">&nbsp;                put(</b>
-<b class="fc">&nbsp;                    key,</b>
-<b class="fc">&nbsp;                    valueSerializer.deserialize(reader)</b>
-&nbsp;                )
-&nbsp;            }
-<b class="fc">&nbsp;            reader.endObject()</b>
-<b class="fc">&nbsp;        }</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun deserialize(
-&nbsp;        reader: GhostJsonStringReader
-&nbsp;    ): Map&lt;String, V&gt; {
-<b class="fc">&nbsp;        reader.beginObject()</b>
-<b class="pc">&nbsp;        if (reader.peekByte() == C.CLOSE_OBJ) {</b>
-<b class="nc">&nbsp;            reader.endObject()</b>
-<b class="nc">&nbsp;            return emptyMap()</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return buildMap {</b>
-<b class="fc">&nbsp;            while (true) {</b>
-<b class="fc">&nbsp;                val key = reader.nextKey() ?: break</b>
-<b class="fc">&nbsp;                reader.consumeKeySeparator()</b>
-<b class="fc">&nbsp;                put(</b>
-<b class="fc">&nbsp;                    key,</b>
-<b class="fc">&nbsp;                    valueSerializer.deserialize(reader)</b>
-&nbsp;                )
-&nbsp;            }
-<b class="fc">&nbsp;            reader.endObject()</b>
-<b class="fc">&nbsp;        }</b>
+<b class="fc">&nbsp;        else -&gt; readPlainScalarOrMapping(</b>
+<b class="fc">&nbsp;            indent = indent,</b>
+<b class="fc">&nbsp;            inFlow = inFlow,</b>
+<b class="fc">&nbsp;            expectedTag = expectedTag,</b>
+<b class="fc">&nbsp;            allowMappingRedirect = allowMappingRedirect,</b>
+<b class="fc">&nbsp;            foldIndent = foldIndent</b>
+&nbsp;        )
 &nbsp;    }
 &nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Reads a quoted scalar, then checks whether a `:` follows — a quoted string can be a
+&nbsp; * mapping key too (e.g. `&quot;400&quot;:`), a case [readPlainScalarOrMapping]&#39;s colon-scan already
+&nbsp; * handles for bare keys but readValue&#39;s dispatch never reaches for quoted content.
+&nbsp; */
+&nbsp;private inline fun GhostYamlFlatReader.readQuotedScalarOrMappingKey(
+&nbsp;    indent: Int,
+&nbsp;    inFlow: Boolean,
+&nbsp;    readQuoted: () -&gt; String
+&nbsp;): Any? {
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val text = readQuoted()</b>
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val isMappingKey = isMappingColonAt(rawData = rawData, position = position, limit = localLimit)</b>
+&nbsp;    // Inside a flow collection there&#39;s no block mapping to redirect into — leave position
+&nbsp;    // where it is and let the caller (a flow sequence entry may be an implicit single-pair
+&nbsp;    // mapping) decide.
+<b class="fc">&nbsp;    if (inFlow || !isMappingKey) return text</b>
+<b class="fc">&nbsp;    position = startPosition</b>
+<b class="fc">&nbsp;    return readBlockMapping(blockIndent = indent.coerceAtLeast(0))</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Like [readQuotedScalarOrMappingKey] but for flow collections: a flow collection can itself
+&nbsp; * be a block-mapping key (e.g. `[flow]: block`), not just a value.
+&nbsp; */
+&nbsp;private inline fun GhostYamlFlatReader.readFlowCollectionOrMappingKey(
+&nbsp;    indent: Int,
+&nbsp;    inFlow: Boolean,
+&nbsp;    readCollection: () -&gt; Any?
+&nbsp;): Any? {
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val collection = readCollection()</b>
+<b class="fc">&nbsp;    if (inFlow) return collection</b>
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val isMappingKey = isMappingColonAt(rawData = rawData, position = position, limit = localLimit)</b>
+<b class="fc">&nbsp;    if (!isMappingKey) return collection</b>
+<b class="fc">&nbsp;    position = startPosition</b>
+<b class="fc">&nbsp;    return readBlockMapping(blockIndent = indent.coerceAtLeast(0))</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * True if [rawData] has a `:` at [position] immediately followed by whitespace, a line break,
+&nbsp; * or EOF. Shared by value/key dispatch across [GhostYamlValueReading.kt], the plain-scalar
+&nbsp; * folders in `GhostYamlPlainScalarFolding.kt`, and `GhostYamlKeyReading.kt`.
+&nbsp; */
+&nbsp;internal inline fun isMappingColonAt(rawData: ByteArray, position: Int, limit: Int): Boolean {
+<b class="fc">&nbsp;    if (position &gt;= limit || rawData[position] != TOK.COLON_BYTE) return false</b>
+<b class="fc">&nbsp;    val next = position + 1</b>
+<b class="fc">&nbsp;    return next &gt;= limit ||</b>
+<b class="fc">&nbsp;        rawData[next] == TOK.SPACE_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[next] == TOK.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;        rawData[next] == TOK.CR_BYTE ||</b>
+<b class="fc">&nbsp;        rawData[next] == TOK.TAB_BYTE</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * True if [byte] ends a flow scalar (a comma or the closing bracket/brace of the enclosing
+&nbsp; * collection). Shared with the plain-scalar folders and key reading, same reason as
+&nbsp; * [isMappingColonAt].
+&nbsp; */
+&nbsp;internal fun isFlowScalarTerminatorByte(byte: Byte): Boolean =
+<b class="fc">&nbsp;    byte == TOK.COMMA_BYTE || byte == TOK.RIGHT_BRACE_BYTE || byte == TOK.RIGHT_BRACKET_BYTE</b>
 </code>
 </pre>
 </div>
@@ -244,7 +293,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

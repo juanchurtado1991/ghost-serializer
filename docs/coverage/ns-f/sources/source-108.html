@@ -1,0 +1,230 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > Tweet</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.integration.model</a>
+</div>
+
+<h1>Coverage Summary for Class: Tweet (com.ghost.serialization.integration.model)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">Tweet</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    15.6%
+  </span>
+  <span class="absValue">
+    (15/96)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (37/37)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    56.3%
+  </span>
+  <span class="absValue">
+    (382/678)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Tweet$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    15.6%
+  </span>
+  <span class="absValue">
+    (15/96)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (38/38)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    56.6%
+  </span>
+  <span class="absValue">
+    (386/682)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+&nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostName
+&nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.squareup.moshi.Json
+&nbsp;import com.squareup.moshi.JsonClass
+&nbsp;import kotlinx.serialization.SerialName
+&nbsp;import kotlinx.serialization.Serializable
+&nbsp;
+<b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
+&nbsp;@Serializable
+&nbsp;@GhostSerialization
+&nbsp;data class Tweet(
+<b class="fc">&nbsp;    val metadata: TweetMetadata,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;created_at&quot;)</b>
+&nbsp;    @SerialName(&quot;created_at&quot;) @GhostName(&quot;created_at&quot;)
+<b class="fc">&nbsp;    val createdAt: String,</b>
+<b class="fc">&nbsp;    val id: Long,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;id_str&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,</b>
+<b class="fc">&nbsp;    val text: String,</b>
+<b class="fc">&nbsp;    val source: String,</b>
+<b class="fc">&nbsp;    val truncated: Boolean,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;in_reply_to_status_id&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;in_reply_to_status_id&quot;) @GhostName(&quot;in_reply_to_status_id&quot;) val inReplyToStatusId: Long? = null,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;in_reply_to_status_id_str&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;in_reply_to_status_id_str&quot;) @GhostName(&quot;in_reply_to_status_id_str&quot;) val inReplyToStatusIdStr: String? = null,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;in_reply_to_user_id&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;in_reply_to_user_id&quot;) @GhostName(&quot;in_reply_to_user_id&quot;) val inReplyToUserId: Long? = null,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;in_reply_to_user_id_str&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;in_reply_to_user_id_str&quot;) @GhostName(&quot;in_reply_to_user_id_str&quot;) val inReplyToUserIdStr: String? = null,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;in_reply_to_screen_name&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;in_reply_to_screen_name&quot;) @GhostName(&quot;in_reply_to_screen_name&quot;) val inReplyToScreenName: String? = null,</b>
+<b class="fc">&nbsp;    val user: User,</b>
+<b class="fc">&nbsp;    val geo: String? = null,</b>
+<b class="fc">&nbsp;    val coordinates: String? = null,</b>
+<b class="fc">&nbsp;    val place: String? = null,</b>
+<b class="fc">&nbsp;    val contributors: String? = null,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;retweet_count&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;retweet_count&quot;) @GhostName(&quot;retweet_count&quot;) val retweetCount: Int,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;favorite_count&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;favorite_count&quot;) @GhostName(&quot;favorite_count&quot;) val favoriteCount: Int,</b>
+<b class="fc">&nbsp;    val entities: TweetEntities,</b>
+<b class="fc">&nbsp;    val favorited: Boolean,</b>
+<b class="fc">&nbsp;    val retweeted: Boolean,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;possibly_sensitive&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;possibly_sensitive&quot;) @GhostName(&quot;possibly_sensitive&quot;) val possiblySensitive: Boolean = false,</b>
+<b class="fc">&nbsp;    val lang: String? = null,</b>
+<b class="fc">&nbsp;    @Json(name = &quot;retweeted_status&quot;)</b>
+<b class="fc">&nbsp;    @SerialName(&quot;retweeted_status&quot;) @GhostName(&quot;retweeted_status&quot;) val retweetedStatus: Tweet? = null</b>
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

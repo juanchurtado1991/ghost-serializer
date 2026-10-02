@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonEscapeHelpers</title>
+  <title>GhostSerialization Coverage Report > GhostHttpMessageConverter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.writer.common</a>
+    <a href="../index.html">com.ghost.serialization.spring</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonEscapeHelpers (com.ghost.serialization.writer.common)</h1>
+<h1>Coverage Summary for Class: GhostHttpMessageConverter (com.ghost.serialization.spring)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonEscapeHelpers</td>
+  <td class="name">GhostHttpMessageConverter</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    90.9%
   </span>
   <span class="absValue">
-    (8/8)
+    (10/11)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.7%
+    53.8%
   </span>
   <span class="absValue">
-    (78/90)
+    (14/26)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    95.9%
+    66.7%
   </span>
   <span class="absValue">
-    (139/145)
+    (24/36)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    96.2%
+    70.6%
   </span>
   <span class="absValue">
-    (707/735)
+    (163/231)
   </span>
 </td>
 </tr>
@@ -99,365 +99,114 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.spring
 &nbsp;
-&nbsp;package com.ghost.serialization.writer.common
-&nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ASCII_LIMIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BACKSLASH_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_INDEX_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_SHIFT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BITMASK_UNIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_MASKS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ESCAPE_REPLACEMENTS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_CHARS_CHARS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.HEX_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_BYTE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_12
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_4
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.SHIFT_8
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_ESCAPE_LENGTH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.UNICODE_PREFIX_U
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_BACKSLASH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_QUOTE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.CHAR_U
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.applyOptions
+&nbsp;import com.ghost.serialization.contract.GhostRegistry
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.ghostInternalUseFlatReader
+&nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
+&nbsp;import org.springframework.http.HttpInputMessage
+&nbsp;import org.springframework.http.HttpOutputMessage
+&nbsp;import org.springframework.http.MediaType
+&nbsp;import org.springframework.http.converter.AbstractGenericHttpMessageConverter
+&nbsp;import org.springframework.http.converter.HttpMessageNotReadableException
+&nbsp;import org.springframework.http.converter.HttpMessageNotWritableException
+&nbsp;import java.lang.reflect.Type
+&nbsp;import kotlin.reflect.KClass
 &nbsp;
 &nbsp;/**
-&nbsp; * Shared JSON string-escape helpers for byte and char writers.
+&nbsp; * Spring `HttpMessageConverter` implementation that uses Ghost Serialization.
 &nbsp; *
-&nbsp; * Sink flushes stay at call sites (or are passed as inlined lambdas) so
-&nbsp; * byte JSON writers keep monomorphic buffer writes.
+&nbsp; * Resolves `List` / `Set` / `Map` generics via [GhostSpringTypeSerializers] (parity with
+&nbsp; * Retrofit / Ktor). Read/write use the declared [Type], not only the erased [Class].
+&nbsp; *
+&nbsp; * Resolves serializers through [registry] (defaults to the global [Ghost] singleton) rather than
+&nbsp; * calling [Ghost] directly, so tests can substitute a fake [GhostRegistry].
+&nbsp; *
+&nbsp; * **Read path:** Extracts the request body as a [ByteArray] and feeds it
+&nbsp; * directly to the pooled flat reader, avoiding intermediate Okio wrappers.
+&nbsp; *
+&nbsp; * **Write path:** Serializes through the pooled in-memory `GhostJsonWriter`
+&nbsp; * and writes the resulting [ByteArray] in a single bulk call.
 &nbsp; */
-&nbsp;internal object GhostJsonEscapeHelpers {
+&nbsp;class GhostHttpMessageConverter(
+<b class="fc">&nbsp;    private val registry: GhostRegistry = Ghost</b>
+&nbsp;) : AbstractGenericHttpMessageConverter&lt;Any&gt;(
+<b class="fc">&nbsp;    MediaType.APPLICATION_JSON,</b>
+<b class="fc">&nbsp;    GhostSpringMediaTypes.APPLICATION_JSON_SUFFIX</b>
+&nbsp;) {
 &nbsp;
-&nbsp;    /**
-&nbsp;     * True when [code] is a plain ASCII character that can be emitted unescaped
-&nbsp;     * (not a control char, `&quot;`, `\`, or non-ASCII). Single source of truth for the
-&nbsp;     * bitmask check duplicated across both byte JSON writers and this file.
-&nbsp;     */
-&nbsp;    inline fun isPlainAsciiSafe(code: Int): Boolean =
-<b class="fc">&nbsp;        code &lt; ASCII_LIMIT &amp;&amp;</b>
-<b class="fc">&nbsp;                (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L</b>
+<b class="fc">&nbsp;    private val typeSerializers = GhostSpringTypeSerializers(registry = registry)</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * True when [code] can be emitted verbatim inside a JSON string on the char channel.
-&nbsp;     * Code units `&gt;= ASCII_LIMIT` never need escaping there (unlike the byte writers, which
-&nbsp;     * must UTF-8 encode them) — below that, [ESCAPE_MASKS] rejects controls, `&quot;`, and `\`.
-&nbsp;     */
-&nbsp;    inline fun isSafeUnescapedChar(code: Int): Boolean =
-<b class="fc">&nbsp;        code &gt;= ASCII_LIMIT ||</b>
-<b class="fc">&nbsp;                (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L</b>
+&nbsp;    override fun canRead(type: Type, contextClass: Class&lt;*&gt;?, mediaType: MediaType?): Boolean =
+<b class="pc">&nbsp;        canRead(mediaType) &amp;&amp; typeSerializers.getJsonSerializer(type) != null</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Formats `\uXXXX` into [scratchBuf] at indices `0..5` and flushes via [write].
-&nbsp;     */
-&nbsp;    inline fun writeUnicodeEscapeBytes(
-&nbsp;        code: Int,
-&nbsp;        scratchBuf: ByteArray,
-&nbsp;        write: (scratch: ByteArray, offset: Int, length: Int) -&gt; Unit,
-&nbsp;    ) {
-<b class="fc">&nbsp;        val hexChars = HEX_CHARS</b>
-<b class="fc">&nbsp;        scratchBuf[0] = BACKSLASH</b>
-<b class="fc">&nbsp;        scratchBuf[1] = UNICODE_PREFIX_U</b>
-<b class="fc">&nbsp;        scratchBuf[2] = hexChars[(code shr SHIFT_12) and HEX_MASK]</b>
-<b class="fc">&nbsp;        scratchBuf[3] = hexChars[(code shr SHIFT_8) and HEX_MASK]</b>
-<b class="fc">&nbsp;        scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]</b>
-<b class="fc">&nbsp;        scratchBuf[5] = hexChars[code and HEX_MASK]</b>
-<b class="fc">&nbsp;        write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)</b>
+&nbsp;    override fun canWrite(type: Type?, clazz: Class&lt;*&gt;, mediaType: MediaType?): Boolean =
+<b class="fc">&nbsp;        canWrite(mediaType) &amp;&amp;</b>
+<b class="pc">&nbsp;            typeSerializers.getJsonSerializer(type ?: clazz) != null</b>
+&nbsp;
+&nbsp;    override fun read(
+&nbsp;        type: Type,
+&nbsp;        contextClass: Class&lt;*&gt;?,
+&nbsp;        inputMessage: HttpInputMessage
+&nbsp;    ): Any {
+<b class="pc">&nbsp;        val serializer = typeSerializers.getJsonSerializer(type)</b>
+<b class="nc">&nbsp;            ?: throw HttpMessageNotReadableException(</b>
+<b class="nc">&nbsp;                &quot;${Ghost.NOT_FOUND} $type&quot;,</b>
+<b class="nc">&nbsp;                inputMessage</b>
+&nbsp;            )
+<b class="fc">&nbsp;        return deserialize(serializer, inputMessage.body.readBytes())</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Formats `\uXXXX` into [scratchBuf] at indices `0..5` and flushes via [write].
-&nbsp;     */
-&nbsp;    inline fun writeUnicodeEscapeChars(
-&nbsp;        code: Int,
-&nbsp;        scratchBuf: CharArray,
-&nbsp;        write: (scratch: CharArray, offset: Int, length: Int) -&gt; Unit,
-&nbsp;    ) {
-<b class="fc">&nbsp;        val hexChars = HEX_CHARS_CHARS</b>
-<b class="fc">&nbsp;        scratchBuf[0] = CHAR_BACKSLASH</b>
-<b class="fc">&nbsp;        scratchBuf[1] = CHAR_U</b>
-<b class="fc">&nbsp;        scratchBuf[2] = hexChars[(code shr SHIFT_12) and HEX_MASK]</b>
-<b class="fc">&nbsp;        scratchBuf[3] = hexChars[(code shr SHIFT_8) and HEX_MASK]</b>
-<b class="fc">&nbsp;        scratchBuf[4] = hexChars[(code shr SHIFT_4) and HEX_MASK]</b>
-<b class="fc">&nbsp;        scratchBuf[5] = hexChars[code and HEX_MASK]</b>
-<b class="fc">&nbsp;        write(scratchBuf, 0, UNICODE_ESCAPE_LENGTH)</b>
+&nbsp;    override fun readInternal(clazz: Class&lt;out Any&gt;, inputMessage: HttpInputMessage): Any {
+<b class="nc">&nbsp;        val serializer = typeSerializers.getJsonSerializer(clazz)</b>
+<b class="nc">&nbsp;            ?: throw HttpMessageNotReadableException(</b>
+<b class="nc">&nbsp;                &quot;${Ghost.NOT_FOUND} ${clazz.simpleName}&quot;,</b>
+<b class="nc">&nbsp;                inputMessage</b>
+&nbsp;            )
+<b class="nc">&nbsp;        return deserialize(serializer, inputMessage.body.readBytes())</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Escapes [text] from [start] into [scratchBuf], flushing through sink lambdas.
-&nbsp;     * Used by both byte JSON writers when the string does not fit the quoted-scratch path.
-&nbsp;     */
-&nbsp;    inline fun writeEscapedBytes(
-&nbsp;        text: String,
-&nbsp;        start: Int,
-&nbsp;        scratchBuf: ByteArray,
-&nbsp;        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -&gt; Unit,
-&nbsp;        writeReplacement: (replacement: ByteArray) -&gt; Unit,
-&nbsp;        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -&gt; Unit,
-&nbsp;    ) {
-<b class="fc">&nbsp;        val length = text.length</b>
-<b class="fc">&nbsp;        val remaining = length - start</b>
-<b class="fc">&nbsp;        if (remaining &lt;= 0) {</b>
-&nbsp;            return
+&nbsp;    override fun supports(clazz: Class&lt;*&gt;): Boolean =
+<b class="fc">&nbsp;        typeSerializers.getJsonSerializer(clazz) != null</b>
+&nbsp;
+&nbsp;    override fun writeInternal(t: Any, type: Type?, outputMessage: HttpOutputMessage) {
+<b class="fc">&nbsp;        val serializer = resolveWriteSerializer(t = t, type = type)</b>
+<b class="fc">&nbsp;        GhostStarterHelper.writeToStream(t, serializer, outputMessage.body)</b>
+<b class="fc">&nbsp;        outputMessage.body.flush()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun deserialize(serializer: GhostSerializer&lt;Any&gt;, bytes: ByteArray): Any {
+<b class="fc">&nbsp;        val isStrict = GhostSpringConfig.strict.get()</b>
+<b class="fc">&nbsp;        val isCoerce = GhostSpringConfig.coerce.get()</b>
+&nbsp;
+&nbsp;        // @GhostProtoSerialization classes need GhostProtoJsonFlatReader&#39;s proto3 leniency.
+&nbsp;        // The annotation is BINARY-retained; `serializer.isProto` is the runtime signal.
+<b class="fc">&nbsp;        if (serializer.isProto) {</b>
+<b class="fc">&nbsp;            return ghostProtoInternalUseFlatReader(bytes = bytes) { reader -&gt;</b>
+<b class="fc">&nbsp;                reader.applyOptions(isStrict = isStrict, isCoerce = isCoerce)</b>
+<b class="fc">&nbsp;                serializer.deserialize(reader)</b>
+&nbsp;            }
 &nbsp;        }
 &nbsp;
-<b class="fc">&nbsp;        val replacements = ESCAPE_REPLACEMENTS</b>
-<b class="fc">&nbsp;        val scratchSize = scratchBuf.size</b>
-&nbsp;
-<b class="fc">&nbsp;        if (remaining &lt;= scratchSize) {</b>
-<b class="fc">&nbsp;            var scratchPos = 0</b>
-<b class="fc">&nbsp;            var index = start</b>
-<b class="fc">&nbsp;            while (index &lt; length) {</b>
-<b class="fc">&nbsp;                val charCode = text[index].code</b>
-&nbsp;
-&nbsp;                // Unrolled fast path for plain ASCII
-<b class="fc">&nbsp;                if (isPlainAsciiSafe(charCode)) {</b>
-<b class="fc">&nbsp;                    scratchBuf[scratchPos++] = charCode.toByte()</b>
-<b class="fc">&nbsp;                    index++</b>
-&nbsp;                    continue
-&nbsp;                }
-&nbsp;
-<b class="fc">&nbsp;                if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;                    writeBytes(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                    scratchPos = 0</b>
-&nbsp;                }
-&nbsp;
-<b class="fc">&nbsp;                if (charCode &lt; ASCII_LIMIT) {</b>
-<b class="fc">&nbsp;                    val replacement = replacements[charCode]</b>
-<b class="fc">&nbsp;                    if (replacement != null) {</b>
-<b class="fc">&nbsp;                        writeReplacement(replacement)</b>
-&nbsp;                    } else {
-<b class="fc">&nbsp;                        writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)</b>
-&nbsp;                    }
-&nbsp;                } else {
-<b class="fc">&nbsp;                    val c = text[index]</b>
-<b class="pc">&nbsp;                    if (c.isHighSurrogate() &amp;&amp; index + 1 &lt; length &amp;&amp; text[index + 1].isLowSurrogate()) {</b>
-<b class="fc">&nbsp;                        writeUtf8Range(text, index, index + 2)</b>
-<b class="fc">&nbsp;                        index++</b>
-&nbsp;                    } else {
-<b class="fc">&nbsp;                        writeUtf8Range(text, index, index + 1)</b>
-&nbsp;                    }
-&nbsp;                }
-<b class="fc">&nbsp;                index++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;                writeBytes(scratchBuf, 0, scratchPos)</b>
-&nbsp;            }
-&nbsp;            return
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        var scratchPos = 0</b>
-<b class="fc">&nbsp;        var index = start</b>
-&nbsp;
-<b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="fc">&nbsp;            val charCode = text[index].code</b>
-&nbsp;
-<b class="fc">&nbsp;            if (isPlainAsciiSafe(charCode)) {</b>
-<b class="fc">&nbsp;                scratchBuf[scratchPos++] = charCode.toByte()</b>
-<b class="fc">&nbsp;                if (scratchPos == scratchSize) {</b>
-<b class="fc">&nbsp;                    writeBytes(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                    scratchPos = 0</b>
-&nbsp;                }
-<b class="fc">&nbsp;                index++</b>
-&nbsp;                continue
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;                writeBytes(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                scratchPos = 0</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            if (charCode &lt; ASCII_LIMIT) {</b>
-<b class="fc">&nbsp;                val replacement = replacements[charCode]</b>
-<b class="fc">&nbsp;                if (replacement != null) {</b>
-<b class="fc">&nbsp;                    writeReplacement(replacement)</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)</b>
-&nbsp;                }
-&nbsp;            } else {
-<b class="fc">&nbsp;                val char = text[index]</b>
-<b class="pc">&nbsp;                if (char.isHighSurrogate() &amp;&amp; index + 1 &lt; length &amp;&amp; text[index + 1].isLowSurrogate()) {</b>
-<b class="fc">&nbsp;                    writeUtf8Range(text, index, index + 2)</b>
-<b class="fc">&nbsp;                    index++</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    writeUtf8Range(text, index, index + 1)</b>
-&nbsp;                }
-&nbsp;            }
-<b class="fc">&nbsp;            index++</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;            writeBytes(scratchBuf, 0, scratchPos)</b>
+<b class="fc">&nbsp;        return ghostInternalUseFlatReader(bytes = bytes) { reader -&gt;</b>
+<b class="fc">&nbsp;            reader.applyOptions(isStrict = isStrict, isCoerce = isCoerce)</b>
+<b class="fc">&nbsp;            serializer.deserialize(reader)</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Escapes [text] into [scratchBuf] (opening quote already at index 0) and flushes
-&nbsp;     * through the provided sink lambdas. Used by both byte JSON writers.
-&nbsp;     */
-&nbsp;    inline fun writeEscapedIntoByteScratch(
-&nbsp;        text: String,
-&nbsp;        length: Int,
-&nbsp;        scratchBuf: ByteArray,
-&nbsp;        writeBytes: (scratch: ByteArray, offset: Int, length: Int) -&gt; Unit,
-&nbsp;        writeReplacement: (replacement: ByteArray) -&gt; Unit,
-&nbsp;        writeUtf8Range: (text: String, beginIndex: Int, endIndex: Int) -&gt; Unit,
-&nbsp;        writeQuoteByte: () -&gt; Unit,
-&nbsp;    ) {
-<b class="fc">&nbsp;        val escapeReplacements = ESCAPE_REPLACEMENTS</b>
-<b class="fc">&nbsp;        var scratchPos = 1 // Start after the opening quote already written at index 0.</b>
-<b class="fc">&nbsp;        var index = 0</b>
-&nbsp;
-<b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="fc">&nbsp;            val charCode = text[index].code</b>
-&nbsp;
-<b class="fc">&nbsp;            if (isPlainAsciiSafe(charCode)) {</b>
-<b class="fc">&nbsp;                scratchBuf[scratchPos++] = charCode.toByte()</b>
-<b class="fc">&nbsp;                index++</b>
-&nbsp;                continue
-&nbsp;            }
-&nbsp;
-&nbsp;            // Flush what we have so far
-<b class="fc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;                writeBytes(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                scratchPos = 0</b>
-&nbsp;            }
-&nbsp;
-&nbsp;            // Handle the escape
-<b class="fc">&nbsp;            if (charCode &lt; ASCII_LIMIT) {</b>
-<b class="fc">&nbsp;                val replacement = escapeReplacements[charCode]</b>
-<b class="fc">&nbsp;                if (replacement != null) {</b>
-<b class="fc">&nbsp;                    writeReplacement(replacement)</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    writeUnicodeEscapeBytes(charCode, scratchBuf, writeBytes)</b>
-&nbsp;                }
-&nbsp;            } else {
-<b class="fc">&nbsp;                val c = text[index]</b>
-<b class="pc">&nbsp;                if (c.isHighSurrogate() &amp;&amp; index + 1 &lt; length &amp;&amp; text[index + 1].isLowSurrogate()) {</b>
-<b class="fc">&nbsp;                    writeUtf8Range(text, index, index + 2)</b>
-<b class="fc">&nbsp;                    index++</b>
-&nbsp;                } else {
-<b class="fc">&nbsp;                    writeUtf8Range(text, index, index + 1)</b>
-&nbsp;                }
-&nbsp;            }
-<b class="fc">&nbsp;            index++</b>
+&nbsp;    private fun resolveWriteSerializer(t: Any, type: Type?): GhostSerializer&lt;Any&gt; {
+<b class="pc">&nbsp;        type?.let { declared -&gt;</b>
+<b class="pc">&nbsp;            typeSerializers.getJsonSerializer(declared)?.let { return it }</b>
 &nbsp;        }
-&nbsp;
-&nbsp;        // Add the closing quote and final flush
-<b class="pc">&nbsp;        if (scratchPos + 1 &gt; scratchBuf.size) {</b>
-<b class="nc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="nc">&nbsp;                writeBytes(scratchBuf, 0, scratchPos)</b>
-&nbsp;            }
-<b class="nc">&nbsp;            writeQuoteByte()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            scratchBuf[scratchPos++] = QUOTE_BYTE</b>
-<b class="fc">&nbsp;            writeBytes(scratchBuf, 0, scratchPos)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Char-array twin of [writeEscapedBytes] for the string JSON writer. Unlike the byte
-&nbsp;     * channel, code units `&gt;= ASCII_LIMIT` never need escaping (see [isSafeUnescapedChar]) and
-&nbsp;     * an escaped char is always exactly two chars (`\` + [getEscapeSecondChar]), so there is no
-&nbsp;     * UTF-8-range or variable-length-replacement branch to mirror from the byte side.
-&nbsp;     */
-&nbsp;    inline fun writeEscapedChars(
-&nbsp;        text: String,
-&nbsp;        start: Int,
-&nbsp;        scratchBuf: CharArray,
-&nbsp;        writeChars: (scratch: CharArray, offset: Int, length: Int) -&gt; Unit,
-&nbsp;        writeTwoChars: (first: Int, second: Int) -&gt; Unit,
-&nbsp;        getEscapeSecondChar: (Int) -&gt; Int,
-&nbsp;        writeUnicodeEscape: (code: Int, scratch: CharArray) -&gt; Unit,
-&nbsp;    ) {
-<b class="fc">&nbsp;        val length = text.length</b>
-<b class="fc">&nbsp;        var scratchPos = 0</b>
-<b class="fc">&nbsp;        var index = start</b>
-&nbsp;
-<b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="fc">&nbsp;            val charCode = text[index].code</b>
-&nbsp;
-<b class="fc">&nbsp;            if (isSafeUnescapedChar(charCode)) {</b>
-<b class="fc">&nbsp;                scratchBuf[scratchPos++] = charCode.toChar()</b>
-<b class="fc">&nbsp;                if (scratchPos == scratchBuf.size) {</b>
-<b class="fc">&nbsp;                    writeChars(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                    scratchPos = 0</b>
-&nbsp;                }
-<b class="fc">&nbsp;                index++</b>
-&nbsp;                continue
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;                writeChars(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                scratchPos = 0</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            val esc = getEscapeSecondChar(charCode)</b>
-<b class="fc">&nbsp;            if (esc != 0) {</b>
-<b class="fc">&nbsp;                writeTwoChars(BACKSLASH_INT, esc)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                writeUnicodeEscape(charCode, scratchBuf)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            index++</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;            writeChars(scratchBuf, 0, scratchPos)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Char-array twin of [writeEscapedIntoByteScratch] for the string JSON writer.
-&nbsp;     * [scratchBuf] already has the opening quote written at index 0.
-&nbsp;     */
-&nbsp;    inline fun writeEscapedIntoCharScratch(
-&nbsp;        text: String,
-&nbsp;        length: Int,
-&nbsp;        scratchBuf: CharArray,
-&nbsp;        writeChars: (scratch: CharArray, offset: Int, length: Int) -&gt; Unit,
-&nbsp;        writeTwoChars: (first: Int, second: Int) -&gt; Unit,
-&nbsp;        getEscapeSecondChar: (Int) -&gt; Int,
-&nbsp;        writeUnicodeEscape: (code: Int, scratch: CharArray) -&gt; Unit,
-&nbsp;        writeQuoteChar: () -&gt; Unit,
-&nbsp;    ) {
-<b class="fc">&nbsp;        var scratchPos = 1 // Start after the opening quote already written at index 0.</b>
-<b class="fc">&nbsp;        var index = 0</b>
-&nbsp;
-<b class="fc">&nbsp;        while (index &lt; length) {</b>
-<b class="fc">&nbsp;            val charCode = text[index].code</b>
-&nbsp;
-<b class="fc">&nbsp;            if (isSafeUnescapedChar(charCode)) {</b>
-<b class="fc">&nbsp;                scratchBuf[scratchPos++] = charCode.toChar()</b>
-<b class="fc">&nbsp;                index++</b>
-&nbsp;                continue
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="fc">&nbsp;                writeChars(scratchBuf, 0, scratchPos)</b>
-<b class="fc">&nbsp;                scratchPos = 0</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            val esc = getEscapeSecondChar(charCode)</b>
-<b class="fc">&nbsp;            if (esc != 0) {</b>
-<b class="fc">&nbsp;                writeTwoChars(BACKSLASH_INT, esc)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                writeUnicodeEscape(charCode, scratchBuf)</b>
-&nbsp;            }
-<b class="fc">&nbsp;            index++</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (scratchPos + 1 &gt; scratchBuf.size) {</b>
-<b class="nc">&nbsp;            if (scratchPos &gt; 0) {</b>
-<b class="nc">&nbsp;                writeChars(scratchBuf, 0, scratchPos)</b>
-&nbsp;            }
-<b class="nc">&nbsp;            writeQuoteChar()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            scratchBuf[scratchPos++] = CHAR_QUOTE</b>
-<b class="fc">&nbsp;            writeChars(scratchBuf, 0, scratchPos)</b>
-&nbsp;        }
+&nbsp;        @Suppress(&quot;UNCHECKED_CAST&quot;)
+<b class="nc">&nbsp;        return typeSerializers.getJsonSerializer(t.javaClass)</b>
+<b class="nc">&nbsp;            ?: registry.getSerializer(t::class as KClass&lt;Any&gt;)</b>
+<b class="nc">&nbsp;            ?: throw HttpMessageNotWritableException(</b>
+<b class="nc">&nbsp;                &quot;${Ghost.NOT_FOUND} ${t.javaClass.simpleName}. ${Ghost.MISSING_ANN}&quot;</b>
+&nbsp;            )
 &nbsp;    }
 &nbsp;}
 </code>
@@ -483,7 +232,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

@@ -1,0 +1,96 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostRegistry</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.contract</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostRegistry (com.ghost.serialization.contract)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostRegistry</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.contract
+&nbsp;
+&nbsp;import kotlin.reflect.KClass
+&nbsp;
+&nbsp;/**
+&nbsp; * Discovers compiler-generated and custom serializers. Implementations are generated
+&nbsp; * per-module by the Ghost compiler plugin for reflection-free lookup across KMP targets.
+&nbsp; *
+&nbsp; * [getSerializer] resolves the [GhostSerializer] for a class, or `null` if unregistered in this
+&nbsp; * module. [getAllSerializers] is for eager loading / zero-latency first-runs. [prewarm] eagerly
+&nbsp; * initializes registry entries to avoid first-use JIT warm-up latency. [registeredCount] reports
+&nbsp; * how many serializers this registry holds. All four are abstract — implementations declare
+&nbsp; * explicit behavior for each rather than inheriting a silent default.
+&nbsp; */
+&nbsp;interface GhostRegistry {
+&nbsp;    fun getAllSerializers(): Map&lt;KClass&lt;*&gt;, GhostSerializer&lt;*&gt;&gt;
+&nbsp;
+&nbsp;    fun &lt;T : Any&gt; getSerializer(clazz: KClass&lt;T&gt;): GhostSerializer&lt;T&gt;?
+&nbsp;
+&nbsp;    fun prewarm()
+&nbsp;
+&nbsp;    fun registeredCount(): Int
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > IntSerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlPlainScalarFoldingKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: IntSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlPlainScalarFoldingKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">IntSerializer</td>
+  <td class="name">GhostYamlPlainScalarFoldingKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    100%
   </span>
   <span class="absValue">
-    (4/6)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    66.7%
-  </span>
-  <span class="absValue">
-    (4/6)
+    (4/4)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    72.2%
+    82.6%
   </span>
   <span class="absValue">
-    (13/18)
+    (109/132)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.8%
+  </span>
+  <span class="absValue">
+    (128/138)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.7%
+  </span>
+  <span class="absValue">
+    (562/600)
   </span>
 </td>
 </tr>
@@ -92,46 +99,288 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
-&nbsp;package com.ghost.serialization.serializers
-&nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.nextInt
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.nextInt
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Built-in serializer for Kotlin [Int] type.
+&nbsp; * Reads either a plain scalar (string, int, float, bool, null) or detects
+&nbsp; * that the current content is actually a block mapping key.
 &nbsp; */
-&nbsp;object IntSerializer : GhostSerializer&lt;Int&gt; {
-<b class="nc">&nbsp;    override val typeName: String get() = C.TYPE_NAME_INT</b>
+&nbsp;internal fun GhostYamlFlatReader.readPlainScalarOrMapping(
+&nbsp;    indent: Int,
+&nbsp;    inFlow: Boolean,
+<b class="nc">&nbsp;    expectedTag: Int = GhostYamlTags.TAG_NONE,</b>
+<b class="nc">&nbsp;    allowMappingRedirect: Boolean = true,</b>
+<b class="fc">&nbsp;    foldIndent: Int = indent</b>
+&nbsp;): Any? {
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonWriter, value: Int) {
-<b class="fc">&nbsp;        writer.value(value)</b>
+&nbsp;    // Scan forward to find &#39;:&#39; or end-of-line
+<b class="fc">&nbsp;    var scanPosition = position</b>
+<b class="fc">&nbsp;    while (scanPosition &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currentByte = localRawData[scanPosition]</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            currentByte == TOK.COLON_BYTE -&gt; {</b>
+&nbsp;                // &#39;:&#39; followed by space/newline/EOF → this is a mapping key
+<b class="fc">&nbsp;                if (isMappingColonAt(rawData = localRawData, position = scanPosition, limit = localLimit)) {</b>
+<b class="fc">&nbsp;                    if (!inFlow) {</b>
+<b class="fc">&nbsp;                        if (!allowMappingRedirect) {</b>
+&nbsp;                            // This colon is an *inline* value/key-node on the same line as an
+&nbsp;                            // enclosing key&#39;s own &#39;:&#39; (e.g. &quot;b: c&quot; in &quot;a: b: c&quot;) — no fresh,
+&nbsp;                            // more-indented line for a nested mapping, so it&#39;s ambiguous, not
+&nbsp;                            // a legal redirect. yaml-test-suite case ZCZ6.
+<b class="fc">&nbsp;                            yamlError(message = EM.ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON)</b>
+&nbsp;                        }
+&nbsp;                        // Rewind and parse as block mapping
+<b class="fc">&nbsp;                        position = startPosition</b>
+<b class="fc">&nbsp;                        return readBlockMapping(blockIndent = indent.coerceAtLeast(0))</b>
+&nbsp;                    }
+&nbsp;                    // No block mapping to redirect into inside a flow collection — stop the
+&nbsp;                    // scalar here and let the caller decide what the colon means.
+&nbsp;                    break
+&nbsp;                }
+<b class="fc">&nbsp;                scanPosition++</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            isLineBreakByte(byte = currentByte) -&gt; break</b>
+<b class="fc">&nbsp;            currentByte == TOK.HASH_BYTE -&gt; {</b>
+&nbsp;                // Inline comment ends the scalar before &#39;#&#39;, only if preceded by whitespace
+&nbsp;                // (&quot;d#X&quot; isn&#39;t a comment, &quot;d #X&quot; is).
+<b class="fc">&nbsp;                if (scanPosition &gt; startPosition &amp;&amp; isInlineWhitespaceByte(byte = localRawData[scanPosition - 1])) break</b>
+<b class="fc">&nbsp;                scanPosition++</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            inFlow &amp;&amp; isFlowScalarTerminatorByte(byte = currentByte) -&gt; break</b>
+<b class="fc">&nbsp;            else -&gt; scanPosition++</b>
+&nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Int) {
-<b class="nc">&nbsp;        writer.value(value)</b>
+<b class="fc">&nbsp;    val endPosition = trimTrailingSpaces(start = startPosition, end = scanPosition)</b>
+<b class="fc">&nbsp;    position = scanPosition</b>
+&nbsp;
+&nbsp;    // A bare &quot;-&quot; is a valid plain-scalar start only when followed by a &quot;safe&quot; character
+&nbsp;    // (ns-plain-first&#39;s rule for &#39;-&#39;/&#39;?&#39;/&#39;:&#39;) — in flow context that excludes flow
+&nbsp;    // indicators (&quot;,[]{}&quot;), so a lone &quot;-&quot; touching one (e.g. &quot;[-, -]&quot;) is neither a block
+&nbsp;    // sequence indicator (flow has none) nor a valid plain scalar.
+<b class="fc">&nbsp;    val isLoneFlowDash = inFlow &amp;&amp; endPosition - startPosition == 1 &amp;&amp; localRawData[startPosition] == TOK.DASH_BYTE</b>
+<b class="fc">&nbsp;    if (isLoneFlowDash) {</b>
+<b class="fc">&nbsp;        yamlError(message = EM.ERR_LONE_DASH_IN_FLOW)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonReader): Int {
-<b class="fc">&nbsp;        return reader.nextInt()</b>
+&nbsp;    // Plain scalars continue onto following lines: more-indented lines in block context
+&nbsp;    // ([foldPlainScalarContinuation]), any non-terminator line in flow context
+&nbsp;    // ([foldFlowPlainScalarContinuation]). Folding rule either way: a single newline becomes
+&nbsp;    // a space; N blank lines become N newlines (same as readBlockScalarContent&#39;s &quot;&gt;&quot; style).
+<b class="fc">&nbsp;    if (position &lt; localLimit &amp;&amp; isLineBreakByte(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;        val firstLine = localRawData.decodeToString(startPosition, endPosition)</b>
+<b class="fc">&nbsp;        val folded = if (inFlow) {</b>
+<b class="fc">&nbsp;            foldFlowPlainScalarContinuation(firstLine = firstLine)</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            foldPlainScalarContinuation(indent = foldIndent, firstLine = firstLine)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (folded != null) {</b>
+<b class="fc">&nbsp;            val foldedBytes = folded.encodeToByteArray()</b>
+<b class="fc">&nbsp;            return interpretScalar(data = foldedBytes, start = 0, end = foldedBytes.size, expectedTag = expectedTag)</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    return interpretScalar(data = localRawData, start = startPosition, end = endPosition, expectedTag = expectedTag)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readPlainScalar(
+&nbsp;    indent: Int,
+&nbsp;    inFlow: Boolean,
+<b class="nc">&nbsp;    expectedTag: Int = GhostYamlTags.TAG_NONE,</b>
+<b class="nc">&nbsp;    allowMappingRedirect: Boolean = true</b>
+&nbsp;): Any? =
+<b class="fc">&nbsp;    readPlainScalarOrMapping(</b>
+<b class="fc">&nbsp;        indent = indent,</b>
+<b class="fc">&nbsp;        inFlow = inFlow,</b>
+<b class="fc">&nbsp;        expectedTag = expectedTag,</b>
+<b class="fc">&nbsp;        allowMappingRedirect = allowMappingRedirect</b>
+&nbsp;    )
+&nbsp;
+&nbsp;/**
+&nbsp; * Consumes following lines that continue a plain scalar (each more indented than [indent],
+&nbsp; * the enclosing block&#39;s indentation), folding them onto [firstLine] per YAML&#39;s line-folding
+&nbsp; * rule. Returns `null` (without moving [position]) if the next line isn&#39;t a continuation, so
+&nbsp; * the caller falls back to its single-line result.
+&nbsp; */
+&nbsp;private fun GhostYamlFlatReader.foldPlainScalarContinuation(indent: Int, firstLine: String): String? {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val scalarEndPosition = position</b>
+<b class="fc">&nbsp;    var folded: StringBuilder? = null</b>
+<b class="fc">&nbsp;    var blankLines = 0</b>
+&nbsp;
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        val beforeNewline = position</b>
+&nbsp;        // Blank-ness is judged after skipping *all* leading whitespace (spaces and tabs) — a
+&nbsp;        // line that&#39;s purely whitespace is blank even if it includes a tab.
+<b class="fc">&nbsp;        val blankScan = scanFoldBlankLine(rawData = localRawData, position = position, limit = localLimit)</b>
+<b class="fc">&nbsp;        if (blankScan.isBlank) {</b>
+<b class="fc">&nbsp;            blankLines++</b>
+<b class="fc">&nbsp;            position = blankScan.contentStart</b>
+<b class="fc">&nbsp;            if (position &gt;= localLimit) break</b>
+&nbsp;            continue
+&nbsp;        }
+<b class="fc">&nbsp;        position = blankScan.afterNewline</b>
+&nbsp;
+&nbsp;        // How &quot;indented&quot; this line is (continuation-vs-dedent) is judged by real spaces only
+&nbsp;        // — a tab can&#39;t establish block-structure indentation (see recomputeCurrentIndent/
+&nbsp;        // indentHasTab), else a tab at a sibling key&#39;s indentation would falsely read as
+&nbsp;        // &quot;still a continuation&quot; instead of ambiguous/invalid. Once continuation is
+&nbsp;        // confirmed, tabs after those spaces are ordinary leading whitespace like the spaces.
+<b class="fc">&nbsp;        var spaces = 0</b>
+<b class="fc">&nbsp;        var peekPos = position</b>
+<b class="pc">&nbsp;        while (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] == TOK.SPACE_BYTE) {</b>
+<b class="fc">&nbsp;            spaces++; peekPos++</b>
+&nbsp;        }
+<b class="pc">&nbsp;        while (peekPos &lt; localLimit &amp;&amp; localRawData[peekPos] == TOK.TAB_BYTE) {</b>
+<b class="fc">&nbsp;            peekPos++</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        position = peekPos</b>
+<b class="fc">&nbsp;        val endsPlainScalar = spaces &lt;= indent || isDocumentMarker() || isDocumentEndMarker()</b>
+<b class="fc">&nbsp;        if (endsPlainScalar) {</b>
+&nbsp;            // Not a continuation (dedented, sibling-level, or a new document). If we already
+&nbsp;            // folded a real continuation line, rewind just past it (trailing blank lines
+&nbsp;            // aren&#39;t part of the value); otherwise rewind to right after the first line,
+&nbsp;            // undoing any tentatively-scanned blank lines so the caller sees them again.
+<b class="fc">&nbsp;            position = if (folded != null) beforeNewline else scalarEndPosition</b>
+&nbsp;            break
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val lineStart = position</b>
+<b class="fc">&nbsp;        var sawComment = false</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit &amp;&amp; !isLineBreakByte(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+&nbsp;            // A comment ends this line the same way it ends a single-line plain scalar (only
+&nbsp;            // when preceded by whitespace) — and since a comment can&#39;t appear inside a
+&nbsp;            // still-open fold, it ends the whole scalar here, not just this line (case BF9H).
+<b class="pc">&nbsp;            val isWhitespacePrecededComment = currentByte == TOK.HASH_BYTE &amp;&amp; position &gt; lineStart &amp;&amp;</b>
+<b class="fc">&nbsp;                isInlineWhitespaceByte(byte = localRawData[position - 1])</b>
+<b class="fc">&nbsp;            if (isWhitespacePrecededComment) {</b>
+<b class="fc">&nbsp;                sawComment = true</b>
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val lineEnd = trimTrailingSpaces(start = lineStart, end = position)</b>
+&nbsp;        // A continuation line can&#39;t itself look like a mapping key (&quot;word: &quot;) — a plain
+&nbsp;        // scalar&#39;s fold can&#39;t contain a nested key/value pair (case 2CMS).
+<b class="fc">&nbsp;        var colonScan = lineStart</b>
+<b class="fc">&nbsp;        while (colonScan &lt; lineEnd) {</b>
+<b class="fc">&nbsp;            if (localRawData[colonScan] == TOK.COLON_BYTE) {</b>
+<b class="fc">&nbsp;                val afterColon = colonScan + 1</b>
+<b class="pc">&nbsp;                val isColonFollowedByBlank = afterColon &gt;= lineEnd ||</b>
+<b class="fc">&nbsp;                    localRawData[afterColon] == TOK.SPACE_BYTE ||</b>
+<b class="pc">&nbsp;                    localRawData[afterColon] == TOK.TAB_BYTE</b>
+<b class="fc">&nbsp;                if (isColonFollowedByBlank) {</b>
+<b class="fc">&nbsp;                    yamlError(message = EM.ERR_PLAIN_CONTINUATION_MAPPING_KEY)</b>
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            colonScan++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val lineText = localRawData.decodeToString(lineStart, lineEnd)</b>
+&nbsp;
+<b class="fc">&nbsp;        if (folded == null) folded = StringBuilder(firstLine)</b>
+<b class="fc">&nbsp;        appendFoldedLine(builder = folded, blankLines = blankLines, lineText = lineText)</b>
+<b class="fc">&nbsp;        blankLines = 0</b>
+&nbsp;
+&nbsp;        // Leave position at the &#39;#&#39; — the caller&#39;s skipWhitespaceAndComments handles it.
+<b class="fc">&nbsp;        if (sawComment) break</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit) break</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Int {
-<b class="fc">&nbsp;        return reader.nextInt()</b>
+<b class="fc">&nbsp;    return folded?.toString()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Flow-context counterpart to [foldPlainScalarContinuation]. Unlike block context, a flow
+&nbsp; * collection isn&#39;t indentation-bounded once opened (delimited by its closing bracket/brace
+&nbsp; * instead), so there&#39;s no indentation threshold here — continuation is decided purely by
+&nbsp; * what the next line starts with, using the same terminators (`,`, `]`, `}`, a real `:` key
+&nbsp; * separator, or a whitespace-preceded `#` comment) that end a single-line flow scalar.
+&nbsp; *
+&nbsp; * Also called from [GhostYamlFlatReader.readKey] — a flow mapping key can fold across lines
+&nbsp; * like any other flow plain scalar.
+&nbsp; */
+&nbsp;internal fun GhostYamlFlatReader.foldFlowPlainScalarContinuation(firstLine: String): String? {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val scalarEndPosition = position</b>
+<b class="fc">&nbsp;    var folded: StringBuilder? = null</b>
+<b class="fc">&nbsp;    var blankLines = 0</b>
+&nbsp;
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;        val beforeNewline = position</b>
+<b class="fc">&nbsp;        val blankScan = scanFoldBlankLine(rawData = localRawData, position = position, limit = localLimit)</b>
+<b class="pc">&nbsp;        if (blankScan.isBlank) {</b>
+<b class="nc">&nbsp;            blankLines++</b>
+<b class="nc">&nbsp;            position = blankScan.contentStart</b>
+<b class="nc">&nbsp;            if (position &gt;= localLimit) break</b>
+&nbsp;            continue
+&nbsp;        }
+&nbsp;
+&nbsp;        // No indentation threshold here (see KDoc above) — skip this line&#39;s leading
+&nbsp;        // whitespace and look at what comes next.
+<b class="fc">&nbsp;        position = blankScan.contentStart</b>
+<b class="fc">&nbsp;        val lineStart = position</b>
+<b class="fc">&nbsp;        val leadByte = localRawData[position]</b>
+<b class="fc">&nbsp;        val leadIsColonSeparator = isMappingColonAt(rawData = localRawData, position = position, limit = localLimit)</b>
+<b class="fc">&nbsp;        val isTerminatorLine = leadByte == TOK.COMMA_BYTE || leadByte == TOK.RIGHT_BRACE_BYTE ||</b>
+<b class="fc">&nbsp;            leadByte == TOK.RIGHT_BRACKET_BYTE || leadByte == TOK.HASH_BYTE || leadIsColonSeparator ||</b>
+<b class="pc">&nbsp;            isDocumentMarker() || isDocumentEndMarker()</b>
+<b class="fc">&nbsp;        if (isTerminatorLine) {</b>
+&nbsp;            // This line is nothing but the scalar&#39;s own terminator (or a comment) — not a
+&nbsp;            // continuation. A comment can&#39;t appear inside a still-open fold, so a
+&nbsp;            // comment-only line ends the scalar here too regardless of what follows
+&nbsp;            // (case CML9). Same rewind rule as the block version.
+<b class="pc">&nbsp;            position = if (folded != null) beforeNewline else scalarEndPosition</b>
+&nbsp;            break
+&nbsp;        }
+&nbsp;
+&nbsp;        // Scan this line&#39;s content with the same stop rules a single-line flow scalar uses
+&nbsp;        // (mirrors the scan at the top of readPlainScalarOrMapping).
+<b class="fc">&nbsp;        var scanPos = lineStart</b>
+<b class="pc">&nbsp;        while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[scanPos]</b>
+<b class="fc">&nbsp;            when {</b>
+<b class="fc">&nbsp;                currentByte == TOK.COLON_BYTE -&gt; {</b>
+<b class="pc">&nbsp;                    if (isMappingColonAt(rawData = localRawData, position = scanPos, limit = localLimit)) break</b>
+<b class="nc">&nbsp;                    scanPos++</b>
+&nbsp;                }
+&nbsp;
+<b class="pc">&nbsp;                isLineBreakByte(byte = currentByte) -&gt; break</b>
+<b class="pc">&nbsp;                currentByte == TOK.HASH_BYTE -&gt; {</b>
+<b class="nc">&nbsp;                    if (scanPos &gt; lineStart &amp;&amp; isInlineWhitespaceByte(byte = localRawData[scanPos - 1])) break</b>
+<b class="nc">&nbsp;                    scanPos++</b>
+&nbsp;                }
+&nbsp;
+<b class="fc">&nbsp;                isFlowScalarTerminatorByte(byte = currentByte) -&gt; break</b>
+<b class="fc">&nbsp;                else -&gt; scanPos++</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val lineEnd = trimTrailingSpaces(start = lineStart, end = scanPos)</b>
+<b class="fc">&nbsp;        val lineText = localRawData.decodeToString(lineStart, lineEnd)</b>
+&nbsp;
+<b class="pc">&nbsp;        if (folded == null) folded = StringBuilder(firstLine)</b>
+<b class="fc">&nbsp;        appendFoldedLine(builder = folded, blankLines = blankLines, lineText = lineText)</b>
+<b class="fc">&nbsp;        blankLines = 0</b>
+&nbsp;
+<b class="fc">&nbsp;        position = scanPos</b>
+<b class="pc">&nbsp;        if (position &gt;= localLimit) break</b>
+&nbsp;        // If the scan stopped at a mid-line terminator (not a newline), the scalar is done —
+&nbsp;        // don&#39;t loop expecting another continuation line.
+<b class="pc">&nbsp;        if (!isLineBreakByte(byte = localRawData[position])) break</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Int {
-<b class="fc">&nbsp;        return reader.nextInt()</b>
-&nbsp;    }
+<b class="fc">&nbsp;    return folded?.toString()</b>
 &nbsp;}
 </code>
 </pre>
@@ -156,7 +405,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

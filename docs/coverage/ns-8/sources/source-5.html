@@ -1,0 +1,189 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostProcessorConstants</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.internal</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostProcessorConstants (com.ghost.serialization.compiler.internal)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostProcessorConstants</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.internal
+&nbsp;
+&nbsp;/** KSP processor concerns: module options, registry/ProGuard/ServiceLoader output, YAML eligibility diagnostics,
+&nbsp; * log messages. */
+&nbsp;internal object GhostProcessorConstants {
+&nbsp;
+&nbsp;    const val STR_REGISTRY_PREFIX = &quot;GhostModuleRegistry&quot;
+&nbsp;    const val STR_LOG_PREFIX = &quot;&gt;&gt;&gt; [GhostSerialization]&quot;
+&nbsp;    const val OPTION_MODULE_NAME = &quot;ghost.moduleName&quot;
+&nbsp;    /** Explicit test compilation flag (`&quot;true&quot;` / `&quot;false&quot;`); see
+&nbsp;     * [com.ghost.serialization.compiler.ksp.TestSourceSetDetection]. */
+&nbsp;    const val OPTION_IS_TEST = &quot;ghost.isTest&quot;
+&nbsp;
+&nbsp;    const val STR_DEFAULT_NAME = &quot;Default&quot;
+&nbsp;    const val STR_DASH = &quot;-&quot;
+&nbsp;    const val STR_LOG_OPTIMIZED = &quot; Successfully optimized: &quot;
+&nbsp;    const val STR_LOG_CRITICAL = &quot; Critical error processing &quot;
+&nbsp;    const val STR_COLON_SPACE = &quot;: &quot;
+&nbsp;    const val STR_KCLASS = &quot;KClass&quot;
+&nbsp;    const val STR_TYPE_T = &quot;T&quot;
+&nbsp;    const val STR_MAP = &quot;Map&quot;
+&nbsp;    const val STR_FORMAT_S = &quot;%S&quot;
+&nbsp;    const val STR_MAP_OF = &quot;mapOf(\n&quot;
+&nbsp;    const val STR_MAP_ENTRY = &quot;    %T::class to %T&quot;
+&nbsp;    const val STR_COMMA_NEWLINE = &quot;,\n&quot;
+&nbsp;    const val STR_PAREN_CLOSE = &quot;)&quot;
+&nbsp;    const val STR_PROP_SERIALIZERS_MAP = &quot;serializersByClass&quot;
+&nbsp;    const val STR_FUN_GET_SERIALIZER = &quot;getSerializer&quot;
+&nbsp;    const val STR_PARAM_CLAZZ = &quot;clazz&quot;
+&nbsp;    const val STR_UNCHECKED_CAST = &quot;UNCHECKED_CAST&quot;
+&nbsp;    const val STR_GHOST_REGISTRY = &quot;GhostRegistry&quot;
+&nbsp;    const val STR_FUN_PREWARM = &quot;prewarm&quot;
+&nbsp;    const val STR_SERIALIZERS_SIZE = &quot;serializersByClass.size&quot;
+&nbsp;    const val STR_FUN_REG_COUNT = &quot;registeredCount&quot;
+&nbsp;    const val STR_FUN_GET_ALL_SERIALIZERS = &quot;getAllSerializers&quot;
+&nbsp;    const val STR_RETURN_SERIALIZERS = &quot;return serializersByClass&quot;
+&nbsp;    const val STR_KDOC_REGISTRY =
+&nbsp;        &quot;Generated Registry for GhostSerialization.\nUses a when-based getSerializer for cold-start-friendly class loading and a lazy map for getAllSerializers.&quot;
+&nbsp;
+&nbsp;    const val STR_INSTANCE = &quot;INSTANCE&quot;
+&nbsp;    const val STR_INIT_INSTANCE = &quot;%T()&quot;
+&nbsp;    const val STR_META_INF_PROGUARD = &quot;META-INF.proguard&quot;
+&nbsp;    const val STR_GHOST_SERIALIZATION_FILE = &quot;ghost-serialization&quot;
+&nbsp;    const val STR_EXT_PRO = &quot;pro&quot;
+&nbsp;    const val STR_LOG_PROGUARD_WARN = &quot; Could not generate ProGuard rules: &quot;
+&nbsp;    const val STR_SERVICE_REGISTRY = &quot;com.ghost.serialization.contract.GhostRegistry&quot;
+&nbsp;    const val STR_META_INF_SERVICES = &quot;META-INF.services&quot;
+&nbsp;    const val STR_LOG_SERVICE_WARN = &quot; Could not generate ServiceLoader file: &quot;
+&nbsp;    const val STR_LAZY_START = &quot;lazy {\n&quot;
+&nbsp;    const val STR_WHEN_CLAZZ_START = &quot;return when (clazz) {\n&quot;
+&nbsp;    const val STR_WHEN_ENTRY = &quot;    %T::class -&gt; %T\n&quot;
+&nbsp;    const val STR_WHEN_ELSE_NULL = &quot;    else -&gt; null\n&quot;
+&nbsp;    const val STR_WHEN_CLOSE_CAST = &quot;} as %T\n&quot;
+&nbsp;    const val STR_RETURN_L = &quot;return %L&quot;
+&nbsp;    const val REGISTRY_CHUNK_SIZE = 500
+&nbsp;    const val TEMPLATE_GET_SHARD_MAP_CALL = &quot;getShardMap%L()&quot;
+&nbsp;    const val STR_PLUS_SPACED = &quot; + &quot;
+&nbsp;    const val STR_NEWLINE_CLOSE_CURLY = &quot;\n}&quot;
+&nbsp;    const val TEMPLATE_GET_SHARD_CALL = &quot;getShard%L(clazz)?.let { return it as %T }&quot;
+&nbsp;    const val STR_RETURN_NULL = &quot;return null&quot;
+&nbsp;    const val TEMPLATE_SHARD_MAP_NAME = &quot;getShardMap%d&quot;
+&nbsp;    const val TEMPLATE_SHARD_NAME = &quot;getShard%d&quot;
+&nbsp;    const val TEMPLATE_PROGUARD_KEEP = $$&quot;&quot;&quot;
+&nbsp;        # Ghost KSP module rules (registry + serializers for this compilation unit)
+&nbsp;        -keep class %1$s.** { *; }
+&nbsp;        -keep class %1$s.%2$s {
+&nbsp;            public static ** INSTANCE;
+&nbsp;            public *** getSerializer(...);
+&nbsp;        }
+&nbsp;        -keep class * implements com.ghost.serialization.contract.GhostSerializer {
+&nbsp;            *;
+&nbsp;        }
+&nbsp;        -keep class * implements com.ghost.serialization.yaml.contract.GhostYamlSerializer {
+&nbsp;            *;
+&nbsp;        }
+&nbsp;    &quot;&quot;&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_ORPHAN =
+&nbsp;        &quot;GhostYamlSerialization: @GhostYamlSerialization requires @GhostSerialization or @GhostProtoSerialization on the same class.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_RESILIENT =
+&nbsp;        &quot;GhostYamlSerialization: @GhostResilient is JSON-only and cannot be combined with @GhostYamlSerialization.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_SEALED =
+&nbsp;        &quot;GhostYamlSerialization: sealed classes are JSON-only and cannot use @GhostYamlSerialization.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_ENVELOPE =
+&nbsp;        &quot;GhostYamlSerialization: @GhostJsonEnvelope is JSON-only and cannot use @GhostYamlSerialization.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_INFERRED =
+&nbsp;        &quot;GhostYamlSerialization: inferred polymorphism is JSON-only and cannot use @GhostYamlSerialization.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_CUSTOM_CODEC =
+&nbsp;        &quot;GhostYamlSerialization: @GhostDecoder/@GhostEncoder are JSON-only and cannot be used on YAML-enabled models.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_STRUCTURAL =
+&nbsp;        &quot;GhostYamlSerialization: @GhostFlatten/@GhostWrap/@GhostWrappedKeys are JSON-only and cannot be used on YAML-enabled models.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_NESTED_GHOST =
+&nbsp;        &quot;GhostYamlSerialization: nested @GhostSerialization types are not supported on YAML paths.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_RAW_JSON =
+&nbsp;        &quot;GhostYamlSerialization: RawJson is JSON-only and cannot be used on YAML-enabled models.&quot;
+&nbsp;
+&nbsp;    const val STR_ERR_YAML_BYTE_ARRAY =
+&nbsp;        &quot;GhostYamlSerialization: non-proto ByteArray is JSON-only; use @GhostProtoSerialization for Base64 YAML fields.&quot;
+&nbsp;
+&nbsp;    const val STR_YAML_SERIALIZER_FQN = &quot;com.ghost.serialization.yaml.contract.GhostYamlSerializer&quot;
+&nbsp;
+&nbsp;    const val OPTION_TEXT_CHANNEL = &quot;ghost.textChannel&quot;
+&nbsp;    const val ARG_INFERRED = &quot;inferred&quot;
+&nbsp;    const val STR_SRC_TEST = &quot;/src/test/&quot;
+&nbsp;    const val STR_SRC_ANDROID_TEST = &quot;/src/androidTest/&quot;
+&nbsp;    const val STR_SRC_TEST_KSP = &quot;/src/testKsp/&quot;
+&nbsp;    const val STR_TEST_SUFFIX = &quot;_Test&quot;
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

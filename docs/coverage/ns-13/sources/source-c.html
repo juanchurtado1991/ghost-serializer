@@ -1,0 +1,191 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostUtf8PositionBridgeKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.common</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostUtf8PositionBridgeKt (com.ghost.serialization.parser.common)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostUtf8PositionBridgeKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (24/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (22/22)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.3%
+  </span>
+  <span class="absValue">
+    (130/135)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser.common
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
+&nbsp;
+&nbsp;/**
+&nbsp; * Bridges char-indexed [String] positions to/from UTF-8 byte offsets without allocating a
+&nbsp; * [ByteArray]. Used by [com.ghost.serialization.parser.strings.GhostJsonStringReader] to
+&nbsp; * translate KSP-generated custom decoders&#39; byte-indexed positions to/from its own char-indexed
+&nbsp; * ones. Surrogate pairs count as two `Char`s but four UTF-8 bytes.
+&nbsp; */
+&nbsp;
+&nbsp;/** Maps a char-based position in [s] to the corresponding UTF-8 byte offset. */
+&nbsp;@InternalGhostApi
+&nbsp;fun charToBytePosition(
+&nbsp;    s: String,
+&nbsp;    charPos: Int
+&nbsp;): Int {
+<b class="fc">&nbsp;    var bytePos = 0</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="pc">&nbsp;    while (index &lt; charPos &amp;&amp; index &lt; s.length) {</b>
+<b class="fc">&nbsp;        bytePos += utf8ByteSizeAt(s = s, index = index)</b>
+<b class="fc">&nbsp;        index += if (isSurrogatePairStart(s = s, index = index)) 2 else 1</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return bytePos</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Inverse of [charToBytePosition]: maps a UTF-8 byte offset back to a char-indexed position in [s]. */
+&nbsp;@InternalGhostApi
+&nbsp;fun byteToCharPosition(
+&nbsp;    s: String,
+&nbsp;    targetBytePos: Int
+&nbsp;): Int {
+<b class="fc">&nbsp;    var bytePos = 0</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="pc">&nbsp;    while (bytePos &lt; targetBytePos &amp;&amp; index &lt; s.length) {</b>
+<b class="fc">&nbsp;        bytePos += utf8ByteSizeAt(s = s, index = index)</b>
+<b class="fc">&nbsp;        index += if (isSurrogatePairStart(s = s, index = index)) 2 else 1</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return index</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** Whether the code point starting at [index] is a valid high+low surrogate pair. */
+&nbsp;internal inline fun isSurrogatePairStart(s: String, index: Int): Boolean {
+<b class="fc">&nbsp;    val code = s[index].code</b>
+<b class="pc">&nbsp;    return code in TOK.HIGH_SURROGATE_START..TOK.HIGH_SURROGATE_END &amp;&amp;</b>
+<b class="pc">&nbsp;        index + 1 &lt; s.length &amp;&amp;</b>
+<b class="pc">&nbsp;        s[index + 1].code in TOK.LOW_SURROGATE_START..TOK.LOW_SURROGATE_END</b>
+&nbsp;}
+&nbsp;
+&nbsp;/** UTF-8 byte width of the code point at [index] (4 for a surrogate pair start). */
+&nbsp;internal inline fun utf8ByteSizeAt(s: String, index: Int): Int {
+<b class="fc">&nbsp;    val code = s[index].code</b>
+<b class="fc">&nbsp;    return when {</b>
+<b class="fc">&nbsp;        code &lt;= WR.UTF8_1BYTE_MAX -&gt; WR.UTF8_1BYTE_SIZE</b>
+<b class="fc">&nbsp;        code &lt;= WR.UTF8_2BYTE_MAX -&gt; WR.UTF8_2BYTE_SIZE</b>
+<b class="fc">&nbsp;        isSurrogatePairStart(s = s, index = index) -&gt; WR.UTF8_4BYTE_SIZE</b>
+<b class="fc">&nbsp;        else -&gt; WR.UTF8_3BYTE_SIZE</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

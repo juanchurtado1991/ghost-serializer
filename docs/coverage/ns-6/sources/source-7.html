@@ -110,21 +110,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
-&nbsp;/**
-&nbsp; * Emitter for fragmented serialization logic.
-&nbsp; *
-&nbsp; * Used for large classes to avoid JVM method size limits by splitting
-&nbsp; * the writing logic into multiple private &quot;chunk&quot; functions.
-&nbsp; */
+&nbsp;/** Serializes large classes as multiple private &quot;chunk&quot; functions to avoid JVM method size limits. */
 <b class="nc">&nbsp;internal class FragmentedSerializeEmitter(</b>
 &nbsp;    properties: List&lt;GhostPropertyModel&gt;,
 &nbsp;    originalClassName: ClassName,
 &nbsp;    writerClass: ClassName
-<b class="nc">&nbsp;) : BaseSerializeEmitter(properties, originalClassName, writerClass) {</b>
+<b class="nc">&nbsp;) : BaseSerializeEmitter(properties = properties, originalClassName = originalClassName, writerClass = writerClass) {</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Emits the fragmented chunk-based serialization logic.
-&nbsp;     */
 &nbsp;    fun emit(
 &nbsp;        code: CodeBlock.Builder,
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
@@ -156,9 +148,6 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        code.addStatement(C.STR_WRITER_END_OBJ)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Generates a private chunk serialization method.
-&nbsp;     */
 &nbsp;    private fun emitChunkFunction(
 &nbsp;        index: Int,
 &nbsp;        chunkProps: List&lt;GhostPropertyModel&gt;,
@@ -179,7 +168,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="nc">&nbsp;        val chunkCode = CodeBlock.builder()</b>
 <b class="nc">&nbsp;        chunkProps.forEach { prop -&gt;</b>
-<b class="nc">&nbsp;            emitProperty(chunkCode, prop)</b>
+<b class="nc">&nbsp;            emitProperty(code = chunkCode, prop = prop)</b>
 <b class="nc">&nbsp;        }</b>
 &nbsp;
 <b class="nc">&nbsp;        chunkFun.addCode(chunkCode.build())</b>
@@ -209,7 +198,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

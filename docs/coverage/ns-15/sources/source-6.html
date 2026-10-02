@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlExplicitKeySubsystemKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonNumberValidationHelpersKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
+    <a href="../index.html">com.ghost.serialization.parser.common.json</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlExplicitKeySubsystemKt (com.ghost.serialization.parser.yaml)</h1>
+<h1>Coverage Summary for Class: GhostJsonNumberValidationHelpersKt (com.ghost.serialization.parser.common.json)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlExplicitKeySubsystemKt</td>
+  <td class="name">GhostJsonNumberValidationHelpersKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    97.5%
   </span>
   <span class="absValue">
-    (48/64)
+    (77/79)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    97.9%
+    100%
   </span>
   <span class="absValue">
-    (46/47)
+    (81/81)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    98.5%
+    100%
   </span>
   <span class="absValue">
-    (260/264)
+    (421/421)
   </span>
 </td>
 </tr>
@@ -99,102 +99,212 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common.json
 &nbsp;
-&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as C
-&nbsp;
-&nbsp;/**
-&nbsp; * Handles YAML&#39;s explicit block-mapping keys (`? key` / `: value`). Unlike an implicit
-&nbsp; * &quot;key: value&quot; pair, the key may be any node — not just plain scalar text — and the value is
-&nbsp; * entirely optional; a bare `? key` maps to null.
-&nbsp; */
-&nbsp;
-&nbsp;/** True if position is at a `?` explicit-key indicator (must be followed by whitespace/EOL). */
-&nbsp;internal fun GhostYamlFlatReader.isExplicitKeyIndicator(): Boolean {
-<b class="pc">&nbsp;    if (position &gt;= limit || rawData[position] != C.QUESTION_BYTE) return false</b>
-<b class="fc">&nbsp;    val nextPosition = position + 1</b>
-<b class="pc">&nbsp;    return nextPosition &gt;= limit ||</b>
-<b class="fc">&nbsp;        rawData[nextPosition] == C.SPACE_BYTE ||</b>
-<b class="fc">&nbsp;        rawData[nextPosition] == C.NEWLINE_BYTE ||</b>
-<b class="pc">&nbsp;        rawData[nextPosition] == C.CR_BYTE ||</b>
-<b class="fc">&nbsp;        rawData[nextPosition] == C.TAB_BYTE</b>
-&nbsp;}
+&nbsp;import com.ghost.serialization.parser.common.isDigit
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Reads one &quot;? key&quot; / &quot;: value&quot; entry, with [GhostYamlFlatReader.position] at the &quot;?&quot;. If a &quot;:&quot;
-&nbsp; * doesn&#39;t follow at [blockIndent], the value is null and nothing past the key is consumed.
+&nbsp; * Numeric header/footer/leading-zero/skip kernels shared by flat, streaming, and string JSON
+&nbsp; * readers — validate or skip parts of a number without producing a value.
+&nbsp; *
+&nbsp; * Reader-specific state (position, nextTokenByte, getByte, skipWhitespace, errors) is
+&nbsp; * supplied via inlined adapters so each call site stays monomorphic after inlining.
 &nbsp; */
-&nbsp;internal fun GhostYamlFlatReader.readExplicitKeyEntry(blockIndent: Int): Pair&lt;String, Any?&gt; {
-<b class="fc">&nbsp;    position++ // consume &#39;?&#39;</b>
-<b class="fc">&nbsp;    skipInlineWhitespace()</b>
-<b class="fc">&nbsp;    val localRawData = rawData</b>
-<b class="fc">&nbsp;    val localLimit = limit</b>
 &nbsp;
-<b class="pc">&nbsp;    val keyNode = if (position &gt;= localLimit || localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE) {</b>
-&nbsp;        // Key on later line(s): mirrors value-after-&#39;:&#39; resolution, including the exception
-&nbsp;        // that a &#39;-&#39; sequence entry may sit at exactly blockIndent (e.g. &quot;?\n- a\n- b&quot;).
-<b class="fc">&nbsp;        advanceLine()</b>
-<b class="fc">&nbsp;        skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;        val continuesAsSequenceEntry =</b>
-<b class="pc">&nbsp;            position &lt; localLimit &amp;&amp; localRawData[position] == C.DASH_BYTE &amp;&amp; isBlockSequenceEntry()</b>
-<b class="pc">&nbsp;        if (position &gt;= localLimit || (currentIndent &lt;= blockIndent &amp;&amp; !(currentIndent == blockIndent &amp;&amp; continuesAsSequenceEntry))) {</b>
-<b class="nc">&nbsp;            null</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            readValue(currentIndent, inFlow = false)</b>
+&nbsp;/**
+&nbsp; * Prepares the numeric header: optional coercion quote and leading minus.
+&nbsp; *
+&nbsp; * @return Bitmask of [NUM.NUMERIC_HEADER_QUOTED] and/or [NUM.NUMERIC_HEADER_NEGATIVE].
+&nbsp; */
+&nbsp;internal inline fun prepareNumericHeaderCore(
+&nbsp;    getNextTokenByte: () -&gt; Int,
+&nbsp;    setNextTokenByte: (Int) -&gt; Unit,
+&nbsp;    getPosition: () -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;    limit: Int,
+&nbsp;    coerceStringsToNumbers: Boolean,
+&nbsp;    skipWhitespace: () -&gt; Unit,
+&nbsp;    throwError: (String) -&gt; Nothing,
+&nbsp;): Int {
+<b class="fc">&nbsp;    if (getNextTokenByte() == SCN.RESET_TOKEN_BYTE) {</b>
+<b class="fc">&nbsp;        skipWhitespace()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    if (getPosition() &gt;= limit) {</b>
+<b class="fc">&nbsp;        throwError(EM.ERR_EXPECTED_NUMBER)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var header = 0</b>
+<b class="fc">&nbsp;    var token = getNextTokenByte()</b>
+&nbsp;
+<b class="fc">&nbsp;    if (token == TOK.QUOTE_INT) {</b>
+<b class="fc">&nbsp;        if (!coerceStringsToNumbers) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_COERCION_DISABLED)</b>
 &nbsp;        }
-<b class="fc">&nbsp;    } else if (isExplicitValueIndicator()) {</b>
-&nbsp;        // Nothing between &#39;?&#39; and &#39;:&#39; (e.g. &quot;? : x&quot;) — an empty/null key.
-<b class="fc">&nbsp;        null</b>
-&nbsp;    } else {
-&nbsp;        // Unlike an implicit pair&#39;s value, explicit-key content supports YAML&#39;s &quot;compact
-&nbsp;        // notation&quot; — a nested block mapping/sequence starting inline right after &quot;?&quot;/&quot;:&quot;
-&nbsp;        // (spec example 8.19). allowMappingRedirect stays at its default (true) here.
-<b class="fc">&nbsp;        readValue(blockIndent, inFlow = false, strictDedent = true)</b>
-&nbsp;    }
-<b class="fc">&nbsp;    val key = stringifyExplicitMappingKey(keyNode)</b>
-&nbsp;
-&nbsp;    // Look for &#39;:&#39;. On the key&#39;s own line it&#39;s always valid regardless of column; the
-&nbsp;    // indentation check only matters once we&#39;ve crossed onto a later line.
-<b class="fc">&nbsp;    val positionBeforeGap = position</b>
-<b class="fc">&nbsp;    skipWhitespaceAndComments()</b>
-<b class="fc">&nbsp;    var crossedLine = false</b>
-<b class="fc">&nbsp;    var scanPos = positionBeforeGap</b>
-<b class="fc">&nbsp;    while (scanPos &lt; position) {</b>
-<b class="pc">&nbsp;        if (localRawData[scanPos] == C.NEWLINE_BYTE || localRawData[scanPos] == C.CR_BYTE) {</b>
-<b class="fc">&nbsp;            crossedLine = true</b>
-&nbsp;            break
+<b class="fc">&nbsp;        setPosition(getPosition() + 1)</b>
+<b class="fc">&nbsp;        setNextTokenByte(SCN.RESET_TOKEN_BYTE)</b>
+<b class="fc">&nbsp;        skipWhitespace()</b>
+<b class="fc">&nbsp;        if (getPosition() &gt;= limit) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_EXPECTED_NUMBER)</b>
 &nbsp;        }
-<b class="fc">&nbsp;        scanPos++</b>
+<b class="fc">&nbsp;        token = getNextTokenByte()</b>
+<b class="fc">&nbsp;        header = header or NUM.NUMERIC_HEADER_QUOTED</b>
 &nbsp;    }
-<b class="pc">&nbsp;    val value = if (position &lt; localLimit &amp;&amp; isExplicitValueIndicator() &amp;&amp; (!crossedLine || currentIndent == blockIndent)) {</b>
-<b class="fc">&nbsp;        position++ // consume &#39;:&#39;</b>
-<b class="fc">&nbsp;        resolveValueAfterColon(blockIndent)</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        null</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return key to value</b>
-&nbsp;}
 &nbsp;
-&nbsp;/** True if position is at a `:` explicit-value indicator (must be followed by whitespace/EOL). */
-&nbsp;private fun GhostYamlFlatReader.isExplicitValueIndicator(): Boolean {
-<b class="fc">&nbsp;    if (rawData[position] != C.COLON_BYTE) return false</b>
-<b class="fc">&nbsp;    val nextPosition = position + 1</b>
-<b class="pc">&nbsp;    return nextPosition &gt;= limit ||</b>
-<b class="fc">&nbsp;        rawData[nextPosition] == C.SPACE_BYTE ||</b>
-<b class="fc">&nbsp;        rawData[nextPosition] == C.NEWLINE_BYTE ||</b>
-<b class="pc">&nbsp;        rawData[nextPosition] == C.CR_BYTE ||</b>
-<b class="pc">&nbsp;        rawData[nextPosition] == C.TAB_BYTE</b>
+<b class="fc">&nbsp;    if (token == TOK.MINUS_INT) {</b>
+<b class="fc">&nbsp;        if (getPosition() + 1 &gt;= limit) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_ISOLATED_MINUS)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        setPosition(getPosition() + 1)</b>
+<b class="fc">&nbsp;        setNextTokenByte(SCN.RESET_TOKEN_BYTE)</b>
+<b class="fc">&nbsp;        header = header or NUM.NUMERIC_HEADER_NEGATIVE</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    return header</b>
 &nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Converts a node read as an explicit key into the String [GhostYamlFlatReader]&#39;s
-&nbsp; * `Map&lt;String, Any?&gt;` representation needs. Non-scalar keys have no clean string form, but no
-&nbsp; * yaml-test-suite case using one has a JSON fixture to match against either.
+&nbsp; * Consumes the closing `&quot;` after a coerced numeric string value.
 &nbsp; */
-<b class="fc">&nbsp;internal fun stringifyExplicitMappingKey(keyNode: Any?): String = when (keyNode) {</b>
-<b class="fc">&nbsp;    null -&gt; &quot;&quot;</b>
-<b class="fc">&nbsp;    is String -&gt; keyNode</b>
-<b class="fc">&nbsp;    else -&gt; keyNode.toString()</b>
+&nbsp;internal inline fun consumeNumericCoercionFooterCore(
+&nbsp;    position: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    throwError: (String) -&gt; Nothing,
+&nbsp;    afterQuote: () -&gt; Unit,
+&nbsp;) {
+<b class="fc">&nbsp;    if (position &gt;= limit || getByte(position) != TOK.QUOTE_INT) {</b>
+<b class="fc">&nbsp;        throwError(EM.ERR_EXPECTED_COERCION_QUOTE)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    afterQuote()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Consumes a lone leading `0` (used by int/long fast paths) and rejects `0` + digit.
+&nbsp; */
+&nbsp;internal inline fun handleLeadingZeroCore(
+&nbsp;    position: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    throwError: (String) -&gt; Nothing,
+&nbsp;    consumeOne: () -&gt; Unit,
+&nbsp;) {
+<b class="fc">&nbsp;    val nextCursor = position + 1</b>
+<b class="fc">&nbsp;    if (nextCursor &lt; limit) {</b>
+<b class="fc">&nbsp;        val nextDigitByte = getByte(nextCursor)</b>
+<b class="fc">&nbsp;        if (nextDigitByte in TOK.ZERO_INT..TOK.NINE_INT) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_LEADING_ZEROS)</b>
+&nbsp;        }
+&nbsp;    }
+<b class="fc">&nbsp;    consumeOne()</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Asserts that a leading `0` is not followed by another digit.
+&nbsp; */
+&nbsp;internal inline fun validateLeadingZeroCore(
+&nbsp;    position: Int,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    throwError: (String) -&gt; Nothing,
+&nbsp;) {
+<b class="pc">&nbsp;    val hasLeadingZeroFollowedByMore = position &lt; limit &amp;&amp; getByte(position) == TOK.ZERO_INT &amp;&amp; position + 1 &lt; limit</b>
+<b class="fc">&nbsp;    if (hasLeadingZeroFollowedByMore) {</b>
+<b class="fc">&nbsp;        val nextDigitByte = getByte(position + 1)</b>
+<b class="fc">&nbsp;        if (nextDigitByte in TOK.ZERO_INT..TOK.NINE_INT) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_LEADING_ZEROS)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Skips a JSON number body (integer/fraction/exponent) after the numeric header. Flat and
+&nbsp; * string readers share this via [getByte]; streaming keeps its own `readNumericLoop`-based
+&nbsp; * skip to avoid cross-buffer coupling here.
+&nbsp; */
+&nbsp;internal inline fun skipNumberBodyCore(
+&nbsp;    getPosition: () -&gt; Int,
+&nbsp;    setPosition: (Int) -&gt; Unit,
+&nbsp;    limit: Int,
+&nbsp;    getByte: (Int) -&gt; Int,
+&nbsp;    throwError: (String) -&gt; Nothing,
+&nbsp;) {
+<b class="fc">&nbsp;    var hasDigits = false</b>
+<b class="fc">&nbsp;    var position = getPosition()</b>
+&nbsp;
+<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == TOK.ZERO_INT) {</b>
+<b class="fc">&nbsp;        val newPos = position + 1</b>
+<b class="fc">&nbsp;        position = newPos</b>
+<b class="fc">&nbsp;        hasDigits = true</b>
+<b class="fc">&nbsp;        if (newPos &lt; limit &amp;&amp; isDigit(byteCode = getByte(newPos))) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_LEADING_ZEROS)</b>
+&nbsp;        }
+&nbsp;    } else {
+<b class="fc">&nbsp;        while (position &lt; limit) {</b>
+<b class="fc">&nbsp;            val byte = getByte(position)</b>
+<b class="fc">&nbsp;            if (isDigit(byteCode = byte)) {</b>
+<b class="fc">&nbsp;                hasDigits = true</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (!hasDigits) {</b>
+<b class="fc">&nbsp;        throwError(EM.ERR_EXPECTED_INT_PART)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == TOK.DOT_INT) {</b>
+<b class="fc">&nbsp;        position++</b>
+<b class="fc">&nbsp;        var hasDecimalDigits = false</b>
+<b class="fc">&nbsp;        while (position &lt; limit) {</b>
+<b class="fc">&nbsp;            val byte = getByte(position)</b>
+<b class="fc">&nbsp;            if (isDigit(byteCode = byte)) {</b>
+<b class="fc">&nbsp;                hasDecimalDigits = true</b>
+<b class="fc">&nbsp;                position++</b>
+&nbsp;            } else {
+&nbsp;                break
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        if (!hasDecimalDigits) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_EXPECTED_DECIMAL_DIGITS)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (position &lt; limit) {</b>
+<b class="fc">&nbsp;        val byte = getByte(position)</b>
+<b class="fc">&nbsp;        if (byte == TOK.EXP_LOWER_INT || byte == TOK.EXP_UPPER_INT) {</b>
+<b class="fc">&nbsp;            var newPos = position + 1</b>
+<b class="fc">&nbsp;            position = newPos</b>
+<b class="fc">&nbsp;            if (newPos &lt; limit) {</b>
+<b class="fc">&nbsp;                val sign = getByte(newPos)</b>
+<b class="fc">&nbsp;                if (sign == TOK.PLUS_INT || sign == TOK.MINUS_INT) {</b>
+<b class="fc">&nbsp;                    newPos++</b>
+<b class="fc">&nbsp;                    position = newPos</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            var hasExpDigits = false</b>
+<b class="fc">&nbsp;            while (position &lt; limit) {</b>
+<b class="fc">&nbsp;                val byteCode = getByte(position)</b>
+<b class="fc">&nbsp;                if (isDigit(byteCode = byteCode)) {</b>
+<b class="fc">&nbsp;                    hasExpDigits = true</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                } else {
+&nbsp;                    break
+&nbsp;                }
+&nbsp;            }
+<b class="fc">&nbsp;            if (!hasExpDigits) {</b>
+<b class="fc">&nbsp;                throwError(EM.ERR_EXPECTED_EXPONENT_DIGITS)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    setPosition(position)</b>
 &nbsp;}
 </code>
 </pre>
@@ -219,7 +329,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

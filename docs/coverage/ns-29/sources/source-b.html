@@ -1,0 +1,97 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostSerialization</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.annotations</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostSerialization (com.ghost.serialization.annotations)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostSerialization</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates a reflection-free serializer for the annotated class via the Ghost KSP plugin.
+&nbsp; *
+&nbsp; * @param name Optional custom name to avoid registry collisions.
+&nbsp; * @param discriminator JSON field identifying the concrete type of a `sealed class`. Defaults to
+&nbsp; *   `&quot;type&quot;`; override for APIs using a different convention (e.g. `&quot;kind&quot;`, `&quot;@type&quot;`). No effect
+&nbsp; *   on non-sealed classes.
+&nbsp; * @param inferred Whether the type should be inferred automatically.
+&nbsp; * @param textChannel When `true` (default), generates `GhostJsonStringReader` overloads so decoding
+&nbsp; *   a `String` skips UTF-8 re-encoding. Set `false` for smaller generated code on byte/stream-only
+&nbsp; *   types; module-wide `ghost.textChannel=false` forces this for every model.
+&nbsp; *
+&nbsp; * YAML support requires [GhostYamlSerialization] on the same class as well.
+&nbsp; */
+&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostSerialization(
+&nbsp;    val name: String = &quot;&quot;,
+&nbsp;    val discriminator: String = &quot;type&quot;,
+&nbsp;    val inferred: Boolean = false,
+&nbsp;    val textChannel: Boolean = true,
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

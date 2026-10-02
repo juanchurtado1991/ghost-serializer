@@ -1,0 +1,90 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostProtoSerialization</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.annotations</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostProtoSerialization (com.ghost.serialization.annotations)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostProtoSerialization</td>
+    <td class="coverageStat"/>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
+&nbsp;
+&nbsp;/**
+&nbsp; * Generates serializers for the annotated class following proto3 JSON mapping rules:
+&nbsp; * `lowerCamelCase` field names, default/empty values omitted, 64-bit integers as quoted strings,
+&nbsp; * enums as strings, and byte arrays as Base64.
+&nbsp; *
+&nbsp; * Incompatible with [GhostJsonEnvelope], [GhostFlatten], [GhostWrap], sealed/`inferred` types on
+&nbsp; * the message itself, [GhostDecoder], [GhostEncoder], `RawJson`, and non-proto opaque `ByteArray`
+&nbsp; * — combining any of these (or [GhostResilient]) with [GhostYamlSerialization] on the same class
+&nbsp; * is a KSP error.
+&nbsp; */
+&nbsp;@Target(AnnotationTarget.CLASS)
+&nbsp;@Retention(AnnotationRetention.BINARY)
+&nbsp;annotation class GhostProtoSerialization(
+&nbsp;    val name: String = &quot;&quot;,
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

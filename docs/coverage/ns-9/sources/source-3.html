@@ -1,0 +1,353 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostSerializationProcessor</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.ksp</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostSerializationProcessor (com.ghost.serialization.compiler.ksp)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostSerializationProcessor</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    53.6%
+  </span>
+  <span class="absValue">
+    (15/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.5%
+  </span>
+  <span class="absValue">
+    (104/110)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.8%
+  </span>
+  <span class="absValue">
+    (422/450)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.ksp
+&nbsp;
+&nbsp;import com.ghost.serialization.compiler.analysis.EnvelopeAnalyzer
+&nbsp;import com.ghost.serialization.compiler.analysis.GhostAnalyzer
+&nbsp;import com.ghost.serialization.compiler.analysis.TextChannelPlanner
+&nbsp;import com.ghost.serialization.compiler.codegen.GhostCodeGenerator
+&nbsp;import com.ghost.serialization.compiler.codegen.GeneratedSourceTrimmer
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.google.devtools.ksp.processing.CodeGenerator
+&nbsp;import com.google.devtools.ksp.processing.Dependencies
+&nbsp;import com.google.devtools.ksp.processing.KSPLogger
+&nbsp;import com.google.devtools.ksp.processing.Resolver
+&nbsp;import com.google.devtools.ksp.processing.SymbolProcessor
+&nbsp;import com.google.devtools.ksp.symbol.KSAnnotated
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSFile
+&nbsp;import com.google.devtools.ksp.symbol.Modifier
+&nbsp;import com.squareup.kotlinpoet.ClassName
+&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * KSP processor for Ghost Serialization: analyzes `@GhostSerialization`-annotated classes,
+&nbsp; * generates their serializers, and builds a per-module registry to avoid reflection at runtime.
+&nbsp; */
+&nbsp;class GhostSerializationProcessor(
+<b class="fc">&nbsp;    private val codeGenerator: CodeGenerator,</b>
+<b class="fc">&nbsp;    private val logger: KSPLogger,</b>
+<b class="fc">&nbsp;    private val options: Map&lt;String, String&gt; = emptyMap(),</b>
+<b class="fc">&nbsp;    private val emitJvmField: Boolean = true</b>
+&nbsp;) : SymbolProcessor {
+&nbsp;
+<b class="fc">&nbsp;    private val classToSerializer = mutableMapOf&lt;ClassName, ClassName&gt;()</b>
+&nbsp;
+&nbsp;    /** Origin files of processed declarations, for KSP incremental compilation dependencies. */
+<b class="fc">&nbsp;    private val originatingFiles = mutableSetOf&lt;KSFile&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    private val processedFiles = mutableSetOf&lt;String&gt;()</b>
+&nbsp;
+<b class="fc">&nbsp;    private val analyzer = GhostAnalyzer(logger = logger)</b>
+<b class="fc">&nbsp;    private val envelopeAnalyzer = EnvelopeAnalyzer(logger = logger)</b>
+<b class="fc">&nbsp;    private val yamlEligibility = GhostYamlEligibility(logger = logger)</b>
+&nbsp;
+&nbsp;    /** Output name of the module-level registry class, e.g. `GhostRegistry_module_name`. */
+<b class="fc">&nbsp;    private val registryClassName: String by lazy {</b>
+<b class="pc">&nbsp;        var moduleName = options[PC.OPTION_MODULE_NAME]</b>
+<b class="pc">&nbsp;            ?.replace(PC.STR_DASH, CC.STR_UNDERSCORE)</b>
+<b class="pc">&nbsp;            ?.replace(CC.STR_DOT, CC.STR_UNDERSCORE)</b>
+<b class="fc">&nbsp;            ?: PC.STR_DEFAULT_NAME</b>
+&nbsp;
+&nbsp;        // Append _Test when in a test source set, to avoid colliding with the main registry.
+<b class="pc">&nbsp;        if (moduleName == PC.STR_DEFAULT_NAME) {</b>
+<b class="fc">&nbsp;            val isTest = TestSourceSetDetection.isTestCompilation(</b>
+<b class="fc">&nbsp;                options = options,</b>
+<b class="fc">&nbsp;                filePaths = originatingFiles.map { it.filePath },</b>
+&nbsp;            )
+<b class="pc">&nbsp;            if (isTest) {</b>
+<b class="nc">&nbsp;                moduleName += PC.STR_TEST_SUFFIX</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        PC.STR_REGISTRY_PREFIX + CC.STR_UNDERSCORE + moduleName</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** @return Symbols that could not be processed in this round (deferred to KSP&#39;s next round). */
+&nbsp;    override fun process(resolver: Resolver): List&lt;KSAnnotated&gt; {
+<b class="fc">&nbsp;        val symbols = (resolver.getSymbolsWithAnnotation(CC.STR_ANNOTATION_SERIALIZATION) +</b>
+<b class="fc">&nbsp;                resolver.getSymbolsWithAnnotation(CC.STR_ANNOTATION_PROTO_SERIALIZATION)).toSet()</b>
+<b class="fc">&nbsp;        val validClasses = symbols.filterIsInstance&lt;KSClassDeclaration&gt;().toList()</b>
+<b class="fc">&nbsp;        val unableToProcess = symbols.filterNot { it is KSClassDeclaration }</b>
+&nbsp;
+<b class="fc">&nbsp;        val analyzed = validClasses.mapNotNull { classDeclaration -&gt;</b>
+&nbsp;            try {
+<b class="fc">&nbsp;                TextChannelPlanner.AnalyzedClass(</b>
+<b class="fc">&nbsp;                    declaration = classDeclaration,</b>
+<b class="fc">&nbsp;                    properties = analyzer.analyze(classDeclaration),</b>
+&nbsp;                )
+&nbsp;            } catch (e: Exception) {
+<b class="nc">&nbsp;                logger.error(</b>
+&nbsp;                    &quot;${PC.STR_LOG_PREFIX}${PC.STR_LOG_CRITICAL}${
+<b class="nc">&nbsp;                        classDeclaration.simpleName.asString()</b>
+<b class="nc">&nbsp;                    }${PC.STR_COLON_SPACE}${e.message ?: e.toString()}&quot;,</b>
+<b class="nc">&nbsp;                    classDeclaration,</b>
+&nbsp;                )
+<b class="fc">&nbsp;                null</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val textChannelByClass = TextChannelPlanner.plan(</b>
+<b class="fc">&nbsp;            analyzed = analyzed,</b>
+<b class="fc">&nbsp;            moduleTextChannelOverride = when (options[PC.OPTION_TEXT_CHANNEL]) {</b>
+<b class="fc">&nbsp;                CC.STR_TRUE -&gt; true</b>
+<b class="fc">&nbsp;                CC.STR_FALSE -&gt; false</b>
+<b class="fc">&nbsp;                else -&gt; null</b>
+&nbsp;            },
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        analyzed.forEach { entry -&gt;</b>
+<b class="fc">&nbsp;            processClass(</b>
+<b class="fc">&nbsp;                classDeclaration = entry.declaration,</b>
+<b class="fc">&nbsp;                propertiesModel = entry.properties,</b>
+<b class="fc">&nbsp;                textChannel = textChannelByClass[entry.declaration] == true,</b>
+<b class="fc">&nbsp;                resolver = resolver,</b>
+&nbsp;            )
+<b class="fc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        yamlEligibility.reportOrphanGhostYamlSerialization(resolver = resolver)</b>
+&nbsp;
+<b class="fc">&nbsp;        if (validClasses.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            GhostModuleRegistryGenerator(</b>
+<b class="fc">&nbsp;                codeGenerator = codeGenerator,</b>
+<b class="fc">&nbsp;                registryClassName = registryClassName,</b>
+<b class="fc">&nbsp;                originatingFiles = originatingFiles,</b>
+<b class="fc">&nbsp;                emitJvmField = emitJvmField</b>
+&nbsp;            )
+<b class="fc">&nbsp;                .generate(classToSerializer = classToSerializer)</b>
+<b class="fc">&nbsp;            val buildTooling = GhostBuildToolingWriter(</b>
+<b class="fc">&nbsp;                codeGenerator = codeGenerator, logger = logger, registryClassName = registryClassName, originatingFiles = originatingFiles</b>
+&nbsp;            )
+<b class="fc">&nbsp;            buildTooling.generateProGuardRules()</b>
+<b class="fc">&nbsp;            buildTooling.generateServiceFile()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return unableToProcess.toList()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** @return The generated serializer&#39;s [ClassName], or null if this file was already processed. */
+&nbsp;    private fun generateSerializer(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        propertiesModel: List&lt;GhostPropertyModel&gt;,
+&nbsp;        textChannel: Boolean,
+&nbsp;        resolver: Resolver,
+&nbsp;    ): ClassName? {
+<b class="fc">&nbsp;        val envelopeModel = envelopeAnalyzer.analyze(classDeclaration, propertiesModel)</b>
+<b class="fc">&nbsp;        val hasYaml = yamlEligibility.shouldGenerateYaml(</b>
+<b class="fc">&nbsp;            resolver = resolver,</b>
+<b class="fc">&nbsp;            classDeclaration = classDeclaration,</b>
+<b class="fc">&nbsp;            propertiesModel = propertiesModel,</b>
+<b class="fc">&nbsp;            envelopeModel = envelopeModel,</b>
+&nbsp;        )
+<b class="fc">&nbsp;        val fileGenerator = GhostCodeGenerator(</b>
+<b class="fc">&nbsp;            classDeclaration = classDeclaration,</b>
+<b class="fc">&nbsp;            properties = propertiesModel,</b>
+<b class="fc">&nbsp;            textChannel = textChannel,</b>
+<b class="fc">&nbsp;            envelopeModel = envelopeModel,</b>
+<b class="fc">&nbsp;            hasYaml = hasYaml,</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        val fileSpec = fileGenerator.createSpec()</b>
+<b class="fc">&nbsp;        val packageName = classDeclaration.packageName.asString()</b>
+<b class="fc">&nbsp;        val fullFileName = &quot;$packageName.${fileSpec.name}&quot;</b>
+&nbsp;
+<b class="pc">&nbsp;        if (processedFiles.contains(fullFileName)) {</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        processedFiles.add(fullFileName)</b>
+&nbsp;
+<b class="fc">&nbsp;        GeneratedSourceTrimmer.write(</b>
+<b class="fc">&nbsp;            fileSpec = fileSpec,</b>
+<b class="fc">&nbsp;            codeGenerator = codeGenerator,</b>
+<b class="fc">&nbsp;            dependencies = Dependencies(</b>
+<b class="fc">&nbsp;                aggregating = false,</b>
+<b class="fc">&nbsp;                classDeclaration.containingFile!!</b>
+&nbsp;            )
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        return ClassName(</b>
+<b class="fc">&nbsp;            packageName,</b>
+<b class="fc">&nbsp;            classDeclaration</b>
+<b class="fc">&nbsp;                .toClassName()</b>
+<b class="fc">&nbsp;                .simpleNames</b>
+<b class="fc">&nbsp;                .joinToString(CC.STR_UNDERSCORE)</b>
+&nbsp;                    + CC.STR_SERIALIZER_SUFFIX
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun processClass(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        propertiesModel: List&lt;GhostPropertyModel&gt;,
+&nbsp;        textChannel: Boolean,
+&nbsp;        resolver: Resolver,
+&nbsp;    ) {
+<b class="fc">&nbsp;        val className = classDeclaration.simpleName.asString()</b>
+&nbsp;        try {
+<b class="pc">&nbsp;            val serializerClassName = generateSerializer(</b>
+<b class="fc">&nbsp;                classDeclaration = classDeclaration,</b>
+<b class="fc">&nbsp;                propertiesModel = propertiesModel,</b>
+<b class="fc">&nbsp;                textChannel = textChannel,</b>
+<b class="fc">&nbsp;                resolver = resolver,</b>
+&nbsp;            ) ?: return
+&nbsp;
+<b class="fc">&nbsp;            registerSerializer(classDeclaration = classDeclaration, serializerClassName = serializerClassName)</b>
+&nbsp;
+<b class="fc">&nbsp;            logger.info(</b>
+&nbsp;                &quot;${
+&nbsp;                    PC.STR_LOG_PREFIX
+&nbsp;                }${
+&nbsp;                    PC.STR_LOG_OPTIMIZED
+<b class="fc">&nbsp;                }$className&quot;</b>
+&nbsp;            )
+&nbsp;        } catch (e: Exception) {
+<b class="fc">&nbsp;            logger.error(</b>
+<b class="pc">&nbsp;                &quot;${PC.STR_LOG_PREFIX}${PC.STR_LOG_CRITICAL}$className${PC.STR_COLON_SPACE}${e.message ?: e.toString()}&quot;,</b>
+<b class="fc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Registers the serializer for [classDeclaration] and its sealed subclasses, if any. */
+&nbsp;    private fun registerSerializer(
+&nbsp;        classDeclaration: KSClassDeclaration,
+&nbsp;        serializerClassName: ClassName
+&nbsp;    ) {
+<b class="fc">&nbsp;        classToSerializer[classDeclaration.toClassName()] = serializerClassName</b>
+&nbsp;
+<b class="fc">&nbsp;        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {</b>
+<b class="fc">&nbsp;            classDeclaration.getSealedSubclasses().forEach { subclass -&gt;</b>
+<b class="fc">&nbsp;                classToSerializer[subclass.toClassName()] = serializerClassName</b>
+<b class="fc">&nbsp;            }</b>
+&nbsp;        }
+<b class="pc">&nbsp;        classDeclaration.containingFile?.let { originatingFiles.add(it) }</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

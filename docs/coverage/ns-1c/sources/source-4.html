@@ -1,0 +1,273 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostYamlConverterFactory</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.retrofit</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostYamlConverterFactory (com.ghost.serialization.retrofit)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostYamlConverterFactory</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (6/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (25/25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.2%
+  </span>
+  <span class="absValue">
+    (118/124)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostYamlConverterFactory$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (6/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (27/27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.7%
+  </span>
+  <span class="absValue">
+    (133/139)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.retrofit
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.GhostReflectTypeSerializers
+&nbsp;import com.ghost.serialization.contract.GhostRegistry
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.yaml.contract.GhostYamlSerializer
+&nbsp;import com.ghost.serialization.yaml.ghostYamlInternalUseFlatReader
+&nbsp;import com.ghost.serialization.ghostYamlEncodeToBytes
+&nbsp;import okhttp3.MediaType.Companion.toMediaType
+&nbsp;import okhttp3.RequestBody
+&nbsp;import okhttp3.RequestBody.Companion.toRequestBody
+&nbsp;import okhttp3.ResponseBody
+&nbsp;import retrofit2.Converter
+&nbsp;import retrofit2.Retrofit
+&nbsp;import java.lang.reflect.Type
+&nbsp;
+&nbsp;/**
+&nbsp; * Retrofit `Converter.Factory` for YAML-backed types
+&nbsp; * (`GhostYamlSerializer`).
+&nbsp; *
+&nbsp; * Resolves serializers through [registry] (defaults to the global [Ghost] singleton) rather than
+&nbsp; * calling [Ghost] directly, so tests can substitute a fake [GhostRegistry].
+&nbsp; *
+&nbsp; * ```kotlin
+&nbsp; * Retrofit.Builder()
+&nbsp; *     .baseUrl(baseUrl)
+&nbsp; *     .addConverterFactory(GhostYamlConverterFactory.create())
+&nbsp; *     .build()
+&nbsp; * ```
+&nbsp; */
+<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+&nbsp;class GhostYamlConverterFactory private constructor(
+<b class="fc">&nbsp;    private val registry: GhostRegistry</b>
+&nbsp;) : Converter.Factory() {
+&nbsp;
+<b class="fc">&nbsp;    private val serializers = GhostReflectTypeSerializers(</b>
+<b class="fc">&nbsp;        registry = registry,</b>
+<b class="fc">&nbsp;        yamlOnly = true</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    override fun requestBodyConverter(
+&nbsp;        type: Type,
+&nbsp;        parameterAnnotations: Array&lt;out Annotation&gt;,
+&nbsp;        methodAnnotations: Array&lt;out Annotation&gt;,
+&nbsp;        retrofit: Retrofit
+&nbsp;    ): Converter&lt;*, RequestBody&gt;? {
+<b class="pc">&nbsp;        val serializer = serializers.get(type = type) ?: return null</b>
+<b class="pc">&nbsp;        if (serializer !is GhostYamlSerializer&lt;*&gt;) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val yamlSerializer = serializer as GhostYamlSerializer&lt;Any&gt;</b>
+&nbsp;
+<b class="fc">&nbsp;        return Converter&lt;Any, RequestBody&gt; { value -&gt;</b>
+<b class="fc">&nbsp;            val bytes = ghostYamlEncodeToBytes(</b>
+<b class="fc">&nbsp;            serializer = yamlSerializer,</b>
+<b class="fc">&nbsp;            value = value</b>
+&nbsp;        )
+<b class="fc">&nbsp;            bytes.toRequestBody(MEDIA_TYPE)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun responseBodyConverter(
+&nbsp;        type: Type,
+&nbsp;        annotations: Array&lt;out Annotation&gt;,
+&nbsp;        retrofit: Retrofit
+&nbsp;    ): Converter&lt;ResponseBody, *&gt;? {
+<b class="fc">&nbsp;        val serializer = serializers.get(type = type) ?: return null</b>
+<b class="pc">&nbsp;        if (serializer !is GhostYamlSerializer&lt;*&gt;) return null</b>
+&nbsp;
+<b class="fc">&nbsp;        val yamlSerializer = serializer as GhostYamlSerializer&lt;Any&gt;</b>
+&nbsp;
+<b class="fc">&nbsp;        return Converter { body -&gt;</b>
+<b class="fc">&nbsp;            body.use {</b>
+<b class="fc">&nbsp;                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset -&gt;</b>
+<b class="fc">&nbsp;                    val bytesToParse =</b>
+<b class="pc">&nbsp;                        if (offset == scratch.size) scratch else scratch.copyOf(offset)</b>
+<b class="fc">&nbsp;                    ghostYamlInternalUseFlatReader(bytes = bytesToParse) { reader -&gt;</b>
+<b class="fc">&nbsp;                        yamlSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+<b class="fc">&nbsp;        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_YAML_UTF8.toMediaType()</b>
+&nbsp;
+<b class="fc">&nbsp;        fun create(registry: GhostRegistry = Ghost): GhostYamlConverterFactory =</b>
+<b class="fc">&nbsp;            GhostYamlConverterFactory(registry = registry)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

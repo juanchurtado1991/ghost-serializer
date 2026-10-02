@@ -1,0 +1,277 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostProtoConverterFactory</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.retrofit</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostProtoConverterFactory (com.ghost.serialization.retrofit)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostProtoConverterFactory</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.5%
+  </span>
+  <span class="absValue">
+    (19/21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.4%
+  </span>
+  <span class="absValue">
+    (106/110)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">GhostProtoConverterFactory$Companion</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (15/15)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.3%
+  </span>
+  <span class="absValue">
+    (21/23)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.8%
+  </span>
+  <span class="absValue">
+    (121/125)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;UNCHECKED_CAST&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.retrofit
+&nbsp;
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.GhostReflectTypeSerializers
+&nbsp;import com.ghost.serialization.contract.GhostRegistry
+&nbsp;import com.ghost.serialization.contract.GhostSerializer
+&nbsp;import com.ghost.serialization.parser.streaming.consumeNull
+&nbsp;import com.ghost.serialization.parser.streaming.isNextNullValue
+&nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
+&nbsp;import okhttp3.MediaType.Companion.toMediaType
+&nbsp;import okhttp3.RequestBody
+&nbsp;import okhttp3.RequestBody.Companion.toRequestBody
+&nbsp;import okhttp3.ResponseBody
+&nbsp;import retrofit2.Converter
+&nbsp;import retrofit2.Retrofit
+&nbsp;import java.lang.reflect.Type
+&nbsp;
+&nbsp;
+&nbsp;/**
+&nbsp; * Retrofit `Converter.Factory` for proto3 JSON mapping (`@GhostProtoSerialization`).
+&nbsp; *
+&nbsp; * Differs from [GhostConverterFactory] only on the read path: bodies are parsed through
+&nbsp; * `GhostProtoJsonFlatReader`, which accepts quoted-or-bare int64/uint64, lenient int32, and
+&nbsp; * quoted `&quot;NaN&quot;`/`&quot;Infinity&quot;` per proto3 JSON rules — needed to round-trip payloads from real
+&nbsp; * protobuf/JSON libraries. Encoding reuses `Ghost.encodeToBytes`, since proto3 wire correctness
+&nbsp; * is generated into the serializer&#39;s own `serialize()`.
+&nbsp; *
+&nbsp; * Also unwraps `List&lt;T&gt;`/`Set&lt;T&gt;`/`Map&lt;String, V&gt;` bodies when the element/value serializer is
+&nbsp; * registered, same as [GhostConverterFactory].
+&nbsp; *
+&nbsp; * Resolves serializers through [registry] (defaults to the global [Ghost] singleton) rather than
+&nbsp; * calling [Ghost] directly, so tests can substitute a fake [GhostRegistry].
+&nbsp; *
+&nbsp; * ```kotlin
+&nbsp; * Retrofit.Builder()
+&nbsp; *     .baseUrl(baseUrl)
+&nbsp; *     .addConverterFactory(GhostProtoConverterFactory.create())
+&nbsp; *     .build()
+&nbsp; * ```
+&nbsp; */
+<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
+&nbsp;class GhostProtoConverterFactory private constructor(
+<b class="fc">&nbsp;    private val registry: GhostRegistry</b>
+&nbsp;) : Converter.Factory() {
+&nbsp;
+<b class="fc">&nbsp;    private val serializers = GhostReflectTypeSerializers(</b>
+<b class="fc">&nbsp;        registry = registry</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    override fun requestBodyConverter(
+&nbsp;        type: Type,
+&nbsp;        parameterAnnotations: Array&lt;out Annotation&gt;,
+&nbsp;        methodAnnotations: Array&lt;out Annotation&gt;,
+&nbsp;        retrofit: Retrofit
+&nbsp;    ): Converter&lt;*, RequestBody&gt;? {
+<b class="fc">&nbsp;        val serializer = serializers.get(type = type)</b>
+<b class="fc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;        return Converter&lt;Any, RequestBody&gt; { value -&gt;</b>
+<b class="fc">&nbsp;            Ghost.encodeToBytes(serializer = serializer, value = value)</b>
+<b class="fc">&nbsp;                .toRequestBody(MEDIA_TYPE)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun responseBodyConverter(
+&nbsp;        type: Type,
+&nbsp;        annotations: Array&lt;out Annotation&gt;,
+&nbsp;        retrofit: Retrofit
+&nbsp;    ): Converter&lt;ResponseBody, *&gt;? {
+<b class="fc">&nbsp;        val serializer = serializers.get(type = type)</b>
+<b class="fc">&nbsp;            ?: return null</b>
+&nbsp;
+<b class="fc">&nbsp;        return Converter { body -&gt;</b>
+<b class="fc">&nbsp;            body.use {</b>
+<b class="fc">&nbsp;                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset -&gt;</b>
+<b class="fc">&nbsp;                    ghostProtoInternalUseFlatReader(bytes = scratch, length = offset) { reader -&gt;</b>
+<b class="pc">&nbsp;                        if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                            reader.consumeNull()</b>
+<b class="nc">&nbsp;                            null</b>
+&nbsp;                        } else {
+<b class="fc">&nbsp;                            serializer.deserialize(reader)</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                    }</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    companion object {
+<b class="fc">&nbsp;        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()</b>
+&nbsp;
+<b class="fc">&nbsp;        fun create(registry: GhostRegistry = Ghost): GhostProtoConverterFactory =</b>
+<b class="fc">&nbsp;            GhostProtoConverterFactory(registry = registry)</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

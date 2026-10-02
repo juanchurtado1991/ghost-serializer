@@ -1,0 +1,258 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostJsonExceptionKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.exception</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostJsonExceptionKt (com.ghost.serialization.exception)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostJsonExceptionKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.3%
+  </span>
+  <span class="absValue">
+    (57/58)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (31/31)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (245/245)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.exception
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_COERCE_BOOLEANS
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_COERCION_DISABLED
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_DEPTH_EXCEEDED
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_ARRAY
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_NUMBER
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_OBJECT
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_EXPECTED_STRING
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_INVALID_BASE64
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_INVALID_ENUM_VALUE
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_LEADING_ZEROS
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_MAX_COLLECTION_SIZE
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_MISSING_DISCRIMINATOR
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_NON_FINITE
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_PROTO_INT_RANGE
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_REQUIRED_FIELD
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNEXPECTED_COMMA
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNKNOWN_DISCRIMINATOR
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNKNOWN_ENUM
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNKNOWN_FIELD
+&nbsp;import com.ghost.serialization.exception.GhostJsonHintMessages.HINT_UNTERMINATED
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+&nbsp;import com.ghost.serialization.proto.GhostProtoConstants as PC
+&nbsp;
+&nbsp;/**
+&nbsp; * Exception for JSON parsing/encoding errors.
+&nbsp; *
+&nbsp; * [line]/[column] are computed lazily: the parser can raise this in tight probing
+&nbsp; * loops, so the O(N) source scan only runs if a caller actually reads them.
+&nbsp; * @param path JSONPath of the error (e.g. `$.user.addresses[1].zip`); `&quot;$&quot;` if root/unknown.
+&nbsp; * @param hint Optional developer-facing fix suggestion.
+&nbsp; */
+&nbsp;class GhostJsonException @InternalGhostApi internal constructor(
+&nbsp;    private val baseMessage: String,
+&nbsp;    private val computeLineCol: () -&gt; IntArray,
+&nbsp;    val path: String = ROOT_PATH,
+&nbsp;    val hint: String? = null,
+&nbsp;) : RuntimeException() {
+&nbsp;
+&nbsp;    private val lineCol: IntArray by lazy(mode = LazyThreadSafetyMode.NONE) {
+&nbsp;        computeLineCol()
+&nbsp;    }
+&nbsp;
+&nbsp;    val line: Int get() = lineCol[0]
+&nbsp;
+&nbsp;    val column: Int get() = lineCol[1]
+&nbsp;
+&nbsp;    override val message: String
+&nbsp;        get() = &quot;$baseMessage [at line $line, col $column, path $path]&quot; +
+&nbsp;                if (hint.isNullOrEmpty()) &quot;&quot; else &quot;$HINT_PREFIX$hint&quot;
+&nbsp;
+&nbsp;    @OptIn(InternalGhostApi::class)
+&nbsp;    constructor(
+&nbsp;        message: String,
+&nbsp;        line: Int = -1,
+&nbsp;        column: Int = -1,
+&nbsp;        path: String = ROOT_PATH,
+&nbsp;        hint: String? = null,
+&nbsp;    ) : this(
+&nbsp;        baseMessage = message,
+&nbsp;        computeLineCol = { intArrayOf(line, column) },
+&nbsp;        path = path,
+&nbsp;        hint = hint,
+&nbsp;    )
+&nbsp;
+&nbsp;    companion object {
+&nbsp;        private const val HINT_PREFIX = &quot;\nHint: &quot;
+&nbsp;        private const val ROOT_PATH = &quot;$&quot;
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Maps well-known parser error prefixes to short fix suggestions.
+&nbsp; * Returns null when no actionable hint is known (keeps noise low).
+&nbsp; */
+&nbsp;@InternalGhostApi
+<b class="fc">&nbsp;internal fun String.hintForJsonError(): String? = when {</b>
+<b class="fc">&nbsp;    startsWith(prefix = EM.STRICT_MODE_UNKNOWN_FIELD) -&gt; HINT_UNKNOWN_FIELD</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_COERCION_DISABLED) -&gt; HINT_COERCION_DISABLED</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_EXPECTED_BOOLEAN) -&gt; HINT_COERCE_BOOLEANS</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_TRAILING_COMMA) ||</b>
+<b class="pc">&nbsp;            startsWith(prefix = EM.ERR_UNEXPECTED_COMMA) -&gt; HINT_UNEXPECTED_COMMA</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_NON_FINITE) -&gt; HINT_NON_FINITE</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_LEADING_ZEROS) -&gt; HINT_LEADING_ZEROS</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_DEPTH_EXCEEDED) -&gt; HINT_DEPTH_EXCEEDED</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_MAX_COLLECTION_SIZE) -&gt; HINT_MAX_COLLECTION_SIZE</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.UNTERMINATED_STRING_ERROR) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.UNTERMINATED_ESCAPE_ERROR) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.UNTERMINATED_UNICODE_ERROR) -&gt; HINT_UNTERMINATED</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_EXPECTED_BEGIN_OBJ) -&gt; HINT_EXPECTED_OBJECT</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_EXPECTED_BEGIN_ARR) -&gt; HINT_EXPECTED_ARRAY</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_EXPECTED_STRING) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.ERR_EXPECTED_KEY) -&gt; HINT_EXPECTED_STRING</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_EXPECTED_NUMBER) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.ERR_EXPECTED_INT_PART) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.ERR_INT_OVERFLOW) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.ERR_LONG_OVERFLOW) -&gt; HINT_EXPECTED_NUMBER</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_REQUIRED_FIELD_PREFIX) -&gt; HINT_REQUIRED_FIELD</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_MISSING_DISCRIMINATOR) -&gt; HINT_MISSING_DISCRIMINATOR</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_UNKNOWN_DISCRIMINATOR_PREFIX) -&gt; HINT_UNKNOWN_DISCRIMINATOR</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_INVALID_ENUM_VALUE) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = EM.ERR_UNEXPECTED_ENUM_INDEX_PREFIX) -&gt; HINT_INVALID_ENUM_VALUE</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = EM.ERR_UNKNOWN_ENUM) -&gt; HINT_UNKNOWN_ENUM</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = PC.ERR_INVALID_BASE64) -&gt; HINT_INVALID_BASE64</b>
+&nbsp;
+<b class="fc">&nbsp;    startsWith(prefix = PC.ERR_PROTO_UINT32_OVERFLOW) ||</b>
+<b class="fc">&nbsp;            startsWith(prefix = PC.ERR_PROTO_FRACTIONAL_INT) -&gt; HINT_PROTO_INT_RANGE</b>
+&nbsp;
+<b class="fc">&nbsp;    else -&gt; null</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

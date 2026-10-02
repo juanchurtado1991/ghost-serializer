@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > RawJsonDecodeKt</title>
+  <title>GhostSerialization Coverage Report > ProtoAnySerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.types</a>
+    <a href="../index.html">com.ghost.serialization.proto.wkt</a>
 </div>
 
-<h1>Coverage Summary for Class: RawJsonDecodeKt (com.ghost.serialization.types)</h1>
+<h1>Coverage Summary for Class: ProtoAnySerializer (com.ghost.serialization.proto.wkt)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">RawJsonDecodeKt</td>
+  <td class="name">ProtoAnySerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    66.7%
   </span>
   <span class="absValue">
-    (1/2)
-  </span>
-</td>
-    <td class="coverageStat"/>
-<td class="coverageStat">
-  <span class="percent">
-    50%
-  </span>
-  <span class="absValue">
-    (1/2)
+    (4/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    60%
+    60.7%
   </span>
   <span class="absValue">
-    (6/10)
+    (17/28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    61.8%
+  </span>
+  <span class="absValue">
+    (34/55)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    61.4%
+  </span>
+  <span class="absValue">
+    (127/207)
   </span>
 </td>
 </tr>
@@ -94,47 +101,116 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;package com.ghost.serialization.types
+&nbsp;package com.ghost.serialization.proto.wkt
 &nbsp;
-&nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.ghostInternalUseFlatReader
-&nbsp;import kotlin.reflect.KClass
+&nbsp;import com.ghost.serialization.contract.AbstractGhostSerializer
+&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.captureRawJsonBytes
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.streaming.beginObject
+&nbsp;import com.ghost.serialization.parser.streaming.captureRawJsonBytes
+&nbsp;import com.ghost.serialization.parser.streaming.consumeArraySeparator
+&nbsp;import com.ghost.serialization.parser.streaming.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.streaming.endObject
+&nbsp;import com.ghost.serialization.parser.streaming.nextString
+&nbsp;import com.ghost.serialization.parser.streaming.skipValue
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.beginObject
+&nbsp;import com.ghost.serialization.parser.strings.captureRawJsonBytes
+&nbsp;import com.ghost.serialization.parser.strings.consumeArraySeparator
+&nbsp;import com.ghost.serialization.parser.strings.consumeKeySeparator
+&nbsp;import com.ghost.serialization.parser.strings.endObject
+&nbsp;import com.ghost.serialization.parser.strings.nextString
+&nbsp;import com.ghost.serialization.parser.strings.skipValue
+&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.proto.GhostProtoConstants as PC
 &nbsp;
-&nbsp;/**
-&nbsp; * Typed deserialization for [RawJson] using zero-copy slice parsing on the flat byte reader.
-&nbsp; */
-&nbsp;object RawJsonDecode {
+&nbsp;object ProtoAnySerializer : AbstractGhostSerializer&lt;ProtoAny&gt;() {
+<b class="fc">&nbsp;    override val typeName: String get() = PC.WKT_ANY_TYPE</b>
 &nbsp;
-&nbsp;    /** Parses this opaque JSON into [T] without copying the slice when it aliases a parent buffer. */
-&nbsp;    inline fun &lt;reified T : Any&gt; decode(raw: RawJson): T =
-&nbsp;        decode(raw, T::class)
-&nbsp;
-&nbsp;    /** Parses this opaque JSON with an explicit [serializer]. */
-&nbsp;    fun &lt;T : Any&gt; decode(raw: RawJson, serializer: GhostSerializer&lt;T&gt;): T {
-&nbsp;        if (raw.storageOffset == 0 &amp;&amp; raw.storageLength == raw.storage.size) {
-&nbsp;            return Ghost.deserialize(serializer, raw.storage)
+&nbsp;    override fun deserialize(reader: GhostJsonReader): ProtoAny {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="fc">&nbsp;        var typeUrl = &quot;&quot;</b>
+<b class="fc">&nbsp;        var payload = TOK.EMPTY_BYTES</b>
+<b class="fc">&nbsp;        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            val key = reader.nextString()</b>
+<b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;            when (key) {</b>
+<b class="fc">&nbsp;                PC.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
+<b class="fc">&nbsp;                PC.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="fc">&nbsp;                else -&gt; reader.skipValue()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (reader.peekNextToken() == TOK.COMMA_INT) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
 &nbsp;        }
-&nbsp;        return ghostInternalUseFlatReader(raw.storage) { reader -&gt;
-&nbsp;            reader.resetSlice(raw.storage, raw.storageOffset, raw.storageLength)
-&nbsp;            serializer.deserialize(reader)
-&nbsp;        }
+<b class="fc">&nbsp;        reader.endObject()</b>
+<b class="fc">&nbsp;        return ProtoAny(typeUrl = typeUrl, value = payload)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    fun &lt;T : Any&gt; decode(raw: RawJson, clazz: KClass&lt;T&gt;): T {
-&nbsp;        val serializer = Ghost.getSerializer(clazz)
-&nbsp;            ?: error(&quot;${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}&quot;)
-&nbsp;        return decode(raw, serializer)
+&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): ProtoAny {
+<b class="fc">&nbsp;        reader.beginObject()</b>
+<b class="fc">&nbsp;        var typeUrl = &quot;&quot;</b>
+<b class="fc">&nbsp;        var payload = TOK.EMPTY_BYTES</b>
+<b class="fc">&nbsp;        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            val key = reader.nextString()</b>
+<b class="fc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="fc">&nbsp;            when (key) {</b>
+<b class="fc">&nbsp;                PC.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
+<b class="pc">&nbsp;                PC.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="nc">&nbsp;                else -&gt; reader.skipValue()</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (reader.peekNextToken() == TOK.COMMA_INT) {</b>
+<b class="fc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        reader.endObject()</b>
+<b class="fc">&nbsp;        return ProtoAny(typeUrl = typeUrl, value = payload)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun deserialize(reader: GhostJsonStringReader): ProtoAny {
+<b class="nc">&nbsp;        reader.beginObject()</b>
+<b class="nc">&nbsp;        var typeUrl = &quot;&quot;</b>
+<b class="nc">&nbsp;        var payload = TOK.EMPTY_BYTES</b>
+<b class="nc">&nbsp;        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {</b>
+<b class="nc">&nbsp;            val key = reader.nextString()</b>
+<b class="nc">&nbsp;            reader.consumeKeySeparator()</b>
+<b class="nc">&nbsp;            when (key) {</b>
+<b class="nc">&nbsp;                PC.PROTO_TYPE_URL_KEY -&gt; typeUrl = reader.nextString()</b>
+<b class="nc">&nbsp;                PC.PROTO_VALUE_KEY -&gt; payload = reader.captureRawJsonBytes()</b>
+<b class="nc">&nbsp;                else -&gt; reader.skipValue()</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (reader.peekNextToken() == TOK.COMMA_INT) {</b>
+<b class="nc">&nbsp;                reader.consumeArraySeparator()</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        reader.endObject()</b>
+<b class="nc">&nbsp;        return ProtoAny(typeUrl = typeUrl, value = payload)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: ProtoAny) {
+<b class="fc">&nbsp;        writer.beginObject()</b>
+<b class="fc">&nbsp;        writer.name(key = PC.PROTO_TYPE_URL_KEY).value(text = value.typeUrl)</b>
+<b class="fc">&nbsp;        if (value.value.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            writer.name(key = PC.PROTO_VALUE_KEY)</b>
+<b class="fc">&nbsp;            writer.rawValue(bytes = value.value)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        writer.endObject()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: ProtoAny) {
+<b class="nc">&nbsp;        writer.beginObject()</b>
+<b class="nc">&nbsp;        writer.name(key = PC.PROTO_TYPE_URL_KEY).value(text = value.typeUrl)</b>
+<b class="nc">&nbsp;        if (value.value.isNotEmpty()) {</b>
+<b class="nc">&nbsp;            writer.name(key = PC.PROTO_VALUE_KEY)</b>
+<b class="nc">&nbsp;            writer.rawValue(bytes = value.value)</b>
+&nbsp;        }
+<b class="nc">&nbsp;        writer.endObject()</b>
 &nbsp;    }
 &nbsp;}
-&nbsp;
-&nbsp;/** Parses this [RawJson] into [T] (zero-copy slice when captured from a response buffer). */
-<b class="fc">&nbsp;inline fun &lt;reified T : Any&gt; RawJson.decodeAs(): T = RawJsonDecode.decode(this)</b>
-&nbsp;
-&nbsp;/** Parses this [RawJson] with an explicit [serializer]. */
-&nbsp;fun &lt;T : Any&gt; RawJson.decodeAs(serializer: GhostSerializer&lt;T&gt;): T =
-<b class="nc">&nbsp;    RawJsonDecode.decode(this, serializer)</b>
 </code>
 </pre>
 </div>
@@ -158,7 +234,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

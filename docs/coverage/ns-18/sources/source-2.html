@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostProtoConverterFactory</title>
+  <title>GhostSerialization Coverage Report > GhostJsonStringReader</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,15 +19,18 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.retrofit</a>
+    <a href="../index.html">com.ghost.serialization.parser.strings</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostProtoConverterFactory (com.ghost.serialization.retrofit)</h1>
+<h1>Coverage Summary for Class: GhostJsonStringReader (com.ghost.serialization.parser.strings)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,51 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostProtoConverterFactory</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (9/9)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    69%
-  </span>
-  <span class="absValue">
-    (29/42)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    93.2%
-  </span>
-  <span class="absValue">
-    (41/44)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    91.9%
-  </span>
-  <span class="absValue">
-    (250/272)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">GhostProtoConverterFactory$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
+  <td class="name">GhostJsonStringReader</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -101,48 +60,38 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    96.4%
   </span>
   <span class="absValue">
-    (4/4)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (10/10)
+    (27/28)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    69%
+    91.3%
   </span>
   <span class="absValue">
-    (29/42)
+    (42/46)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.3%
+    96.6%
   </span>
   <span class="absValue">
-    (42/45)
+    (170/176)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92%
+    97.2%
   </span>
   <span class="absValue">
-    (254/276)
+    (736/757)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -150,145 +99,341 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;UNCHECKED_CAST&quot;)
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;FunctionName&quot;, &quot;NOTHING_TO_INLINE&quot;)
 &nbsp;
-&nbsp;package com.ghost.serialization.retrofit
+&nbsp;package com.ghost.serialization.parser.strings
 &nbsp;
-&nbsp;import com.ghost.serialization.Ghost
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.streaming.consumeNull
-&nbsp;import com.ghost.serialization.parser.streaming.isNextNullValue
-&nbsp;import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
-&nbsp;import com.ghost.serialization.serializers.ListSerializer
-&nbsp;import com.ghost.serialization.serializers.MapSerializer
-&nbsp;import com.ghost.serialization.serializers.SetSerializer
-&nbsp;import okhttp3.MediaType.Companion.toMediaType
-&nbsp;import okhttp3.RequestBody
-&nbsp;import okhttp3.RequestBody.Companion.toRequestBody
-&nbsp;import okhttp3.ResponseBody
-&nbsp;import retrofit2.Converter
-&nbsp;import retrofit2.Retrofit
-&nbsp;import java.lang.reflect.Type
-&nbsp;import java.util.concurrent.ConcurrentHashMap
-&nbsp;import kotlin.reflect.KClass
-&nbsp;
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.exception.hintForJsonError
+&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
+&nbsp;import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
+&nbsp;import com.ghost.serialization.parser.common.byteToCharPosition
+&nbsp;import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
+&nbsp;import com.ghost.serialization.parser.common.isSurrogatePairStart
+&nbsp;import com.ghost.serialization.parser.common.utf8ByteSizeAt
+&nbsp;import com.ghost.serialization.parser.streaming.beginObject
+&nbsp;import com.ghost.serialization.writer.strings.copyRangeToCharArray
+&nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 &nbsp;
 &nbsp;/**
-&nbsp; * Retrofit `Converter.Factory` for proto3 JSON mapping
-&nbsp; * (`@GhostProtoSerialization`).
+&nbsp; * Flat JSON parser for in-memory [String] payloads (the default `textChannel` path).
 &nbsp; *
-&nbsp; * Differs from [GhostConverterFactory] only on the read path: response bodies are parsed
-&nbsp; * through `GhostProtoJsonFlatReader`, which additionally
-&nbsp; * accepts quoted-or-bare int64/uint64, lenient int32 (rejects fractional values), and quoted
-&nbsp; * `&quot;NaN&quot;`/`&quot;Infinity&quot;` literals per proto3 JSON rules — required for round-tripping payloads
-&nbsp; * produced by real protobuf/JSON libraries. Encoding (`requestBodyConverter`) reuses
-&nbsp; * `Ghost.encodeToBytes` since proto3 wire correctness (int64 quoting,
-&nbsp; * Base64 `bytes`, default-value omission) is generated directly into the
-&nbsp; * `@GhostProtoSerialization`
-&nbsp; * serializer&#39;s own `serialize()` method.
+&nbsp; * Indexes a reused [rawChars] [CharArray] of UTF-16 code units — hot structure/select/number
+&nbsp; * work never UTF-8-encodes the document. Bridge helpers ([ensureUtf8Bytes], [sliceUtf8Bytes],
+&nbsp; * [captureRawJsonBytes]) lazily encode [utf8CacheBytes]/[charToByteOffsets] once per [reset],
+&nbsp; * only when a byte API is needed. Sibling of the byte flat reader (`GhostJsonFlatReader`) and
+&nbsp; * the streaming `GhostJsonReader`.
 &nbsp; *
-&nbsp; * Also unwraps `List&lt;T&gt;`/`Set&lt;T&gt;`/`Map&lt;String, V&gt;` request/response bodies when the
-&nbsp; * element/value serializer is registered — same pattern as [GhostConverterFactory], still
-&nbsp; * using `GhostProtoJsonFlatReader` on the read path.
-&nbsp; *
-&nbsp; * ```kotlin
-&nbsp; * Retrofit.Builder()
-&nbsp; *     .baseUrl(baseUrl)
-&nbsp; *     .addConverterFactory(GhostProtoConverterFactory.create())
-&nbsp; *     .build()
-&nbsp; * ```
+&nbsp; * [pathTracker] is scratch for the error JSONPath, rebuilt by re-scanning the input only when
+&nbsp; * [throwError] builds an exception (nothing is tracked on the happy path). [predictedFieldIndex] is an optimistic hint for the field-select fast path: the
+&nbsp; * next expected field index when JSON objects list fields in declaration order; reset on
+&nbsp; * [beginObject], and a misprediction falls back to hashed dispatch, so it never affects
+&nbsp; * correctness. [stringPool]/[stringPoolHashes] are a cross-call string intern pool — same
+&nbsp; * design as the byte flat reader&#39;s `stringPool`. [slowPathChars] is reused across
+&nbsp; * [readQuotedString]&#39;s escape-decoding slow path.
 &nbsp; */
-<b class="fc">&nbsp;@OptIn(InternalGhostApi::class)</b>
-&nbsp;class GhostProtoConverterFactory private constructor() : Converter.Factory() {
+&nbsp;class GhostJsonStringReader(
+<b class="fc">&nbsp;    var rawData: String,</b>
+<b class="fc">&nbsp;    var maxDepth: Int = NUM.MAX_DEPTH,</b>
+<b class="fc">&nbsp;    var strictMode: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceStringsToNumbers: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceBooleans: Boolean = false,</b>
+<b class="fc">&nbsp;    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize</b>
+&nbsp;) {
+<b class="fc">&nbsp;    var limit: Int = rawData.length</b>
+<b class="fc">&nbsp;    var position: Int = 0</b>
+<b class="fc">&nbsp;    var nextTokenByte: Int = SCN.RESET_TOKEN_BYTE</b>
+<b class="nc">&nbsp;    var lastScanContentWas7BitOnly: Boolean = false</b>
+<b class="fc">&nbsp;    var depth: Int = 0</b>
+<b class="fc">&nbsp;    var needsCommaMask: Long = 0L</b>
+<b class="fc">&nbsp;    var commaConsumedMask: Long = 0L</b>
 &nbsp;
-<b class="fc">&nbsp;    private val serializerCache = ConcurrentHashMap&lt;Type, GhostSerializer&lt;Any&gt;&gt;()</b>
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()</b>
+<b class="fc">&nbsp;    internal var predictedFieldIndex: Int = SCN.FIELD_PREDICTION_START</b>
+<b class="fc">&nbsp;    var rawChars: CharArray</b>
+&nbsp;    private var utf8CacheBytes: ByteArray? = null
+&nbsp;    private var charToByteOffsets: IntArray? = null
+<b class="fc">&nbsp;    val stringPool: Array&lt;String?&gt; = arrayOfNulls(SCN.STR_POOL_SIZE)</b>
+<b class="fc">&nbsp;    val stringPoolHashes = IntArray(SCN.STR_POOL_SIZE)</b>
+<b class="fc">&nbsp;    var slowPathChars: CharArray = CharArray(WR.STRING_ESCAPE_SCRATCH_SIZE)</b>
 &nbsp;
-&nbsp;    override fun responseBodyConverter(
-&nbsp;        type: Type,
-&nbsp;        annotations: Array&lt;out Annotation&gt;,
-&nbsp;        retrofit: Retrofit
-&nbsp;    ): Converter&lt;ResponseBody, *&gt;? {
-<b class="fc">&nbsp;        val serializer = getSerializerWithCache(type)</b>
-<b class="fc">&nbsp;            ?: return null</b>
+<b class="fc">&nbsp;    init {</b>
+<b class="fc">&nbsp;        val len = rawData.length</b>
+<b class="fc">&nbsp;        val chars = CharArray(len)</b>
+<b class="fc">&nbsp;        rawData.copyRangeToCharArray(dest = chars, destOffset = 0, startIndex = 0, endIndex = len)</b>
+<b class="fc">&nbsp;        rawChars = chars</b>
+<b class="fc">&nbsp;    }</b>
 &nbsp;
-<b class="fc">&nbsp;        return Converter { body -&gt;</b>
-<b class="fc">&nbsp;            body.use {</b>
-<b class="fc">&nbsp;                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset -&gt;</b>
-<b class="fc">&nbsp;                    ghostProtoInternalUseFlatReader(scratch, length = offset) { reader -&gt;</b>
-<b class="pc">&nbsp;                        if (reader.isNextNullValue()) {</b>
-<b class="nc">&nbsp;                            reader.consumeNull()</b>
-<b class="nc">&nbsp;                            null</b>
-&nbsp;                        } else {
-<b class="fc">&nbsp;                            serializer.deserialize(reader)</b>
-&nbsp;                        }
-<b class="fc">&nbsp;                    }</b>
-&nbsp;                }
-&nbsp;            }
+&nbsp;    @InternalGhostApi
+&nbsp;    inline fun &lt;T&gt; decodeResilient(crossinline block: () -&gt; T): T? {
+<b class="fc">&nbsp;        val savedPos = position</b>
+<b class="fc">&nbsp;        val savedToken = nextTokenByte</b>
+<b class="fc">&nbsp;        val savedDepth = depth</b>
+<b class="fc">&nbsp;        val savedNeedsCommaMask = needsCommaMask</b>
+<b class="fc">&nbsp;        val savedCommaConsumedMask = commaConsumedMask</b>
+&nbsp;        try {
+<b class="fc">&nbsp;            return block()</b>
+&nbsp;        } catch (_: GhostJsonException) {
+<b class="fc">&nbsp;            position = savedPos</b>
+<b class="fc">&nbsp;            nextTokenByte = savedToken</b>
+<b class="fc">&nbsp;            depth = savedDepth</b>
+<b class="fc">&nbsp;            needsCommaMask = savedNeedsCommaMask</b>
+<b class="fc">&nbsp;            commaConsumedMask = savedCommaConsumedMask</b>
+<b class="fc">&nbsp;            skipValue()</b>
+<b class="fc">&nbsp;            return null</b>
 &nbsp;        }
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun requestBodyConverter(
-&nbsp;        type: Type,
-&nbsp;        parameterAnnotations: Array&lt;out Annotation&gt;,
-&nbsp;        methodAnnotations: Array&lt;out Annotation&gt;,
-&nbsp;        retrofit: Retrofit
-&nbsp;    ): Converter&lt;*, RequestBody&gt;? {
-<b class="fc">&nbsp;        val serializer = getSerializerWithCache(type)</b>
-<b class="fc">&nbsp;            ?: return null</b>
-&nbsp;
-<b class="fc">&nbsp;        return Converter&lt;Any, RequestBody&gt; { value -&gt;</b>
-<b class="fc">&nbsp;            Ghost.encodeToBytes(serializer, value)</b>
-<b class="fc">&nbsp;                .toRequestBody(MEDIA_TYPE)</b>
-&nbsp;        }
+&nbsp;    inline fun getByte(index: Int): Int {
+<b class="fc">&nbsp;        return rawChars[index].code</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    private fun getSerializerWithCache(type: Type): GhostSerializer&lt;Any&gt;? {
-<b class="fc">&nbsp;        val cached = serializerCache[type]</b>
-<b class="fc">&nbsp;        if (cached != null) {</b>
+&nbsp;    fun internalSkip(charCount: Int) {
+<b class="fc">&nbsp;        position += charCount</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextNonWhitespace(): Int {
+<b class="fc">&nbsp;        val nextToken = peekNextToken()</b>
+<b class="fc">&nbsp;        if (nextToken == -1) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_UNEXPECTED_EOF)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        internalSkip(1)</b>
+<b class="fc">&nbsp;        return nextToken</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun peekByte(): Byte = peekNextToken().toByte()</b>
+&nbsp;
+&nbsp;    fun peekNextToken(): Int {
+<b class="fc">&nbsp;        val cached = nextTokenByte</b>
+<b class="fc">&nbsp;        if (cached != -1) {</b>
 <b class="fc">&nbsp;            return cached</b>
 &nbsp;        }
-<b class="fc">&nbsp;        val serializer = getSerializerForType(type) ?: return null</b>
-<b class="fc">&nbsp;        val existing = serializerCache.putIfAbsent(type, serializer)</b>
-<b class="pc">&nbsp;        return existing ?: serializer</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun getSerializerForType(type: Type): GhostSerializer&lt;Any&gt;? {
-<b class="fc">&nbsp;        if (type is Class&lt;*&gt;) {</b>
-<b class="fc">&nbsp;            return Ghost.getSerializer(type.kotlin as KClass&lt;Any&gt;)</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        if (type is java.lang.reflect.ParameterizedType) {</b>
-<b class="pc">&nbsp;            val rawType = type.rawType as? Class&lt;*&gt; ?: return null</b>
-&nbsp;
-<b class="fc">&nbsp;            if (List::class.java.isAssignableFrom(rawType)) {</b>
-<b class="pc">&nbsp;                val arg = type.actualTypeArguments.firstOrNull() ?: return null</b>
-<b class="pc">&nbsp;                val itemSerializer = getSerializerWithCache(arg) ?: return null</b>
-<b class="fc">&nbsp;                return ListSerializer(itemSerializer) as GhostSerializer&lt;Any&gt;</b>
+<b class="fc">&nbsp;        val cursor = position</b>
+<b class="fc">&nbsp;        if (cursor + 1 &lt; limit) {</b>
+<b class="fc">&nbsp;            val chars = rawChars</b>
+<b class="fc">&nbsp;            val firstChar = chars[cursor].code</b>
+<b class="fc">&nbsp;            if (firstChar &gt; TOK.SPACE_INT) {</b>
+<b class="fc">&nbsp;                nextTokenByte = firstChar</b>
+<b class="fc">&nbsp;                return firstChar</b>
 &nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;            if (Set::class.java.isAssignableFrom(rawType)) {</b>
-<b class="pc">&nbsp;                val arg = type.actualTypeArguments.firstOrNull() ?: return null</b>
-<b class="pc">&nbsp;                val itemSerializer = getSerializerWithCache(arg) ?: return null</b>
-<b class="fc">&nbsp;                return SetSerializer(itemSerializer) as GhostSerializer&lt;Any&gt;</b>
-&nbsp;            }
-&nbsp;
-<b class="pc">&nbsp;            if (Map::class.java.isAssignableFrom(rawType)) {</b>
-<b class="pc">&nbsp;                val keyArg = type.actualTypeArguments.getOrNull(0) ?: return null</b>
-<b class="fc">&nbsp;                if (!isStringMapKeyType(keyArg)) return null</b>
-<b class="pc">&nbsp;                val valueArg = type.actualTypeArguments.getOrNull(1) ?: return null</b>
-<b class="pc">&nbsp;                val valueSerializer = getSerializerWithCache(valueArg) ?: return null</b>
-<b class="fc">&nbsp;                return MapSerializer(valueSerializer) as GhostSerializer&lt;Any&gt;</b>
+<b class="fc">&nbsp;            val secondChar = chars[cursor + 1].code</b>
+<b class="fc">&nbsp;            val isSingleSpaceBeforeToken = firstChar == TOK.SPACE_INT &amp;&amp; secondChar &gt; TOK.SPACE_INT</b>
+<b class="fc">&nbsp;            if (isSingleSpaceBeforeToken) {</b>
+<b class="fc">&nbsp;                position = cursor + 1</b>
+<b class="fc">&nbsp;                nextTokenByte = secondChar</b>
+<b class="fc">&nbsp;                return secondChar</b>
 &nbsp;            }
 &nbsp;        }
-<b class="nc">&nbsp;        return null</b>
+<b class="fc">&nbsp;        skipWhitespace()</b>
+<b class="fc">&nbsp;        return nextTokenByte</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    companion object {
-<b class="fc">&nbsp;        private val MEDIA_TYPE = GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType()</b>
+&nbsp;    @Suppress(&quot;StringReferentialEquality&quot;)
+<b class="fc">&nbsp;    fun reset(newData: String, newLimit: Int = newData.length) {</b>
+<b class="fc">&nbsp;        val oldData = rawData</b>
+<b class="fc">&nbsp;        rawData = newData</b>
+<b class="fc">&nbsp;        position = 0</b>
+<b class="fc">&nbsp;        limit = newLimit</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        depth = 0</b>
+<b class="fc">&nbsp;        needsCommaMask = 0L</b>
+<b class="fc">&nbsp;        commaConsumedMask = 0L</b>
+<b class="fc">&nbsp;        strictMode = false</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        coerceBooleans = false</b>
+<b class="fc">&nbsp;        maxDepth = NUM.MAX_DEPTH</b>
+<b class="fc">&nbsp;        maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;        lastScanContentWas7BitOnly = false</b>
+<b class="fc">&nbsp;        predictedFieldIndex = SCN.FIELD_PREDICTION_START</b>
+<b class="fc">&nbsp;        invalidateUtf8Cache()</b>
 &nbsp;
-<b class="fc">&nbsp;        fun create(): GhostProtoConverterFactory = GhostProtoConverterFactory()</b>
+<b class="fc">&nbsp;        if (newData !== oldData) {</b>
+<b class="fc">&nbsp;            val len = newData.length</b>
+<b class="fc">&nbsp;            var chars = rawChars</b>
+<b class="fc">&nbsp;            if (chars.size &lt; len) {</b>
+<b class="fc">&nbsp;                chars = CharArray(len)</b>
+<b class="fc">&nbsp;                rawChars = chars</b>
+&nbsp;            }
+<b class="fc">&nbsp;            newData.copyRangeToCharArray(dest = chars, destOffset = 0, startIndex = 0, endIndex = len)</b>
+&nbsp;        }
 &nbsp;    }
+&nbsp;
+&nbsp;    fun skipAndValidateLiteral(expected: ByteString) {
+<b class="fc">&nbsp;        val size = expected.size</b>
+<b class="fc">&nbsp;        if (position + size &gt; limit) {</b>
+<b class="fc">&nbsp;            throwError(EM.ERR_EXPECTED_LITERAL + expected.utf8())</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        for (i in 0 until size) {</b>
+<b class="fc">&nbsp;            if (chars[position + i].code != (expected[i].toInt() and TOK.BYTE_MASK)) {</b>
+<b class="fc">&nbsp;                throwError(EM.ERR_EXPECTED_LITERAL + expected.utf8())</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        position += size</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun skipWhitespace() {
+<b class="fc">&nbsp;        val chars = rawChars</b>
+<b class="fc">&nbsp;        val newPosition = findNextNonWhitespaceImpl(position = position, limit = limit) { chars[it].code }</b>
+<b class="fc">&nbsp;        if (newPosition == SCN.MATCH_END) {</b>
+<b class="fc">&nbsp;            position = limit</b>
+<b class="fc">&nbsp;            nextTokenByte = SCN.MATCH_END</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            position = newPosition</b>
+<b class="fc">&nbsp;            nextTokenByte = chars[newPosition].code</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun throwError(message: String): Nothing = throwErrorWithPath(</b>
+<b class="fc">&nbsp;        message = message,</b>
+<b class="fc">&nbsp;        missingKey = null</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Throws for a missing required field, appending [jsonName] to the JSONPath so the
+&nbsp;     * exception points at `$.….&lt;jsonName&gt;` (validation runs before [endObject]).
+&nbsp;     */
+<b class="fc">&nbsp;    fun throwMissingRequiredField(jsonName: String): Nothing = throwErrorWithPath(</b>
+<b class="fc">&nbsp;        message = &quot;${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}&quot;,</b>
+<b class="fc">&nbsp;        missingKey = jsonName</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    private fun throwErrorWithPath(
+&nbsp;        message: String,
+&nbsp;        missingKey: String?
+&nbsp;    ): Nothing {
+<b class="fc">&nbsp;        val errorPosition = position</b>
+<b class="pc">&nbsp;        val errorEnd = if (errorPosition &gt; limit) limit else errorPosition</b>
+<b class="fc">&nbsp;        val localData = rawData</b>
+<b class="fc">&nbsp;        val tracker = GhostJsonPathReconstruction.reconstruct(</b>
+<b class="fc">&nbsp;            tracker = pathTracker,</b>
+<b class="fc">&nbsp;            start = 0,</b>
+<b class="fc">&nbsp;            end = errorEnd,</b>
+<b class="fc">&nbsp;            limit = limit,</b>
+<b class="fc">&nbsp;            getByte = { localData[it].code },</b>
+<b class="fc">&nbsp;            decodeRange = { from, to -&gt; localData.substring(startIndex = from, endIndex = to) }</b>
+&nbsp;        )
+<b class="fc">&nbsp;        if (missingKey != null) {</b>
+<b class="fc">&nbsp;            tracker.finishScalarValue()</b>
+<b class="fc">&nbsp;            tracker.pushKey(name = missingKey)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val errorPath = tracker.formatPath()</b>
+&nbsp;
+<b class="fc">&nbsp;        throw GhostJsonException(</b>
+<b class="fc">&nbsp;            baseMessage = &quot;$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition&quot;,</b>
+<b class="fc">&nbsp;            computeLineCol = {</b>
+<b class="fc">&nbsp;                var columnNumber = 0</b>
+<b class="fc">&nbsp;                var lineNumber = 0</b>
+<b class="fc">&nbsp;                var byteIndex = 0</b>
+<b class="fc">&nbsp;                val chars = rawChars</b>
+<b class="fc">&nbsp;                while (byteIndex &lt; errorEnd) {</b>
+<b class="pc">&nbsp;                    if (chars[byteIndex].code == TOK.NEWLINE_INT) {</b>
+<b class="nc">&nbsp;                        lineNumber++</b>
+<b class="nc">&nbsp;                        columnNumber = 0</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        columnNumber++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    byteIndex++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                intArrayOf(lineNumber, columnNumber)</b>
+&nbsp;            },
+<b class="fc">&nbsp;            path = errorPath,</b>
+<b class="fc">&nbsp;            hint = message.hintForJsonError(),</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    private fun invalidateUtf8Cache() {
+<b class="fc">&nbsp;        utf8CacheBytes = null</b>
+<b class="fc">&nbsp;        charToByteOffsets = null</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Inverse of [charPositionToBytePosition] for syncing reader position after byte decoders.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun bytePositionToCharPosition(targetBytePos: Int): Int {
+<b class="fc">&nbsp;        return byteToCharPosition(s = rawData, targetBytePos = targetBytePos)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Maps a char index to its UTF-8 byte offset using a cached offset table.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun charPositionToBytePosition(charPos: Int): Int {
+<b class="fc">&nbsp;        val safePos = charPos.coerceIn(0, limit)</b>
+<b class="fc">&nbsp;        return ensureCharToByteOffsets()[safePos]</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns UTF-8 bytes for [rawData], encoding at most once until the next [reset].
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun ensureUtf8Bytes(): ByteArray {
+<b class="fc">&nbsp;        var bytes = utf8CacheBytes</b>
+<b class="fc">&nbsp;        if (bytes == null) {</b>
+<b class="fc">&nbsp;            bytes = rawData.encodeToByteArray()</b>
+<b class="fc">&nbsp;            utf8CacheBytes = bytes</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return bytes</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Returns UTF-8 bytes for the char range [[charStart], [charEnd]).
+&nbsp;     *
+&nbsp;     * When [ensureUtf8Bytes] already materialized the payload, copies that range from the
+&nbsp;     * cached array (used by custom-decoder bridges). Otherwise, encodes only the range —
+&nbsp;     * avoids a full document UTF-8 pass for `captureRawJsonBytes` on large envelopes.
+&nbsp;     */
+&nbsp;    @InternalGhostApi
+&nbsp;    fun sliceUtf8Bytes(charStart: Int, charEnd: Int): ByteArray {
+<b class="fc">&nbsp;        val cached = utf8CacheBytes</b>
+<b class="pc">&nbsp;        if (cached != null) {</b>
+<b class="nc">&nbsp;            return cached.copyOfRange(</b>
+<b class="nc">&nbsp;                charPositionToBytePosition(charPos = charStart),</b>
+<b class="nc">&nbsp;                charPositionToBytePosition(charPos = charEnd),</b>
+&nbsp;            )
+&nbsp;        }
+<b class="fc">&nbsp;        return rawData.substring(charStart, charEnd).encodeToByteArray()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun ensureCharToByteOffsets(): IntArray {
+<b class="fc">&nbsp;        val cached = charToByteOffsets</b>
+<b class="pc">&nbsp;        if (cached != null &amp;&amp; cached.size == limit + 1) {</b>
+<b class="fc">&nbsp;            return cached</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val currentLimit = limit</b>
+<b class="fc">&nbsp;        val table = IntArray(currentLimit + 1)</b>
+<b class="fc">&nbsp;        var bytePos = 0</b>
+<b class="fc">&nbsp;        var charIndex = 0</b>
+<b class="fc">&nbsp;        table[0] = 0</b>
+<b class="fc">&nbsp;        while (charIndex &lt; currentLimit) {</b>
+<b class="fc">&nbsp;            table[charIndex] = bytePos</b>
+<b class="fc">&nbsp;            val isSurrogatePair = isSurrogatePairStart(s = rawData, index = charIndex)</b>
+<b class="fc">&nbsp;            bytePos += utf8ByteSizeAt(s = rawData, index = charIndex)</b>
+<b class="fc">&nbsp;            if (isSurrogatePair) {</b>
+<b class="fc">&nbsp;                table[charIndex + 1] = bytePos</b>
+<b class="fc">&nbsp;                charIndex += 2</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                charIndex++</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        table[currentLimit] = bytePos</b>
+<b class="fc">&nbsp;        charToByteOffsets = table</b>
+<b class="fc">&nbsp;        return table</b>
+&nbsp;    }
+&nbsp;
 &nbsp;}
 </code>
 </pre>
@@ -313,7 +458,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

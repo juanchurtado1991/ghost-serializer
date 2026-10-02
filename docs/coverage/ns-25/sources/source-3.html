@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostCoerce</title>
+  <title>GhostSerialization Coverage Report > GhostYamlScanConstants</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.annotations</a>
+    <a href="../index.html">com.ghost.serialization.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostCoerce (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostYamlScanConstants (com.ghost.serialization.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostCoerce</td>
+  <td class="name">GhostYamlScanConstants</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -44,19 +44,82 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml
 &nbsp;
-&nbsp;/**
-&nbsp; * Enables loose type coercion (stringified numbers/booleans converted to primitives) during
-&nbsp; * deserialization, on the annotated endpoint, parameter, or controller.
-&nbsp; */
-&nbsp;@Target(
-&nbsp;    AnnotationTarget.FUNCTION,
-&nbsp;    AnnotationTarget.VALUE_PARAMETER,
-&nbsp;    AnnotationTarget.CLASS
-&nbsp;)
-&nbsp;@Retention(AnnotationRetention.RUNTIME)
-&nbsp;annotation class GhostCoerce
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens.NINE_BYTE
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens.ZERO_BYTE
+&nbsp;
+&nbsp;/** Reader numeric constants: digit/case masks, nesting/buffer limits, number-base shifts, UTF-8 and escape-sequence
+&nbsp; * decoding. */
+&nbsp;@PublishedApi
+&nbsp;internal object GhostYamlScanConstants {
+&nbsp;
+&nbsp;    // ── Bitwise masks for hot-path validations ────────────────────────────────
+&nbsp;
+&nbsp;    /** Bounds for an ASCII decimal digit (0-9), used as `b in DIGIT_LOWER_BOUND..DIGIT_UPPER_BOUND`. */
+&nbsp;    const val DIGIT_LOWER_BOUND: Byte = ZERO_BYTE   // 0x30
+&nbsp;    const val DIGIT_UPPER_BOUND: Byte = NINE_BYTE   // 0x39
+&nbsp;
+&nbsp;    /** Mask to convert a known-alphabetic uppercase ASCII byte to lowercase. */
+&nbsp;    const val ASCII_TO_LOWER_MASK: Int = 0x20
+&nbsp;
+&nbsp;    // ── Indentation ───────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    /** Sentinel value for &quot;no indentation level set yet&quot;. */
+&nbsp;    const val INDENT_UNSET: Int = -1
+&nbsp;
+&nbsp;    /** Columns a block sequence entry consumes before its value: the `-` and the mandatory space after it. */
+&nbsp;    const val SEQUENCE_ENTRY_INDENT: Int = 2
+&nbsp;
+&nbsp;    /** Radix for decimal digit accumulation in plain-scalar number parsing. */
+&nbsp;    const val DECIMAL_RADIX: Int = 10
+&nbsp;
+&nbsp;    /** Maximum supported nesting depth. */
+&nbsp;    const val MAX_DEPTH: Int = 64
+&nbsp;
+&nbsp;    // ── Bit shift constants for parsing numeric bases ──────────────────────────
+&nbsp;
+&nbsp;    const val HEX_SHIFT = 4
+&nbsp;    const val OCTAL_SHIFT = 3
+&nbsp;    const val BINARY_SHIFT = 1
+&nbsp;
+&nbsp;    // ── UTF-8 and Escape code parsing constants ──────────────────
+&nbsp;
+&nbsp;    const val BUFFER_SCALE_FACTOR = 2
+&nbsp;    const val SHIFT_12 = 12
+&nbsp;    const val UTF8_1BYTE_MAX = 0x7F
+&nbsp;    const val UTF8_2BYTE_MAX = 0x7FF
+&nbsp;    const val UTF8_3BYTE_MAX = 0xFFFF
+&nbsp;    const val UTF8_2BYTE_PREFIX = 0xC0
+&nbsp;    const val UTF8_3BYTE_PREFIX = 0xE0
+&nbsp;    const val UTF8_4BYTE_PREFIX = 0xF0
+&nbsp;    const val UTF8_CONT_PREFIX = 0x80
+&nbsp;    const val UTF8_CONT_MASK = 0x3F
+&nbsp;    const val HEX_SHIFT_4 = 4
+&nbsp;    const val HEX_RADIX_10 = 10
+&nbsp;    const val SHIFT_18_BITS = 18
+&nbsp;    const val SHIFT_6_BITS = 6
+&nbsp;    const val CODE_ZERO = 0
+&nbsp;    const val CODE_BEL = 7
+&nbsp;    const val CODE_BS = 8
+&nbsp;    const val CODE_TAB = 9
+&nbsp;    const val CODE_FF = 12
+&nbsp;    const val CODE_CR = 13
+&nbsp;    const val CODE_VTAB = 11
+&nbsp;    const val CODE_ESC = 27
+&nbsp;    const val CODE_NEXT_LINE = 133
+&nbsp;    const val CODE_NBSP = 160
+&nbsp;    const val CODE_LINE_SEP = 8232
+&nbsp;    const val CODE_PARA_SEP = 8233
+&nbsp;
+&nbsp;    // ── Sizes ────────────────────────────────────────────────────────────────
+&nbsp;
+&nbsp;    const val DEFAULT_MAP_CAPACITY = 8
+&nbsp;    const val SCRATCH_BUFFER_SIZE = 256
+&nbsp;    const val HEX_ESCAPE_X_LEN = 2
+&nbsp;    const val HEX_ESCAPE_U_LEN = 4
+&nbsp;    const val HEX_ESCAPE_U32_LEN = 8
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -80,7 +143,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostLongList</title>
+  <title>GhostSerialization Coverage Report > GhostYamlKeyReadingKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostLongList (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlKeyReadingKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostLongList</td>
+  <td class="name">GhostYamlKeyReadingKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    83.7%
   </span>
   <span class="absValue">
-    (4/6)
+    (77/92)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.6%
+    96.1%
   </span>
   <span class="absValue">
-    (11/13)
+    (73/76)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.7%
+    96.8%
   </span>
   <span class="absValue">
-    (68/75)
+    (387/400)
   </span>
 </td>
 </tr>
@@ -99,41 +99,152 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.serializers
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
+&nbsp;
+&nbsp;/** Reads a mapping key: a plain scalar ending at &#39;:&#39;, or a quoted string. */
+&nbsp;internal fun GhostYamlFlatReader.readKey(inFlow: Boolean): String? {
+<b class="fc">&nbsp;    skipInlineWhitespace()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="pc">&nbsp;    if (position &gt;= localLimit) return null</b>
+&nbsp;
+&nbsp;    // Alias as key: &quot;*name&quot; resolves immediately to the aliased node&#39;s value, stringified the
+&nbsp;    // same way an explicit-key node would be. Only recognized with no anchor/tag prefix
+&nbsp;    // before it; combining both has no clear meaning and isn&#39;t exercised by any test.
+<b class="fc">&nbsp;    if (localRawData[position] == TOK.ASTERISK_BYTE) {</b>
+<b class="fc">&nbsp;        return stringifyExplicitMappingKey(keyNode = readAlias())</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val (anchorName, hadPrefixes) = consumeKeyAnchorAndTagPrefixes()</b>
+&nbsp;    // Having consumed an anchor/tag prefix commits us to a real key afterward — silently
+&nbsp;    // returning null after eating those bytes would let a dangling anchor/tag masquerade as
+&nbsp;    // &quot;no more keys&quot; instead of erroring.
+<b class="pc">&nbsp;    if (position &gt;= localLimit) {</b>
+<b class="nc">&nbsp;        if (hadPrefixes) yamlError(message = EM.ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY)</b>
+<b class="nc">&nbsp;        return null</b>
+&nbsp;    }
+&nbsp;    // An anchor can&#39;t wrap an alias reference here either — same rule readAnchoredValue
+&nbsp;    // enforces for values (an alias points at an existing node, not one a new anchor can attach to).
+<b class="fc">&nbsp;    if (anchorName != null &amp;&amp; localRawData[position] == TOK.ASTERISK_BYTE) {</b>
+<b class="fc">&nbsp;        yamlError(message = &quot;${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}&quot;)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val key = when (localRawData[position]) {</b>
+<b class="fc">&nbsp;        TOK.DOUBLE_QUOTE_BYTE -&gt; readQuotedKeyRejectingMultiLine(inFlow = inFlow) { readDoubleQuotedString() }</b>
+<b class="fc">&nbsp;        TOK.SINGLE_QUOTE_BYTE -&gt; readQuotedKeyRejectingMultiLine(inFlow = inFlow) { readSingleQuotedString() }</b>
+<b class="fc">&nbsp;        else -&gt; readBareKeyOrEmptyString(inFlow = inFlow, hadPrefixes = hadPrefixes)</b>
+&nbsp;    }
+<b class="pc">&nbsp;    if (key != null &amp;&amp; anchorName != null) {</b>
+<b class="fc">&nbsp;        anchorTable[anchorName] = key</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return key</b>
+&nbsp;}
 &nbsp;
 &nbsp;/**
-&nbsp; * Highly optimized, zero-allocation internal list implementation for [Long] primitives.
-&nbsp; * Avoids boxing overhead and memory allocation pressure.
+&nbsp; * Consumes any `&amp;anchor`/`!tag` prefixes before a key (e.g. &quot;&amp;a5 !!str key5:&quot;). A tag has no
+&nbsp; * JSON representation on a key, so it&#39;s dropped like an ordinary tagged value&#39;s tag; an anchor
+&nbsp; * still needs binding to the key&#39;s text so later aliases can resolve it. Returns the bound
+&nbsp; * anchor name (if any) alongside whether any prefix was consumed at all, since the caller
+&nbsp; * needs that to tell &quot;no more keys&quot; apart from &quot;a dangling anchor/tag with no key after it&quot;.
 &nbsp; */
-<b class="fc">&nbsp;internal class GhostLongList(initialCapacity: Int = C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY) {</b>
-<b class="fc">&nbsp;    private var buffer = LongArray(initialCapacity)</b>
-&nbsp;    private var currentSize = 0
-&nbsp;
-&nbsp;    fun add(value: Long) {
-<b class="fc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="fc">&nbsp;            val newCapacity =</b>
-<b class="pc">&nbsp;                if (buffer.isEmpty()) {</b>
-<b class="fc">&nbsp;                    C.DEFAULT_PRIMITIVE_COLLECTION_CAPACITY</b>
-&nbsp;                } else {
-<b class="nc">&nbsp;                    (buffer.size * C.BUFFER_SCALE_FACTOR)</b>
-&nbsp;                }
-<b class="fc">&nbsp;            buffer = buffer.copyOf(newCapacity)</b>
+&nbsp;private fun GhostYamlFlatReader.consumeKeyAnchorAndTagPrefixes(): Pair&lt;String?, Boolean&gt; {
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    var anchorName: String? = null</b>
+<b class="fc">&nbsp;    val positionBeforePrefixes = position</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;        (localRawData[position] == TOK.AMPERSAND_BYTE || localRawData[position] == TOK.EXCLAMATION_BYTE)</b>
+&nbsp;    ) {
+<b class="fc">&nbsp;        val isAnchor = localRawData[position] == TOK.AMPERSAND_BYTE</b>
+<b class="fc">&nbsp;        if (isAnchor) position++ // consume &#39;&amp;&#39;</b>
+<b class="fc">&nbsp;        val prefixStart = position</b>
+<b class="pc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val prefixByte = localRawData[position]</b>
+<b class="fc">&nbsp;            val isDelimiterPrefix = prefixByte == TOK.SPACE_BYTE ||</b>
+<b class="pc">&nbsp;                prefixByte == TOK.TAB_BYTE ||</b>
+<b class="fc">&nbsp;                prefixByte == TOK.NEWLINE_BYTE ||</b>
+<b class="pc">&nbsp;                prefixByte == TOK.CR_BYTE ||</b>
+<b class="pc">&nbsp;                prefixByte == TOK.COMMA_BYTE ||</b>
+<b class="pc">&nbsp;                prefixByte == TOK.RIGHT_BRACE_BYTE ||</b>
+<b class="pc">&nbsp;                prefixByte == TOK.RIGHT_BRACKET_BYTE</b>
+<b class="fc">&nbsp;            if (isDelimiterPrefix) break</b>
+<b class="fc">&nbsp;            position++</b>
 &nbsp;        }
-<b class="fc">&nbsp;        buffer[currentSize++] = value</b>
+<b class="fc">&nbsp;        if (isAnchor) anchorName = localRawData.decodeToString(prefixStart, position)</b>
+<b class="fc">&nbsp;        skipInlineWhitespace()</b>
 &nbsp;    }
+<b class="fc">&nbsp;    return anchorName to (position != positionBeforePrefixes)</b>
+&nbsp;}
 &nbsp;
-&nbsp;    fun toArray(): LongArray {
-<b class="pc">&nbsp;        if (currentSize == buffer.size) {</b>
-<b class="nc">&nbsp;            return buffer</b>
+&nbsp;/** Scans a bare (unquoted) key ending at `:`/EOL, or resolves the empty-string-key shape (`&quot;: value&quot;`). */
+&nbsp;private fun GhostYamlFlatReader.readBareKeyOrEmptyString(inFlow: Boolean, hadPrefixes: Boolean): String? {
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;        val isMappingColon = currentByte == TOK.COLON_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;            isMappingColonAt(rawData = localRawData, position = position, limit = localLimit)</b>
+<b class="fc">&nbsp;        if (isMappingColon) break</b>
+<b class="fc">&nbsp;        if (isLineBreakByte(byte = currentByte)) break</b>
+&nbsp;        // An inline comment ends the key like it ends a plain scalar value, only
+&nbsp;        // when preceded by whitespace: &quot;a#b&quot; stays one key, &quot;a #b&quot; ends at &quot;a&quot;.
+<b class="fc">&nbsp;        val isWhitespacePrecededComment = currentByte == TOK.HASH_BYTE &amp;&amp; position &gt; startPosition &amp;&amp;</b>
+<b class="fc">&nbsp;            isInlineWhitespaceByte(byte = localRawData[position - 1])</b>
+<b class="fc">&nbsp;        if (isWhitespacePrecededComment) break</b>
+<b class="fc">&nbsp;        if (inFlow &amp;&amp; isFlowScalarTerminatorByte(byte = currentByte)) break</b>
+<b class="fc">&nbsp;        position++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val endPosition = trimTrailingSpaces(start = startPosition, end = position)</b>
+<b class="fc">&nbsp;    if (endPosition == startPosition) {</b>
+&nbsp;        // A bare &#39;:&#39; with nothing before it is a valid empty-string key (e.g.
+&nbsp;        // &quot;: value&quot;) — the loop above breaks on the first byte without advancing.
+&nbsp;        // A prefix followed directly by &#39;:&#39; is this same empty-key shape, not
+&nbsp;        // dangling. Anything else (newline, EOF) is &quot;no more mapping to read&quot;, or a
+&nbsp;        // genuinely dangling prefix if one was consumed.
+<b class="pc">&nbsp;        return if (position &lt; localLimit &amp;&amp; localRawData[position] == TOK.COLON_BYTE) {</b>
+<b class="fc">&nbsp;            &quot;&quot;</b>
+<b class="pc">&nbsp;        } else if (hadPrefixes) {</b>
+<b class="fc">&nbsp;            yamlError(message = EM.ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY)</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            null</b>
 &nbsp;        }
-<b class="fc">&nbsp;        return buffer.copyOf(currentSize)</b>
 &nbsp;    }
+<b class="fc">&nbsp;    val firstLine = localRawData.decodeToString(startPosition, endPosition)</b>
+&nbsp;    // A flow mapping key can fold across lines like any other flow plain scalar
+&nbsp;    // — block-context keys never reach here sitting on a newline, since a colon
+&nbsp;    // must follow on the same line there.
+<b class="pc">&nbsp;    return if (inFlow &amp;&amp; position &lt; localLimit &amp;&amp; isLineBreakByte(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;        foldFlowPlainScalarContinuation(firstLine = firstLine) ?: firstLine</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        firstLine</b>
+&nbsp;    }
+&nbsp;}
 &nbsp;
-&nbsp;    fun isEmpty(): Boolean {
-<b class="fc">&nbsp;        return currentSize == 0</b>
+&nbsp;/**
+&nbsp; * Reads a quoted key via [readQuoted], then — in block context only — rejects it if it
+&nbsp; * spanned more than one line. An implicit block-mapping key (no `?` indicator) must fit on a
+&nbsp; * single line, unlike an ordinary quoted-scalar value (which folds fine); a flow-mapping key
+&nbsp; * has no such restriction since its brackets give an unambiguous boundary (cases 9BXH/9SA2
+&nbsp; * expect a folded multi-line flow key to succeed, JKF3 expects the block equivalent to fail).
+&nbsp; */
+&nbsp;private inline fun GhostYamlFlatReader.readQuotedKeyRejectingMultiLine(
+&nbsp;    inFlow: Boolean,
+&nbsp;    readQuoted: () -&gt; String
+&nbsp;): String {
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val text = readQuoted()</b>
+<b class="fc">&nbsp;    if (inFlow) return text</b>
+<b class="fc">&nbsp;    var scanPosition = startPosition</b>
+<b class="fc">&nbsp;    while (scanPosition &lt; position) {</b>
+<b class="fc">&nbsp;        if (isLineBreakByte(byte = rawData[scanPosition])) {</b>
+<b class="fc">&nbsp;            yamlError(message = EM.ERR_IMPLICIT_KEY_MULTILINE)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        scanPosition++</b>
 &nbsp;    }
+<b class="fc">&nbsp;    return text</b>
 &nbsp;}
 </code>
 </pre>
@@ -158,7 +269,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

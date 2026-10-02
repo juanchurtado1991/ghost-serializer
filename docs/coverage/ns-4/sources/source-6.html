@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > TextChannelPlanner</title>
+  <title>GhostSerialization Coverage Report > GhostAnalyzerTypeHelpersKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.compiler.analysis</a>
 </div>
 
-<h1>Coverage Summary for Class: TextChannelPlanner (com.ghost.serialization.compiler.analysis)</h1>
+<h1>Coverage Summary for Class: GhostAnalyzerTypeHelpersKt (com.ghost.serialization.compiler.analysis)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,42 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">TextChannelPlanner</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (6/6)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    59.4%
-  </span>
-  <span class="absValue">
-    (38/64)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    88.2%
-  </span>
-  <span class="absValue">
-    (45/51)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    80.7%
-  </span>
-  <span class="absValue">
-    (297/368)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">TextChannelPlanner$AnalyzedClass</td>
+  <td class="name">GhostAnalyzerTypeHelpersKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -90,59 +58,40 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     (1/1)
   </span>
 </td>
-    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (3/3)
+    (10/10)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    51.1%
   </span>
   <span class="absValue">
-    (12/12)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (7/7)
+    (47/92)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    59.4%
+    85.4%
   </span>
   <span class="absValue">
-    (38/64)
+    (41/48)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    88.9%
+    75.9%
   </span>
   <span class="absValue">
-    (48/54)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    81.3%
-  </span>
-  <span class="absValue">
-    (309/380)
+    (303/399)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -152,139 +101,113 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
 &nbsp;
-&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.google.devtools.ksp.symbol.ClassKind
+&nbsp;import com.google.devtools.ksp.symbol.KSAnnotated
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSType
 &nbsp;import com.google.devtools.ksp.symbol.Modifier
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
-&nbsp;
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 &nbsp;
 &nbsp;/**
-&nbsp; * Resolves which `@GhostSerialization` models in a compilation round need the native
-&nbsp; * string reader/writer overloads.
-&nbsp; *
-&nbsp; * Priority:
-&nbsp; * 1. `ghost.textChannel=true`/`false` KSP option → forces every model in the module,
-&nbsp; *    overriding any per-class value.
-&nbsp; * 2. Otherwise, each `@GhostSerialization` model&#39;s own `textChannel` value (defaults to
-&nbsp; *    `true` on the annotation itself), **plus transitive propagation to any dependency**
-&nbsp; *    reachable from an enabled model&#39;s property graph (lists, maps, sealed subclasses,
-&nbsp; *    inferred variants) — a model referenced by an enabled model must also generate the
-&nbsp; *    string-reader overload, since the enabled model&#39;s generated code calls it directly;
-&nbsp; *    an explicit `textChannel = false` on a class only &quot;sticks&quot; when nothing reachable
-&nbsp; *    from an enabled model needs it.
+&nbsp; * Stateless type/annotation inspection shared by [GhostAnalyzer], [WrappedKeysAnalyzer], and
+&nbsp; * [CustomCoderAnalyzer] — none of these need a [com.google.devtools.ksp.processing.KSPLogger], so
+&nbsp; * they live as plain top-level functions instead of being duplicated across those 3 classes.
 &nbsp; */
-&nbsp;internal object TextChannelPlanner {
 &nbsp;
-<b class="fc">&nbsp;    data class AnalyzedClass(</b>
-<b class="fc">&nbsp;        val declaration: KSClassDeclaration,</b>
-<b class="fc">&nbsp;        val properties: List&lt;GhostPropertyModel&gt;,</b>
-&nbsp;    )
+<b class="fc">&nbsp;internal fun getJsonName(prop: KSPropertyDeclaration): String = getSerialName(declaration = prop)</b>
 &nbsp;
-&nbsp;    fun plan(
-&nbsp;        analyzed: List&lt;AnalyzedClass&gt;,
-&nbsp;        moduleTextChannelOverride: Boolean?,
-&nbsp;    ): Map&lt;KSClassDeclaration, Boolean&gt; {
-<b class="fc">&nbsp;        if (analyzed.isEmpty()) {</b>
-<b class="fc">&nbsp;            return emptyMap()</b>
-&nbsp;        }
+&nbsp;/** Resolves the serialized name, preferring `@GhostName` then kotlinx `@SerialName`. */
+&nbsp;internal fun getSerialName(declaration: KSAnnotated): String {
+<b class="fc">&nbsp;    val annotations = declaration.annotations.toList()</b>
 &nbsp;
-<b class="fc">&nbsp;        val byDeclaration = analyzed.associate { it.declaration to it.properties }</b>
-<b class="fc">&nbsp;        if (moduleTextChannelOverride != null) {</b>
-<b class="fc">&nbsp;            return byDeclaration.keys.associateWith { moduleTextChannelOverride }</b>
-&nbsp;        }
+&nbsp;    // 1. GhostName (Primary)
+<b class="fc">&nbsp;    val ghostName = annotations.find { it.shortName.asString() == AC.GHOST_NAME }</b>
+<b class="fc">&nbsp;    if (ghostName != null) {</b>
+<b class="pc">&nbsp;        val arg = ghostName.arguments.find { it.name?.asString() == AC.NAME }</b>
+<b class="nc">&nbsp;            ?: ghostName.arguments.firstOrNull()</b>
+<b class="pc">&nbsp;        return arg?.value?.toString() ?: CC.STR_EMPTY</b>
+&nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;        val enabled = mutableSetOf&lt;KSClassDeclaration&gt;()</b>
-<b class="fc">&nbsp;        analyzed.forEach { entry -&gt;</b>
-<b class="fc">&nbsp;            if (entry.declaration.effectiveOwnTextChannelValue()) {</b>
-<b class="fc">&nbsp;                enabled.add(entry.declaration)</b>
-&nbsp;            }
-<b class="fc">&nbsp;        }</b>
+&nbsp;    // 2. SerialName (kotlinx compatibility)
+<b class="pc">&nbsp;    val serialName = annotations.find {</b>
+<b class="fc">&nbsp;        val name = it.shortName.asString()</b>
+<b class="pc">&nbsp;        name == AC.SERIAL_NAME || name.endsWith(AC.STR_SERIAL_NAME_SUFFIX)</b>
+&nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;        val pending = ArrayDeque(enabled)</b>
-<b class="fc">&nbsp;        while (pending.isNotEmpty()) {</b>
-<b class="fc">&nbsp;            val current = pending.removeFirst()</b>
-<b class="pc">&nbsp;            val properties = byDeclaration[current] ?: emptyList()</b>
-<b class="fc">&nbsp;            for (dependency in ghostDependencies(current, properties)) {</b>
-<b class="fc">&nbsp;                if (enabled.add(dependency)) {</b>
-<b class="fc">&nbsp;                    pending.addLast(dependency)</b>
+<b class="pc">&nbsp;    if (serialName != null) {</b>
+<b class="nc">&nbsp;        val arg = serialName.arguments.find { it.name?.asString() == AC.STR_VALUE_ARG }</b>
+<b class="nc">&nbsp;            ?: serialName.arguments.firstOrNull()</b>
+&nbsp;
+<b class="nc">&nbsp;        return arg?.value?.toString()</b>
+<b class="nc">&nbsp;            ?: (declaration as? KSDeclaration)?.simpleName?.asString()</b>
+<b class="nc">&nbsp;            ?: CC.STR_EMPTY</b>
+&nbsp;    }
+&nbsp;
+<b class="pc">&nbsp;    return (declaration as? KSDeclaration)</b>
+<b class="pc">&nbsp;        ?.simpleName?.asString()</b>
+<b class="nc">&nbsp;        ?: CC.STR_EMPTY</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun KSPropertyDeclaration.hasAnnotation(name: String): Boolean {
+<b class="fc">&nbsp;    return annotations.any { it.shortName.asString() == name }</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun isEnumType(type: KSType): Boolean =
+<b class="pc">&nbsp;    (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS</b>
+&nbsp;
+&nbsp;internal fun isGhostType(type: KSType): Boolean =
+<b class="fc">&nbsp;    type.declaration.annotations.any {</b>
+<b class="fc">&nbsp;        val name = it.shortName.asString()</b>
+<b class="fc">&nbsp;        name == CC.ANNOTATION_GHOST_SERIALIZATION || name == CC.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
+&nbsp;    }
+&nbsp;
+&nbsp;internal fun isSealedClass(type: KSType): Boolean {
+<b class="pc">&nbsp;    val declaration = type.declaration as? KSClassDeclaration ?: return false</b>
+<b class="fc">&nbsp;    return declaration.modifiers.contains(Modifier.SEALED)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun isValueClass(type: KSType): Boolean {
+<b class="pc">&nbsp;    val declaration = type.declaration as? KSClassDeclaration ?: return false</b>
+<b class="fc">&nbsp;    return declaration.modifiers.contains(Modifier.VALUE) ||</b>
+<b class="fc">&nbsp;            declaration.modifiers.contains(Modifier.INLINE)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun resolveFirstTypeArg(type: KSType): KSType? {
+<b class="pc">&nbsp;    return type.arguments.firstOrNull()?.type?.resolve()</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun resolveSecondTypeArg(type: KSType): KSType? {
+<b class="pc">&nbsp;    return type.arguments.getOrNull(1)?.type?.resolve()</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun toLowerCamelCase(str: String): String {
+<b class="pc">&nbsp;    if (str.isEmpty()) return str</b>
+<b class="fc">&nbsp;    val sb = StringBuilder()</b>
+<b class="fc">&nbsp;    var uppercaseNext = false</b>
+<b class="fc">&nbsp;    var i = 0</b>
+<b class="fc">&nbsp;    val len = str.length</b>
+<b class="fc">&nbsp;    while (i &lt; len) {</b>
+<b class="fc">&nbsp;        val c = str[i]</b>
+<b class="fc">&nbsp;        if (c == AC.CHAR_UNDERSCORE) {</b>
+<b class="fc">&nbsp;            uppercaseNext = true</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            if (uppercaseNext) {</b>
+<b class="fc">&nbsp;                sb.append(c.uppercaseChar())</b>
+<b class="fc">&nbsp;                uppercaseNext = false</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                if (i == 0) {</b>
+<b class="fc">&nbsp;                    sb.append(c.lowercaseChar())</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    sb.append(c)</b>
 &nbsp;                }
 &nbsp;            }
 &nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return byDeclaration.keys.associateWith { it in enabled }</b>
+<b class="fc">&nbsp;        i++</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * A class&#39;s own stated preference, ignoring transitive requirements from callers. Only
-&nbsp;     * `@GhostSerialization`-annotated classes have an opinion (defaults to `true`); anything
-&nbsp;     * else (e.g. `@GhostProtoSerialization`) returns `false` but can still be pulled in
-&nbsp;     * transitively.
-&nbsp;     */
-&nbsp;    private fun KSClassDeclaration.effectiveOwnTextChannelValue(): Boolean {
-<b class="fc">&nbsp;        val annotation = annotations.firstOrNull {</b>
-<b class="fc">&nbsp;            it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION</b>
-<b class="fc">&nbsp;        } ?: return false</b>
-<b class="pc">&nbsp;        val explicit = annotation.arguments</b>
-<b class="pc">&nbsp;            .firstOrNull { arg -&gt; arg.name?.asString() == C.ARG_TEXT_CHANNEL }</b>
-<b class="pc">&nbsp;            ?.value as? Boolean</b>
-<b class="pc">&nbsp;        return explicit ?: true</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun ghostDependencies(
-&nbsp;        classDeclaration: KSClassDeclaration,
-&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
-&nbsp;    ): Set&lt;KSClassDeclaration&gt; {
-<b class="fc">&nbsp;        val deps = mutableSetOf&lt;KSClassDeclaration&gt;()</b>
-&nbsp;
-<b class="fc">&nbsp;        if (classDeclaration.modifiers.contains(Modifier.SEALED)) {</b>
-<b class="fc">&nbsp;            classDeclaration.getSealedSubclasses().forEach { subclass -&gt;</b>
-<b class="pc">&nbsp;                subclass.toGhostDeclaration()?.let { deps.add(it) }</b>
-<b class="fc">&nbsp;            }</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        for (property in properties) {</b>
-<b class="fc">&nbsp;            collectPropertyDependencies(property, deps)</b>
-<b class="pc">&nbsp;            property.valueClassProperty?.let { inner -&gt;</b>
-<b class="nc">&nbsp;                if (inner.isGhost) {</b>
-<b class="nc">&nbsp;                    inner.type.toGhostDeclaration()?.let { deps.add(it) }</b>
-&nbsp;                }
-<b class="nc">&nbsp;            }</b>
-<b class="fc">&nbsp;            for (subclass in property.inferredSubclasses) {</b>
-<b class="pc">&nbsp;                subclass.declaration.toGhostDeclaration()?.let { deps.add(it) }</b>
-<b class="fc">&nbsp;                for (subProperty in subclass.properties) {</b>
-<b class="fc">&nbsp;                    collectPropertyDependencies(subProperty, deps)</b>
-&nbsp;                }
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return deps</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun collectPropertyDependencies(
-&nbsp;        property: GhostPropertyModel,
-&nbsp;        deps: MutableSet&lt;KSClassDeclaration&gt;,
-&nbsp;    ) {
-<b class="fc">&nbsp;        if (property.isGhost) {</b>
-<b class="pc">&nbsp;            property.type.toGhostDeclaration()?.let { deps.add(it) }</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (property.listInnerIsGhost) {</b>
-<b class="nc">&nbsp;            property.listInnerType?.toGhostDeclaration()?.let { deps.add(it) }</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (property.mapValueIsGhost) {</b>
-<b class="nc">&nbsp;            property.mapValueType?.toGhostDeclaration()?.let { deps.add(it) }</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun KSType.toGhostDeclaration(): KSClassDeclaration? =
-<b class="pc">&nbsp;        (declaration as? KSClassDeclaration)?.toGhostDeclaration()</b>
-&nbsp;
-&nbsp;    private fun KSClassDeclaration.toGhostDeclaration(): KSClassDeclaration? {
-<b class="pc">&nbsp;        if (!annotations.any { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }) {</b>
-<b class="nc">&nbsp;            return null</b>
-&nbsp;        }
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
+<b class="fc">&nbsp;    return sb.toString()</b>
 &nbsp;}
 </code>
 </pre>
@@ -309,7 +232,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

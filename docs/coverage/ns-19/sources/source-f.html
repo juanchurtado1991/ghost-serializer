@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ListSerializer</title>
+  <title>GhostSerialization Coverage Report > GhostYamlQuotedScalarDecodingKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.serializers</a>
+    <a href="../index.html">com.ghost.serialization.parser.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: ListSerializer (com.ghost.serialization.serializers)</h1>
+<h1>Coverage Summary for Class: GhostYamlQuotedScalarDecodingKt (com.ghost.serialization.parser.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ListSerializer</td>
+  <td class="name">GhostYamlQuotedScalarDecodingKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    100%
   </span>
   <span class="absValue">
-    (6/7)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    54.5%
+    77.9%
   </span>
   <span class="absValue">
-    (12/22)
+    (173/222)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    63.8%
+    75%
   </span>
   <span class="absValue">
-    (30/47)
+    (192/256)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    61.9%
+    74.2%
   </span>
   <span class="absValue">
-    (120/194)
+    (1080/1455)
   </span>
 </td>
 </tr>
@@ -101,121 +101,385 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;package com.ghost.serialization.serializers
+&nbsp;package com.ghost.serialization.parser.yaml
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.contract.GhostSerializer
-&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
-&nbsp;import com.ghost.serialization.parser.streaming.decodeResilient
-&nbsp;import com.ghost.serialization.parser.streaming.readList
-&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.strings.readList
-&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
-&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+&nbsp;import com.ghost.serialization.acquireScratchBuffer
+&nbsp;import com.ghost.serialization.releaseScratchBuffer
+&nbsp;import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+&nbsp;import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
+&nbsp;import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Serializer implementation for standard Kotlin [List] collections.
+&nbsp; * Decodes double- and single-quoted scalars: escape sequences, `&#39;&#39;`-doubling, and the
+&nbsp; * line-fold/trim rules quoted scalars share with plain/block-folded ones. Split out of
+&nbsp; * `GhostYamlScalarDecoding.kt` since this layer never needs the type-resolution logic there.
 &nbsp; */
-<b class="fc">&nbsp;class ListSerializer&lt;T&gt;(</b>
-<b class="fc">&nbsp;    private val itemSerializer: GhostSerializer&lt;T&gt;</b>
-&nbsp;) : GhostSerializer&lt;List&lt;T&gt;&gt; {
 &nbsp;
-&nbsp;    override val typeName: String
-<b class="nc">&nbsp;        get() = &quot;${C.TYPE_NAME_LIST_PREFIX}${itemSerializer.typeName}${C.TYPE_NAME_GENERIC_SUFFIX}&quot;</b>
+&nbsp;internal fun GhostYamlFlatReader.readDoubleQuotedString(): String {
+<b class="fc">&nbsp;    position++ // consume opening &#39;&quot;&#39;</b>
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
 &nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: GhostJsonWriter,
-&nbsp;        value: List&lt;T&gt;
-&nbsp;    ) {
-<b class="fc">&nbsp;        writer.beginArray()</b>
-<b class="fc">&nbsp;        val size = value.size</b>
-<b class="pc">&nbsp;        if (size == 0) {</b>
-<b class="nc">&nbsp;            writer.endArray()</b>
-&nbsp;            return
+<b class="fc">&nbsp;    var hasEscape = false</b>
+<b class="fc">&nbsp;    var scanPos = position</b>
+<b class="fc">&nbsp;    while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byteVal = localRawData[scanPos]</b>
+<b class="fc">&nbsp;        if (byteVal == TOK.DOUBLE_QUOTE_BYTE) {</b>
+&nbsp;            break
 &nbsp;        }
-<b class="pc">&nbsp;        if (value is RandomAccess) {</b>
-<b class="fc">&nbsp;            for (i in 0 until size) {</b>
-<b class="fc">&nbsp;                itemSerializer.serialize(writer, value[i])</b>
-&nbsp;            }
-&nbsp;        } else {
-<b class="nc">&nbsp;            for (item in value) {</b>
-<b class="nc">&nbsp;                itemSerializer.serialize(writer, item)</b>
-&nbsp;            }
+<b class="fc">&nbsp;        if (byteVal == TOK.BACKSLASH_BYTE || isLineBreakByte(byte = byteVal)) {</b>
+&nbsp;            // A line break needs folding, same as an escape sequence needs decoding — both force
+&nbsp;            // the slow path.
+<b class="fc">&nbsp;            hasEscape = true</b>
+&nbsp;            break
 &nbsp;        }
-<b class="fc">&nbsp;        writer.endArray()</b>
+<b class="fc">&nbsp;        scanPos++</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun serialize(
-&nbsp;        writer: GhostJsonStringWriter,
-&nbsp;        value: List&lt;T&gt;
-&nbsp;    ) {
-<b class="fc">&nbsp;        writer.beginArray()</b>
-<b class="fc">&nbsp;        val size = value.size</b>
-<b class="pc">&nbsp;        if (size == 0) {</b>
-<b class="nc">&nbsp;            writer.endArray()</b>
-&nbsp;            return
-&nbsp;        }
-<b class="pc">&nbsp;        if (value is RandomAccess) {</b>
-<b class="fc">&nbsp;            for (i in 0 until size) {</b>
-<b class="fc">&nbsp;                itemSerializer.serialize(writer, value[i])</b>
-&nbsp;            }
-&nbsp;        } else {
-<b class="nc">&nbsp;            for (item in value) {</b>
-<b class="nc">&nbsp;                itemSerializer.serialize(writer, item)</b>
-&nbsp;            }
-&nbsp;        }
-<b class="fc">&nbsp;        writer.endArray()</b>
+<b class="fc">&nbsp;    if (!hasEscape &amp;&amp; scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        position = scanPos + 1 // consume string and closing quote</b>
+<b class="fc">&nbsp;        return localRawData.decodeToString(startPosition, scanPos)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(
-&nbsp;        reader: GhostJsonReader
-&nbsp;    ): List&lt;T&gt; {
-<b class="pc">&nbsp;        return if (itemSerializer.isResilient) {</b>
-<b class="nc">&nbsp;            reader.readList {</b>
-<b class="nc">&nbsp;                reader.decodeResilient {</b>
-<b class="nc">&nbsp;                    itemSerializer.deserialize(reader)</b>
-<b class="nc">&nbsp;                }</b>
-<b class="nc">&nbsp;            }.filterNotNull()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            reader.readList {</b>
-<b class="fc">&nbsp;                itemSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;    var outBuffer = acquireScratchBuffer(minSize = SC.SCRATCH_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    var outPos = 0</b>
+&nbsp;    // Trailing whitespace before a fold is normally trimmed, but an *escaped* space/tab
+&nbsp;    // (&quot;\ &quot;/&quot;\t&quot;) is real content the author deliberately protected — trimFloor marks how far
+&nbsp;    // back the trim loop may go, advanced to outPos after every escape write.
+<b class="fc">&nbsp;    var trimFloor = 0</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;            if (currentByte == TOK.DOUBLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+<b class="fc">&nbsp;                return outBuffer.decodeToString(0, outPos)</b>
+<b class="fc">&nbsp;            } else if (currentByte == TOK.BACKSLASH_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+<b class="pc">&nbsp;                if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;                val nextByte = localRawData[position]</b>
+<b class="fc">&nbsp;                if (isLineBreakByte(byte = nextByte)) {</b>
+<b class="pc">&nbsp;                    val isCrLf = nextByte == TOK.CR_BYTE &amp;&amp;</b>
+<b class="nc">&nbsp;                        position + 1 &lt; localLimit &amp;&amp; localRawData[position + 1] == TOK.NEWLINE_BYTE</b>
+<b class="pc">&nbsp;                    if (isCrLf) {</b>
+<b class="nc">&nbsp;                        position++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    position++</b>
+<b class="pc">&nbsp;                    while (position &lt; localLimit &amp;&amp; isInlineWhitespaceByte(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;                        position++</b>
+&nbsp;                    }
+&nbsp;                } else {
+<b class="fc">&nbsp;                    val code = processEscapeSequence()</b>
+<b class="fc">&nbsp;                    if (code &lt;= SC.UTF8_1BYTE_MAX) {</b>
+<b class="fc">&nbsp;                        if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                            val newBuffer =</b>
+<b class="fc">&nbsp;                                acquireScratchBuffer(minSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR)</b>
+<b class="fc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="fc">&nbsp;                            releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="fc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] = code.toByte()</b>
+<b class="pc">&nbsp;                    } else if (code &lt;= SC.UTF8_2BYTE_MAX) {</b>
+<b class="nc">&nbsp;                        if (outPos + 2 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(minSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (SC.UTF8_2BYTE_PREFIX or (code shr SC.SHIFT_6_BITS)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (SC.UTF8_CONT_PREFIX or (code and SC.UTF8_CONT_MASK)).toByte()</b>
+<b class="pc">&nbsp;                    } else if (code &lt;= SC.UTF8_3BYTE_MAX) {</b>
+<b class="pc">&nbsp;                        if (outPos + 3 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(minSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="fc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                            (SC.UTF8_3BYTE_PREFIX or (code shr SC.SHIFT_12)).toByte()</b>
+<b class="fc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                            (SC.UTF8_CONT_PREFIX or ((code shr SC.SHIFT_6_BITS) and SC.UTF8_CONT_MASK)).toByte()</b>
+<b class="fc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="fc">&nbsp;                            (SC.UTF8_CONT_PREFIX or (code and SC.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                    } else {
+<b class="nc">&nbsp;                        if (outPos + 4 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                            val newBuffer =</b>
+<b class="nc">&nbsp;                                acquireScratchBuffer(minSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                            outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                            releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                            outBuffer = newBuffer</b>
+&nbsp;                        }
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (SC.UTF8_4BYTE_PREFIX or (code shr SC.SHIFT_18_BITS)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (SC.UTF8_CONT_PREFIX or ((code shr SC.SHIFT_12) and SC.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (SC.UTF8_CONT_PREFIX or ((code shr SC.SHIFT_6_BITS) and SC.UTF8_CONT_MASK)).toByte()</b>
+<b class="nc">&nbsp;                        outBuffer[outPos++] =</b>
+<b class="nc">&nbsp;                            (SC.UTF8_CONT_PREFIX or (code and SC.UTF8_CONT_MASK)).toByte()</b>
+&nbsp;                    }
+&nbsp;                }
+<b class="fc">&nbsp;                trimFloor = outPos</b>
+<b class="fc">&nbsp;            } else if (isLineBreakByte(byte = currentByte)) {</b>
+&nbsp;                // Trim trailing spaces/tabs before the fold, never past trimFloor — that would
+&nbsp;                // eat an escaped space/tab the author deliberately protected.
+<b class="fc">&nbsp;                while (outPos &gt; trimFloor &amp;&amp; isInlineWhitespaceByte(byte = outBuffer[outPos - 1])) {</b>
+<b class="fc">&nbsp;                    outPos--</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val breakCount = skipQuotedLineBreaks()</b>
+<b class="fc">&nbsp;                val toAppend = if (breakCount == 1) 1 else breakCount - 1</b>
+<b class="pc">&nbsp;                if (outPos + toAppend &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + toAppend &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= SC.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(minSize = newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val fillByte = if (breakCount == 1) TOK.SPACE_BYTE else TOK.NEWLINE_BYTE</b>
+<b class="fc">&nbsp;                repeat(toAppend) { outBuffer[outPos++] = fillByte }</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val startPos = position</b>
+<b class="fc">&nbsp;                while (position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != TOK.DOUBLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != TOK.BACKSLASH_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != TOK.NEWLINE_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                    localRawData[position] != TOK.CR_BYTE</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val rangeLength = position - startPos</b>
+<b class="fc">&nbsp;                if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="fc">&nbsp;                    var newSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR</b>
+<b class="pc">&nbsp;                    while (outPos + rangeLength &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= SC.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    val newBuffer = acquireScratchBuffer(minSize = newSize)</b>
+<b class="fc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="fc">&nbsp;                    releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="fc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
+<b class="fc">&nbsp;                outPos += rangeLength</b>
 &nbsp;            }
 &nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        releaseScratchBuffer(buffer = outBuffer)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    yamlError(message = EM.ERR_UNTERMINATED_DOUBLE_QUOTED)</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun GhostYamlFlatReader.readSingleQuotedString(): String {
+<b class="fc">&nbsp;    position++ // consume opening &#39;\&#39;&#39;</b>
+<b class="fc">&nbsp;    val startPosition = position</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+&nbsp;
+<b class="fc">&nbsp;    var hasEscape = false</b>
+<b class="fc">&nbsp;    var scanPos = position</b>
+<b class="fc">&nbsp;    while (scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val byteVal = localRawData[scanPos]</b>
+<b class="fc">&nbsp;        if (byteVal == TOK.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;            if (scanPos + 1 &lt; localLimit &amp;&amp; localRawData[scanPos + 1] == TOK.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                hasEscape = true</b>
+<b class="fc">&nbsp;                scanPos += 2</b>
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        if (isLineBreakByte(byte = byteVal)) {</b>
+&nbsp;            // A line break needs folding, same as a doubled &#39;&#39; needs unescaping — both force the
+&nbsp;            // slow path.
+<b class="fc">&nbsp;            hasEscape = true</b>
+&nbsp;            break
+&nbsp;        }
+<b class="fc">&nbsp;        scanPos++</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(
-&nbsp;        reader: GhostJsonFlatReader
-&nbsp;    ): List&lt;T&gt; {
-<b class="pc">&nbsp;        return if (itemSerializer.isResilient) {</b>
-<b class="nc">&nbsp;            reader.readList {</b>
-<b class="nc">&nbsp;                reader.decodeResilient {</b>
-<b class="nc">&nbsp;                    itemSerializer.deserialize(reader)</b>
-<b class="nc">&nbsp;                }</b>
-<b class="nc">&nbsp;            }.filterNotNull()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            reader.readList {</b>
-<b class="fc">&nbsp;                itemSerializer.deserialize(reader)</b>
-&nbsp;            }
-&nbsp;        }
+<b class="fc">&nbsp;    if (!hasEscape &amp;&amp; scanPos &lt; localLimit) {</b>
+<b class="fc">&nbsp;        position = scanPos + 1 // consume string and closing quote</b>
+<b class="fc">&nbsp;        return localRawData.decodeToString(startPosition, scanPos)</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    override fun deserialize(
-&nbsp;        reader: GhostJsonStringReader
-&nbsp;    ): List&lt;T&gt; {
-<b class="fc">&nbsp;        return if (itemSerializer.isResilient) {</b>
-<b class="fc">&nbsp;            reader.readList {</b>
-<b class="fc">&nbsp;                reader.decodeResilient {</b>
-<b class="fc">&nbsp;                    itemSerializer.deserialize(reader)</b>
-<b class="fc">&nbsp;                }</b>
-<b class="fc">&nbsp;            }.filterNotNull()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            reader.readList {</b>
-<b class="fc">&nbsp;                itemSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;    var outBuffer = acquireScratchBuffer(minSize = SC.SCRATCH_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    var outPos = 0</b>
+&nbsp;    try {
+<b class="fc">&nbsp;        while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;            val currentByte = localRawData[position]</b>
+<b class="fc">&nbsp;            if (currentByte == TOK.SINGLE_QUOTE_BYTE) {</b>
+<b class="fc">&nbsp;                position++</b>
+<b class="pc">&nbsp;                if (position &lt; localLimit &amp;&amp; localRawData[position] == TOK.SINGLE_QUOTE_BYTE) {</b>
+<b class="pc">&nbsp;                    if (outPos + 1 &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                        val newBuffer =</b>
+<b class="nc">&nbsp;                            acquireScratchBuffer(minSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR)</b>
+<b class="nc">&nbsp;                        outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                        releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                        outBuffer = newBuffer</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    outBuffer[outPos++] = TOK.SINGLE_QUOTE_BYTE</b>
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    return outBuffer.decodeToString(0, outPos)</b>
+&nbsp;                }
+<b class="fc">&nbsp;            } else if (isLineBreakByte(byte = currentByte)) {</b>
+&nbsp;                // Single-quoted scalars have no backslash-escape mechanism, so unlike the
+&nbsp;                // double-quoted reader there&#39;s never a protected trailing space/tab — always
+&nbsp;                // trim trailing whitespace before a fold in full.
+<b class="fc">&nbsp;                while (outPos &gt; 0 &amp;&amp; isInlineWhitespaceByte(byte = outBuffer[outPos - 1])) {</b>
+<b class="fc">&nbsp;                    outPos--</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val breakCount = skipQuotedLineBreaks()</b>
+<b class="fc">&nbsp;                val toAppend = if (breakCount == 1) 1 else breakCount - 1</b>
+<b class="pc">&nbsp;                if (outPos + toAppend &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + toAppend &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= SC.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(minSize = newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val fillByte = if (breakCount == 1) TOK.SPACE_BYTE else TOK.NEWLINE_BYTE</b>
+<b class="fc">&nbsp;                repeat(toAppend) { outBuffer[outPos++] = fillByte }</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val startPos = position</b>
+<b class="fc">&nbsp;                while (position &lt; localLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != TOK.SINGLE_QUOTE_BYTE &amp;&amp;</b>
+<b class="fc">&nbsp;                    localRawData[position] != TOK.NEWLINE_BYTE &amp;&amp;</b>
+<b class="pc">&nbsp;                    localRawData[position] != TOK.CR_BYTE</b>
+&nbsp;                ) {
+<b class="fc">&nbsp;                    position++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                val rangeLength = position - startPos</b>
+<b class="pc">&nbsp;                if (outPos + rangeLength &gt; outBuffer.size) {</b>
+<b class="nc">&nbsp;                    var newSize = outBuffer.size * SC.BUFFER_SCALE_FACTOR</b>
+<b class="nc">&nbsp;                    while (outPos + rangeLength &gt; newSize) {</b>
+<b class="nc">&nbsp;                        newSize *= SC.BUFFER_SCALE_FACTOR</b>
+&nbsp;                    }
+<b class="nc">&nbsp;                    val newBuffer = acquireScratchBuffer(minSize = newSize)</b>
+<b class="nc">&nbsp;                    outBuffer.copyInto(newBuffer, 0, 0, outPos)</b>
+<b class="nc">&nbsp;                    releaseScratchBuffer(buffer = outBuffer)</b>
+<b class="nc">&nbsp;                    outBuffer = newBuffer</b>
+&nbsp;                }
+<b class="fc">&nbsp;                localRawData.copyInto(outBuffer, outPos, startPos, position)</b>
+<b class="fc">&nbsp;                outPos += rangeLength</b>
 &nbsp;            }
 &nbsp;        }
+&nbsp;    } finally {
+<b class="fc">&nbsp;        releaseScratchBuffer(buffer = outBuffer)</b>
 &nbsp;    }
+<b class="fc">&nbsp;    yamlError(message = EM.ERR_UNTERMINATED_SINGLE_QUOTED)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Called with [GhostYamlFlatReader.position] at a line-break inside a quoted scalar. Folds it
+&nbsp; * like plain/block-folded scalars: one line break becomes a space, N consecutive breaks (N-1
+&nbsp; * blank lines) become N-1 newlines. Each line&#39;s leading whitespace is fully skipped — quoted
+&nbsp; * scalars have no block-style indentation to preserve. Leaves position at the first non-blank
+&nbsp; * content (or closing quote); returns the number of line breaks folded.
+&nbsp; */
+&nbsp;private fun GhostYamlFlatReader.skipQuotedLineBreaks(): Int {
+<b class="fc">&nbsp;    val localRawData = rawData</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    var breakCount = 0</b>
+<b class="pc">&nbsp;    while (position &lt; localLimit) {</b>
+<b class="fc">&nbsp;        val currentByte = localRawData[position]</b>
+<b class="pc">&nbsp;        if (currentByte == TOK.CR_BYTE) {</b>
+<b class="nc">&nbsp;            position++</b>
+<b class="nc">&nbsp;            if (position &lt; localLimit &amp;&amp; localRawData[position] == TOK.NEWLINE_BYTE) position++</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            position++ // NEWLINE_BYTE</b>
+&nbsp;        }
+<b class="fc">&nbsp;        breakCount++</b>
+<b class="fc">&nbsp;        while (position &lt; localLimit &amp;&amp; isInlineWhitespaceByte(byte = localRawData[position])) {</b>
+<b class="fc">&nbsp;            position++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (position &gt;= localLimit) break</b>
+<b class="fc">&nbsp;        if (!isLineBreakByte(byte = localRawData[position])) break</b>
+&nbsp;    }
+&nbsp;    // The quoted scalar is still &quot;open&quot; (closing quote not yet seen), but a line that looks like
+&nbsp;    // a document marker is forbidden content inside it regardless (spec&#39;s c-forbidden production).
+<b class="fc">&nbsp;    val endsAtDocumentMarker = position &lt; localLimit &amp;&amp; (isDocumentMarker() || isDocumentEndMarker())</b>
+<b class="fc">&nbsp;    if (endsAtDocumentMarker) {</b>
+<b class="fc">&nbsp;        val markerName = if (localRawData[position] == TOK.DASH_BYTE) TOK.STR_DOC_START else TOK.STR_DOC_END</b>
+<b class="fc">&nbsp;        yamlError(</b>
+<b class="fc">&nbsp;            message = EM.ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX + markerName + EM.ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX</b>
+&nbsp;        )
+&nbsp;    }
+<b class="fc">&nbsp;    return breakCount</b>
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.processEscapeSequence(): Int {
+<b class="fc">&nbsp;    val currentByte = rawData[position++]</b>
+<b class="fc">&nbsp;    val currentByteInt = currentByte.toInt()</b>
+<b class="fc">&nbsp;    val localLimit = limit</b>
+<b class="fc">&nbsp;    return when (currentByte) {</b>
+<b class="fc">&nbsp;        TOK.DOUBLE_QUOTE_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        TOK.BACKSLASH_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        TOK.ESCAPE_SLASH_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        TOK.SPACE_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        TOK.TAB_BYTE -&gt; currentByteInt</b>
+<b class="fc">&nbsp;        TOK.LOWERCASE_B_BYTE -&gt; SC.CODE_BS</b>
+<b class="fc">&nbsp;        TOK.LOWERCASE_F_BYTE -&gt; SC.CODE_FF</b>
+<b class="fc">&nbsp;        TOK.LOWERCASE_N_BYTE -&gt; TOK.NEWLINE_INT</b>
+<b class="fc">&nbsp;        TOK.LOWERCASE_R_BYTE -&gt; SC.CODE_CR</b>
+<b class="fc">&nbsp;        TOK.LOWERCASE_T_BYTE -&gt; SC.CODE_TAB</b>
+<b class="fc">&nbsp;        TOK.LOWERCASE_X_BYTE -&gt; {        // \xXX</b>
+<b class="pc">&nbsp;            if (position + SC.HEX_ESCAPE_X_LEN &gt; localLimit) yamlError(message = EM.ERR_INCOMPLETE_X_ESCAPE)</b>
+<b class="fc">&nbsp;            val hexVal = parseHex(data = rawData, start = position, length = SC.HEX_ESCAPE_X_LEN)</b>
+<b class="fc">&nbsp;            position += SC.HEX_ESCAPE_X_LEN</b>
+<b class="fc">&nbsp;            hexVal</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        TOK.LOWERCASE_U_BYTE -&gt; {        // \uXXXX</b>
+<b class="fc">&nbsp;            if (position + SC.HEX_ESCAPE_U_LEN &gt; localLimit) yamlError(message = EM.ERR_INCOMPLETE_U_ESCAPE)</b>
+<b class="fc">&nbsp;            val hexVal = parseHex(data = rawData, start = position, length = SC.HEX_ESCAPE_U_LEN)</b>
+<b class="fc">&nbsp;            position += SC.HEX_ESCAPE_U_LEN</b>
+<b class="fc">&nbsp;            hexVal</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        TOK.UPPERCASE_U_BYTE -&gt; {        // \UXXXXXXXX</b>
+<b class="nc">&nbsp;            if (position + SC.HEX_ESCAPE_U32_LEN &gt; localLimit) yamlError(message = EM.ERR_INCOMPLETE_U32_ESCAPE)</b>
+<b class="nc">&nbsp;            val hexVal = parseHex(data = rawData, start = position, length = SC.HEX_ESCAPE_U32_LEN)</b>
+<b class="nc">&nbsp;            position += SC.HEX_ESCAPE_U32_LEN</b>
+<b class="nc">&nbsp;            hexVal</b>
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        TOK.ZERO_BYTE -&gt; SC.CODE_ZERO</b>
+<b class="pc">&nbsp;        TOK.LOWERCASE_A_BYTE -&gt; SC.CODE_BEL</b>
+<b class="pc">&nbsp;        TOK.LOWERCASE_V_BYTE -&gt; SC.CODE_VTAB</b>
+<b class="pc">&nbsp;        TOK.LOWERCASE_E_BYTE -&gt; SC.CODE_ESC</b>
+<b class="pc">&nbsp;        TOK.UPPERCASE_N_BYTE -&gt; SC.CODE_NEXT_LINE</b>
+<b class="pc">&nbsp;        TOK.UNDERSCORE_BYTE -&gt; SC.CODE_NBSP</b>
+<b class="pc">&nbsp;        TOK.UPPERCASE_L_BYTE -&gt; SC.CODE_LINE_SEP</b>
+<b class="pc">&nbsp;        TOK.UPPERCASE_P_BYTE -&gt; SC.CODE_PARA_SEP</b>
+<b class="fc">&nbsp;        else -&gt; yamlError(message = &quot;${EM.ERR_UNKNOWN_ESCAPE_PREFIX}${currentByteInt.toChar()}&quot;)</b>
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;private fun GhostYamlFlatReader.parseHex(data: ByteArray, start: Int, length: Int): Int {
+<b class="fc">&nbsp;    var value = 0</b>
+<b class="fc">&nbsp;    var index = 0</b>
+<b class="fc">&nbsp;    while (index &lt; length) {</b>
+<b class="fc">&nbsp;        val byteVal = data[start + index]</b>
+<b class="fc">&nbsp;        val digit = when {</b>
+<b class="pc">&nbsp;            byteVal in TOK.ZERO_BYTE..TOK.NINE_BYTE -&gt; byteVal - TOK.ZERO_BYTE</b>
+<b class="fc">&nbsp;            byteVal in TOK.LOWERCASE_A_BYTE..TOK.LOWERCASE_F_BYTE -&gt; byteVal - TOK.LOWERCASE_A_BYTE + SC.HEX_RADIX_10</b>
+<b class="pc">&nbsp;            byteVal in TOK.UPPERCASE_A_BYTE..TOK.UPPERCASE_F_BYTE -&gt; byteVal - TOK.UPPERCASE_A_BYTE + SC.HEX_RADIX_10</b>
+<b class="fc">&nbsp;            else -&gt; yamlError(message = EM.ERR_INVALID_HEX_IN_ESCAPE)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        value = (value shl SC.HEX_SHIFT_4) or digit</b>
+<b class="fc">&nbsp;        index++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return value</b>
 &nbsp;}
 </code>
 </pre>
@@ -240,7 +504,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

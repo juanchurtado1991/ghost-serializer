@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonStringReaderCaptureKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonTokens</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.strings</a>
+    <a href="../index.html">com.ghost.serialization.parser.common.constants</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonStringReaderCaptureKt (com.ghost.serialization.parser.strings)</h1>
+<h1>Coverage Summary for Class: GhostJsonTokens (com.ghost.serialization.parser.common.constants)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonStringReaderCaptureKt</td>
+  <td class="name">GhostJsonTokens</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,10 +63,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (3/3)
+    (5/5)
   </span>
 </td>
-    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -80,7 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (53/53)
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (91/91)
   </span>
 </td>
 </tr>
@@ -92,40 +99,209 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.strings
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common.constants
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.types.RawJson
-&nbsp;import com.ghost.serialization.parser.common.captureJsonValueScan
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+&nbsp;/** Fixed JSON syntax bytes/chars and their fast-path case-folded forms. */
+&nbsp;object GhostJsonTokens {
+&nbsp;    const val CHAR_QUOTE = &#39;&quot;&#39;
+&nbsp;    const val CHAR_T = &#39;t&#39;
+&nbsp;    const val CHAR_R = &#39;r&#39;
+&nbsp;    const val CHAR_U = &#39;u&#39;
+&nbsp;    const val CHAR_E = &#39;e&#39;
+&nbsp;    const val CHAR_F = &#39;f&#39;
+&nbsp;    const val CHAR_A = &#39;a&#39;
+&nbsp;    const val CHAR_L = &#39;l&#39;
+&nbsp;    const val CHAR_S = &#39;s&#39;
+&nbsp;    const val CHAR_N = &#39;n&#39;
+&nbsp;    const val CHAR_DOT = &#39;.&#39;
+&nbsp;    const val CHAR_ZERO = &#39;0&#39;
+&nbsp;    const val CHAR_BACKSLASH = &#39;\\&#39;
+&nbsp;    const val CHAR_HYPHEN = &#39;-&#39;
+&nbsp;    const val CHAR_PLUS = &#39;+&#39;
+&nbsp;    const val CHAR_COLON = &#39;:&#39;
+&nbsp;    const val CHAR_T_UPPER = &#39;T&#39;
+&nbsp;    const val CHAR_Z_UPPER = &#39;Z&#39;
+&nbsp;    const val CHAR_Z_LOWER = &#39;z&#39;
+&nbsp;    const val CHAR_COMMA = &#39;,&#39;
+&nbsp;    const val CHAR_UNDERSCORE = &#39;_&#39;
 &nbsp;
+&nbsp;    // --- Case-Folded ASCII Byte Constants ---
+&nbsp;    // Each constant is `&#39;X&#39;.code or 32` (32 = CASE_INSENSITIVE_MASK): folding bit 5 turns
+&nbsp;    // uppercase into lowercase, enabling zero-allocation compares: `(rawByte or CASE_INSENSITIVE_MASK) == FOLD_X`.
+&nbsp;    const val FOLD_T = &#39;t&#39;.code or 32 // &quot;true&quot;
+&nbsp;    const val FOLD_R = &#39;r&#39;.code or 32 // &quot;true&quot;
+&nbsp;    const val FOLD_U = &#39;u&#39;.code or 32 // &quot;true&quot;
+&nbsp;    const val FOLD_E = &#39;e&#39;.code or 32 // &quot;true&quot;, &quot;false&quot;, &quot;yes&quot;
+&nbsp;    const val FOLD_F = &#39;f&#39;.code or 32 // &quot;false&quot;, &quot;off&quot;
+&nbsp;    const val FOLD_A = &#39;a&#39;.code or 32 // &quot;false&quot;
+&nbsp;    const val FOLD_L = &#39;l&#39;.code or 32 // &quot;false&quot;
+&nbsp;    const val FOLD_S = &#39;s&#39;.code or 32 // &quot;false&quot;, &quot;yes&quot;
+&nbsp;    const val FOLD_Y = &#39;y&#39;.code or 32 // &quot;yes&quot;, &quot;y&quot;
+&nbsp;    const val FOLD_N = &#39;n&#39;.code or 32 // &quot;no&quot;, &quot;n&quot;
+&nbsp;    const val FOLD_O = &#39;o&#39;.code or 32 // &quot;on&quot;, &quot;no&quot;, &quot;off&quot;
 &nbsp;
-&nbsp;/**
-&nbsp; * Captures the next complete JSON value as owned [RawJson] (UTF-16 source requires encoding).
-&nbsp; */
-&nbsp;fun GhostJsonStringReader.captureRawJson(): RawJson =
-<b class="fc">&nbsp;    RawJson.fromUtf8Bytes(captureRawJsonBytes())</b>
+&nbsp;    /** Bitmask to normalize ASCII uppercase to lowercase (e.g. &#39;E&#39; or 32 == &#39;e&#39;). */
+&nbsp;    const val CASE_INSENSITIVE_MASK = 32
 &nbsp;
-&nbsp;/**
-&nbsp; * Captures the next complete JSON value as a raw [ByteArray] without decoding the value tree.
-&nbsp; *
-&nbsp; * Since [GhostJsonStringReader] operates on a UTF-16 [String], the captured char range is
-&nbsp; * converted to UTF-8 via [GhostJsonStringReader.sliceUtf8Bytes]: a range copy of the cached
-&nbsp; * UTF-8 view when present, otherwise an encode of that range only. Prefer
-&nbsp; * `parser.bytes.captureRawJsonBytes` when starting from a [ByteArray] source.
-&nbsp; */
-&nbsp;@OptIn(InternalGhostApi::class)
-&nbsp;fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
-<b class="fc">&nbsp;    skipWhitespace()</b>
-<b class="fc">&nbsp;    val start = position</b>
-<b class="fc">&nbsp;    captureStringReaderValueBytes()</b>
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;    return sliceUtf8Bytes(start, position)</b>
-&nbsp;}
+&nbsp;    /** String lengths used as a fast gate before byte-level coercion matching. */
+&nbsp;    const val BOOL_STR_LEN_1 = 1   // &quot;y&quot;, &quot;n&quot;, &quot;1&quot;, &quot;0&quot;
+&nbsp;    const val BOOL_STR_LEN_2 = 2   // &quot;on&quot;, &quot;no&quot;
+&nbsp;    const val BOOL_STR_LEN_3 = 3   // &quot;yes&quot;, &quot;off&quot;
+&nbsp;    const val BOOL_STR_LEN_4 = 4   // &quot;true&quot;
+&nbsp;    const val BOOL_STR_LEN_5 = 5   // &quot;false&quot;
 &nbsp;
-&nbsp;private fun GhostJsonStringReader.captureStringReaderValueBytes() {
-<b class="fc">&nbsp;    val chars = rawChars</b>
-<b class="fc">&nbsp;    position = captureJsonValueScan(position, limit) { index -&gt; chars[index].code }</b>
+&nbsp;    // Tail lengths after the first character of JSON literals has been consumed.
+&nbsp;    const val TRUE_TAIL_LEN = &quot;true&quot;.length - 1
+&nbsp;    const val FALSE_TAIL_LEN = &quot;false&quot;.length - 1
+&nbsp;    const val NULL_TAIL_LEN = &quot;null&quot;.length - 1
+&nbsp;    const val LITERAL_NULL = &quot;null&quot;
+&nbsp;    const val LITERAL_NULL_LEN = LITERAL_NULL.length
+&nbsp;
+&nbsp;    /** Length of a `\uXXXX` escape sequence written into the scratch buffer. */
+&nbsp;    const val UNICODE_ESCAPE_LENGTH = 6
+&nbsp;
+&nbsp;    const val BYTE_MASK = 0xFF
+&nbsp;    const val LONG_BYTE_MASK = 0xFFL
+&nbsp;
+&nbsp;    // --- ASCII Token Codes (Integers) ---
+&nbsp;    const val NEWLINE_INT = &#39;\n&#39;.code
+&nbsp;    const val COMMA_INT = &#39;,&#39;.code
+&nbsp;    const val COLON_INT = &#39;:&#39;.code
+&nbsp;    const val QUOTE_INT = &#39;&quot;&#39;.code
+&nbsp;    const val OPEN_OBJ_INT = &#39;{&#39;.code
+&nbsp;    const val CLOSE_OBJ_INT = &#39;}&#39;.code
+&nbsp;    const val OPEN_ARR_INT = &#39;[&#39;.code
+&nbsp;    const val CLOSE_ARR_INT = &#39;]&#39;.code
+&nbsp;    const val NULL_CHAR_INT = &#39;n&#39;.code
+&nbsp;    const val TRUE_CHAR_INT = &#39;t&#39;.code
+&nbsp;    const val FALSE_CHAR_INT = &#39;f&#39;.code
+&nbsp;    const val MINUS_INT = &#39;-&#39;.code
+&nbsp;    const val PLUS_INT = &#39;+&#39;.code
+&nbsp;    const val DOT_INT = &#39;.&#39;.code
+&nbsp;    const val ZERO_INT = &#39;0&#39;.code
+&nbsp;    const val ONE_INT = &#39;1&#39;.code
+&nbsp;    const val NINE_INT = &#39;9&#39;.code
+&nbsp;    const val BACKSLASH_INT = &#39;\\&#39;.code
+&nbsp;    const val UNICODE_PREFIX_U_INT = &#39;u&#39;.code
+&nbsp;    const val EXP_LOWER_INT = &#39;e&#39;.code
+&nbsp;    const val EXP_UPPER_INT = &#39;E&#39;.code
+&nbsp;    const val EQUALS_INT = &#39;=&#39;.code
+&nbsp;    const val EQUALS_BYTE = &#39;=&#39;.code.toByte()
+&nbsp;
+&nbsp;    // --- ASCII Token Codes (Bytes) ---
+&nbsp;    const val CLOSE_OBJ = &#39;}&#39;.code.toByte()
+&nbsp;    const val CLOSE_ARR = &#39;]&#39;.code.toByte()
+&nbsp;    const val MINUS = &#39;-&#39;.code.toByte()
+&nbsp;    const val DOT = &#39;.&#39;.code.toByte()
+&nbsp;    const val ZERO = &#39;0&#39;.code.toByte()
+&nbsp;    const val BACKSLASH = &#39;\\&#39;.code.toByte()
+&nbsp;    const val UNICODE_PREFIX_U = &#39;u&#39;.code.toByte()
+&nbsp;
+&nbsp;    // --- Control Characters (Int/Char values for parsing) ---
+&nbsp;    const val LF_INT = 0x0A
+&nbsp;    const val CR_INT = 0x0D
+&nbsp;    const val TAB_INT = 0x09
+&nbsp;    const val BS_INT = 0x08
+&nbsp;    const val FF_INT = 0x0C
+&nbsp;    const val LF_CHAR = &#39;\n&#39;
+&nbsp;    const val CR_CHAR = &#39;\r&#39;
+&nbsp;    const val TAB_CHAR = &#39;\t&#39;
+&nbsp;    const val BS_CHAR = &#39;\b&#39;
+&nbsp;    const val FF_CHAR = &#39;&#39;
+&nbsp;    const val SPACE_INT = 32
+&nbsp;    const val QUOTE_BYTE: Byte = 34
+&nbsp;    const val CONTROL_CHAR_START_INT = 0
+&nbsp;    const val CONTROL_CHAR_LIMIT_INT = 31
+&nbsp;    const val ASCII_LIMIT = 128
+&nbsp;
+&nbsp;    // Canonical byte codes for JSON literal (&#39;true&#39;/&#39;false&#39;/&#39;null&#39;) and escape-sequence
+&nbsp;    // (&#39;\b&#39;/&#39;\f&#39;/&#39;\n&#39;/&#39;\r&#39;/&#39;\t&#39;) matching — the same 5 letters serve both purposes.
+&nbsp;    const val N_BYTE_INT = 110
+&nbsp;    const val R_BYTE_INT = 114
+&nbsp;    const val T_BYTE_INT = 116
+&nbsp;    const val B_BYTE_INT = 98
+&nbsp;    const val F_BYTE_INT = 102
+&nbsp;    const val U_BYTE_INT = 117
+&nbsp;    const val A_BYTE_INT = 97
+&nbsp;    const val L_BYTE_INT = 108
+&nbsp;    const val S_BYTE_INT = 115
+&nbsp;    const val E_BYTE_INT = 101
+&nbsp;
+&nbsp;    /** Maps ASCII bytes (0-255) to their hex numeric value (-1 if invalid). */
+<b class="fc">&nbsp;    val HEX_LUT = IntArray(size = 256) { -1 }.apply {</b>
+<b class="fc">&nbsp;        for (i in 0..9) this[&#39;0&#39;.code + i] = i</b>
+<b class="fc">&nbsp;        for (i in 0..5) {</b>
+<b class="fc">&nbsp;            this[&#39;A&#39;.code + i] = 10 + i</b>
+<b class="fc">&nbsp;            this[&#39;a&#39;.code + i] = 10 + i</b>
+&nbsp;        }
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val HEX_CHARS = &quot;0123456789abcdef&quot;.encodeToByteArray()</b>
+<b class="fc">&nbsp;    val HEX_CHARS_CHARS = CharArray(size = 16) { i -&gt; &quot;0123456789abcdef&quot;[i] }</b>
+&nbsp;    const val HEX_MASK = 0xF
+&nbsp;    const val UNICODE_HEX_LENGTH = 4
+&nbsp;
+&nbsp;    // --- Unicode Surrogate Pairs ---
+&nbsp;    const val SURROGATE_OFFSET = 6
+&nbsp;    const val HIGH_SURROGATE_START = 0xD800
+&nbsp;    const val HIGH_SURROGATE_END = 0xDBFF
+&nbsp;    const val LOW_SURROGATE_START = 0xDC00
+&nbsp;    const val LOW_SURROGATE_END = 0xDFFF
+&nbsp;    const val UNICODE_BASE = 0x10000
+&nbsp;    const val SHIFT_10 = 10
+&nbsp;    const val BMP_LIMIT = 0xFFFF
+&nbsp;
+&nbsp;    /** Largest valid Unicode code point (U+10FFFF). */
+&nbsp;    const val UNICODE_MAX_CODE_POINT = 0x10FFFF
+&nbsp;
+&nbsp;    // --- Encoding Detection (BOM / NUL sniffing) ---
+&nbsp;    const val NUL_BYTE = 0
+&nbsp;
+&nbsp;    /** Sentinel for a byte position that is past `length` during BOM probing. */
+&nbsp;    const val ABSENT_BYTE = -1
+&nbsp;
+&nbsp;    /** BOM size to report when no byte-order mark is present. */
+&nbsp;    const val NO_BOM = 0
+&nbsp;    const val UTF16_UNIT_SIZE = 2
+&nbsp;    const val UTF32_UNIT_SIZE = 4
+&nbsp;
+&nbsp;    /** Minimum bytes to request before probing a streaming source for a BOM. */
+&nbsp;    const val BOM_PROBE_MIN = 1
+&nbsp;
+&nbsp;    /** Bytes inspected when sniffing the leading BOM / NUL pattern. */
+&nbsp;    const val BOM_PROBE_SIZE = 4
+&nbsp;    const val UTF8_BOM_0 = 0xEF
+&nbsp;    const val UTF8_BOM_1 = 0xBB
+&nbsp;    const val UTF8_BOM_2 = 0xBF
+&nbsp;    const val UTF8_BOM_SIZE = 3
+&nbsp;    const val UTF16_BE_BOM_0 = 0xFE
+&nbsp;    const val UTF16_LE_BOM_0 = 0xFF
+&nbsp;
+<b class="fc">&nbsp;    val EMPTY_BYTES = ByteArray(0)</b>
+&nbsp;    const val DEFAULT_DISCRIMINATOR_KEY = &quot;type&quot;
+&nbsp;
+&nbsp;    /** Warm-up payload fed through the parser once to trigger JIT/ART compilation. */
+&nbsp;    const val WARM_RAW_JSON_PAYLOAD = &quot;&quot;&quot;{&quot;warm&quot;:true}&quot;&quot;&quot;
+&nbsp;    const val TYPE_NAME_RAW_JSON = &quot;RawJson&quot;
+&nbsp;
+&nbsp;    // --- Type Names (codegen `typeName` reflection strings) ---
+&nbsp;    const val TYPE_NAME_STRING = &quot;String&quot;
+&nbsp;    const val TYPE_NAME_INT = &quot;Int&quot;
+&nbsp;    const val TYPE_NAME_LONG = &quot;Long&quot;
+&nbsp;    const val TYPE_NAME_FLOAT = &quot;Float&quot;
+&nbsp;    const val TYPE_NAME_DOUBLE = &quot;Double&quot;
+&nbsp;    const val TYPE_NAME_BOOLEAN = &quot;Boolean&quot;
+&nbsp;    const val TYPE_NAME_BYTE = &quot;Byte&quot;
+&nbsp;    const val TYPE_NAME_SHORT = &quot;Short&quot;
+&nbsp;    const val TYPE_NAME_CHAR = &quot;Char&quot;
+&nbsp;    const val TYPE_NAME_INT_ARRAY = &quot;IntArray&quot;
+&nbsp;    const val TYPE_NAME_LONG_ARRAY = &quot;LongArray&quot;
+&nbsp;    const val TYPE_NAME_FLOAT_ARRAY = &quot;FloatArray&quot;
+&nbsp;    const val TYPE_NAME_DOUBLE_ARRAY = &quot;DoubleArray&quot;
+&nbsp;    const val TYPE_NAME_BOOLEAN_ARRAY = &quot;BooleanArray&quot;
+&nbsp;    const val TYPE_NAME_LIST_PREFIX = &quot;List&lt;&quot;
+&nbsp;    const val TYPE_NAME_SET_PREFIX = &quot;Set&lt;&quot;
+&nbsp;    const val TYPE_NAME_MAP_STRING_PREFIX = &quot;Map&lt;String, &quot;
+&nbsp;    const val TYPE_NAME_GENERIC_SUFFIX = &quot;&gt;&quot;
 &nbsp;}
 </code>
 </pre>
@@ -150,7 +326,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

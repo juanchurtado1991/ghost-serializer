@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonWriter</title>
+  <title>GhostSerialization Coverage Report > ByteSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.writer.bytes</a>
+    <a href="../index.html">com.ghost.serialization.serializers</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonWriter (com.ghost.serialization.writer.bytes)</h1>
+<h1>Coverage Summary for Class: ByteSerializer (com.ghost.serialization.serializers)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonWriter</td>
+  <td class="name">ByteSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.8%
+    33.3%
   </span>
   <span class="absValue">
-    (45/49)
+    (2/6)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (2/6)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    95%
+    38.1%
   </span>
   <span class="absValue">
-    (19/20)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    92.1%
-  </span>
-  <span class="absValue">
-    (211/229)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    92.7%
-  </span>
-  <span class="absValue">
-    (810/874)
+    (8/21)
   </span>
 </td>
 </tr>
@@ -101,579 +94,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;package com.ghost.serialization.writer.bytes
+&nbsp;package com.ghost.serialization.serializers
 &nbsp;
 &nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.acquireScratchBuffer
-&nbsp;import com.ghost.serialization.exception.GhostJsonException
-&nbsp;import com.ghost.serialization.types.RawJson
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COLON_QUOTE_BS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.COMMA_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_DEPTH_EXCEEDED
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.ERR_NON_FINITE
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MAX_DEPTH
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_INT_BS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.MIN_LONG_BS
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.PLAIN_ASCII_FAST_PATH_LIMIT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.QUOTE_INT
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.WRITER_SCRATCH_SIZE
-&nbsp;import com.ghost.serialization.releaseScratchBuffer
-&nbsp;import com.ghost.serialization.writer.common.GhostJsonEscapeHelpers
-&nbsp;import okio.BufferedSink
-&nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.contract.AbstractGhostSerializer
+&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.streaming.nextInt
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.nextInt
+&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 &nbsp;
-&nbsp;/**
-&nbsp; * A highly optimized, low-allocation JSON writer for Kotlin Multiplatform.
-&nbsp; *
-&nbsp; * Backed by either a streaming Okio [BufferedSink] or, for in-memory encodes,
-&nbsp; * a [FlatByteArrayWriter] — both funnel through [GhostByteSink], so the
-&nbsp; * body of this class is written once and shared by both channels.
-&nbsp; */
-<b class="fc">&nbsp;class GhostJsonWriter private constructor(</b>
-<b class="fc">&nbsp;    @PublishedApi internal val sink: GhostByteSink</b>
-&nbsp;) {
+&nbsp;object ByteSerializer : AbstractGhostSerializer&lt;Byte&gt;() {
+<b class="nc">&nbsp;    override val typeName: String get() = TOK.TYPE_NAME_BYTE</b>
 &nbsp;
-&nbsp;    /** Streaming constructor — writes flow through an Okio [BufferedSink]. */
-<b class="fc">&nbsp;    constructor(sink: BufferedSink) : this(BufferGhostByteSink(sink))</b>
+<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonReader): Byte = reader.nextInt().toByte()</b>
 &nbsp;
-&nbsp;    /** In-memory constructor — writes accumulate in a [FlatByteArrayWriter]. */
-&nbsp;    @InternalGhostApi
-<b class="fc">&nbsp;    constructor(flatBuffer: FlatByteArrayWriter) : this(flatBuffer as GhostByteSink)</b>
+<b class="nc">&nbsp;    override fun deserialize(reader: GhostJsonFlatReader): Byte = reader.nextInt().toByte()</b>
 &nbsp;
-<b class="fc">&nbsp;    internal var needsComma = false</b>
+<b class="fc">&nbsp;    override fun deserialize(reader: GhostJsonStringReader): Byte = reader.nextInt().toByte()</b>
 &nbsp;
-&nbsp;    private var depth = 0
-&nbsp;
-<b class="nc">&nbsp;    internal var scratch: ByteArray? = null</b>
-&nbsp;
-&nbsp;    internal fun acquireScratch(): ByteArray {
-<b class="fc">&nbsp;        val currentScratch = scratch</b>
-<b class="fc">&nbsp;        if (currentScratch != null) {</b>
-<b class="fc">&nbsp;            return currentScratch</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val newScratch = acquireScratchBuffer(WRITER_SCRATCH_SIZE)</b>
-<b class="fc">&nbsp;        scratch = newScratch</b>
-<b class="fc">&nbsp;        return newScratch</b>
+&nbsp;    override fun serialize(writer: GhostJsonWriter, value: Byte) {
+<b class="nc">&nbsp;        writer.value(number = value.toInt())</b>
 &nbsp;    }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Releases the internal scratch buffer back to the pool.
-&nbsp;     * Must be called at the end of the root serialization process.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun release() {
-<b class="fc">&nbsp;        val currentScratch = scratch</b>
-<b class="pc">&nbsp;        if (currentScratch != null) {</b>
-<b class="fc">&nbsp;            releaseScratchBuffer(currentScratch)</b>
-<b class="fc">&nbsp;            scratch = null</b>
-&nbsp;        }
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        depth = 0</b>
+&nbsp;    override fun serialize(writer: GhostJsonStringWriter, value: Byte) {
+<b class="nc">&nbsp;        writer.value(number = value.toInt())</b>
 &nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Resets writer state for reuse from a pool.
-&nbsp;     * Does NOT release the scratch buffer — it is kept warm for the next call.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun reset() {
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        depth = 0</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Ensures all buffered bytes are pushed to the underlying sink.
-&nbsp;     * No-op for the in-memory (flat) channel.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun flush() {
-<b class="fc">&nbsp;        sink.flush()</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    // ── Structural ────────────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Starts a new JSON object.
-&nbsp;     * Automatically handles comma insertion and indentation tracking.
-&nbsp;     */
-&nbsp;    fun beginObject(): GhostJsonWriter {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.beginObjectCore(</b>
-<b class="fc">&nbsp;            depth = depth,</b>
-<b class="fc">&nbsp;            maxDepth = MAX_DEPTH,</b>
-<b class="fc">&nbsp;            appendSeparator = { appendSeparator() },</b>
-<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
-<b class="fc">&nbsp;            setDepth = { depth = it },</b>
-<b class="fc">&nbsp;            throwDepthError = { throwDepthError() },</b>
-&nbsp;        )
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Ends the current JSON object.
-&nbsp;     */
-&nbsp;    fun endObject(): GhostJsonWriter {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.endObjectCore(</b>
-<b class="fc">&nbsp;            depth = depth,</b>
-<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
-<b class="fc">&nbsp;            setDepth = { depth = it },</b>
-&nbsp;        )
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Starts a new JSON array.
-&nbsp;     */
-&nbsp;    fun beginArray(): GhostJsonWriter {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.beginArrayCore(</b>
-<b class="fc">&nbsp;            depth = depth,</b>
-<b class="fc">&nbsp;            maxDepth = MAX_DEPTH,</b>
-<b class="fc">&nbsp;            appendSeparator = { appendSeparator() },</b>
-<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
-<b class="fc">&nbsp;            setDepth = { depth = it },</b>
-<b class="nc">&nbsp;            throwDepthError = { throwDepthError() },</b>
-&nbsp;        )
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Ends the current JSON array.
-&nbsp;     */
-&nbsp;    fun endArray(): GhostJsonWriter {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.endArrayCore(</b>
-<b class="fc">&nbsp;            depth = depth,</b>
-<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
-<b class="fc">&nbsp;            setDepth = { depth = it },</b>
-&nbsp;        )
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a field name as a string.
-&nbsp;     * Escapes the key and appends the colon separator.
-&nbsp;     */
-&nbsp;    fun name(key: String): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.writeByte(QUOTE_INT)</b>
-<b class="fc">&nbsp;        writeEscaped(key)</b>
-<b class="fc">&nbsp;        sink.write(COLON_QUOTE_BS)</b>
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a pre-encoded field name [ByteString].
-&nbsp;     * This is the fastest way to write field names as it avoids runtime escaping.
-&nbsp;     */
-&nbsp;    fun name(key: ByteString): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(key)</b>
-<b class="fc">&nbsp;        needsComma = false</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a field name raw [ByteString] without validating or escaping.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeNameRaw(header: ByteString): GhostJsonWriter {
-<b class="fc">&nbsp;        return name(header)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Int): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(header)</b>
-<b class="fc">&nbsp;        writeIntValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Long): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(header)</b>
-<b class="fc">&nbsp;        writeLongValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: ULong): GhostJsonWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        sink.write(header)</b>
-<b class="nc">&nbsp;        writeULongValueRaw(value)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: String): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(header)</b>
-<b class="fc">&nbsp;        writeStringValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Boolean): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(header)</b>
-<b class="fc">&nbsp;        writeBooleanValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Double): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(header)</b>
-<b class="fc">&nbsp;        writeDoubleValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Fused name + value with automatic comma handling.
-&nbsp;     * Used by KSP-generated serializers for subsequent object fields.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeField(header: ByteString, value: Float): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(header)</b>
-<b class="fc">&nbsp;        writeFloatValueRaw(value)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    // ── value() public API ────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a string value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(text: String): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeStringValueRaw(text)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes an integer value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Int): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeIntValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a long value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Long): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeLongValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    fun value(number: ULong): GhostJsonWriter {
-<b class="nc">&nbsp;        appendSeparator()</b>
-<b class="nc">&nbsp;        writeULongValueRaw(number)</b>
-<b class="nc">&nbsp;        needsComma = true</b>
-<b class="nc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a double value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Double): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeDoubleValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a float value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(number: Float): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        writeFloatValueRaw(number)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a boolean value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun value(value: Boolean): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        if (value) {</b>
-<b class="fc">&nbsp;            sink.writeTrue()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            sink.writeFalse()</b>
-&nbsp;        }
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a single [Char] as a JSON string without allocating an intermediate [String].
-&nbsp;     */
-&nbsp;    fun value(char: Char): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.writeQuotedBmpCodeUnit(char.code)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a null value into the JSON stream.
-&nbsp;     */
-&nbsp;    fun nullValue(): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.writeNull()</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes raw JSON bytes directly into the stream without quoting or escaping.
-&nbsp;     * Use this to emit a pre-serialized JSON fragment captured via
-&nbsp;     * `captureRawJsonBytes`.
-&nbsp;     */
-&nbsp;    fun rawValue(bytes: ByteArray): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(bytes)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a slice of raw JSON bytes directly into the stream without quoting or escaping.
-&nbsp;     */
-&nbsp;    fun rawValue(bytes: ByteArray, offset: Int, length: Int): GhostJsonWriter {
-<b class="fc">&nbsp;        appendSeparator()</b>
-<b class="fc">&nbsp;        sink.write(bytes, offset, length)</b>
-<b class="fc">&nbsp;        needsComma = true</b>
-<b class="fc">&nbsp;        return this</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /** Writes [raw] without copying slice data when possible. */
-&nbsp;    fun rawValue(raw: RawJson): GhostJsonWriter =
-<b class="fc">&nbsp;        rawValue(raw.storage, raw.storageOffset, raw.storageLength)</b>
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a boolean value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeBooleanValueRaw(value: Boolean) {
-<b class="fc">&nbsp;        if (value) {</b>
-<b class="fc">&nbsp;            sink.writeTrue()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            sink.writeFalse()</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes an integer value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeIntValueRaw(value: Int) {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.writeIntValueRawCore(</b>
-<b class="fc">&nbsp;            value = value,</b>
-<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
-<b class="fc">&nbsp;            write2Bytes = { a, b -&gt; sink.write2Bytes(a, b) },</b>
-<b class="fc">&nbsp;            writeMinIntBs = { sink.write(MIN_INT_BS) },</b>
-<b class="fc">&nbsp;            writeLongValueRawInternal = { writeLongValueRawInternal(it) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a long value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeLongValueRaw(value: Long) {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.writeLongValueRawCore(</b>
-<b class="fc">&nbsp;            value = value,</b>
-<b class="fc">&nbsp;            writeByte = { sink.writeByte(it) },</b>
-<b class="fc">&nbsp;            write2Bytes = { a, b -&gt; sink.write2Bytes(a, b) },</b>
-<b class="fc">&nbsp;            writeMinIntBs = { sink.write(MIN_INT_BS) },</b>
-<b class="fc">&nbsp;            writeMinLongBs = { sink.write(MIN_LONG_BS) },</b>
-<b class="fc">&nbsp;            writeLongValueRawInternal = { writeLongValueRawInternal(it) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeULongValueRaw(value: ULong) {
-<b class="nc">&nbsp;        GhostJsonWriterHelpers.writeULongValueRawCore(</b>
-<b class="nc">&nbsp;            value = value,</b>
-<b class="nc">&nbsp;            writeLongValueRaw = { writeLongValueRaw(it) },</b>
-<b class="nc">&nbsp;            writeStringValueRaw = { writeStringValueRaw(it) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Internal implementation for writing Long values into the scratch buffer.
-&nbsp;     */
-&nbsp;    private fun writeLongValueRawInternal(value: Long) {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.writeLongValueRawInternalCore(</b>
-<b class="fc">&nbsp;            value = value,</b>
-<b class="fc">&nbsp;            scratch = scratch,</b>
-<b class="fc">&nbsp;            acquireScratch = { acquireScratch() },</b>
-<b class="nc">&nbsp;            writeMinLongBs = { sink.write(MIN_LONG_BS) },</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, length -&gt; sink.write(buf, offset, length) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a double value without a field name or separator.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeDoubleValueRaw(number: Double) {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.writeDoubleValueRawCore(</b>
-<b class="fc">&nbsp;            number = number,</b>
-<b class="fc">&nbsp;            writeLongValueRawInternal = { writeLongValueRawInternal(it) },</b>
-<b class="fc">&nbsp;            writeDotZero = { sink.writeDotZero() },</b>
-<b class="fc">&nbsp;            acquireScratch = { acquireScratch() },</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, length -&gt; sink.write(buf, offset, length) },</b>
-<b class="fc">&nbsp;            writeUtf8 = { sink.writeUtf8(it) },</b>
-<b class="fc">&nbsp;            throwNonFinite = { throw GhostJsonException(ERR_NON_FINITE, 0, 0) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeFloatValueRaw(number: Float) {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.writeFloatValueRawCore(</b>
-<b class="fc">&nbsp;            number = number,</b>
-<b class="fc">&nbsp;            writeLongValueRawInternal = { writeLongValueRawInternal(it) },</b>
-<b class="fc">&nbsp;            writeDotZero = { sink.writeDotZero() },</b>
-<b class="fc">&nbsp;            acquireScratch = { acquireScratch() },</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, length -&gt; sink.write(buf, offset, length) },</b>
-<b class="nc">&nbsp;            writeUtf8 = { sink.writeUtf8(it) },</b>
-<b class="fc">&nbsp;            throwNonFinite = { throw GhostJsonException(ERR_NON_FINITE, 0, 0) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Appends the separator comma if needsComma is true.
-&nbsp;     */
-&nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
-&nbsp;    internal inline fun appendSeparator() {
-<b class="fc">&nbsp;        if (needsComma) {</b>
-<b class="fc">&nbsp;            sink.writeByte(COMMA_INT)</b>
-<b class="fc">&nbsp;            needsComma = false</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Writes a string value with quotes and proper escaping.
-&nbsp;     */
-&nbsp;    @InternalGhostApi
-&nbsp;    fun writeStringValueRaw(value: String) {
-<b class="fc">&nbsp;        val length = value.length</b>
-<b class="fc">&nbsp;        if (length == 0) {</b>
-<b class="fc">&nbsp;            sink.write2Bytes(QUOTE_INT, QUOTE_INT)</b>
-&nbsp;            return
-&nbsp;        }
-&nbsp;
-&nbsp;        // Short strings: scan for the first char that needs escaping / UTF-8. All-plain →
-&nbsp;        // writeQuotedAscii. Mixed → keep the ASCII prefix (breakIndex) so the slow path does
-&nbsp;        // not re-scan it (same shape as GhostJsonStringWriter).
-<b class="fc">&nbsp;        var breakIndex = 0</b>
-<b class="fc">&nbsp;        if (length &lt;= PLAIN_ASCII_FAST_PATH_LIMIT) {</b>
-<b class="fc">&nbsp;            while (breakIndex &lt; length) {</b>
-<b class="fc">&nbsp;                if (!GhostJsonEscapeHelpers.isPlainAsciiSafe(value[breakIndex].code)) {</b>
-&nbsp;                    break
-&nbsp;                }
-<b class="fc">&nbsp;                breakIndex++</b>
-&nbsp;            }
-<b class="fc">&nbsp;            if (breakIndex == length) {</b>
-<b class="fc">&nbsp;                sink.writeQuotedAscii(value, length)</b>
-&nbsp;                return
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        writeStringValueRawSlow(value, length, breakIndex)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun writeStringValueRawSlow(value: String, length: Int, breakIndex: Int) {
-<b class="fc">&nbsp;        GhostJsonWriterHelpers.writeStringValueRawSlowCore(</b>
-<b class="fc">&nbsp;            value = value,</b>
-<b class="fc">&nbsp;            length = length,</b>
-<b class="fc">&nbsp;            breakIndex = breakIndex,</b>
-<b class="fc">&nbsp;            scratchBuf = acquireScratch(),</b>
-<b class="fc">&nbsp;            writeQuoteByte = { sink.writeByte(QUOTE_INT) },</b>
-<b class="fc">&nbsp;            writeUtf8Range = { text, begin, end -&gt; sink.writeUtf8(text, begin, end) },</b>
-<b class="fc">&nbsp;            writeEscapedIntoScratch = { text, len, buf -&gt; writeEscapedIntoScratch(text, len, buf) },</b>
-<b class="fc">&nbsp;            writeEscaped = { text, start -&gt; writeEscaped(text, start) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Helper to write escaped character bytes into the destination sink.
-&nbsp;     */
-<b class="fc">&nbsp;    private fun writeEscaped(text: String, start: Int = 0) {</b>
-<b class="fc">&nbsp;        GhostJsonEscapeHelpers.writeEscapedBytes(</b>
-<b class="fc">&nbsp;            text = text,</b>
-<b class="fc">&nbsp;            start = start,</b>
-<b class="fc">&nbsp;            scratchBuf = acquireScratch(),</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, len -&gt; sink.write(buf, offset, len) },</b>
-<b class="fc">&nbsp;            writeReplacement = { replacement -&gt; sink.write(replacement) },</b>
-<b class="fc">&nbsp;            writeUtf8Range = { s, begin, end -&gt; sink.writeUtf8(s, begin, end) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Helper to write escaped character bytes directly into the scratch buffer.
-&nbsp;     */
-&nbsp;    private fun writeEscapedIntoScratch(text: String, length: Int, scratchBuf: ByteArray) {
-<b class="fc">&nbsp;        GhostJsonEscapeHelpers.writeEscapedIntoByteScratch(</b>
-<b class="fc">&nbsp;            text = text,</b>
-<b class="fc">&nbsp;            length = length,</b>
-<b class="fc">&nbsp;            scratchBuf = scratchBuf,</b>
-<b class="fc">&nbsp;            writeBytes = { buf, offset, len -&gt; sink.write(buf, offset, len) },</b>
-<b class="fc">&nbsp;            writeReplacement = { replacement -&gt; sink.write(replacement) },</b>
-<b class="fc">&nbsp;            writeUtf8Range = { s, begin, end -&gt; sink.writeUtf8(s, begin, end) },</b>
-<b class="nc">&nbsp;            writeQuoteByte = { sink.writeByte(QUOTE_INT) },</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Throws an exception when max depth limits are exceeded.
-&nbsp;     */
-&nbsp;    private fun throwDepthError(): Nothing =
-<b class="fc">&nbsp;        throw GhostJsonException(</b>
-<b class="fc">&nbsp;            &quot;$ERR_DEPTH_EXCEEDED (${MAX_DEPTH})&quot;,</b>
-<b class="fc">&nbsp;            0,</b>
-<b class="fc">&nbsp;            0</b>
-&nbsp;        )
 &nbsp;}
 </code>
 </pre>
@@ -698,7 +147,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

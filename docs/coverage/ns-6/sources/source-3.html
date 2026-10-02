@@ -108,6 +108,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.kotlinpoet.PropertySpec
 &nbsp;import com.squareup.kotlinpoet.TypeSpec
 &nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;/**
@@ -118,26 +120,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="fc">&nbsp;    private val entries = mutableMapOf&lt;KSType, String&gt;()</b>
 &nbsp;
-&nbsp;    fun nameFor(type: KSType): String {
-<b class="nc">&nbsp;        return entries.getOrPut(type) {</b>
-<b class="nc">&nbsp;            val simpleName = type.declaration.simpleName.asString()</b>
-<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else &quot;&quot;</b>
-&nbsp;            C.STR_CONTEXTUAL_PREFIX +
-<b class="nc">&nbsp;                    simpleName.replaceFirstChar { it.lowercase() } +</b>
-<b class="nc">&nbsp;                    nullableSuffix +</b>
-<b class="nc">&nbsp;                    C.STR_SERIALIZER_SUFFIX</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
 &nbsp;    fun injectInto(typeSpecBuilder: TypeSpec.Builder) {
-<b class="fc">&nbsp;        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST)</b>
+<b class="fc">&nbsp;        val ghostClass = ClassName(CC.PKG_GHOST, CG.STR_GHOST)</b>
 &nbsp;
 <b class="fc">&nbsp;        entries.forEach { (type, name) -&gt;</b>
 <b class="nc">&nbsp;            val nonNullableType = type.makeNotNullable()</b>
 <b class="nc">&nbsp;            typeSpecBuilder.addProperty(</b>
 <b class="nc">&nbsp;                PropertySpec.builder(</b>
 <b class="nc">&nbsp;                    name,</b>
-<b class="nc">&nbsp;                    ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)</b>
+<b class="nc">&nbsp;                    ClassName(CC.PKG_CONTRACT, CC.STR_GHOST_SERIALIZER)</b>
 <b class="nc">&nbsp;                        .parameterizedBy(nonNullableType.toTypeName()),</b>
 <b class="nc">&nbsp;                    KModifier.PRIVATE</b>
 &nbsp;                )
@@ -149,6 +140,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;                    .build()</b>
 &nbsp;            )
 <b class="nc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nameFor(type: KSType): String {
+<b class="nc">&nbsp;        return entries.getOrPut(type) {</b>
+<b class="nc">&nbsp;            val simpleName = type.declaration.simpleName.asString()</b>
+<b class="nc">&nbsp;            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else &quot;&quot;</b>
+&nbsp;            C.STR_CONTEXTUAL_PREFIX +
+<b class="nc">&nbsp;                    simpleName.replaceFirstChar { it.lowercase() } +</b>
+<b class="nc">&nbsp;                    nullableSuffix +</b>
+<b class="nc">&nbsp;                    CC.STR_SERIALIZER_SUFFIX</b>
+&nbsp;        }
 &nbsp;    }
 &nbsp;}
 </code>
@@ -174,7 +176,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

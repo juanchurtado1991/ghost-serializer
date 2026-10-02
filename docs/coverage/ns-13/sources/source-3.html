@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostJsonReaderNumbersKt</title>
+  <title>GhostSerialization Coverage Report > GhostBooleanCoercionHelpersKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.streaming</a>
+    <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostJsonReaderNumbersKt (com.ghost.serialization.parser.streaming)</h1>
+<h1>Coverage Summary for Class: GhostBooleanCoercionHelpersKt (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostJsonReaderNumbersKt</td>
+  <td class="name">GhostBooleanCoercionHelpersKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (13/13)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    70%
+    67.8%
   </span>
   <span class="absValue">
-    (21/30)
+    (40/59)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    92.1%
+    86.8%
   </span>
   <span class="absValue">
-    (129/140)
+    (46/53)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.7%
+    85.7%
   </span>
   <span class="absValue">
-    (716/781)
+    (281/328)
   </span>
 </td>
 </tr>
@@ -99,317 +99,96 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
-&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
 &nbsp;
-&nbsp;package com.ghost.serialization.parser.streaming
+&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
-&nbsp;import com.ghost.serialization.parser.common.finalizeParsedDouble
-&nbsp;import com.ghost.serialization.parser.common.finalizeParsedFloat
-&nbsp;import com.ghost.serialization.parser.common.handleLeadingZeroCore
-&nbsp;import com.ghost.serialization.parser.common.parseExponentValueCore
-&nbsp;import com.ghost.serialization.parser.common.parseIntDigitsCore
-&nbsp;import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
-&nbsp;import com.ghost.serialization.parser.common.parseLongDigitsCore
-&nbsp;import com.ghost.serialization.parser.common.prepareNumericHeaderCore
-&nbsp;import com.ghost.serialization.parser.common.skipNumberBodyCore
-&nbsp;import com.ghost.serialization.parser.common.validateLeadingZeroCore
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 &nbsp;
 &nbsp;/**
-&nbsp; * Reads a JSON number and returns it as a Float.
-&nbsp; * Uses a zero-allocation, register-based loop for maximum speed.
-&nbsp; * Used by KSP-generated serializers.
+&nbsp; * Pure, reader-agnostic boolean coercion matcher: compares raw bytes at [start] against known
+&nbsp; * truthy (&quot;true&quot;,&quot;yes&quot;,&quot;on&quot;,&quot;y&quot;,&quot;1&quot;) / falsy (&quot;false&quot;,&quot;no&quot;,&quot;off&quot;,&quot;n&quot;,&quot;0&quot;) strings, case-insensitive
+&nbsp; * via `or CASE_INSENSITIVE_MASK`, without allocating a String.
 &nbsp; *
-&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException
-&nbsp; * if float format is invalid or overflows.
+&nbsp; * @param onError Called on no match; must throw ([Nothing] keeps every branch exhaustive).
 &nbsp; */
-&nbsp;fun GhostJsonReader.nextFloat(): Float {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    validateLeadingZero()</b>
-&nbsp;
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;    val result = parseJsonFloatingBodyCore(</b>
-<b class="fc">&nbsp;        precisionLimit = C.FLOAT_PRECISION_LIMIT,</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        parseExponentValue = { parseExponentValue() },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    ) { mantissa, exponent -&gt;
-<b class="fc">&nbsp;        finalizeParsedFloat(mantissa, exponent, isNegativeValue) { throwError(it) }</b>
+&nbsp;internal inline fun matchCoerceBooleanBytes(
+&nbsp;    start: Int,
+&nbsp;    length: Int,
+&nbsp;    onError: () -&gt; Nothing,
+&nbsp;    getByte: (Int) -&gt; Int,
+<b class="pc">&nbsp;): Boolean = when (length) {</b>
+&nbsp;    TOK.BOOL_STR_LEN_1 -&gt; {
+<b class="fc">&nbsp;        val b0 = getByte(start)</b>
+<b class="pc">&nbsp;        when (b0 or TOK.CASE_INSENSITIVE_MASK) {</b>
+<b class="fc">&nbsp;            TOK.FOLD_Y -&gt; true // &quot;y&quot; / &quot;Y&quot;</b>
+<b class="fc">&nbsp;            TOK.FOLD_N -&gt; false // &quot;n&quot; / &quot;N&quot;</b>
+<b class="nc">&nbsp;            else -&gt; when (b0) {</b>
+<b class="nc">&nbsp;                TOK.ONE_INT -&gt; true // &quot;1&quot;</b>
+<b class="nc">&nbsp;                TOK.ZERO_INT -&gt; false // &quot;0&quot;</b>
+<b class="nc">&nbsp;                else -&gt; onError()</b>
+&nbsp;            }
+&nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;    if (isQuoted) {</b>
-<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    TOK.BOOL_STR_LEN_2 -&gt; {
+<b class="fc">&nbsp;        val b0 = getByte(start)</b>
+<b class="fc">&nbsp;        val b1 = getByte(start + 1)</b>
+<b class="fc">&nbsp;        val isOn = (b0 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_O &amp;&amp;</b>
+<b class="pc">&nbsp;            (b1 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_N</b>
+<b class="fc">&nbsp;        val isNo = (b0 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_N &amp;&amp;</b>
+<b class="pc">&nbsp;            (b1 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_O</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            isOn -&gt; true</b>
+<b class="pc">&nbsp;            isNo -&gt; false</b>
+<b class="nc">&nbsp;            else -&gt; onError()</b>
+&nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Reads a JSON number and returns it as a Double.
-&nbsp; * Uses a zero-allocation, register-based loop for maximum speed.
-&nbsp; * Used by KSP-generated serializers.
-&nbsp; *
-&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException
-&nbsp; * if double format is invalid or overflows.
-&nbsp; */
-&nbsp;fun GhostJsonReader.nextDouble(): Double {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    validateLeadingZero()</b>
-&nbsp;
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
-<b class="fc">&nbsp;    val result = parseJsonFloatingBodyCore(</b>
-<b class="fc">&nbsp;        precisionLimit = C.DOUBLE_PRECISION_LIMIT,</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        parseExponentValue = { parseExponentValue() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    ) { mantissa, exponent -&gt;
-<b class="fc">&nbsp;        finalizeParsedDouble(mantissa, exponent, isNegativeValue) { throwError(it) }</b>
+&nbsp;    TOK.BOOL_STR_LEN_3 -&gt; {
+<b class="fc">&nbsp;        val b0 = getByte(start)</b>
+<b class="fc">&nbsp;        val b1 = getByte(start + 1)</b>
+<b class="fc">&nbsp;        val b2 = getByte(start + 2)</b>
+<b class="fc">&nbsp;        val isYes = (b0 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_Y &amp;&amp;</b>
+<b class="pc">&nbsp;            (b1 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_E &amp;&amp;</b>
+<b class="pc">&nbsp;            (b2 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_S</b>
+<b class="fc">&nbsp;        val isOff = (b0 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_O &amp;&amp;</b>
+<b class="pc">&nbsp;            (b1 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_F &amp;&amp;</b>
+<b class="pc">&nbsp;            (b2 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_F</b>
+<b class="fc">&nbsp;        when {</b>
+<b class="fc">&nbsp;            isYes -&gt; true</b>
+<b class="pc">&nbsp;            isOff -&gt; false</b>
+<b class="nc">&nbsp;            else -&gt; onError()</b>
+&nbsp;        }
 &nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;    if (isQuoted) {</b>
-<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
+&nbsp;    TOK.BOOL_STR_LEN_4 -&gt; {
+<b class="fc">&nbsp;        val b0 = getByte(start)</b>
+<b class="fc">&nbsp;        val b1 = getByte(start + 1)</b>
+<b class="fc">&nbsp;        val b2 = getByte(start + 2)</b>
+<b class="fc">&nbsp;        val b3 = getByte(start + 3)</b>
+<b class="pc">&nbsp;        val isTrue = (b0 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_T &amp;&amp;</b>
+<b class="pc">&nbsp;            (b1 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_R &amp;&amp;</b>
+<b class="pc">&nbsp;            (b2 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_U &amp;&amp;</b>
+<b class="pc">&nbsp;            (b3 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_E</b>
+<b class="pc">&nbsp;        if (isTrue) true else onError()</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return result</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Parses the exponent value suffix (e.g. e-5) from the stream.
-&nbsp; */
-&nbsp;private inline fun GhostJsonReader.parseExponentValue(): Int =
-<b class="fc">&nbsp;    parseExponentValueCore(</b>
-<b class="fc">&nbsp;        startPosition = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;/**
-&nbsp; * Reads a JSON integer and returns it as an Int.
-&nbsp; * Optimized for common small integers.
-&nbsp; * Used by KSP-generated serializers.
-&nbsp; *
-&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException
-&nbsp; * if the integer is invalid or overflows.
-&nbsp; */
-&nbsp;fun GhostJsonReader.nextInt(): Int {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    val startOfNumber = position</b>
-&nbsp;
-<b class="fc">&nbsp;    val absoluteValue = if (</b>
-<b class="pc">&nbsp;        startOfNumber &lt; limit &amp;&amp;</b>
-<b class="fc">&nbsp;        getByte(startOfNumber) == C.ZERO_INT</b>
-&nbsp;    ) {
-<b class="fc">&nbsp;        handleLeadingZero()</b>
-<b class="fc">&nbsp;        0</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        parseIntDigits(isNegativeValue, startOfNumber)</b>
+&nbsp;    TOK.BOOL_STR_LEN_5 -&gt; {
+<b class="fc">&nbsp;        val b0 = getByte(start)</b>
+<b class="fc">&nbsp;        val b1 = getByte(start + 1)</b>
+<b class="fc">&nbsp;        val b2 = getByte(start + 2)</b>
+<b class="fc">&nbsp;        val b3 = getByte(start + 3)</b>
+<b class="fc">&nbsp;        val b4 = getByte(start + 4)</b>
+<b class="fc">&nbsp;        val isFalse = (b0 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_F &amp;&amp;</b>
+<b class="pc">&nbsp;            (b1 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_A &amp;&amp;</b>
+<b class="pc">&nbsp;            (b2 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_L &amp;&amp;</b>
+<b class="pc">&nbsp;            (b3 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_S &amp;&amp;</b>
+<b class="pc">&nbsp;            (b4 or TOK.CASE_INSENSITIVE_MASK) == TOK.FOLD_E</b>
+<b class="fc">&nbsp;        if (isFalse) false else onError()</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    val finalIntResult = if (isNegativeValue) {</b>
-<b class="fc">&nbsp;        -absoluteValue</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        absoluteValue</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    if (isQuoted) {</b>
-<b class="fc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return finalIntResult</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Reads a JSON long and returns it as a Long.
-&nbsp; * Optimized for common small longs.
-&nbsp; * Used by KSP-generated serializers.
-&nbsp; *
-&nbsp; * @throws com.ghost.serialization.exception.GhostJsonException
-&nbsp; * if the long is invalid or overflows.
-&nbsp; */
-&nbsp;fun GhostJsonReader.nextLong(): Long {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-<b class="fc">&nbsp;    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    val startOfNumber = position</b>
-&nbsp;
-<b class="fc">&nbsp;    val absoluteValue = if (</b>
-<b class="pc">&nbsp;        startOfNumber &lt; limit &amp;&amp;</b>
-<b class="fc">&nbsp;        getByte(startOfNumber) == C.ZERO_INT</b>
-&nbsp;    ) {
-<b class="fc">&nbsp;        handleLeadingZero()</b>
-<b class="fc">&nbsp;        0L</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        parseLongDigits(isNegativeValue, startOfNumber)</b>
-&nbsp;    }
-&nbsp;
-<b class="fc">&nbsp;    val finalLongResult = if (absoluteValue == Long.MIN_VALUE) {</b>
-<b class="fc">&nbsp;        absoluteValue</b>
-&nbsp;    } else {
-<b class="fc">&nbsp;        (if (isNegativeValue) -absoluteValue else absoluteValue)</b>
-&nbsp;    }
-&nbsp;
-<b class="pc">&nbsp;    if (isQuoted) {</b>
-<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    pathTracker.finishScalarValue()</b>
-<b class="fc">&nbsp;    return finalLongResult</b>
-&nbsp;}
-&nbsp;
-&nbsp;/** Reads a JSON/YAML unsigned long scalar (quoted decimal string for full `uint64` range). */
-&nbsp;fun GhostJsonReader.nextULong(): ULong {
-<b class="pc">&nbsp;    if (nextTokenByte == C.RESET_TOKEN_BYTE) {</b>
-<b class="fc">&nbsp;        skipWhitespace()</b>
-&nbsp;    }
-<b class="pc">&nbsp;    if (position &lt; limit &amp;&amp; getByte(position) == C.QUOTE_INT) {</b>
-<b class="nc">&nbsp;        return nextString().toULong()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    return nextLong().toULong()</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Prepares the numeric header by checking the negative sign and checking string coercion quote.
-&nbsp; */
-&nbsp;private fun GhostJsonReader.prepareNumericHeader(): Int =
-<b class="fc">&nbsp;    prepareNumericHeaderCore(</b>
-<b class="fc">&nbsp;        getNextTokenByte = { nextTokenByte },</b>
-<b class="fc">&nbsp;        setNextTokenByte = { nextTokenByte = it },</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        coerceStringsToNumbers = coerceStringsToNumbers,</b>
-<b class="fc">&nbsp;        skipWhitespace = { skipWhitespace() },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-&nbsp;/**
-&nbsp; * Validates and consumes a leading zero.
-&nbsp; */
-&nbsp;private fun GhostJsonReader.handleLeadingZero() {
-<b class="fc">&nbsp;    handleLeadingZeroCore(</b>
-<b class="fc">&nbsp;        position = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-<b class="fc">&nbsp;        consumeOne = { internalSkip(1) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Bitwise parsing loop for integer digits with overflow verification.
-&nbsp; */
-&nbsp;private fun GhostJsonReader.parseIntDigits(
-&nbsp;    isNegative: Boolean,
-&nbsp;    startOfNumber: Int
-&nbsp;): Int {
-<b class="fc">&nbsp;    return parseIntDigitsCore(</b>
-<b class="fc">&nbsp;        isNegative = isNegative,</b>
-<b class="fc">&nbsp;        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-&nbsp;        onNumericSeparator = {
-<b class="fc">&nbsp;            position = startOfNumber</b>
-<b class="fc">&nbsp;            nextDouble().toInt()</b>
-&nbsp;        },
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Bitwise parsing loop for long digits with overflow verification.
-&nbsp; */
-&nbsp;private fun GhostJsonReader.parseLongDigits(
-&nbsp;    isNegative: Boolean,
-&nbsp;    startOfNumber: Int
-&nbsp;): Long {
-<b class="fc">&nbsp;    return parseLongDigitsCore(</b>
-<b class="fc">&nbsp;        isNegative = isNegative,</b>
-<b class="fc">&nbsp;        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-&nbsp;        onNumericSeparator = {
-<b class="nc">&nbsp;            position = startOfNumber</b>
-<b class="nc">&nbsp;            nextDouble().toLong()</b>
-&nbsp;        },
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Consumes the closing quotation mark for coerced numeric string values.
-&nbsp; */
-&nbsp;private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
-<b class="fc">&nbsp;    consumeNumericCoercionFooterCore(</b>
-<b class="fc">&nbsp;        position = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;        afterQuote = {
-<b class="fc">&nbsp;            internalSkip(1)</b>
-<b class="fc">&nbsp;            skipWhitespace()</b>
-<b class="fc">&nbsp;        },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Asserts that leading zero doesn&#39;t precede another digit.
-&nbsp; */
-&nbsp;private fun GhostJsonReader.validateLeadingZero() {
-<b class="fc">&nbsp;    validateLeadingZeroCore(</b>
-<b class="fc">&nbsp;        position = position,</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="nc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Skips a JSON numeric token value from the source.
-&nbsp; */
-&nbsp;@InternalGhostApi
-&nbsp;fun GhostJsonReader.skipNumber() {
-<b class="fc">&nbsp;    val header = prepareNumericHeader()</b>
-<b class="fc">&nbsp;    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0</b>
-&nbsp;
-<b class="fc">&nbsp;    skipNumberBodyCore(</b>
-<b class="fc">&nbsp;        getPosition = { position },</b>
-<b class="fc">&nbsp;        setPosition = { position = it },</b>
-<b class="fc">&nbsp;        limit = limit,</b>
-<b class="fc">&nbsp;        getByte = { getByte(it) },</b>
-<b class="fc">&nbsp;        throwError = { throwError(it) },</b>
-&nbsp;    )
-&nbsp;
-<b class="pc">&nbsp;    if (isQuoted) {</b>
-<b class="nc">&nbsp;        consumeNumericCoercionFooter()</b>
-&nbsp;    }
-<b class="fc">&nbsp;    nextTokenByte = C.RESET_TOKEN_BYTE</b>
+<b class="nc">&nbsp;    else -&gt; onError()</b>
 &nbsp;}
 </code>
 </pre>
@@ -434,7 +213,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

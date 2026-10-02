@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (38/38)
+    (35/35)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (250/250)
+    (229/229)
   </span>
 </td>
 </tr>
@@ -109,9 +109,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * @property isResilient True if this property or class is marked with @GhostResilient.
 &nbsp; * @property flattenPath Nested JSON path if this property is flattened via @GhostFlatten.
 &nbsp; * @property wrapPath Nested JSON path if this property is wrapped via @GhostWrap.
-&nbsp; * @property wrappedSourceKeys Wire keys collapsed into this property via @GhostWrappedKeys.
-&nbsp; * @property wrappedOmitIfEmpty When true, absent/null-only captures yield a null wrapper property.
-&nbsp; * @property wrappedOmitIfAbsent Keys that force a null wrapper when absent or JSON null.
+&nbsp; * @property wrappedKeys `@GhostWrappedKeys` data (collapsed wire keys, omit rules, unwrap targets), or
+&nbsp; *   `null` when the property isn&#39;t a wrapped-keys capture.
 &nbsp; * @property isProto True if the enclosing class is `@GhostProtoSerialization`: `Long` fields are
 &nbsp; *   read/written as quoted decimal strings instead of bare JSON numbers.
 &nbsp; */
@@ -147,10 +146,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val customEncoder: CustomCoderModel? = null,</b>
 <b class="fc">&nbsp;    val flattenPath: List&lt;String&gt;? = null,</b>
 <b class="fc">&nbsp;    val wrapPath: List&lt;String&gt;? = null,</b>
-<b class="fc">&nbsp;    val wrappedSourceKeys: List&lt;String&gt;? = null,</b>
-<b class="fc">&nbsp;    val wrappedOmitIfEmpty: Boolean = false,</b>
-<b class="fc">&nbsp;    val wrappedOmitIfAbsent: List&lt;String&gt; = emptyList(),</b>
-<b class="fc">&nbsp;    val wrappedUnwrapFields: List&lt;WrappedUnwrapFieldModel&gt; = emptyList(),</b>
+<b class="fc">&nbsp;    val wrappedKeys: WrappedKeysModel? = null,</b>
 <b class="fc">&nbsp;    val isInferredSignature: Boolean = false,</b>
 <b class="fc">&nbsp;    val inferredSubclasses: List&lt;InferredSubclassModel&gt; = emptyList(),</b>
 <b class="fc">&nbsp;    val isProto: Boolean = false</b>
@@ -178,7 +174,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

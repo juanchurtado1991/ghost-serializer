@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostResilient</title>
+  <title>GhostSerialization Coverage Report > GhostYamlErrorMessages</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.annotations</a>
+    <a href="../index.html">com.ghost.serialization.yaml</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostResilient (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostYamlErrorMessages (com.ghost.serialization.yaml)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostResilient</td>
+  <td class="name">GhostYamlErrorMessages</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -44,18 +44,101 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml
 &nbsp;
-&nbsp;/**
-&nbsp; * Applies resilient parsing to a property on JSON readers only: on a type mismatch or unknown
-&nbsp; * enum value, Ghost assigns `null` (if nullable) and continues instead of throwing.
-&nbsp; *
-&nbsp; * Not honored for YAML ([GhostYamlSerialization]); combining the two on the same class is a
-&nbsp; * KSP error.
-&nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
-&nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostResilient
+&nbsp;/** Error message text (and fragments) for YAML parse/write failures and serializer lookup. */
+&nbsp;@PublishedApi
+&nbsp;internal object GhostYamlErrorMessages {
+&nbsp;
+&nbsp;    // ── Error messages (parser / writer / extensions) ────────────────────────
+&nbsp;
+&nbsp;    const val ERR_EXPECTED_MAP_PREFIX = &quot;Expected Map but found &quot;
+&nbsp;    const val ERR_EXPECTED_INT_PREFIX = &quot;Expected Int but found &quot;
+&nbsp;    const val ERR_EXPECTED_LONG_PREFIX = &quot;Expected Long but found &quot;
+&nbsp;    const val ERR_EXPECTED_ULONG_PREFIX = &quot;Expected ULong but found &quot;
+&nbsp;    const val ERR_EXPECTED_DOUBLE_PREFIX = &quot;Expected Double but found &quot;
+&nbsp;    const val ERR_EXPECTED_FLOAT_PREFIX = &quot;Expected Float but found &quot;
+&nbsp;    const val ERR_EXPECTED_BOOLEAN_PREFIX = &quot;Expected Boolean but found &quot;
+&nbsp;    const val ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX = &quot;Expected single-character string but found length &quot;
+&nbsp;    const val ERR_EXPECTED_LIST_PREFIX = &quot;Expected List but found &quot;
+&nbsp;    const val ERR_PLAIN_SCALAR_PERCENT =
+&nbsp;        &quot;A plain scalar cannot start with &#39;%&#39; — reserved for directives&quot;
+&nbsp;    const val ERR_MAX_NESTING_DEPTH_PREFIX = &quot;Maximum nesting depth (&quot;
+&nbsp;    const val ERR_MAX_NESTING_DEPTH_SUFFIX = &quot;) exceeded&quot;
+&nbsp;    const val ERR_TAB_IN_BLOCK_MAPPING_INDENT =
+&nbsp;        &quot;Tab character not allowed in block mapping indentation&quot;
+&nbsp;
+&nbsp;    /** YAML [GhostYamlException] position suffix: `&quot;$message$ERR_AT_POSITION_PAREN_PREFIX$pos$ERR_AT_POSITION_PAREN_SUFFIX&quot;`. */
+&nbsp;    const val ERR_AT_POSITION_PAREN_PREFIX = &quot; (position=&quot;
+&nbsp;    const val ERR_AT_POSITION_PAREN_SUFFIX = &quot;)&quot;
+&nbsp;    const val ERR_EXPECTED_COLON_AFTER_KEY_PREFIX = &quot;Expected &#39;:&#39; after key &#39;&quot;
+&nbsp;    const val ERR_EXPECTED_COLON_AFTER_KEY_MID = &quot;&#39; at position &quot;
+&nbsp;    const val ERR_TAB_IN_BLOCK_SEQUENCE_INDENT =
+&nbsp;        &quot;Tab character not allowed in block sequence indentation&quot;
+&nbsp;    const val ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON =
+&nbsp;        &quot;Unexpected &#39;:&#39; — a nested mapping can&#39;t start inline on the same line as its enclosing key&quot;
+&nbsp;    const val ERR_LONE_DASH_IN_FLOW =
+&nbsp;        &quot;A lone &#39;-&#39; is not a valid plain scalar in flow context&quot;
+&nbsp;    const val ERR_PLAIN_CONTINUATION_MAPPING_KEY =
+&nbsp;        &quot;Plain scalar continuation cannot contain a mapping key indicator&quot;
+&nbsp;    const val ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY =
+&nbsp;        &quot;Anchor/tag prefix on a key must be followed by the key itself&quot;
+&nbsp;    const val ERR_IMPLICIT_KEY_MULTILINE = &quot;Implicit keys cannot span multiple lines&quot;
+&nbsp;    const val ERR_PARSER_NO_PROGRESS_PREFIX = &quot;Parser made no progress at position &quot;
+&nbsp;    const val ERR_PARSER_NO_PROGRESS_SUFFIX = &quot; — malformed content&quot;
+&nbsp;    const val ERR_UNEXPECTED_AFTER_DOCUMENT_VALUE = &quot;Unexpected content after document value&quot;
+&nbsp;    const val ERR_DIRECTIVES_NEED_DOC_END =
+&nbsp;        &quot;Directives must be preceded by an explicit document end marker (...)&quot;
+&nbsp;    const val ERR_UNEXPECTED_COMMA_FLOW_MAPPING =
+&nbsp;        &quot;Unexpected &#39;,&#39; in flow mapping — empty entries are not allowed&quot;
+&nbsp;    const val ERR_EXPECTED_COLON_AFTER_FLOW_KEY_PREFIX = &quot;Expected &#39;:&#39; after flow mapping key &#39;&quot;
+&nbsp;    const val ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_MAP = &quot;Expected &#39;,&#39; or &#39;}&#39; in flow mapping&quot;
+&nbsp;    const val ERR_UNEXPECTED_COMMA_FLOW_SEQUENCE =
+&nbsp;        &quot;Unexpected &#39;,&#39; in flow sequence — empty entries are not allowed&quot;
+&nbsp;    const val ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_SEQ = &quot;Expected &#39;,&#39; or &#39;]&#39; in flow sequence&quot;
+&nbsp;    const val ERR_UNTERMINATED_DOUBLE_QUOTED = &quot;Unterminated double-quoted string&quot;
+&nbsp;    const val ERR_UNTERMINATED_SINGLE_QUOTED = &quot;Unterminated single-quoted string&quot;
+&nbsp;    const val ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX = &quot;Document marker &#39;&quot;
+&nbsp;    const val ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX = &quot;&#39; not allowed inside a quoted scalar&quot;
+&nbsp;    const val ERR_INCOMPLETE_X_ESCAPE = &quot;Incomplete \\x escape&quot;
+&nbsp;    const val ERR_INCOMPLETE_U_ESCAPE = &quot;Incomplete \\u escape&quot;
+&nbsp;    const val ERR_INCOMPLETE_U32_ESCAPE = &quot;Incomplete \\U escape&quot;
+&nbsp;    const val ERR_UNKNOWN_ESCAPE_PREFIX = &quot;Unknown escape: \\&quot;
+&nbsp;    const val ERR_INVALID_HEX_IN_ESCAPE = &quot;Invalid hex char in escape sequence&quot;
+&nbsp;    const val ERR_BLOCK_INDENT_INDICATOR_DIGIT =
+&nbsp;        &quot;Block scalar indentation indicator must be a single digit&quot;
+&nbsp;    const val ERR_BLOCK_INDENT_RANGE_1_9 =
+&nbsp;        &quot;Block scalar indentation indicator must be between 1 and 9&quot;
+&nbsp;    const val ERR_COMMENT_AFTER_BLOCK_INDICATOR_WS =
+&nbsp;        &quot;Comment after block scalar indicator must be preceded by whitespace&quot;
+&nbsp;    const val ERR_INVALID_TEXT_AFTER_BLOCK_INDICATOR = &quot;Invalid text after block scalar indicator&quot;
+&nbsp;    const val ERR_LEADING_EMPTY_LINE_OVERINDENTED =
+&nbsp;        &quot;Leading empty line in block scalar is more indented than its first content line&quot;
+&nbsp;    const val ERR_EOF_AFTER_TAG = &quot;Unexpected end of input after tag indicator&quot;
+&nbsp;    const val ERR_TAG_HANDLE_UNDEFINED_PREFIX = &quot;Tag handle &#39;&quot;
+&nbsp;    const val ERR_TAG_HANDLE_UNDEFINED_SUFFIX =
+&nbsp;        &quot;&#39; is not defined by a %TAG directive in this document&quot;
+&nbsp;    const val ERR_INVALID_CHAR_AFTER_TAG = &quot;Invalid character immediately after tag&quot;
+&nbsp;    const val ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX = &quot;Anchor &#39;&quot;
+&nbsp;    const val ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX = &quot;&#39; cannot be immediately followed by an alias&quot;
+&nbsp;    const val ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX =
+&nbsp;        &quot;&#39; cannot be immediately followed by a block sequence entry on the same line&quot;
+&nbsp;    const val ERR_ANCHOR_NOT_FOUND_PREFIX = &quot;Anchor &#39;&quot;
+&nbsp;    const val ERR_ANCHOR_NOT_FOUND_SUFFIX = &quot;&#39; not found&quot;
+&nbsp;    const val ERR_COMMENT_NEEDS_WHITESPACE = &quot;Comment must be preceded by whitespace&quot;
+&nbsp;    const val ERR_DUPLICATE_YAML_DIRECTIVE = &quot;Duplicate %YAML directive&quot;
+&nbsp;    const val ERR_MALFORMED_YAML_VERSION_PREFIX = &quot;Malformed %YAML directive version: &quot;
+&nbsp;    const val ERR_UNEXPECTED_AFTER_YAML_DIRECTIVE = &quot;Unexpected content after %YAML directive&quot;
+&nbsp;    const val ERR_DIRECTIVES_NEED_DOC_START =
+&nbsp;        &quot;Directives must be followed by a document-start marker (---)&quot;
+&nbsp;    const val ERR_UNEXPECTED_AFTER_DOC_END = &quot;Unexpected content after document-end marker&quot;
+&nbsp;    const val ERR_MAX_DEPTH_EXCEEDED = &quot;Max depth exceeded&quot;
+&nbsp;    const val ERR_NAME_OUTSIDE_OBJECT = &quot;Cannot write name outside of object scope&quot;
+&nbsp;    const val ERR_SERIALIZER_NOT_FOUND_PREFIX = &quot;Serializer not found for &quot;
+&nbsp;    const val ERR_NOT_YAML_SERIALIZER_PREFIX = &quot;Serializer for &quot;
+&nbsp;    const val ERR_NOT_YAML_SERIALIZER_SUFFIX = &quot; does not implement GhostYamlSerializer&quot;
+&nbsp;    const val STR_UNKNOWN_TYPE = &quot;unknown&quot;
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -79,7 +162,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

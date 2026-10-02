@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostBase64Kt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonFlatReader</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.common</a>
+    <a href="../index.html">com.ghost.serialization.parser.bytes</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostBase64Kt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostJsonFlatReader (com.ghost.serialization.parser.bytes)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostBase64Kt</td>
+  <td class="name">GhostJsonFlatReader</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    79.7%
   </span>
   <span class="absValue">
-    (2/2)
+    (47/59)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    40.7%
+    66.1%
   </span>
   <span class="absValue">
-    (22/54)
+    (115/174)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    74.6%
+    75.5%
   </span>
   <span class="absValue">
-    (53/71)
+    (240/318)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    67.3%
+    66.5%
   </span>
   <span class="absValue">
-    (302/449)
+    (1112/1672)
   </span>
 </td>
 </tr>
@@ -99,120 +99,652 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
+&nbsp;@file:Suppress(&quot;FunctionName&quot;)
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;package com.ghost.serialization.parser.bytes
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.exception.GhostJsonException
+&nbsp;import com.ghost.serialization.exception.hintForJsonError
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.internalSelect
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.nextDoubleExtension
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.nextFloatExtension
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.nextIntExtension
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.nextLongExtension
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.readQuotedString
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.skipNumber
+&nbsp;import com.ghost.serialization.parser.bytes.extensions.skipQuotedString
+&nbsp;import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
+&nbsp;import com.ghost.serialization.parser.common.GhostHeuristics
+&nbsp;import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
+&nbsp;import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
+&nbsp;import com.ghost.serialization.parser.common.GhostSource
+&nbsp;import com.ghost.serialization.parser.common.json.JsonReaderOptions
+&nbsp;import com.ghost.serialization.parser.common.createByteArraySource
+&nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
+&nbsp;import com.ghost.serialization.parser.common.matchCoerceBooleanBytes
+&nbsp;import com.ghost.serialization.parser.common.json.skipValueCore
+&nbsp;import com.ghost.serialization.parser.streaming.captureRawJson
 &nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
-&nbsp;
+&nbsp;import com.ghost.serialization.parser.strings.captureRawJson
+&nbsp;import okio.ByteString
+&nbsp;import okio.ByteString.Companion.encodeUtf8
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 &nbsp;
 &nbsp;/**
-&nbsp; * Decodes a standard or URL-safe Base64 string (with or without `=` padding) into raw bytes.
+&nbsp; * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
+&nbsp; * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
 &nbsp; *
-&nbsp; * Operates on an already-materialized Kotlin [String] (e.g. from `reader.nextString()`), so
-&nbsp; * it works from any reader flavor ([GhostJsonReader] or [GhostJsonStringReader]) — unlike a
-&nbsp; * scratch-buffer-pooled decoder tied to a specific byte buffer implementation.
+&nbsp; * @property strictMode When true, rejects unknown/unmapped fields and enforces strict comma
+&nbsp; * validation; `false` favors lenient parsing performance.
+&nbsp; * @property materializeRawJsonCaptures When true, [captureRawJson] copies into an owned array
+&nbsp; * instead of slicing [rawData]; set by the [GhostJsonStringReader] deserialize bridge.
+&nbsp; * @property source String-decoding backend ([GhostSource.decodeJsonStringRange]); built via
+&nbsp; * [createByteArraySource] so JVM/Android use ISO-8859-1 for known 7-bit spans. Typed as
+&nbsp; * [ByteArrayGhostSource] so [resetSlice] can rebind its buffer without reallocating.
+&nbsp; * @property predictedFieldIndex Optimistic hint for [internalSelect]: the field index expected
+&nbsp; * next, assuming declaration-order JSON (the common case for machine-generated payloads). A hit
+&nbsp; * skips straight to a single compare instead of hash+verify; a miss falls back transparently, so
+&nbsp; * only speed is at stake, never correctness. Reset on [beginObject].
+&nbsp; * @property pathTracker Scratch stack for the error JSONPath, rebuilt by re-scanning the input only
+&nbsp; * when [throwError] builds an exception (nothing is tracked on the happy path).
 &nbsp; *
-&nbsp; * @throws IllegalArgumentException if [value] contains a non-alphabet, non-whitespace character.
+&nbsp; * [beginObject]/[beginArray] enforce [maxDepth] against stack overflow. [getByte] masks to a
+&nbsp; * positive int since Kotlin&#39;s [Byte] is signed — the same `and BYTE_MASK` pattern recurs
+&nbsp; * throughout for direct byte access. [selectNameAndConsume] matches a field name via
+&nbsp; * [JsonReaderOptions]&#39;s perfect hash and consumes the following `:`; [selectString] does the same
+&nbsp; * without consuming a separator (e.g. enum values). [peekStringField] is the codegen-facing alias
+&nbsp; * for [peekDiscriminator], used for sealed class discriminators. [throwMissingRequiredField]
+&nbsp; * pushes the field name onto the JSONPath itself, since that validation runs after the object
+&nbsp; * loop already finished — [endObject] would have popped it by then. [resetSlice] rebinds to a
+&nbsp; * sub-range of a buffer with no copy. `GhostProtoJsonFlatReader` overrides [nextProtoUInt64] for
+&nbsp; * the full [ULong] range.
 &nbsp; */
-&nbsp;fun decodeBase64String(value: String): ByteArray {
-<b class="fc">&nbsp;    val lut = C.BASE64_LUT</b>
-<b class="fc">&nbsp;    val length = value.length</b>
-<b class="fc">&nbsp;    val output = ByteArray(length)</b>
-<b class="fc">&nbsp;    var outputPosition = 0</b>
-<b class="fc">&nbsp;    val chunk = IntArray(4)</b>
-<b class="fc">&nbsp;    var chunkIndex = 0</b>
+&nbsp;open class GhostJsonFlatReader(
+<b class="fc">&nbsp;    var rawData: ByteArray,</b>
+<b class="fc">&nbsp;    var maxDepth: Int = NUM.MAX_DEPTH,</b>
+<b class="fc">&nbsp;    var strictMode: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceStringsToNumbers: Boolean = false,</b>
+<b class="fc">&nbsp;    var coerceBooleans: Boolean = false,</b>
+<b class="fc">&nbsp;    var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize,</b>
+<b class="fc">&nbsp;    var materializeRawJsonCaptures: Boolean = false,</b>
+&nbsp;) {
 &nbsp;
-<b class="fc">&nbsp;    for (index in 0 until length) {</b>
-<b class="fc">&nbsp;        val c = value[index].code</b>
-<b class="pc">&nbsp;        if (c &lt;= C.SPACE_INT) continue</b>
-<b class="fc">&nbsp;        chunk[chunkIndex++] = c</b>
-<b class="fc">&nbsp;        if (chunkIndex == 4) {</b>
-&nbsp;            // Chars outside the LUT&#39;s range (any non-Latin-1 code unit) are never valid
-&nbsp;            // base64 alphabet members — bounds-check rather than indexing lut[] directly,
-&nbsp;            // since a raw index would throw ArrayIndexOutOfBoundsException instead of the
-&nbsp;            // documented IllegalArgumentException.
-<b class="pc">&nbsp;            val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
-<b class="pc">&nbsp;            val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
-<b class="pc">&nbsp;            val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
-<b class="pc">&nbsp;            val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
-<b class="pc">&nbsp;            if (value0 &lt; 0 || value1 &lt; 0 || value2 == -1 || value3 == -1) {</b>
-<b class="nc">&nbsp;                throw IllegalArgumentException(C.ERR_INVALID_BASE64)</b>
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val source: ByteArrayGhostSource =</b>
+<b class="fc">&nbsp;        createByteArraySource(data = rawData) as ByteArrayGhostSource</b>
+&nbsp;
+<b class="fc">&nbsp;    var limit: Int = rawData.size</b>
+&nbsp;
+<b class="fc">&nbsp;    var position: Int = 0</b>
+&nbsp;
+<b class="fc">&nbsp;    var nextTokenByte: Int = SCN.RESET_TOKEN_BYTE</b>
+&nbsp;
+&nbsp;    @InternalGhostApi
+<b class="nc">&nbsp;    fun _getPosition(): Int = position</b>
+&nbsp;
+&nbsp;    @InternalGhostApi
+<b class="nc">&nbsp;    fun _getRawData(): ByteArray = rawData</b>
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun _setNextTokenByte(tokenByte: Int) {
+<b class="nc">&nbsp;        nextTokenByte = tokenByte</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun _setPosition(position: Int) {
+<b class="nc">&nbsp;        this.position = position</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    internal val stringPool = arrayOfNulls&lt;String&gt;(SCN.STR_POOL_SIZE)</b>
+<b class="fc">&nbsp;    internal val stringPoolHashes = IntArray(SCN.STR_POOL_SIZE)</b>
+&nbsp;
+<b class="fc">&nbsp;    internal var lastScanContentWas7BitOnly: Boolean = false</b>
+&nbsp;
+<b class="fc">&nbsp;    internal var predictedFieldIndex: Int = SCN.FIELD_PREDICTION_START</b>
+&nbsp;
+<b class="fc">&nbsp;    var depth: Int = 0</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal var needsCommaMask: Long = 0L</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal var commaConsumedMask: Long = 0L</b>
+&nbsp;
+&nbsp;    @PublishedApi
+<b class="fc">&nbsp;    internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()</b>
+&nbsp;
+&nbsp;    private var sliceStart: Int = 0
+&nbsp;
+&nbsp;    fun beginArray() {
+<b class="pc">&nbsp;        if (nextNonWhitespace() != TOK.OPEN_ARR_INT) throwError(EM.ERR_EXPECTED_BEGIN_ARR)</b>
+<b class="fc">&nbsp;        depth++</b>
+&nbsp;
+<b class="fc">&nbsp;        if (depth &gt; maxDepth) throwError(EM.ERR_DEPTH_EXCEEDED)</b>
+&nbsp;
+<b class="fc">&nbsp;        if (depth &lt; SCN.MAX_BITMASK_DEPTH) {</b>
+<b class="fc">&nbsp;            val bit = SCN.BITMASK_UNIT shl depth</b>
+<b class="fc">&nbsp;            needsCommaMask = needsCommaMask and bit.inv()</b>
+<b class="fc">&nbsp;            commaConsumedMask = commaConsumedMask and bit.inv()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    fun beginObject() {
+<b class="pc">&nbsp;        if (nextNonWhitespace() != TOK.OPEN_OBJ_INT) throwError(EM.ERR_EXPECTED_BEGIN_OBJ)</b>
+<b class="fc">&nbsp;        predictedFieldIndex = SCN.FIELD_PREDICTION_START</b>
+<b class="fc">&nbsp;        depth++</b>
+&nbsp;
+<b class="fc">&nbsp;        if (depth &gt; maxDepth) throwError(EM.ERR_DEPTH_EXCEEDED)</b>
+&nbsp;
+<b class="fc">&nbsp;        if (depth &lt; SCN.MAX_BITMASK_DEPTH) {</b>
+<b class="fc">&nbsp;            val bit = SCN.BITMASK_UNIT shl depth</b>
+<b class="fc">&nbsp;            needsCommaMask = needsCommaMask and bit.inv()</b>
+<b class="fc">&nbsp;            commaConsumedMask = commaConsumedMask and bit.inv()</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    fun endArray() {
+<b class="fc">&nbsp;        if (nextNonWhitespace() != TOK.CLOSE_ARR_INT) throwError(EM.ERR_EXPECTED_END_ARR)</b>
+<b class="pc">&nbsp;        if (depth &gt; 0) depth--</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    fun endObject() {
+<b class="pc">&nbsp;        if (nextNonWhitespace() != TOK.CLOSE_OBJ_INT) throwError(EM.ERR_EXPECTED_END_OBJ)</b>
+<b class="pc">&nbsp;        if (depth &gt; 0) depth--</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;    inline fun getByte(index: Int): Int {
+<b class="fc">&nbsp;        return rawData[index].toInt() and TOK.BYTE_MASK</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun internalSkip(byteCount: Int) {
+<b class="fc">&nbsp;        position += byteCount</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    open fun nextDouble(): Double = nextDoubleExtension()</b>
+&nbsp;
+<b class="fc">&nbsp;    open fun nextFloat(): Float = nextFloatExtension()</b>
+&nbsp;
+<b class="fc">&nbsp;    open fun nextInt(): Int = nextIntExtension()</b>
+&nbsp;
+<b class="fc">&nbsp;    open fun nextLong(): Long = nextLongExtension()</b>
+&nbsp;
+&nbsp;    fun nextNonWhitespace(): Int {
+<b class="fc">&nbsp;        val nextToken = peekNextToken()</b>
+<b class="fc">&nbsp;        if (nextToken == -1) throwError(EM.ERR_UNEXPECTED_EOF)</b>
+&nbsp;
+<b class="fc">&nbsp;        internalSkip(1)</b>
+<b class="fc">&nbsp;        return nextToken</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    open fun nextProtoUInt64(): ULong {
+<b class="fc">&nbsp;        val saved = coerceStringsToNumbers</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = true</b>
+&nbsp;        return try {
+<b class="fc">&nbsp;            if (peekNextToken() == TOK.QUOTE_INT) {</b>
+<b class="fc">&nbsp;                nextString().toULong()</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                nextLong().toULong()</b>
 &nbsp;            }
-<b class="fc">&nbsp;            output[outputPosition++] =</b>
-<b class="fc">&nbsp;                ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()</b>
-<b class="pc">&nbsp;            if (value2 != -2) {</b>
-<b class="fc">&nbsp;                output[outputPosition++] =</b>
-<b class="fc">&nbsp;                    ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()</b>
-<b class="pc">&nbsp;                if (value3 != -2) {</b>
-<b class="fc">&nbsp;                    output[outputPosition++] = ((value2 shl C.B64_SHIFT_6) or value3).toByte()</b>
+&nbsp;        } finally {
+<b class="fc">&nbsp;            coerceStringsToNumbers = saved</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    open fun nextULong(): ULong = nextProtoUInt64()</b>
+&nbsp;
+&nbsp;    fun nextULongOrNull(): ULong? {
+<b class="nc">&nbsp;        if (isNextNullValue()) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="nc">&nbsp;        return nextULong()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun peekByte(): Byte = peekNextToken().toByte()</b>
+&nbsp;
+<b class="nc">&nbsp;    fun peekDiscriminator(key: String = TOK.DEFAULT_DISCRIMINATOR_KEY): String? {</b>
+<b class="nc">&nbsp;        if (key == TOK.DEFAULT_DISCRIMINATOR_KEY) return peekDiscriminator(key = WR.TYPE_BS)</b>
+<b class="nc">&nbsp;        return peekDiscriminator(key = key.encodeUtf8())</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun peekDiscriminator(
+&nbsp;        key: ByteString
+<b class="nc">&nbsp;    ): String? = GhostDiscriminatorPeeker.peek(</b>
+<b class="nc">&nbsp;        source = source,</b>
+<b class="nc">&nbsp;        rawData = rawData,</b>
+<b class="nc">&nbsp;        isStreaming = false,</b>
+<b class="nc">&nbsp;        start = position,</b>
+<b class="nc">&nbsp;        limit = limit,</b>
+<b class="nc">&nbsp;        key = key</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    fun peekNextToken(): Int {
+<b class="fc">&nbsp;        val cached = nextTokenByte</b>
+<b class="fc">&nbsp;        if (cached != -1) return cached</b>
+&nbsp;
+<b class="fc">&nbsp;        val cursor = position</b>
+<b class="fc">&nbsp;        if (cursor + 1 &lt; limit) {</b>
+<b class="fc">&nbsp;            val data = rawData</b>
+<b class="fc">&nbsp;            val firstByte = data[cursor].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;            if (firstByte &gt; TOK.SPACE_INT) {</b>
+<b class="fc">&nbsp;                nextTokenByte = firstByte</b>
+<b class="fc">&nbsp;                return firstByte</b>
+&nbsp;            }
+<b class="fc">&nbsp;            val secondByte = data[cursor + 1].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;            val isSingleSpaceBeforeToken = firstByte == TOK.SPACE_INT &amp;&amp; secondByte &gt; TOK.SPACE_INT</b>
+<b class="fc">&nbsp;            if (isSingleSpaceBeforeToken) {</b>
+<b class="fc">&nbsp;                position = cursor + 1</b>
+<b class="fc">&nbsp;                nextTokenByte = secondByte</b>
+<b class="fc">&nbsp;                return secondByte</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        skipWhitespace()</b>
+<b class="fc">&nbsp;        return nextTokenByte</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun reset(newData: ByteArray, newLimit: Int = newData.size) {</b>
+<b class="fc">&nbsp;        resetSlice(buffer = newData, offset = 0, length = newLimit)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
+<b class="fc">&nbsp;        rawData = buffer</b>
+<b class="fc">&nbsp;        source.data = buffer</b>
+<b class="fc">&nbsp;        sliceStart = offset</b>
+<b class="fc">&nbsp;        position = offset</b>
+<b class="fc">&nbsp;        limit = offset + length</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+<b class="fc">&nbsp;        depth = 0</b>
+<b class="fc">&nbsp;        needsCommaMask = 0L</b>
+<b class="fc">&nbsp;        commaConsumedMask = 0L</b>
+<b class="fc">&nbsp;        strictMode = false</b>
+<b class="fc">&nbsp;        coerceStringsToNumbers = false</b>
+<b class="fc">&nbsp;        coerceBooleans = false</b>
+<b class="fc">&nbsp;        maxDepth = NUM.MAX_DEPTH</b>
+<b class="fc">&nbsp;        maxCollectionSize = GhostHeuristics.maxCollectionSize</b>
+<b class="fc">&nbsp;        lastScanContentWas7BitOnly = false</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @InternalGhostApi
+&nbsp;    fun skipAndValidateLiteral(expected: ByteString) {
+<b class="fc">&nbsp;        val size = expected.size</b>
+<b class="pc">&nbsp;        val literalMismatch = position + size &gt; limit || !expected.rangeEquals(</b>
+<b class="fc">&nbsp;            offset = 0,</b>
+<b class="fc">&nbsp;            other = rawData,</b>
+<b class="fc">&nbsp;            otherOffset = position,</b>
+<b class="fc">&nbsp;            byteCount = size</b>
+&nbsp;        )
+<b class="pc">&nbsp;        if (literalMismatch) throwError(EM.ERR_EXPECTED_LITERAL + expected.utf8())</b>
+&nbsp;
+<b class="fc">&nbsp;        position += size</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun skipWhitespace() {
+<b class="fc">&nbsp;        val data = rawData</b>
+<b class="fc">&nbsp;        val byteLimit = limit</b>
+<b class="fc">&nbsp;        var cursor = position</b>
+<b class="fc">&nbsp;        while (true) {</b>
+&nbsp;            // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
+&nbsp;            // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
+&nbsp;            // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
+<b class="fc">&nbsp;            while (cursor + SCN.LONG_BYTES &lt;= byteLimit &amp;&amp;</b>
+<b class="fc">&nbsp;                ghostReadLong8(data = data, index = cursor) == SCN.SPACE_RUN_LONG</b>
+&nbsp;            ) {
+<b class="fc">&nbsp;                cursor += SCN.LONG_BYTES</b>
+&nbsp;            }
+<b class="fc">&nbsp;            if (cursor &gt;= byteLimit) {</b>
+<b class="fc">&nbsp;                position = byteLimit</b>
+<b class="fc">&nbsp;                nextTokenByte = SCN.MATCH_END</b>
+&nbsp;                return
+&nbsp;            }
+<b class="fc">&nbsp;            val tokenByte = data[cursor].toInt() and TOK.BYTE_MASK</b>
+<b class="fc">&nbsp;            if (tokenByte &gt; TOK.SPACE_INT) {</b>
+<b class="fc">&nbsp;                position = cursor</b>
+<b class="fc">&nbsp;                nextTokenByte = tokenByte</b>
+&nbsp;                return
+&nbsp;            }
+&nbsp;            // Non-space whitespace (tab / LF / CR) or a control byte; mirror WHITESPACE_MASK.
+<b class="fc">&nbsp;            val isNonWhitespaceControlByte = tokenByte != TOK.SPACE_INT &amp;&amp;</b>
+<b class="fc">&nbsp;                    tokenByte != TOK.LF_INT &amp;&amp; tokenByte != TOK.CR_INT &amp;&amp; tokenByte != TOK.TAB_INT</b>
+<b class="fc">&nbsp;            if (isNonWhitespaceControlByte) {</b>
+<b class="fc">&nbsp;                position = cursor</b>
+<b class="fc">&nbsp;                nextTokenByte = tokenByte</b>
+&nbsp;                return
+&nbsp;            }
+<b class="fc">&nbsp;            cursor++</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    fun throwError(message: String): Nothing = throwErrorWithPath(</b>
+<b class="fc">&nbsp;        message = message,</b>
+<b class="fc">&nbsp;        missingKey = null</b>
+&nbsp;    )
+&nbsp;
+<b class="nc">&nbsp;    fun throwMissingRequiredField(jsonName: String): Nothing = throwErrorWithPath(</b>
+<b class="nc">&nbsp;        message = &quot;${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}&quot;,</b>
+<b class="nc">&nbsp;        missingKey = jsonName</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    private fun throwErrorWithPath(
+&nbsp;        message: String,
+&nbsp;        missingKey: String?
+&nbsp;    ): Nothing {
+<b class="fc">&nbsp;        val errorPosition = position</b>
+<b class="pc">&nbsp;        val errorEnd = if (errorPosition &gt; limit) {</b>
+<b class="nc">&nbsp;            limit</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            errorPosition</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val localData = rawData</b>
+<b class="fc">&nbsp;        val tracker = GhostJsonPathReconstruction.reconstruct(</b>
+<b class="fc">&nbsp;            tracker = pathTracker,</b>
+<b class="fc">&nbsp;            start = sliceStart,</b>
+<b class="fc">&nbsp;            end = errorEnd,</b>
+<b class="fc">&nbsp;            limit = limit,</b>
+<b class="fc">&nbsp;            getByte = { localData[it].toInt() and TOK.BYTE_MASK },</b>
+<b class="fc">&nbsp;            decodeRange = { from, to -&gt; localData.decodeToString(startIndex = from, endIndex = to) }</b>
+&nbsp;        )
+<b class="pc">&nbsp;        if (missingKey != null) {</b>
+<b class="nc">&nbsp;            tracker.finishScalarValue()</b>
+<b class="nc">&nbsp;            tracker.pushKey(name = missingKey)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val errorPath = tracker.formatPath()</b>
+&nbsp;
+<b class="fc">&nbsp;        throw GhostJsonException(</b>
+<b class="fc">&nbsp;            baseMessage = &quot;$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition&quot;,</b>
+<b class="fc">&nbsp;            computeLineCol = {</b>
+<b class="fc">&nbsp;                var columnNumber = 0</b>
+<b class="fc">&nbsp;                var lineNumber = 0</b>
+<b class="fc">&nbsp;                var byteIndex = 0</b>
+<b class="fc">&nbsp;                while (byteIndex &lt; errorEnd) {</b>
+<b class="pc">&nbsp;                    if ((rawData[byteIndex].toInt() and TOK.BYTE_MASK) == TOK.NEWLINE_INT) {</b>
+<b class="nc">&nbsp;                        lineNumber++</b>
+<b class="nc">&nbsp;                        columnNumber = 0</b>
+&nbsp;                    } else {
+<b class="fc">&nbsp;                        columnNumber++</b>
+&nbsp;                    }
+<b class="fc">&nbsp;                    byteIndex++</b>
+&nbsp;                }
+<b class="fc">&nbsp;                intArrayOf(lineNumber, columnNumber)</b>
+&nbsp;            },
+<b class="fc">&nbsp;            path = errorPath,</b>
+<b class="fc">&nbsp;            hint = message.hintForJsonError(),</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    /** Whether [token] closes either container kind (`]` or `}`). */
+&nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;    private inline fun isCloseToken(token: Int): Boolean =
+<b class="fc">&nbsp;        token == TOK.CLOSE_ARR_INT || token == TOK.CLOSE_OBJ_INT</b>
+&nbsp;
+&nbsp;    /** Skips a comma already confirmed present, rejecting one immediately followed by a close token. */
+&nbsp;    @Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;    private inline fun skipCommaRejectingTrailing() {
+<b class="fc">&nbsp;        internalSkip(1)</b>
+<b class="fc">&nbsp;        if (isCloseToken(token = peekNextToken())) throwError(EM.ERR_TRAILING_COMMA)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun consumeArraySeparator() {
+<b class="pc">&nbsp;        if (strictMode &amp;&amp; depth &lt; SCN.MAX_BITMASK_DEPTH) {</b>
+<b class="fc">&nbsp;            val bit = SCN.BITMASK_UNIT shl depth</b>
+&nbsp;            // If hasNext() already consumed the comma, honor that.
+<b class="pc">&nbsp;            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {</b>
+<b class="fc">&nbsp;                commaConsumedMask = commaConsumedMask and bit.inv()</b>
+<b class="fc">&nbsp;                needsCommaMask = needsCommaMask or bit</b>
+&nbsp;                return
+&nbsp;            }
+<b class="nc">&nbsp;            val token = peekNextToken()</b>
+<b class="nc">&nbsp;            if (token == TOK.COMMA_INT) {</b>
+<b class="nc">&nbsp;                skipCommaRejectingTrailing()</b>
+<b class="nc">&nbsp;                commaConsumedMask = commaConsumedMask or bit</b>
+&nbsp;            } else {
+&nbsp;                // Whether a comma was required (a prior element exists) or not (first call at
+&nbsp;                // this depth), a non-separator token here is only valid as the closing bracket.
+<b class="nc">&nbsp;                if (!isCloseToken(token = token)) throwError(EM.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)</b>
+&nbsp;            }
+<b class="nc">&nbsp;            needsCommaMask = needsCommaMask or bit</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            val token = peekNextToken()</b>
+<b class="pc">&nbsp;            if (token == TOK.COMMA_INT) {</b>
+<b class="fc">&nbsp;                internalSkip(1)</b>
+<b class="pc">&nbsp;                if (peekNextToken() == TOK.CLOSE_ARR_INT) throwError(EM.ERR_TRAILING_COMMA)</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun consumeKeySeparator() {
+<b class="pc">&nbsp;        if (nextNonWhitespace() != TOK.COLON_INT) throwError(EM.ERR_EXPECTED_COLON)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Consumes the null value literal from the stream.
+&nbsp;     *
+&nbsp;     * After [peekNextToken] has already positioned on `&#39;n&#39;`, validates the remaining
+&nbsp;     * `ull` bytes inline — avoids `okio.ByteString.rangeEquals` on the hot nullable path.
+&nbsp;     */
+&nbsp;    fun consumeNull() {
+<b class="fc">&nbsp;        val cursor = position</b>
+<b class="fc">&nbsp;        val data = rawData</b>
+<b class="pc">&nbsp;        val isNotNullLiteral = cursor + TOK.LITERAL_NULL_LEN &gt; limit ||</b>
+<b class="pc">&nbsp;            (data[cursor].toInt() and TOK.BYTE_MASK) != TOK.NULL_CHAR_INT ||</b>
+<b class="pc">&nbsp;            (data[cursor + 1].toInt() and TOK.BYTE_MASK) != TOK.U_BYTE_INT ||</b>
+<b class="pc">&nbsp;            (data[cursor + 2].toInt() and TOK.BYTE_MASK) != TOK.L_BYTE_INT ||</b>
+<b class="pc">&nbsp;            (data[cursor + 3].toInt() and TOK.BYTE_MASK) != TOK.L_BYTE_INT</b>
+<b class="pc">&nbsp;        if (isNotNullLiteral) {</b>
+<b class="nc">&nbsp;            throwError(EM.ERR_EXPECTED_LITERAL + TOK.LITERAL_NULL)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        position = cursor + TOK.LITERAL_NULL_LEN</b>
+<b class="fc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Returns whether the current container has more elements; rejects trailing commas. */
+&nbsp;    fun hasNext(): Boolean {
+<b class="fc">&nbsp;        val token = peekNextToken()</b>
+<b class="pc">&nbsp;        val containerExhausted = isCloseToken(token = token) || token == SCN.MATCH_END</b>
+<b class="fc">&nbsp;        if (containerExhausted) return false</b>
+&nbsp;
+<b class="pc">&nbsp;        if (strictMode &amp;&amp; depth &lt; SCN.MAX_BITMASK_DEPTH) {</b>
+<b class="fc">&nbsp;            val bit = SCN.BITMASK_UNIT shl depth</b>
+<b class="pc">&nbsp;            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {</b>
+<b class="nc">&nbsp;                if (token == TOK.COMMA_INT) {</b>
+<b class="nc">&nbsp;                    commaConsumedMask = commaConsumedMask and bit.inv()</b>
+<b class="nc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
 &nbsp;                }
 &nbsp;            }
-<b class="fc">&nbsp;            chunkIndex = 0</b>
+<b class="pc">&nbsp;            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {</b>
+<b class="nc">&nbsp;                commaConsumedMask = commaConsumedMask and bit.inv()</b>
+<b class="nc">&nbsp;                needsCommaMask = needsCommaMask or bit</b>
+&nbsp;            } else {
+<b class="fc">&nbsp;                val required = (needsCommaMask and bit) != SCN.RESULT_NONE</b>
+<b class="fc">&nbsp;                if (token == TOK.COMMA_INT) {</b>
+<b class="pc">&nbsp;                    if (!required) throwError(EM.ERR_UNEXPECTED_COMMA)</b>
+&nbsp;
+<b class="fc">&nbsp;                    skipCommaRejectingTrailing()</b>
+<b class="fc">&nbsp;                    commaConsumedMask = commaConsumedMask or bit</b>
+<b class="fc">&nbsp;                    needsCommaMask = needsCommaMask and bit.inv()</b>
+&nbsp;                } else {
+<b class="fc">&nbsp;                    if (required) throwError(EM.ERR_EXPECTED_COMMA)</b>
+<b class="fc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } else {
+<b class="fc">&nbsp;            if (token == TOK.COMMA_INT) skipCommaRejectingTrailing()</b>
 &nbsp;        }
+<b class="fc">&nbsp;        return true</b>
 &nbsp;    }
 &nbsp;
-<b class="pc">&nbsp;    if (chunkIndex &gt; 0) {</b>
-<b class="nc">&nbsp;        while (chunkIndex &lt; 4) {</b>
-<b class="nc">&nbsp;            chunk[chunkIndex++] = C.EQUALS_INT</b>
+<b class="fc">&nbsp;    fun isNextNullValue(): Boolean = peekNextToken() == TOK.NULL_CHAR_INT</b>
+&nbsp;
+&nbsp;    /** Parses the next boolean; if [coerceBooleans]
+&nbsp;     *  also accepts `0`/`1` and matching strings. */
+&nbsp;    fun nextBoolean(): Boolean {
+<b class="fc">&nbsp;        val token = peekNextToken()</b>
+<b class="fc">&nbsp;        if (token == TOK.TRUE_CHAR_INT) {</b>
+<b class="fc">&nbsp;            skipAndValidateLiteral(WR.TRUE_BS)</b>
+<b class="fc">&nbsp;            return true</b>
 &nbsp;        }
-<b class="nc">&nbsp;        val value0 = if (chunk[0] &lt; lut.size) lut[chunk[0]] else -1</b>
-<b class="nc">&nbsp;        val value1 = if (chunk[1] &lt; lut.size) lut[chunk[1]] else -1</b>
-<b class="nc">&nbsp;        val value2 = if (chunk[2] &lt; lut.size) lut[chunk[2]] else -1</b>
-<b class="nc">&nbsp;        val value3 = if (chunk[3] &lt; lut.size) lut[chunk[3]] else -1</b>
-<b class="nc">&nbsp;        if (value0 &gt;= 0 &amp;&amp; value1 &gt;= 0) {</b>
-<b class="nc">&nbsp;            output[outputPosition++] =</b>
-<b class="nc">&nbsp;                ((value0 shl C.B64_SHIFT_2) or (value1 ushr C.B64_SHIFT_4)).toByte()</b>
-<b class="nc">&nbsp;            if (value2 != -2 &amp;&amp; value2 &gt;= 0) {</b>
-<b class="nc">&nbsp;                output[outputPosition++] =</b>
-<b class="nc">&nbsp;                    ((value1 shl C.B64_SHIFT_4) or (value2 ushr C.B64_SHIFT_2)).toByte()</b>
+<b class="fc">&nbsp;        if (token == TOK.FALSE_CHAR_INT) {</b>
+<b class="fc">&nbsp;            skipAndValidateLiteral(WR.FALSE_BS)</b>
+<b class="fc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (coerceBooleans) {</b>
+<b class="fc">&nbsp;            if (token == TOK.ONE_INT) {</b>
+<b class="fc">&nbsp;                internalSkip(1)</b>
+<b class="fc">&nbsp;                return true</b>
+&nbsp;            }
+<b class="pc">&nbsp;            if (token == TOK.ZERO_INT) {</b>
+<b class="fc">&nbsp;                internalSkip(1)</b>
+<b class="fc">&nbsp;                return false</b>
+&nbsp;            }
+<b class="nc">&nbsp;            if (token == TOK.QUOTE_INT) {</b>
+&nbsp;                // Scans the quoted string bytes directly — no String allocation.
+<b class="nc">&nbsp;                val coerced = matchCoerceBooleanBytes()</b>
+<b class="nc">&nbsp;                return coerced</b>
 &nbsp;            }
 &nbsp;        }
+<b class="fc">&nbsp;        throwError(EM.ERR_EXPECTED_BOOLEAN)</b>
 &nbsp;    }
 &nbsp;
-<b class="fc">&nbsp;    return output.copyOf(outputPosition)</b>
-&nbsp;}
-&nbsp;
-&nbsp;/**
-&nbsp; * Encodes [source] into a standard Base64 string with `=` padding (RFC 4648 §4).
-&nbsp; */
-&nbsp;fun encodeBase64String(source: ByteArray): String {
-<b class="pc">&nbsp;    if (source.isEmpty()) return &quot;&quot;</b>
-<b class="fc">&nbsp;    val chars = C.BASE64_ALPHABET_BYTES</b>
-<b class="fc">&nbsp;    val outputLength = ((source.size + C.B64_OFFSET_2) / C.B64_PAD_DIVISOR) * C.B64_PAD_MULTIPLIER</b>
-<b class="fc">&nbsp;    val output = ByteArray(outputLength)</b>
-<b class="fc">&nbsp;    var index = 0</b>
-<b class="fc">&nbsp;    var outputIndex = 0</b>
-<b class="fc">&nbsp;    val length = source.size</b>
-<b class="fc">&nbsp;    val loopLimit = length - C.B64_OFFSET_2</b>
-<b class="fc">&nbsp;    while (index &lt; loopLimit) {</b>
-<b class="fc">&nbsp;        val byte0 = source[index].toInt() and C.B64_BYTE_MASK</b>
-<b class="fc">&nbsp;        val byte1 = source[index + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK</b>
-<b class="fc">&nbsp;        val byte2 = source[index + C.B64_OFFSET_2].toInt() and C.B64_BYTE_MASK</b>
-<b class="fc">&nbsp;        output[outputIndex++] = chars[byte0 shr C.B64_SHIFT_2]</b>
-<b class="fc">&nbsp;        output[outputIndex++] =</b>
-<b class="fc">&nbsp;            chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]</b>
-<b class="fc">&nbsp;        output[outputIndex++] =</b>
-<b class="fc">&nbsp;            chars[((byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2) or (byte2 shr C.B64_SHIFT_6)]</b>
-<b class="fc">&nbsp;        output[outputIndex++] = chars[byte2 and C.B64_MASK_6BITS]</b>
-<b class="fc">&nbsp;        index += C.B64_PAD_DIVISOR</b>
-&nbsp;    }
-<b class="fc">&nbsp;    if (index &lt; length) {</b>
-<b class="fc">&nbsp;        val byte0 = source[index].toInt() and C.B64_BYTE_MASK</b>
-<b class="fc">&nbsp;        output[outputIndex++] = chars[byte0 shr C.B64_SHIFT_2]</b>
-<b class="pc">&nbsp;        if (index == length - C.B64_OFFSET_1) {</b>
-<b class="fc">&nbsp;            output[outputIndex++] = chars[(byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4]</b>
-<b class="fc">&nbsp;            output[outputIndex++] = C.EQUALS_BYTE</b>
-<b class="fc">&nbsp;            output[outputIndex++] = C.EQUALS_BYTE</b>
-&nbsp;        } else {
-<b class="nc">&nbsp;            val byte1 = source[index + C.B64_OFFSET_1].toInt() and C.B64_BYTE_MASK</b>
-<b class="nc">&nbsp;            output[outputIndex++] =</b>
-<b class="nc">&nbsp;                chars[((byte0 and C.B64_MASK_2BITS) shl C.B64_SHIFT_4) or (byte1 shr C.B64_SHIFT_4)]</b>
-<b class="nc">&nbsp;            output[outputIndex++] = chars[(byte1 and C.B64_MASK_4BITS) shl C.B64_SHIFT_2]</b>
-<b class="nc">&nbsp;            output[outputIndex++] = C.EQUALS_BYTE</b>
+&nbsp;    fun nextBooleanOrNull(): Boolean? {
+<b class="nc">&nbsp;        if (peekNextToken() == TOK.NULL_CHAR_INT) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
 &nbsp;        }
+<b class="nc">&nbsp;        return nextBoolean()</b>
 &nbsp;    }
-<b class="fc">&nbsp;    return output.decodeToString()</b>
+&nbsp;
+&nbsp;    fun nextIntOrNull(): Int? {
+<b class="pc">&nbsp;        if (peekNextToken() == TOK.NULL_CHAR_INT) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return nextInt()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Consumes any comma separator
+&nbsp;     *  returns the next key or `null` if the object has ended. */
+&nbsp;    fun nextKey(): String? {
+<b class="fc">&nbsp;        val token = peekNextToken()</b>
+<b class="fc">&nbsp;        if (token == TOK.CLOSE_OBJ_INT) {</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (strictMode &amp;&amp; depth &lt; SCN.MAX_BITMASK_DEPTH) {</b>
+<b class="nc">&nbsp;            val bit = SCN.BITMASK_UNIT shl depth</b>
+&nbsp;            // If comma was already consumed by consumeArraySeparator(), skip re-requiring it.
+<b class="nc">&nbsp;            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {</b>
+<b class="nc">&nbsp;                commaConsumedMask = commaConsumedMask and bit.inv()</b>
+<b class="nc">&nbsp;                needsCommaMask = needsCommaMask or bit</b>
+&nbsp;            } else {
+<b class="nc">&nbsp;                val required = (needsCommaMask and bit) != SCN.RESULT_NONE</b>
+<b class="nc">&nbsp;                if (token == TOK.COMMA_INT) {</b>
+<b class="nc">&nbsp;                    if (!required) throwError(EM.ERR_UNEXPECTED_COMMA)</b>
+&nbsp;
+<b class="nc">&nbsp;                    internalSkip(1)</b>
+<b class="nc">&nbsp;                    if (peekNextToken() == TOK.CLOSE_OBJ_INT) throwError(EM.ERR_TRAILING_COMMA)</b>
+&nbsp;
+<b class="nc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
+&nbsp;                } else {
+<b class="nc">&nbsp;                    if (required) throwError(EM.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)</b>
+<b class="nc">&nbsp;                    needsCommaMask = needsCommaMask or bit</b>
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } else {
+<b class="fc">&nbsp;            if (token == TOK.COMMA_INT) {</b>
+<b class="fc">&nbsp;                internalSkip(1)</b>
+<b class="pc">&nbsp;                if (peekNextToken() == TOK.CLOSE_OBJ_INT) throwError(EM.ERR_TRAILING_COMMA)</b>
+&nbsp;            }
+&nbsp;        }
+<b class="fc">&nbsp;        val key = readQuotedString()</b>
+<b class="fc">&nbsp;        return key</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextLongOrNull(): Long? {
+<b class="pc">&nbsp;        if (peekNextToken() == TOK.NULL_CHAR_INT) {</b>
+<b class="nc">&nbsp;            consumeNull()</b>
+<b class="nc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return nextLong()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextString(): String {
+<b class="fc">&nbsp;        val value = readQuotedString()</b>
+<b class="fc">&nbsp;        return value</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun nextStringOrNull(): String? {
+<b class="fc">&nbsp;        if (peekNextToken() == TOK.NULL_CHAR_INT) {</b>
+<b class="fc">&nbsp;            consumeNull()</b>
+<b class="fc">&nbsp;            return null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return nextString()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Zero-copy boolean coercion matcher
+&nbsp;     *  delegates byte comparison to the shared helper in GhostParserUtils. */
+&nbsp;    private fun matchCoerceBooleanBytes(): Boolean {
+<b class="nc">&nbsp;        val localData = rawData</b>
+<b class="nc">&nbsp;        val byteLimit = limit</b>
+<b class="nc">&nbsp;        val contentStart = position + 1 // skip opening</b>
+<b class="nc">&nbsp;        val end = findClosingQuoteImpl(position = contentStart, limit = byteLimit) {</b>
+<b class="nc">&nbsp;            localData[it].toInt() and TOK.BYTE_MASK</b>
+&nbsp;        }
+<b class="nc">&nbsp;        if (end == -1) throwError(EM.UNTERMINATED_STRING_ERROR)</b>
+<b class="nc">&nbsp;        val length = end - contentStart</b>
+<b class="nc">&nbsp;        position = end + 1</b>
+<b class="nc">&nbsp;        nextTokenByte = SCN.RESET_TOKEN_BYTE</b>
+<b class="nc">&nbsp;        return matchCoerceBooleanBytes(</b>
+<b class="nc">&nbsp;            start = contentStart,</b>
+<b class="nc">&nbsp;            length = length,</b>
+<b class="nc">&nbsp;            onError = { throwError(EM.ERR_EXPECTED_BOOLEAN) },</b>
+<b class="nc">&nbsp;            getByte = { localData[it].toInt() and TOK.BYTE_MASK },</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    fun peekStringField(
+&nbsp;        name: String
+<b class="nc">&nbsp;    ): String? = peekDiscriminator(key = name)</b>
+&nbsp;
+&nbsp;    fun selectNameAndConsume(options: JsonReaderOptions): Int {
+<b class="fc">&nbsp;        val index = internalSelect(options = options, consumeSeparator = true)</b>
+<b class="fc">&nbsp;        if (index &gt;= 0) {</b>
+&nbsp;        }
+<b class="fc">&nbsp;        return index</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    fun selectString(options: JsonReaderOptions): Int =
+<b class="fc">&nbsp;        internalSelect(options = options, consumeSeparator = false)</b>
+&nbsp;
+&nbsp;    /** Skips the next complete JSON value
+&nbsp;     * (object, array, string, number, boolean, null), balancing nesting. */
+&nbsp;    fun skipValue() {
+<b class="fc">&nbsp;        skipValueCore(</b>
+<b class="fc">&nbsp;            peekNextToken = { peekNextToken() },</b>
+<b class="fc">&nbsp;            beginObject = { beginObject() },</b>
+<b class="fc">&nbsp;            endObject = { endObject() },</b>
+<b class="fc">&nbsp;            beginArray = { beginArray() },</b>
+<b class="fc">&nbsp;            endArray = { endArray() },</b>
+<b class="fc">&nbsp;            hasNext = { hasNext() },</b>
+<b class="fc">&nbsp;            skipQuotedString = { skipQuotedString() },</b>
+<b class="fc">&nbsp;            consumeKeySeparator = { consumeKeySeparator() },</b>
+<b class="fc">&nbsp;            skipValue = { skipValue() },</b>
+<b class="nc">&nbsp;            skipAndValidateLiteral = { skipAndValidateLiteral(it) },</b>
+<b class="fc">&nbsp;            skipNumber = { skipNumber() },</b>
+<b class="nc">&nbsp;            throwError = { throwError(it) },</b>
+&nbsp;        )
+&nbsp;    }
 &nbsp;}
 </code>
 </pre>
@@ -237,7 +769,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

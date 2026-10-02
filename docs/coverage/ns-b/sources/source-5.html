@@ -1,0 +1,275 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostSerializerLinkExtension</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.plugin</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostSerializerLinkExtension (com.ghost.serialization.compiler.plugin)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostSerializerLinkExtension</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.3%
+  </span>
+  <span class="absValue">
+    (22/30)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (54/54)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.3%
+  </span>
+  <span class="absValue">
+    (251/258)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.plugin
+&nbsp;
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+&nbsp;import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+&nbsp;import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+&nbsp;import org.jetbrains.kotlin.descriptors.Modality
+&nbsp;import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrClass
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrDeclaration
+&nbsp;import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+&nbsp;import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
+&nbsp;import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+&nbsp;import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
+&nbsp;import org.jetbrains.kotlin.ir.types.classOrNull
+&nbsp;import org.jetbrains.kotlin.ir.types.typeWith
+&nbsp;import org.jetbrains.kotlin.ir.util.classId
+&nbsp;import org.jetbrains.kotlin.ir.util.defaultType
+&nbsp;import org.jetbrains.kotlin.ir.util.hasAnnotation
+&nbsp;import org.jetbrains.kotlin.ir.util.primaryConstructor
+&nbsp;import org.jetbrains.kotlin.name.ClassId
+&nbsp;import org.jetbrains.kotlin.name.Name
+&nbsp;import com.ghost.serialization.compiler.plugin.GhostCompilerPluginConstants as C
+&nbsp;
+&nbsp;/**
+&nbsp; * Attaches `@GhostSerializerLink(&lt;Model&gt;Serializer::class)` to every `@GhostSerialization` /
+&nbsp; * `@GhostProtoSerialization` class, and to each direct subclass of an annotated sealed type that
+&nbsp; * is not annotated itself — the same mapping the KSP-generated registry exposes. On Kotlin/Native
+&nbsp; * and Kotlin/Wasm `GhostSerializerLink` is an `@AssociatedObjectKey`, so the runtime resolves the
+&nbsp; * serializer with `findAssociatedObject` instead of requiring `Ghost.addRegistry`.
+&nbsp; *
+&nbsp; * Does nothing when `GhostSerializerLink` is not on the classpath (JVM targets, older runtimes).
+&nbsp; * Class trees are walked by hand rather than through an IR visitor so the plugin depends on as
+&nbsp; * few compiler APIs as possible: those APIs are not stable across Kotlin releases.
+&nbsp; */
+<b class="fc">&nbsp;internal class GhostSerializerLinkExtension(</b>
+<b class="fc">&nbsp;    private val messageCollector: MessageCollector</b>
+&nbsp;) : IrGenerationExtension {
+&nbsp;
+&nbsp;    override fun generate(
+&nbsp;        moduleFragment: IrModuleFragment,
+&nbsp;        pluginContext: IrPluginContext
+&nbsp;    ) {
+<b class="fc">&nbsp;        val linkClass = pluginContext.referenceClass(classId = C.SERIALIZER_LINK_ID) ?: return</b>
+<b class="pc">&nbsp;        val linkConstructor = linkClass.owner.primaryConstructor?.symbol ?: return</b>
+<b class="fc">&nbsp;        val classes = moduleFragment.files.flatMap { file -&gt;</b>
+<b class="fc">&nbsp;            collectClasses(declarations = file.declarations)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        for (irClass in classes) {</b>
+<b class="fc">&nbsp;            linkSerializer(</b>
+<b class="fc">&nbsp;                irClass = irClass,</b>
+<b class="fc">&nbsp;                linkClass = linkClass,</b>
+<b class="fc">&nbsp;                linkConstructor = linkConstructor,</b>
+<b class="fc">&nbsp;                pluginContext = pluginContext</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildLinkAnnotation(
+&nbsp;        serializer: IrClassSymbol,
+&nbsp;        linkClass: IrClassSymbol,
+&nbsp;        linkConstructor: IrConstructorSymbol,
+&nbsp;        pluginContext: IrPluginContext
+&nbsp;    ): IrConstructorCall {
+<b class="fc">&nbsp;        val serializerType = serializer.owner.defaultType</b>
+<b class="fc">&nbsp;        val annotation = GhostCompilerCompat.newAnnotation(</b>
+<b class="fc">&nbsp;            type = linkClass.owner.defaultType,</b>
+<b class="fc">&nbsp;            constructor = linkConstructor</b>
+&nbsp;        )
+<b class="fc">&nbsp;        annotation.arguments[0] = IrClassReferenceImpl(</b>
+<b class="fc">&nbsp;            startOffset = UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;            endOffset = UNDEFINED_OFFSET,</b>
+<b class="fc">&nbsp;            type = pluginContext.irBuiltIns.kClassClass.typeWith(arguments = listOf(serializerType)),</b>
+<b class="fc">&nbsp;            symbol = serializer,</b>
+<b class="fc">&nbsp;            classType = serializerType</b>
+&nbsp;        )
+<b class="fc">&nbsp;        return annotation</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun collectClasses(
+&nbsp;        declarations: List&lt;IrDeclaration&gt;
+<b class="fc">&nbsp;    ): List&lt;IrClass&gt; = declarations.filterIsInstance&lt;IrClass&gt;().flatMap { irClass -&gt;</b>
+<b class="fc">&nbsp;        listOf(irClass) + collectClasses(declarations = irClass.declarations)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun findAnnotatedSealedParent(
+&nbsp;        irClass: IrClass
+<b class="fc">&nbsp;    ): IrClass? = irClass.superTypes</b>
+<b class="pc">&nbsp;        .mapNotNull { superType -&gt; superType.classOrNull?.owner }</b>
+<b class="fc">&nbsp;        .firstOrNull { superClass -&gt;</b>
+<b class="fc">&nbsp;            superClass.modality == Modality.SEALED &amp;&amp; isGhostModel(irClass = superClass)</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    private fun isGhostModel(
+&nbsp;        irClass: IrClass
+<b class="fc">&nbsp;    ): Boolean = irClass.hasAnnotation(classId = C.GHOST_SERIALIZATION_ID) ||</b>
+<b class="fc">&nbsp;        irClass.hasAnnotation(classId = C.GHOST_PROTO_SERIALIZATION_ID)</b>
+&nbsp;
+&nbsp;    private fun linkSerializer(
+&nbsp;        irClass: IrClass,
+&nbsp;        linkClass: IrClassSymbol,
+&nbsp;        linkConstructor: IrConstructorSymbol,
+&nbsp;        pluginContext: IrPluginContext
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (irClass.hasAnnotation(classId = C.SERIALIZER_LINK_ID)) return</b>
+<b class="fc">&nbsp;        val isModel = isGhostModel(irClass = irClass)</b>
+<b class="fc">&nbsp;        val owner = if (isModel) irClass else findAnnotatedSealedParent(irClass = irClass)</b>
+<b class="pc">&nbsp;        val serializerId = owner?.let { serializerClassId(model = it) } ?: return</b>
+<b class="fc">&nbsp;        val serializer = pluginContext.referenceClass(classId = serializerId)</b>
+<b class="fc">&nbsp;        if (serializer == null) {</b>
+<b class="pc">&nbsp;            if (isModel) reportMissingSerializer(serializerId = serializerId, model = irClass)</b>
+&nbsp;            return
+&nbsp;        }
+<b class="fc">&nbsp;        irClass.annotations += buildLinkAnnotation(</b>
+<b class="fc">&nbsp;            serializer = serializer,</b>
+<b class="fc">&nbsp;            linkClass = linkClass,</b>
+<b class="fc">&nbsp;            linkConstructor = linkConstructor,</b>
+<b class="fc">&nbsp;            pluginContext = pluginContext</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun reportMissingSerializer(
+&nbsp;        serializerId: ClassId,
+&nbsp;        model: IrClass
+&nbsp;    ) {
+<b class="fc">&nbsp;        messageCollector.report(</b>
+<b class="fc">&nbsp;            severity = CompilerMessageSeverity.WARNING,</b>
+<b class="fc">&nbsp;            message = C.MISSING_SERIALIZER_PREFIX + serializerId.asFqNameString() +</b>
+<b class="pc">&nbsp;                C.MISSING_SERIALIZER_INFIX + model.classId?.asFqNameString() +</b>
+&nbsp;                C.MISSING_SERIALIZER_SUFFIX
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun serializerClassId(
+&nbsp;        model: IrClass
+&nbsp;    ): ClassId? {
+<b class="pc">&nbsp;        val modelId = model.classId ?: return null</b>
+<b class="fc">&nbsp;        val nestedName = modelId.relativeClassName.pathSegments().joinToString(</b>
+<b class="fc">&nbsp;            separator = C.NESTED_NAME_SEPARATOR</b>
+<b class="fc">&nbsp;        ) { segment -&gt; segment.asString() }</b>
+<b class="fc">&nbsp;        return ClassId(</b>
+<b class="fc">&nbsp;            packageFqName = modelId.packageFqName,</b>
+<b class="fc">&nbsp;            topLevelName = Name.identifier(nestedName + C.SERIALIZER_SUFFIX)</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

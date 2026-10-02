@@ -1,0 +1,386 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > ProtoTimestampCodecKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.proto.wkt</a>
+</div>
+
+<h1>Coverage Summary for Class: ProtoTimestampCodecKt (com.ghost.serialization.proto.wkt)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProtoTimestampCodecKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94%
+  </span>
+  <span class="absValue">
+    (79/84)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.6%
+  </span>
+  <span class="absValue">
+    (162/166)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.3%
+  </span>
+  <span class="absValue">
+    (753/774)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.proto.wkt
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
+&nbsp;import com.ghost.serialization.proto.GhostProtoConstants as PC
+&nbsp;
+&nbsp;/**
+&nbsp; * Parses/formats [ProtoTimestamp]&#39;s RFC 3339 JSON string form. The calendar math is Howard
+&nbsp; * Hinnant&#39;s `days_from_civil`/`civil_from_days` (constant names are `HINNANT_*`), valid over
+&nbsp; * 0001-01-01T00:00:00Z .. 9999-12-31T23:59:59Z, chosen for correctness across the proleptic
+&nbsp; * Gregorian range rather than the usual libc epoch-only tricks.
+&nbsp; */
+&nbsp;
+&nbsp;/** Converts a UTC civil date/time (`year`-`month`-`day` `hour`:`minute`:`second`) to epoch seconds. */
+&nbsp;internal fun dateToEpochSeconds(
+&nbsp;    year: Int,
+&nbsp;    month: Int,
+&nbsp;    day: Int,
+&nbsp;    hour: Int,
+&nbsp;    minute: Int,
+&nbsp;    second: Int
+&nbsp;): Long {
+<b class="fc">&nbsp;    val yearAdjustment = (if (month &lt;= 2) year - 1 else year).toLong()</b>
+<b class="fc">&nbsp;    val monthAdjustment = (if (month &lt;= 2) month + 12 else month).toLong()</b>
+<b class="pc">&nbsp;    val eraBaseYear = if (yearAdjustment &gt;= 0) yearAdjustment else yearAdjustment - (PC.HINNANT_ERA_YEARS - 1)</b>
+<b class="fc">&nbsp;    val era = eraBaseYear / PC.HINNANT_ERA_YEARS</b>
+<b class="fc">&nbsp;    val yearOfEra = yearAdjustment - era * PC.HINNANT_ERA_YEARS</b>
+<b class="fc">&nbsp;    val dayOfYear = (PC.HINNANT_MONTH_COEFF * (monthAdjustment - 3) + 2) / 5 + day - 1</b>
+<b class="fc">&nbsp;    val dayOfEra = yearOfEra * PC.DAYS_PER_YEAR + yearOfEra / 4 - yearOfEra / 100 + dayOfYear</b>
+<b class="fc">&nbsp;    val days = era * PC.HINNANT_DAYS_PER_ERA + dayOfEra - PC.HINNANT_EPOCH_OFFSET</b>
+<b class="fc">&nbsp;    return days * PC.SECONDS_PER_DAY + hour * PC.SECONDS_PER_HOUR + minute * PC.SECONDS_PER_MINUTE + second</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun formatTimestamp(
+&nbsp;    timestamp: ProtoTimestamp
+&nbsp;): String {
+<b class="fc">&nbsp;    val seconds = timestamp.seconds</b>
+<b class="fc">&nbsp;    var days = seconds / PC.SECONDS_PER_DAY</b>
+<b class="fc">&nbsp;    var remSeconds = (seconds % PC.SECONDS_PER_DAY).toInt()</b>
+<b class="pc">&nbsp;    if (remSeconds &lt; 0) {</b>
+<b class="nc">&nbsp;        days -= 1</b>
+<b class="nc">&nbsp;        remSeconds += PC.SECONDS_PER_DAY.toInt()</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val hour = remSeconds / PC.SECONDS_PER_HOUR.toInt()</b>
+<b class="fc">&nbsp;    val remMinutes = remSeconds % PC.SECONDS_PER_HOUR.toInt()</b>
+<b class="fc">&nbsp;    val minute = remMinutes / PC.SECONDS_PER_MINUTE.toInt()</b>
+<b class="fc">&nbsp;    val second = remMinutes % PC.SECONDS_PER_MINUTE.toInt()</b>
+&nbsp;
+<b class="fc">&nbsp;    val zeroDay = days + PC.HINNANT_EPOCH_OFFSET</b>
+<b class="pc">&nbsp;    val eraBaseDay = if (zeroDay &gt;= 0) zeroDay else zeroDay - PC.HINNANT_DAYS_CYCLE_ERA</b>
+<b class="fc">&nbsp;    val era = eraBaseDay / PC.HINNANT_DAYS_PER_ERA</b>
+<b class="fc">&nbsp;    val dayOfEra = (zeroDay - era * PC.HINNANT_DAYS_PER_ERA).toInt()</b>
+<b class="fc">&nbsp;    val yearOfEraNumerator = dayOfEra - dayOfEra / PC.HINNANT_DAYS_CYCLE_4 +</b>
+<b class="fc">&nbsp;        dayOfEra / PC.HINNANT_DAYS_CYCLE_100 - dayOfEra / PC.HINNANT_DAYS_CYCLE_ERA</b>
+<b class="fc">&nbsp;    val yearOfEra = yearOfEraNumerator / PC.DAYS_PER_YEAR</b>
+<b class="fc">&nbsp;    val y = yearOfEra + era * PC.HINNANT_ERA_YEARS</b>
+<b class="fc">&nbsp;    val dayOfYear = dayOfEra - (PC.DAYS_PER_YEAR * yearOfEra + yearOfEra / 4 - yearOfEra / 100)</b>
+<b class="fc">&nbsp;    val monthPosition = (5 * dayOfYear + 2) / PC.HINNANT_MONTH_COEFF</b>
+<b class="fc">&nbsp;    val day = dayOfYear - (PC.HINNANT_MONTH_COEFF * monthPosition + 2) / 5 + 1</b>
+<b class="fc">&nbsp;    val month = if (monthPosition &lt; 10) monthPosition + 3 else monthPosition - 9</b>
+<b class="fc">&nbsp;    val year = (if (month &lt;= 2) y + 1 else y).toInt()</b>
+&nbsp;
+<b class="fc">&nbsp;    val bytes = ByteArray(size = PC.TS_BUFFER_SIZE)</b>
+<b class="fc">&nbsp;    var pos = 0</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(buffer = bytes, startOffset = pos, value = year, width = 4)</b>
+<b class="fc">&nbsp;    bytes[pos++] = TOK.CHAR_HYPHEN.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(buffer = bytes, startOffset = pos, value = month, width = 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = TOK.CHAR_HYPHEN.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(buffer = bytes, startOffset = pos, value = day, width = 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = TOK.CHAR_T_UPPER.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(buffer = bytes, startOffset = pos, value = hour, width = 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = TOK.CHAR_COLON.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(buffer = bytes, startOffset = pos, value = minute, width = 2)</b>
+<b class="fc">&nbsp;    bytes[pos++] = TOK.CHAR_COLON.code.toByte()</b>
+<b class="fc">&nbsp;    pos = writePaddedInt(buffer = bytes, startOffset = pos, value = second, width = 2)</b>
+&nbsp;
+<b class="fc">&nbsp;    if (timestamp.nanos &gt; 0) {</b>
+<b class="fc">&nbsp;        bytes[pos++] = TOK.CHAR_DOT.code.toByte()</b>
+<b class="fc">&nbsp;        pos = writeNanosFraction(buffer = bytes, startOffset = pos, nanos = timestamp.nanos)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    bytes[pos++] = TOK.CHAR_Z_UPPER.code.toByte()</b>
+<b class="fc">&nbsp;    return bytes.decodeToString(</b>
+<b class="fc">&nbsp;        startIndex = 0,</b>
+<b class="fc">&nbsp;        endIndex = pos</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;internal fun String.parseDecimalAt(start: Int, end: Int): Int {
+<b class="fc">&nbsp;    var result = 0</b>
+<b class="fc">&nbsp;    var index = start</b>
+<b class="fc">&nbsp;    while (index &lt; end) {</b>
+<b class="fc">&nbsp;        val code = this[index].code</b>
+<b class="fc">&nbsp;        if ((code - TOK.ZERO_INT) !in 0..9) {</b>
+<b class="fc">&nbsp;            throw IllegalArgumentException(PC.ERR_MALFORMED_DIGIT)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        result = result * WR.BASE_TEN + (code - TOK.ZERO_INT)</b>
+<b class="fc">&nbsp;        index++</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return result</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
+<b class="fc">&nbsp;    if (timestampString.length &lt; PC.TS_MIN_LENGTH) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_SHORT)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val year = timestampString.parseDecimalAt(start = PC.TS_YEAR_START, end = PC.TS_YEAR_END)</b>
+<b class="fc">&nbsp;    if (timestampString[PC.TS_YEAR_END] != TOK.CHAR_HYPHEN) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_YEAR_HYPHEN)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val month = timestampString.parseDecimalAt(start = PC.TS_MONTH_START, end = PC.TS_MONTH_END)</b>
+<b class="fc">&nbsp;    if (timestampString[PC.TS_MONTH_END] != TOK.CHAR_HYPHEN) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_MONTH_HYPHEN)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val day = timestampString.parseDecimalAt(start = PC.TS_DAY_START, end = PC.TS_DAY_END)</b>
+<b class="fc">&nbsp;    if (timestampString[PC.TS_DAY_END] != TOK.CHAR_T_UPPER &amp;&amp; timestampString[PC.TS_DAY_END] != TOK.CHAR_T) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_T)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val hour = timestampString.parseDecimalAt(start = PC.TS_HOUR_START, end = PC.TS_HOUR_END)</b>
+<b class="fc">&nbsp;    if (timestampString[PC.TS_HOUR_END] != TOK.CHAR_COLON) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_HOUR_COLON)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val minute = timestampString.parseDecimalAt(start = PC.TS_MIN_START, end = PC.TS_MIN_END)</b>
+<b class="fc">&nbsp;    if (timestampString[PC.TS_MIN_END] != TOK.CHAR_COLON) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_MINUTE_COLON)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    val second = timestampString.parseDecimalAt(start = PC.TS_SEC_START, end = PC.TS_SEC_END)</b>
+&nbsp;
+<b class="fc">&nbsp;    var nanos = 0</b>
+<b class="fc">&nbsp;    var nextIndex = PC.TS_SEC_END</b>
+<b class="fc">&nbsp;    if (timestampString[PC.TS_SEC_END] == TOK.CHAR_DOT) {</b>
+<b class="fc">&nbsp;        var endIndex = PC.TS_SEC_END + 1</b>
+<b class="fc">&nbsp;        val len = timestampString.length</b>
+<b class="fc">&nbsp;        while (endIndex &lt; len) {</b>
+<b class="fc">&nbsp;            val code = timestampString[endIndex].code</b>
+<b class="fc">&nbsp;            if ((code - TOK.ZERO_INT) !in 0..9) {</b>
+&nbsp;                break
+&nbsp;            }
+<b class="fc">&nbsp;            endIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val fracDigits = endIndex - (PC.TS_SEC_END + 1)</b>
+<b class="fc">&nbsp;        var fractionValue = 0</b>
+<b class="fc">&nbsp;        var fractionIndex = PC.TS_SEC_END + 1</b>
+<b class="fc">&nbsp;        while (fractionIndex &lt; endIndex) {</b>
+<b class="fc">&nbsp;            fractionValue =</b>
+<b class="fc">&nbsp;                fractionValue * WR.BASE_TEN + (timestampString[fractionIndex].code - TOK.ZERO_INT)</b>
+<b class="fc">&nbsp;            fractionIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        var multiplier = 1</b>
+<b class="fc">&nbsp;        var multiplierIndex = 0</b>
+<b class="fc">&nbsp;        while (multiplierIndex &lt; PC.NANOS_DIGITS - fracDigits) {</b>
+<b class="fc">&nbsp;            multiplier *= WR.BASE_TEN</b>
+<b class="fc">&nbsp;            multiplierIndex++</b>
+&nbsp;        }
+<b class="fc">&nbsp;        nanos = fractionValue * multiplier</b>
+<b class="fc">&nbsp;        nextIndex = endIndex</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    if (nextIndex &gt;= timestampString.length) {</b>
+<b class="fc">&nbsp;        throw IllegalArgumentException(PC.ERR_TIMESTAMP_TZ)</b>
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    var offsetSec = 0</b>
+<b class="fc">&nbsp;    if (timestampString[nextIndex] != TOK.CHAR_Z_UPPER &amp;&amp; timestampString[nextIndex] != TOK.CHAR_Z_LOWER) {</b>
+<b class="fc">&nbsp;        val isMalformedTimezoneOffset = nextIndex + PC.TS_TZ_OFFSET_LEN != timestampString.length ||</b>
+<b class="fc">&nbsp;            (timestampString[nextIndex] != TOK.CHAR_PLUS &amp;&amp; timestampString[nextIndex] != TOK.CHAR_HYPHEN)</b>
+<b class="fc">&nbsp;        if (isMalformedTimezoneOffset) {</b>
+<b class="fc">&nbsp;            throw IllegalArgumentException(PC.ERR_TIMESTAMP_TZ_SUPPORT)</b>
+&nbsp;        }
+<b class="fc">&nbsp;        val tzSign = if (timestampString[nextIndex] == TOK.CHAR_HYPHEN) -1 else 1</b>
+<b class="fc">&nbsp;        val tzHour = timestampString.parseDecimalAt(start = nextIndex + 1, end = nextIndex + 3)</b>
+<b class="fc">&nbsp;        val tzMin = timestampString.parseDecimalAt(start = nextIndex + 4, end = nextIndex + 6)</b>
+<b class="fc">&nbsp;        offsetSec = tzSign * (</b>
+<b class="fc">&nbsp;            tzHour * PC.SECONDS_PER_HOUR.toInt() + tzMin * PC.SECONDS_PER_MINUTE.toInt()</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+<b class="fc">&nbsp;    val epochSeconds = dateToEpochSeconds(</b>
+<b class="fc">&nbsp;        year = year,</b>
+<b class="fc">&nbsp;        month = month,</b>
+<b class="fc">&nbsp;        day = day,</b>
+<b class="fc">&nbsp;        hour = hour,</b>
+<b class="fc">&nbsp;        minute = minute,</b>
+<b class="fc">&nbsp;        second = second</b>
+<b class="fc">&nbsp;    ) - offsetSec</b>
+<b class="fc">&nbsp;    return ProtoTimestamp(seconds = epochSeconds, nanos = nanos)</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Proto3 JSON mandates exactly 0, 3, 6, or 9 fractional digits, never an arbitrary trim
+&nbsp; * (e.g. 450_000_000 ns must render as &quot;.450&quot;, not &quot;.45&quot;).
+&nbsp; */
+&nbsp;internal fun writeNanosFraction(
+&nbsp;    buffer: ByteArray,
+&nbsp;    startOffset: Int,
+&nbsp;    nanos: Int
+&nbsp;): Int {
+<b class="fc">&nbsp;    val width: Int</b>
+<b class="fc">&nbsp;    val scale: Int</b>
+<b class="fc">&nbsp;    if (nanos % PC.NANOS_PER_MILLI == 0) {</b>
+<b class="fc">&nbsp;        width = 3</b>
+<b class="fc">&nbsp;        scale = PC.NANOS_PER_MILLI</b>
+<b class="fc">&nbsp;    } else if (nanos % PC.NANOS_PER_MICRO == 0) {</b>
+<b class="fc">&nbsp;        width = 6</b>
+<b class="fc">&nbsp;        scale = PC.NANOS_PER_MICRO</b>
+&nbsp;    } else {
+<b class="fc">&nbsp;        width = 9</b>
+<b class="fc">&nbsp;        scale = 1</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return writePaddedInt(</b>
+<b class="fc">&nbsp;        buffer = buffer,</b>
+<b class="fc">&nbsp;        startOffset = startOffset,</b>
+<b class="fc">&nbsp;        value = nanos / scale,</b>
+<b class="fc">&nbsp;        width = width</b>
+&nbsp;    )
+&nbsp;}
+&nbsp;
+&nbsp;internal fun writePaddedInt(
+&nbsp;    buffer: ByteArray,
+&nbsp;    startOffset: Int,
+&nbsp;    value: Int,
+&nbsp;    width: Int
+&nbsp;): Int {
+<b class="fc">&nbsp;    var position = startOffset</b>
+<b class="fc">&nbsp;    var digitCount = 1</b>
+<b class="fc">&nbsp;    var threshold = WR.BASE_TEN</b>
+<b class="pc">&nbsp;    while (threshold &lt;= value &amp;&amp; digitCount &lt; width) {</b>
+<b class="fc">&nbsp;        digitCount++</b>
+<b class="fc">&nbsp;        threshold *= WR.BASE_TEN</b>
+&nbsp;    }
+<b class="fc">&nbsp;    var remainingValue = value</b>
+<b class="fc">&nbsp;    var actualDigits = digitCount</b>
+<b class="pc">&nbsp;    while (threshold &lt;= remainingValue) {</b>
+<b class="nc">&nbsp;        actualDigits++</b>
+<b class="nc">&nbsp;        threshold *= WR.BASE_TEN</b>
+&nbsp;    }
+<b class="fc">&nbsp;    var paddingCount = width - actualDigits</b>
+<b class="fc">&nbsp;    while (paddingCount &gt; 0) {</b>
+<b class="fc">&nbsp;        buffer[position++] = TOK.CHAR_ZERO.code.toByte()</b>
+<b class="fc">&nbsp;        paddingCount--</b>
+&nbsp;    }
+<b class="fc">&nbsp;    var divisor = 1</b>
+<b class="fc">&nbsp;    var digitIndex = actualDigits - 1</b>
+<b class="fc">&nbsp;    while (digitIndex &gt; 0) {</b>
+<b class="fc">&nbsp;        divisor *= WR.BASE_TEN</b>
+<b class="fc">&nbsp;        digitIndex--</b>
+&nbsp;    }
+<b class="fc">&nbsp;    remainingValue = value</b>
+<b class="fc">&nbsp;    while (divisor &gt; 0) {</b>
+<b class="fc">&nbsp;        val digit = remainingValue / divisor</b>
+<b class="fc">&nbsp;        buffer[position++] = (digit + TOK.ZERO_INT).toByte()</b>
+<b class="fc">&nbsp;        remainingValue %= divisor</b>
+<b class="fc">&nbsp;        divisor /= WR.BASE_TEN</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return position</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

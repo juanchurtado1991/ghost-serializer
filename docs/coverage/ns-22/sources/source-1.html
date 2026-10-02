@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlException</title>
+  <title>GhostSerialization Coverage Report > GhostDoubleFormatter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.yaml.exception</a>
+    <a href="../index.html">com.ghost.serialization.writer.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlException (com.ghost.serialization.yaml.exception)</h1>
+<h1>Coverage Summary for Class: GhostDoubleFormatter (com.ghost.serialization.writer.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlException</td>
+  <td class="name">GhostDoubleFormatter</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,31 +63,31 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (7/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    81%
   </span>
   <span class="absValue">
-    (2/4)
+    (68/84)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    85.7%
+    82.8%
   </span>
   <span class="absValue">
-    (6/7)
+    (159/192)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.1%
+    86.1%
   </span>
   <span class="absValue">
-    (37/44)
+    (596/692)
   </span>
 </td>
 </tr>
@@ -99,71 +99,369 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml.exception
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.common
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.exception.hintForJsonError
-&nbsp;import com.ghost.serialization.yaml.GhostYamlConstants as Y
+&nbsp;import com.ghost.serialization.parser.common.GhostFormatUtils
+&nbsp;import com.ghost.serialization.parser.common.json.finalizeParsedDouble
+&nbsp;import com.ghost.serialization.parser.common.json.finalizeParsedFloat
+&nbsp;import kotlin.math.roundToInt
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 &nbsp;
 &nbsp;/**
-&nbsp; * Exception thrown when Ghost encounters invalid or unsupported YAML content.
+&nbsp; * Zero-allocation ASCII formatter for [Double]/[Float], writing directly into a pre-allocated
+&nbsp; * [ByteArray] to bypass `Double.toString()` GC overhead. Handles up to [MAX_DECIMALS] decimal
+&nbsp; * places for values in `[1e-9, 1e9]`; anything outside that, non-finite, or too small returns
+&nbsp; * [FALLBACK_REQUIRED] so the caller falls back to a platform `toString()`.
 &nbsp; *
-&nbsp; * Cursor-phase errors (typed deserialize walking the AST) include a JSONPath-style [path]
-&nbsp; * (e.g. `$.user.age`) and an optional [hint]. Byte-parse errors keep [path] as `&quot;$&quot;` — the
-&nbsp; * document is not yet a navigable AST, so inventing a deeper path would be misleading.
+&nbsp; * A fixed decimal count isn&#39;t inherently round-trip-safe (e.g. `0.1 + 0.2` prints as `&quot;0.3&quot;` at
+&nbsp; * 9 places, which reads back to a different Double). [writeDoubleDirect]/[writeFloatDirect] verify
+&nbsp; * the digits against [finalizeParsedDouble]/[finalizeParsedFloat] before committing, falling back
+&nbsp; * on mismatch.
 &nbsp; */
-&nbsp;class GhostYamlException(
-<b class="fc">&nbsp;    private val baseMessage: String,</b>
-&nbsp;    /** JSONPath-style location for cursor-phase failures; `&quot;$&quot;` for parse-phase/unknown. */
-<b class="fc">&nbsp;    val path: String = &quot;$&quot;,</b>
-&nbsp;    /** Optional fix suggestion. */
-<b class="fc">&nbsp;    val hint: String? = null,</b>
-&nbsp;) : RuntimeException() {
+&nbsp;internal object GhostDoubleFormatter {
 &nbsp;
-&nbsp;    override val message: String
-&nbsp;        get() {
-<b class="fc">&nbsp;            val location = &quot;[path $path]&quot;</b>
-<b class="pc">&nbsp;            return if (hint.isNullOrEmpty()) {</b>
-<b class="nc">&nbsp;                &quot;$baseMessage $location&quot;</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                &quot;$baseMessage $location\nHint: $hint&quot;</b>
-&nbsp;            }
+&nbsp;    /** `10^n` for `n` in `0..9`, used to fold the written int+fraction digits back into one mantissa. */
+<b class="fc">&nbsp;    private val POW10_LONG = longArrayOf(</b>
+<b class="fc">&nbsp;        1L, 10L, 100L, 1_000L, 10_000L, 100_000L,</b>
+<b class="fc">&nbsp;        1_000_000L, 10_000_000L, 100_000_000L, 1_000_000_000L,</b>
+&nbsp;    )
+&nbsp;
+&nbsp;    private const val SMALL_WHOLE_THRESHOLD = 1_000_000_000.0
+&nbsp;    private const val PRECISION_MULTIPLIER = 1_000_000_000.0
+&nbsp;    private const val MICROSCOPIC_DOUBLE_THRESHOLD = 1e-9
+&nbsp;    private const val MASSIVE_DOUBLE_THRESHOLD = 1e9
+&nbsp;    private const val FRAC_LIMIT = 1_000_000_000L
+&nbsp;    private const val MAX_DECIMALS = 9
+&nbsp;
+&nbsp;    /** Float mirrors of [PRECISION_MULTIPLIER]/[FRAC_LIMIT]/[MAX_DECIMALS]: 7 decimals (10^7). */
+&nbsp;    private const val FLOAT_PRECISION_MULTIPLIER = 10_000_000.0
+&nbsp;    private const val FLOAT_FRAC_LIMIT = 10_000_000L
+&nbsp;    private const val FLOAT_MAX_DECIMALS = 7
+&nbsp;
+&nbsp;    /** Scratch span for [writeLongDirect], within FAST_BUF_SCRATCH_ZONE. */
+&nbsp;    private const val LONG_DIRECT_SCRATCH_SPAN = 32
+&nbsp;
+&nbsp;    private const val DIGIT_PAIR_LUT_STRIDE = 2
+&nbsp;    private const val DIGIT_PAIR_WIDTH = 2
+&nbsp;
+&nbsp;    /** Negative so call sites can keep `bytesWritten &gt; 0` as the success check. */
+&nbsp;    const val FALLBACK_REQUIRED = -1
+&nbsp;
+&nbsp;    private fun doubleRoundTrips(intPart: Long, fracInt: Int, decimalsToPrint: Int, expected: Double): Boolean {
+&nbsp;        // If the reader would truncate this many total digits, don&#39;t trust an idealized
+&nbsp;        // reconstruction that skips that cap — bail out (a real reader&#39;s Double/Float.toString()
+&nbsp;        // fallback never needs more than DOUBLE_PRECISION_LIMIT/FLOAT_PRECISION_LIMIT significant
+&nbsp;        // digits to round-trip, so this only rejects cases the fixed-decimal fast path shouldn&#39;t
+&nbsp;        // have tried to force into a fixed digit count anyway).
+<b class="pc">&nbsp;        if (significantIntDigits(intPart = intPart) + decimalsToPrint &gt; NUM.DOUBLE_PRECISION_LIMIT) return false</b>
+<b class="fc">&nbsp;        val mantissa = intPart * POW10_LONG[decimalsToPrint] + fracInt</b>
+<b class="fc">&nbsp;        val reconstructed = finalizeParsedDouble(</b>
+<b class="fc">&nbsp;            mantissa = mantissa,</b>
+<b class="fc">&nbsp;            exponent = -decimalsToPrint,</b>
+<b class="fc">&nbsp;            isNegative = false</b>
+<b class="nc">&nbsp;        ) { error(it) }</b>
+<b class="fc">&nbsp;        return reconstructed.toRawBits() == expected.toRawBits()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Same check as [doubleRoundTrips], against [finalizeParsedFloat] for the `Float` overload. */
+&nbsp;    private fun floatRoundTrips(intPart: Long, fracInt: Int, decimalsToPrint: Int, expected: Float): Boolean {
+<b class="pc">&nbsp;        if (significantIntDigits(intPart = intPart) + decimalsToPrint &gt; NUM.FLOAT_PRECISION_LIMIT) return false</b>
+<b class="fc">&nbsp;        val mantissa = intPart * POW10_LONG[decimalsToPrint] + fracInt</b>
+<b class="fc">&nbsp;        val reconstructed = finalizeParsedFloat(</b>
+<b class="fc">&nbsp;            mantissa = mantissa,</b>
+<b class="fc">&nbsp;            exponent = -decimalsToPrint,</b>
+<b class="fc">&nbsp;            isNegative = false</b>
+<b class="nc">&nbsp;        ) { error(it) }</b>
+<b class="fc">&nbsp;        return reconstructed.toRawBits() == expected.toRawBits()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Digits of `intPart` counting toward a reader&#39;s `precisionLimit` (a sole &quot;0&quot; counts as 0). */
+&nbsp;    private fun significantIntDigits(intPart: Long): Int {
+<b class="fc">&nbsp;        if (intPart == 0L) return 0</b>
+<b class="fc">&nbsp;        var n = intPart</b>
+<b class="fc">&nbsp;        var count = 0</b>
+<b class="fc">&nbsp;        while (n &gt; 0) {</b>
+<b class="fc">&nbsp;            count++</b>
+<b class="fc">&nbsp;            n /= 10</b>
 &nbsp;        }
-&nbsp;}
+<b class="fc">&nbsp;        return count</b>
+&nbsp;    }
 &nbsp;
-&nbsp;/**
-&nbsp; * Maps well-known YAML / shared decode error prefixes to short fix suggestions.
-&nbsp; * Prefers [hintForJsonError] for shared messages (required field, discriminator, enum, …),
-&nbsp; * then adds only YAML-specific remediations that are clearly actionable.
-&nbsp; */
-&nbsp;@InternalGhostApi
-&nbsp;internal fun hintForYamlError(message: String): String? {
-&nbsp;    hintForJsonError(message)?.let { return it }
+&nbsp;    /**
+&nbsp;     * Formats and writes [value] directly into [scratch] starting at [offset].
+&nbsp;     * @return Bytes written into [scratch], or [FALLBACK_REQUIRED] if the caller should fall back.
+&nbsp;     */
+&nbsp;    fun writeDoubleDirect(
+&nbsp;        value: Double,
+&nbsp;        scratch: ByteArray,
+&nbsp;        offset: Int,
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (!value.isFinite()) return FALLBACK_REQUIRED</b>
 &nbsp;
-&nbsp;    return when {
-&nbsp;        message.startsWith(Y.ERR_EXPECTED_MAP_PREFIX) -&gt;
-&nbsp;            &quot;Expected a YAML mapping here — check the value type at this path.&quot;
+<b class="fc">&nbsp;        var position = offset</b>
+<b class="fc">&nbsp;        var localValue = value</b>
 &nbsp;
-&nbsp;        message.startsWith(Y.ERR_EXPECTED_LIST_PREFIX) -&gt;
-&nbsp;            &quot;Expected a YAML sequence/list here — check the value type at this path.&quot;
+<b class="fc">&nbsp;        if (value.toRawBits() &lt; 0) {</b>
+<b class="fc">&nbsp;            scratch[position++] = TOK.MINUS</b>
+<b class="fc">&nbsp;            localValue = -localValue</b>
+&nbsp;        }
 &nbsp;
-&nbsp;        message.startsWith(Y.ERR_EXPECTED_INT_PREFIX) ||
-&nbsp;            message.startsWith(Y.ERR_EXPECTED_LONG_PREFIX) ||
-&nbsp;            message.startsWith(Y.ERR_EXPECTED_DOUBLE_PREFIX) ||
-&nbsp;            message.startsWith(Y.ERR_EXPECTED_FLOAT_PREFIX) ||
-&nbsp;            message.startsWith(Y.ERR_EXPECTED_ULONG_PREFIX) -&gt;
-&nbsp;            &quot;Check the scalar type at this path. For numeric strings, enable coerceStringsToNumbers.&quot;
+&nbsp;        // Fast path for small whole numbers
+&nbsp;        // (very common in metrics/coordinates)
+<b class="fc">&nbsp;        val isSmallWholeDouble = localValue &lt;= SMALL_WHOLE_THRESHOLD &amp;&amp;</b>
+<b class="fc">&nbsp;            localValue % NUM.WHOLE_NUMBER_CHECK == NUM.ZERO_DOUBLE</b>
+<b class="fc">&nbsp;        if (isSmallWholeDouble) {</b>
+<b class="fc">&nbsp;            return writeLongDirect(</b>
+<b class="fc">&nbsp;                value = localValue.toLong(),</b>
+<b class="fc">&nbsp;                scratch = scratch,</b>
+<b class="fc">&nbsp;                offset = position,</b>
+<b class="fc">&nbsp;                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="fc">&nbsp;                writeDecimalZero = true</b>
+<b class="fc">&nbsp;            ) - offset</b>
+&nbsp;        }
 &nbsp;
-&nbsp;        message.startsWith(Y.ERR_EXPECTED_BOOLEAN_PREFIX) -&gt;
-&nbsp;            &quot;If the API sends string booleans, enable coerceBooleans on the reader options.&quot;
+&nbsp;        // If number is massive or microscopic, delegate to native system
+<b class="fc">&nbsp;        val isOutOfFastRange = localValue &gt; MASSIVE_DOUBLE_THRESHOLD ||</b>
+<b class="pc">&nbsp;            (localValue &gt; 0.0 &amp;&amp; localValue &lt; MICROSCOPIC_DOUBLE_THRESHOLD)</b>
+<b class="fc">&nbsp;        if (isOutOfFastRange) {</b>
+<b class="fc">&nbsp;            return FALLBACK_REQUIRED</b>
+&nbsp;        }
 &nbsp;
-&nbsp;        message.startsWith(Y.ERR_MAX_NESTING_DEPTH_PREFIX) -&gt;
-&nbsp;            &quot;Reduce nesting, or raise maxDepth on the YAML reader if this document is intentionally deep.&quot;
+<b class="fc">&nbsp;        val intPart = localValue.toLong()</b>
+<b class="fc">&nbsp;        val fracPart = localValue - intPart</b>
 &nbsp;
-&nbsp;        message.startsWith(Y.ERR_ANCHOR_NOT_FOUND_PREFIX) -&gt;
-&nbsp;            &quot;Define the anchor with &amp;name before referencing it with *name in this document.&quot;
+&nbsp;        // roundToInt avoids the Double intermediate that round() returns
+<b class="fc">&nbsp;        var fracInt = (fracPart * PRECISION_MULTIPLIER).roundToInt()</b>
 &nbsp;
-&nbsp;        else -&gt; null
+<b class="pc">&nbsp;        if (fracInt &gt;= FRAC_LIMIT) {</b>
+<b class="nc">&nbsp;            return writeLongDirect(</b>
+<b class="nc">&nbsp;                value = intPart + 1,</b>
+<b class="nc">&nbsp;                scratch = scratch,</b>
+<b class="nc">&nbsp;                offset = position,</b>
+<b class="nc">&nbsp;                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="nc">&nbsp;                writeDecimalZero = true</b>
+<b class="nc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        position = writeLongDirect(</b>
+<b class="fc">&nbsp;            value = intPart,</b>
+<b class="fc">&nbsp;            scratch = scratch,</b>
+<b class="fc">&nbsp;            offset = position,</b>
+<b class="fc">&nbsp;            scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="fc">&nbsp;            writeDecimalZero = false</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        scratch[position++] = TOK.DOT</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt == 0) {</b>
+<b class="nc">&nbsp;            scratch[position++] = TOK.ZERO</b>
+<b class="nc">&nbsp;            return position - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var decimalsToPrint = MAX_DECIMALS</b>
+&nbsp;        // Trim trailing zeros: % instead of multiply-subtract
+<b class="fc">&nbsp;        while (decimalsToPrint &gt; 1 &amp;&amp; fracInt % 10 == 0) {</b>
+<b class="fc">&nbsp;            fracInt /= 10</b>
+<b class="fc">&nbsp;            decimalsToPrint--</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (!doubleRoundTrips(</b>
+<b class="fc">&nbsp;            intPart = intPart,</b>
+<b class="fc">&nbsp;            fracInt = fracInt,</b>
+<b class="fc">&nbsp;            decimalsToPrint = decimalsToPrint,</b>
+<b class="fc">&nbsp;            expected = localValue</b>
+&nbsp;        )) {
+<b class="fc">&nbsp;            return FALLBACK_REQUIRED</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        position += decimalsToPrint</b>
+<b class="fc">&nbsp;        var writePos = position - 1</b>
+&nbsp;
+<b class="fc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
+<b class="fc">&nbsp;            val quotient = fracInt / WR.BASE_HUNDRED</b>
+<b class="fc">&nbsp;            val lutOffset = (fracInt - (quotient * WR.BASE_HUNDRED)) * DIGIT_PAIR_LUT_STRIDE</b>
+<b class="fc">&nbsp;            WR.DOUBLE_DIGIT_LUT.copyInto(</b>
+<b class="fc">&nbsp;                scratch,</b>
+<b class="fc">&nbsp;                writePos - 1,</b>
+<b class="fc">&nbsp;                lutOffset,</b>
+<b class="fc">&nbsp;                lutOffset + DIGIT_PAIR_WIDTH</b>
+&nbsp;            )
+<b class="fc">&nbsp;            writePos -= DIGIT_PAIR_WIDTH</b>
+<b class="fc">&nbsp;            fracInt = quotient</b>
+<b class="fc">&nbsp;            decimalsToPrint -= DIGIT_PAIR_WIDTH</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (decimalsToPrint == 1) {</b>
+<b class="fc">&nbsp;            scratch[writePos] = (TOK.ZERO_INT + fracInt % 10).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return position - offset</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Same as [writeDoubleDirect], with 7 decimal places (Float&#39;s precision). */
+&nbsp;    fun writeFloatDirect(
+&nbsp;        value: Float,
+&nbsp;        scratch: ByteArray,
+&nbsp;        offset: Int,
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (!value.isFinite()) return FALLBACK_REQUIRED</b>
+&nbsp;
+<b class="fc">&nbsp;        var pos = offset</b>
+<b class="fc">&nbsp;        var localValue = value</b>
+&nbsp;
+<b class="fc">&nbsp;        if (value.toRawBits() &lt; 0) {</b>
+<b class="fc">&nbsp;            scratch[pos++] = TOK.MINUS</b>
+<b class="fc">&nbsp;            localValue = -localValue</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val doubleVal = localValue.toDouble()</b>
+&nbsp;        // Fast path for small whole numbers
+<b class="pc">&nbsp;        val isSmallWholeFloat = doubleVal &lt;= SMALL_WHOLE_THRESHOLD &amp;&amp;</b>
+<b class="fc">&nbsp;            doubleVal % NUM.WHOLE_NUMBER_CHECK == NUM.ZERO_DOUBLE</b>
+<b class="fc">&nbsp;        if (isSmallWholeFloat) {</b>
+<b class="fc">&nbsp;            return writeLongDirect(</b>
+<b class="fc">&nbsp;                value = doubleVal.toLong(),</b>
+<b class="fc">&nbsp;                scratch = scratch,</b>
+<b class="fc">&nbsp;                offset = pos,</b>
+<b class="fc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="fc">&nbsp;                writeDecimalZero = true</b>
+<b class="fc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        // If number is massive or microscopic, delegate to native system
+<b class="pc">&nbsp;        val isOutOfFastRangeFloat = doubleVal &gt; MASSIVE_DOUBLE_THRESHOLD ||</b>
+<b class="pc">&nbsp;            (localValue &gt; 0.0f &amp;&amp; doubleVal &lt; MICROSCOPIC_DOUBLE_THRESHOLD)</b>
+<b class="pc">&nbsp;        if (isOutOfFastRangeFloat) {</b>
+<b class="nc">&nbsp;            return FALLBACK_REQUIRED</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val intPart = doubleVal.toLong()</b>
+<b class="fc">&nbsp;        val fracPart = doubleVal - intPart</b>
+&nbsp;
+<b class="fc">&nbsp;        var fracInt = (fracPart * FLOAT_PRECISION_MULTIPLIER).roundToInt()</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt &gt;= FLOAT_FRAC_LIMIT) {</b>
+<b class="nc">&nbsp;            return writeLongDirect(</b>
+<b class="nc">&nbsp;                value = intPart + 1,</b>
+<b class="nc">&nbsp;                scratch = scratch,</b>
+<b class="nc">&nbsp;                offset = pos,</b>
+<b class="nc">&nbsp;                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="nc">&nbsp;                writeDecimalZero = true</b>
+<b class="nc">&nbsp;            ) - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        pos = writeLongDirect(</b>
+<b class="fc">&nbsp;            value = intPart,</b>
+<b class="fc">&nbsp;            scratch = scratch,</b>
+<b class="fc">&nbsp;            offset = pos,</b>
+<b class="fc">&nbsp;            scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,</b>
+<b class="fc">&nbsp;            writeDecimalZero = false</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        scratch[pos++] = TOK.DOT</b>
+&nbsp;
+<b class="pc">&nbsp;        if (fracInt == 0) {</b>
+<b class="nc">&nbsp;            scratch[pos++] = TOK.ZERO</b>
+<b class="nc">&nbsp;            return pos - offset</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var decimalsToPrint = FLOAT_MAX_DECIMALS</b>
+<b class="fc">&nbsp;        while (decimalsToPrint &gt; 1 &amp;&amp; fracInt % 10 == 0) {</b>
+<b class="fc">&nbsp;            fracInt /= 10</b>
+<b class="fc">&nbsp;            decimalsToPrint--</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        if (!floatRoundTrips(</b>
+<b class="fc">&nbsp;            intPart = intPart,</b>
+<b class="fc">&nbsp;            fracInt = fracInt,</b>
+<b class="fc">&nbsp;            decimalsToPrint = decimalsToPrint,</b>
+<b class="fc">&nbsp;            expected = localValue</b>
+&nbsp;        )) {
+<b class="fc">&nbsp;            return FALLBACK_REQUIRED</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        pos += decimalsToPrint</b>
+<b class="fc">&nbsp;        var writePos = pos - 1</b>
+&nbsp;
+<b class="pc">&nbsp;        while (decimalsToPrint &gt;= 2) {</b>
+<b class="nc">&nbsp;            val quotient = fracInt / WR.BASE_HUNDRED</b>
+<b class="nc">&nbsp;            val lutOffset = (fracInt - (quotient * WR.BASE_HUNDRED)) * DIGIT_PAIR_LUT_STRIDE</b>
+<b class="nc">&nbsp;            WR.DOUBLE_DIGIT_LUT.copyInto(</b>
+<b class="nc">&nbsp;                scratch,</b>
+<b class="nc">&nbsp;                writePos - 1,</b>
+<b class="nc">&nbsp;                lutOffset,</b>
+<b class="nc">&nbsp;                lutOffset + DIGIT_PAIR_WIDTH</b>
+&nbsp;            )
+<b class="nc">&nbsp;            writePos -= DIGIT_PAIR_WIDTH</b>
+<b class="nc">&nbsp;            fracInt = quotient</b>
+<b class="nc">&nbsp;            decimalsToPrint -= DIGIT_PAIR_WIDTH</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (decimalsToPrint == 1) {</b>
+<b class="fc">&nbsp;            scratch[writePos] = (TOK.ZERO_INT + fracInt % 10).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return pos - offset</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Writes [value]&#39;s ASCII digits into [scratch], extracting right-to-left via base-100
+&nbsp;     * modulo and pre-computed ones/tens lookup tables, then block-copying into place.
+&nbsp;     * @return The next write index in [scratch].
+&nbsp;     */
+&nbsp;    private fun writeLongDirect(
+&nbsp;        value: Long,
+&nbsp;        scratch: ByteArray,
+&nbsp;        offset: Int,
+&nbsp;        scratchEnd: Int,
+&nbsp;        writeDecimalZero: Boolean
+&nbsp;    ): Int {
+<b class="fc">&nbsp;        if (value == 0L) {</b>
+<b class="fc">&nbsp;            scratch[offset] = TOK.ZERO</b>
+<b class="fc">&nbsp;            if (writeDecimalZero) {</b>
+<b class="fc">&nbsp;                scratch[offset + 1] = TOK.DOT</b>
+<b class="fc">&nbsp;                scratch[offset + 2] = TOK.ZERO</b>
+<b class="fc">&nbsp;                return offset + 3</b>
+&nbsp;            }
+<b class="fc">&nbsp;            return offset + 1</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        var localValue = value</b>
+&nbsp;        // Write digits backward into the scratch zone at the end of our reserved area.
+&nbsp;        // scratchEnd is always offset + 32, safely within FAST_BUF_SCRATCH_ZONE.
+<b class="fc">&nbsp;        var end = scratchEnd</b>
+&nbsp;
+<b class="fc">&nbsp;        while (localValue &gt;= WR.BASE_HUNDRED) {</b>
+<b class="fc">&nbsp;            val quotient = localValue / WR.BASE_HUNDRED</b>
+<b class="fc">&nbsp;            val remainder = (localValue - (quotient * WR.BASE_HUNDRED)).toInt()</b>
+<b class="fc">&nbsp;            localValue = quotient</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_ONES[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_TENS[remainder]</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (localValue &gt;= WR.BASE_TEN) {</b>
+<b class="fc">&nbsp;            val remainder = localValue.toInt()</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_ONES[remainder]</b>
+<b class="fc">&nbsp;            scratch[--end] = GhostFormatUtils.DIGIT_TENS[remainder]</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            scratch[--end] = (localValue.toInt() + WR.ASCII_OFFSET).toByte()</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val length = scratchEnd - end</b>
+&nbsp;        // Single System.arraycopy — JVM intrinsic, no per-byte loop
+<b class="fc">&nbsp;        scratch.copyInto(</b>
+<b class="fc">&nbsp;            scratch,</b>
+<b class="fc">&nbsp;            offset,</b>
+<b class="fc">&nbsp;            end,</b>
+<b class="fc">&nbsp;            end + length</b>
+&nbsp;        )
+&nbsp;
+<b class="fc">&nbsp;        var nextOffset = offset + length</b>
+<b class="pc">&nbsp;        if (writeDecimalZero) {</b>
+<b class="nc">&nbsp;            scratch[nextOffset++] = TOK.DOT</b>
+<b class="nc">&nbsp;            scratch[nextOffset++] = TOK.ZERO</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        return nextOffset</b>
 &nbsp;    }
 &nbsp;}
 </code>
@@ -189,7 +487,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

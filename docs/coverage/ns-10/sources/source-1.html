@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ByteArrayGhostSource</title>
+  <title>GhostSerialization Coverage Report > GhostClientExtensionsKt</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,18 +19,15 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.bytes</a>
+    <a href="../index.html">com.ghost.serialization.ktor</a>
 </div>
 
-<h1>Coverage Summary for Class: ByteArrayGhostSource (com.ghost.serialization.parser.bytes)</h1>
+<h1>Coverage Summary for Class: GhostClientExtensionsKt (com.ghost.serialization.ktor)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,49 +46,87 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ByteArrayGhostSource</td>
+  <td class="name">GhostClientExtensionsKt</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    60%
+    100%
   </span>
   <span class="absValue">
-    (6/10)
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    100%
   </span>
   <span class="absValue">
-    (1/2)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    100%
   </span>
   <span class="absValue">
-    (8/16)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    22.2%
-  </span>
-  <span class="absValue">
-    (44/198)
+    (69/69)
   </span>
 </td>
 </tr>
-
+  <tr>
+    <td class="name">GhostClientExtensionsKt$bodyGhostYaml$$inlined$decodeFromYaml$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (69/69)
+  </span>
+</td>
+</tr>
 </table>
 
 <br/>
@@ -99,59 +134,40 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.bytes
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.ktor
 &nbsp;
-&nbsp;import com.ghost.serialization.InternalGhostApi
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants.BYTE_MASK
-&nbsp;import com.ghost.serialization.parser.common.GhostSource
-&nbsp;import com.ghost.serialization.parser.common.contentEqualsStringImpl
-&nbsp;import com.ghost.serialization.parser.common.findClosingQuoteImpl
-&nbsp;import com.ghost.serialization.parser.common.findNextNonWhitespaceImpl
-&nbsp;import com.ghost.serialization.parser.common.scanStringImpl
-&nbsp;import okio.ByteString
+&nbsp;import com.ghost.serialization.Ghost
+&nbsp;import com.ghost.serialization.decodeFromYaml
+&nbsp;import com.ghost.serialization.proto.GhostProto
+&nbsp;import io.ktor.client.call.body
+&nbsp;import io.ktor.client.statement.HttpResponse
 &nbsp;
 &nbsp;
 &nbsp;/**
-&nbsp; * [GhostSource] backed by an in-memory [ByteArray]; holds the loop-unrolled scanning
-&nbsp; * logic shared across platforms. JVM/Android subclass this to override
-&nbsp; * [decodeJsonStringRange] with a faster ASCII decoder; other platforms use it directly.
+&nbsp; * Deserializes the response body directly using Ghost, bypassing Ktor&#39;s ContentNegotiation pipeline.
 &nbsp; */
-<b class="fc">&nbsp;@InternalGhostApi</b>
-<b class="fc">&nbsp;open class ByteArrayGhostSource(var data: ByteArray) : GhostSource {</b>
+&nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhost(): T {
+<b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;    val serializer = Ghost.getSerializer(T::class)</b>
+<b class="fc">&nbsp;        ?: throw IllegalArgumentException(&quot;${GhostKtorErrorMessages.SERIALIZER_NOT_FOUND_PREFIX}${T::class.simpleName}${GhostKtorErrorMessages.SERIALIZER_NOT_FOUND_SUFFIX}&quot;)</b>
+<b class="fc">&nbsp;    return Ghost.deserialize(serializer, bytes)</b>
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;    override val size: Int get() = data.size</b>
+&nbsp;/**
+&nbsp; * Proto3-JSON variant of [bodyGhost]: parses via `GhostProtoJsonFlatReader` for proto3 JSON
+&nbsp; * leniency (quoted-or-bare int64, lenient int32, quoted `NaN`/`Infinity`).
+&nbsp; */
+&nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhostProto(): T {
+<b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;    return GhostProto.deserialize(bytes, T::class)</b>
+&nbsp;}
 &nbsp;
-<b class="fc">&nbsp;    override fun get(index: Int): Int = data[index].toInt() and BYTE_MASK</b>
-&nbsp;
-<b class="fc">&nbsp;    override val rawSourceData: ByteArray get() = data</b>
-&nbsp;
-&nbsp;    override fun decodeToString(start: Int, end: Int): String =
-<b class="fc">&nbsp;        data.decodeToString(start, end)</b>
-&nbsp;
-&nbsp;    override fun contentEquals(start: Int, expected: ByteString): Boolean {
-<b class="pc">&nbsp;        if (start + expected.size &gt; size) return false</b>
-<b class="fc">&nbsp;        return expected.rangeEquals(0, data, start, expected.size)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun findNextNonWhitespace(position: Int, limit: Int): Int {
-<b class="nc">&nbsp;        val localData = data</b>
-<b class="nc">&nbsp;        return findNextNonWhitespaceImpl(position, limit) { localData[it].toInt() and BYTE_MASK }</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun findClosingQuote(position: Int, limit: Int): Int {
-<b class="nc">&nbsp;        val localData = data</b>
-<b class="nc">&nbsp;        return findClosingQuoteImpl(position, limit) { localData[it].toInt() and BYTE_MASK }</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun scanString(start: Int, limit: Int): Long {
-<b class="nc">&nbsp;        val localData = data</b>
-<b class="nc">&nbsp;        return scanStringImpl(start, limit) { localData[it].toInt() and BYTE_MASK }</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    override fun contentEqualsString(start: Int, length: Int, expected: String): Boolean {
-<b class="nc">&nbsp;        val localData = data</b>
-<b class="nc">&nbsp;        return contentEqualsStringImpl(start, length, expected) { localData[it].toInt() and BYTE_MASK }</b>
-&nbsp;    }
+&nbsp;/**
+&nbsp; * YAML variant of [bodyGhost], bypassing Ktor&#39;s ContentNegotiation.
+&nbsp; */
+&nbsp;suspend inline fun &lt;reified T : Any&gt; HttpResponse.bodyGhostYaml(): T {
+<b class="fc">&nbsp;    val bytes = body&lt;ByteArray&gt;()</b>
+<b class="fc">&nbsp;    return Ghost.decodeFromYaml(bytes)</b>
 &nbsp;}
 </code>
 </pre>
@@ -176,7 +192,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

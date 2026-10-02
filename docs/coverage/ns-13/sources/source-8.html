@@ -1,0 +1,217 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > GhostNumericParseHelpersKt</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.parser.common</a>
+</div>
+
+<h1>Coverage Summary for Class: GhostNumericParseHelpersKt (com.ghost.serialization.parser.common)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">GhostNumericParseHelpersKt</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (48/56)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.2%
+  </span>
+  <span class="absValue">
+    (23/27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.5%
+  </span>
+  <span class="absValue">
+    (130/152)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;NOTHING_TO_INLINE&quot;)
+&nbsp;
+&nbsp;package com.ghost.serialization.parser.common
+&nbsp;
+&nbsp;import kotlin.math.pow
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
+&nbsp;
+&nbsp;/**
+&nbsp; * Numeric-parse predicates and digit-accumulation kernels shared by the JSON and YAML readers.
+&nbsp; */
+&nbsp;
+&nbsp;/** Accumulates one decimal digit into an Int, throwing via [onOverflow] past [Int] bounds. */
+&nbsp;internal inline fun accumulateIntWithOverflowCheck(
+&nbsp;    current: Int,
+&nbsp;    digitValue: Int,
+&nbsp;    isNegative: Boolean,
+&nbsp;    onOverflow: () -&gt; Nothing,
+&nbsp;): Int {
+<b class="pc">&nbsp;    val maxLastDigit = if (isNegative) NUM.INT_MIN_LAST_DIGIT else NUM.INT_MAX_LAST_DIGIT</b>
+<b class="fc">&nbsp;    val wouldOverflow = current &gt; NUM.INT_OVERFLOW_LIMIT ||</b>
+<b class="pc">&nbsp;        (current == NUM.INT_OVERFLOW_LIMIT &amp;&amp; digitValue &gt; maxLastDigit)</b>
+&nbsp;
+<b class="fc">&nbsp;    if (wouldOverflow) onOverflow()</b>
+<b class="fc">&nbsp;    return current * WR.BASE_TEN + digitValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;/**
+&nbsp; * Accumulates one decimal digit into a Long, throwing via [onOverflow] past JVM Long bounds.
+&nbsp; * Preserves the Long.MIN_VALUE edge case for negative overflow-limit + last digit.
+&nbsp; */
+&nbsp;internal inline fun accumulateLongWithOverflowCheck(
+&nbsp;    current: Long,
+&nbsp;    digitValue: Int,
+&nbsp;    isNegative: Boolean,
+&nbsp;    onOverflow: () -&gt; Nothing,
+&nbsp;): Long {
+<b class="fc">&nbsp;    val wouldOverflow = current == Long.MIN_VALUE ||</b>
+<b class="fc">&nbsp;        current &gt; NUM.LONG_OVERFLOW_LIMIT ||</b>
+<b class="fc">&nbsp;        (current == NUM.LONG_OVERFLOW_LIMIT &amp;&amp; digitValue &gt; NUM.LONG_MAX_LAST_DIGIT)</b>
+<b class="fc">&nbsp;    if (wouldOverflow) {</b>
+<b class="fc">&nbsp;        val isExactNegativeOverflow = isNegative &amp;&amp;</b>
+<b class="fc">&nbsp;            current == NUM.LONG_OVERFLOW_LIMIT &amp;&amp;</b>
+<b class="fc">&nbsp;            digitValue == NUM.LONG_MIN_LAST_DIGIT</b>
+<b class="fc">&nbsp;        if (isExactNegativeOverflow) {</b>
+<b class="fc">&nbsp;            return Long.MIN_VALUE</b>
+&nbsp;        }
+<b class="fc">&nbsp;        onOverflow()</b>
+&nbsp;    }
+<b class="fc">&nbsp;    return current * WR.BASE_TEN + digitValue</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal inline fun getFloatPowerOfTen(
+&nbsp;    exponent: Int
+&nbsp;): Float {
+<b class="pc">&nbsp;    return if (exponent &gt; 0) {</b>
+<b class="fc">&nbsp;        if (exponent &lt; NUM.POWERS_OF_TEN_FLOAT.size) {</b>
+<b class="fc">&nbsp;            NUM.POWERS_OF_TEN_FLOAT[exponent]</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            10.0f.pow(x = exponent.toFloat())</b>
+&nbsp;        }
+&nbsp;    } else {
+<b class="nc">&nbsp;        val absExp = -exponent</b>
+<b class="nc">&nbsp;        if (absExp &lt; NUM.INVERSE_POWERS_OF_TEN_FLOAT.size) {</b>
+<b class="nc">&nbsp;            NUM.INVERSE_POWERS_OF_TEN_FLOAT[absExp]</b>
+&nbsp;        } else {
+<b class="nc">&nbsp;            10.0f.pow(x = exponent.toFloat())</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;}
+&nbsp;
+&nbsp;internal inline fun isDigit(
+&nbsp;    byteCode: Int
+&nbsp;): Boolean {
+<b class="fc">&nbsp;    return (byteCode xor TOK.ZERO_INT) &lt; WR.BASE_TEN</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal inline fun isExponentMarker(
+&nbsp;    markerByte: Int
+&nbsp;): Boolean {
+<b class="fc">&nbsp;    return (markerByte or TOK.CASE_INSENSITIVE_MASK) == TOK.EXP_LOWER_INT</b>
+&nbsp;}
+&nbsp;
+&nbsp;internal inline fun isNumericSeparator(
+&nbsp;    byteCode: Int
+&nbsp;): Boolean {
+<b class="fc">&nbsp;    return byteCode == TOK.DOT_INT || byteCode == TOK.EXP_LOWER_INT || byteCode == TOK.EXP_UPPER_INT</b>
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
+</div>
+</body>
+</html>

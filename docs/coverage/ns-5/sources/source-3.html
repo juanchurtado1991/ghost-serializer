@@ -97,7 +97,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.google.devtools.ksp.processing.CodeGenerator
 &nbsp;import com.google.devtools.ksp.processing.Dependencies
 &nbsp;import com.squareup.kotlinpoet.FileSpec
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 &nbsp;
 &nbsp;/**
 &nbsp; * Post-processes KotlinPoet output to drop redundant noise:
@@ -106,14 +106,14 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; */
 &nbsp;internal object GeneratedSourceTrimmer {
 &nbsp;
-<b class="fc">&nbsp;    private val redundantKotlinImport = Regex(C.REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT)</b>
-<b class="fc">&nbsp;    private val redundantPublic = Regex(C.REGEX_TRIM_REDUNDANT_PUBLIC)</b>
+<b class="fc">&nbsp;    private val redundantKotlinImport = Regex(CG.REGEX_TRIM_REDUNDANT_KOTLIN_IMPORT)</b>
+<b class="fc">&nbsp;    private val redundantPublic = Regex(CG.REGEX_TRIM_REDUNDANT_PUBLIC)</b>
 &nbsp;
 &nbsp;    fun trim(source: String): String {
 <b class="fc">&nbsp;        return source.lineSequence()</b>
 <b class="fc">&nbsp;            .filterNot { line -&gt; redundantKotlinImport.matches(line.trim()) }</b>
-<b class="fc">&nbsp;            .joinToString(C.STR_NEWLINE) { line -&gt;</b>
-<b class="fc">&nbsp;                redundantPublic.replace(line, C.STR_REGEX_GROUP_1)</b>
+<b class="fc">&nbsp;            .joinToString(CG.STR_NEWLINE) { line -&gt;</b>
+<b class="fc">&nbsp;                redundantPublic.replace(line, CG.STR_REGEX_GROUP_1)</b>
 &nbsp;            }
 &nbsp;    }
 &nbsp;
@@ -122,12 +122,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        codeGenerator: CodeGenerator,
 &nbsp;        dependencies: Dependencies,
 &nbsp;    ) {
-<b class="fc">&nbsp;        val content = trim(fileSpec.toString())</b>
+<b class="fc">&nbsp;        val content = trim(source = fileSpec.toString())</b>
 <b class="fc">&nbsp;        codeGenerator.createNewFile(</b>
 <b class="fc">&nbsp;            dependencies = dependencies,</b>
 <b class="fc">&nbsp;            packageName = fileSpec.packageName,</b>
 <b class="fc">&nbsp;            fileName = fileSpec.name,</b>
-<b class="fc">&nbsp;            extensionName = C.STR_EXT_KT,</b>
+<b class="fc">&nbsp;            extensionName = CG.STR_EXT_KT,</b>
 <b class="fc">&nbsp;        ).use { stream -&gt;</b>
 <b class="fc">&nbsp;            stream.write(content.toByteArray(Charsets.UTF_8))</b>
 <b class="fc">&nbsp;        }</b>
@@ -156,7 +156,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

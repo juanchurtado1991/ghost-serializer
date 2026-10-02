@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostYamlConstants</title>
+  <title>GhostSerialization Coverage Report > BufferGhostByteSink</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.yaml</a>
+    <a href="../index.html">com.ghost.serialization.writer.bytes</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostYamlConstants (com.ghost.serialization.yaml)</h1>
+<h1>Coverage Summary for Class: BufferGhostByteSink (com.ghost.serialization.writer.bytes)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostYamlConstants</td>
+  <td class="name">BufferGhostByteSink</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -60,27 +60,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    93.3%
   </span>
   <span class="absValue">
-    (1/1)
+    (14/15)
   </span>
 </td>
     <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    94.7%
   </span>
   <span class="absValue">
-    (1/1)
+    (18/19)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    96%
   </span>
   <span class="absValue">
-    (4/4)
+    (97/101)
   </span>
 </td>
 </tr>
@@ -92,434 +92,80 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.yaml
-&nbsp;
-&nbsp;/**
-&nbsp; * Byte-level constants for YAML control characters.
-&nbsp; *
-&nbsp; * Every control byte used by the YAML parser is declared here with a descriptive name.
-&nbsp; * Call sites should use these named constants instead of raw byte literals, and compare
-&nbsp; * bytes directly (Byte to Byte) rather than converting to [Char].
-&nbsp; */
-&nbsp;@PublishedApi
-&nbsp;internal object GhostYamlConstants {
-&nbsp;
-&nbsp;    // ── Basic ASCII structure ──────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;:&#39; — key-value separator */
-&nbsp;    const val COLON_BYTE: Byte = 0x3A
-&nbsp;
-&nbsp;    /** &#39; &#39; — space (used after &#39;:&#39; and &#39;-&#39; as mandatory separator) */
-&nbsp;    const val SPACE_BYTE: Byte = 0x20
-&nbsp;
-&nbsp;    /** &#39;\n&#39; — line feed (primary line terminator) */
-&nbsp;    const val NEWLINE_BYTE: Byte = 0x0A
-&nbsp;
-&nbsp;    /** &#39;\r&#39; — carriage return (CRLF support) */
-&nbsp;    const val CR_BYTE: Byte = 0x0D
-&nbsp;
-&nbsp;    /** &#39;\t&#39; — horizontal tab (valid whitespace in YAML) */
-&nbsp;    const val TAB_BYTE: Byte = 0x09
-&nbsp;
-&nbsp;    /** &#39;#&#39; — comment start */
-&nbsp;    const val HASH_BYTE: Byte = 0x23
-&nbsp;
-&nbsp;    /** &#39;-&#39; — block sequence entry / negative number / block scalar chomp */
-&nbsp;    const val DASH_BYTE: Byte = 0x2D
-&nbsp;
-&nbsp;    /** &#39;?&#39; — explicit block mapping key indicator */
-&nbsp;    const val QUESTION_BYTE: Byte = 0x3F
-&nbsp;
-&nbsp;    /** &#39;.&#39; — document end marker start / float decimal point */
-&nbsp;    const val DOT_BYTE: Byte = 0x2E
-&nbsp;
-&nbsp;    // ── String delimiters ─────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;&quot;&#39; — double-quoted scalar start/end */
-&nbsp;    const val DOUBLE_QUOTE_BYTE: Byte = 0x22
-&nbsp;
-&nbsp;    /** &#39;\&#39;&#39; — single-quoted scalar start/end */
-&nbsp;    const val SINGLE_QUOTE_BYTE: Byte = 0x27
-&nbsp;
-&nbsp;    /** &#39;\\&#39; — escape character inside double-quoted scalars */
-&nbsp;    const val BACKSLASH_BYTE: Byte = 0x5C
-&nbsp;
-&nbsp;    // ── Block scalar indicators ───────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;|&#39; — literal block scalar indicator */
-&nbsp;    const val PIPE_BYTE: Byte = 0x7C
-&nbsp;
-&nbsp;    /** &#39;&gt;&#39; — folded block scalar indicator */
-&nbsp;    const val GT_BYTE: Byte = 0x3E
-&nbsp;
-&nbsp;    /** &#39;+&#39; — keep chomp indicator (after &#39;|&#39; or &#39;&gt;&#39;) */
-&nbsp;    const val PLUS_BYTE: Byte = 0x2B
-&nbsp;
-&nbsp;    // ── Flow style delimiters ─────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;{&#39; — flow mapping start */
-&nbsp;    const val LEFT_BRACE_BYTE: Byte = 0x7B
-&nbsp;
-&nbsp;    /** &#39;}&#39; — flow mapping end */
-&nbsp;    const val RIGHT_BRACE_BYTE: Byte = 0x7D
-&nbsp;
-&nbsp;    /** &#39;[&#39; — flow sequence start */
-&nbsp;    const val LEFT_BRACKET_BYTE: Byte = 0x5B
-&nbsp;
-&nbsp;    /** &#39;]&#39; — flow sequence end */
-&nbsp;    const val RIGHT_BRACKET_BYTE: Byte = 0x5D
-&nbsp;
-&nbsp;    /** &#39;,&#39; — flow collection item separator */
-&nbsp;    const val COMMA_BYTE: Byte = 0x2C
-&nbsp;
-&nbsp;    // ── Anchors, Aliases, Tags, Directives ───────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;&amp;&#39; — anchor definition start */
-&nbsp;    const val AMPERSAND_BYTE: Byte = 0x26
-&nbsp;
-&nbsp;    /** &#39;*&#39; — alias reference start */
-&nbsp;    const val ASTERISK_BYTE: Byte = 0x2A
-&nbsp;
-&nbsp;    /** &#39;!&#39; — tag indicator (e.g. !!str, !&lt;TypeName&gt;) */
-&nbsp;    const val EXCLAMATION_BYTE: Byte = 0x21
-&nbsp;
-&nbsp;    /** &#39;%&#39; — YAML directive start (%YAML, %TAG) */
-&nbsp;    const val PERCENT_BYTE: Byte = 0x25
-&nbsp;
-&nbsp;    /** &#39;&lt;&#39; — opening bracket in verbose tags !&lt;TypeName&gt; */
-&nbsp;    const val LT_BYTE: Byte = 0x3C
-&nbsp;
-&nbsp;    // ── Document markers ──────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;—&#39; first byte of document-start marker &#39;---&#39; */
-&nbsp;    // Same as DASH_BYTE. Marker is detected by checking 3 consecutive DASH_BYTE at column 0.
-&nbsp;
-&nbsp;    // ── Numeric helpers ───────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;0&#39; */
-&nbsp;    const val ZERO_BYTE: Byte = 0x30
-&nbsp;
-&nbsp;    /** &#39;9&#39; */
-&nbsp;    const val NINE_BYTE: Byte = 0x39
-&nbsp;
-&nbsp;    /** &#39;x&#39; */
-&nbsp;    const val LOWERCASE_X_BYTE: Byte = 0x78
-&nbsp;
-&nbsp;    /** &#39;X&#39; */
-&nbsp;    const val UPPERCASE_X_BYTE: Byte = 0x58
-&nbsp;
-&nbsp;    /** &#39;o&#39; */
-&nbsp;    const val LOWERCASE_O_BYTE: Byte = 0x6F
-&nbsp;
-&nbsp;    /** &#39;O&#39; */
-&nbsp;    const val UPPERCASE_O_BYTE: Byte = 0x4F
-&nbsp;
-&nbsp;    /** &#39;b&#39; */
-&nbsp;    const val LOWERCASE_B_BYTE: Byte = 0x62
-&nbsp;
-&nbsp;    /** &#39;B&#39; */
-&nbsp;    const val UPPERCASE_B_BYTE: Byte = 0x42
-&nbsp;
-&nbsp;    // ── Tag Character constants ──────────────────────────────────────────────
-&nbsp;    const val CHAR_A_BYTE: Byte = 0x61
-&nbsp;    const val CHAR_B_BYTE: Byte = 0x62
-&nbsp;    const val CHAR_E_BYTE: Byte = 0x65
-&nbsp;    const val CHAR_F_BYTE: Byte = 0x66
-&nbsp;    const val CHAR_I_BYTE: Byte = 0x69
-&nbsp;    const val CHAR_L_BYTE: Byte = 0x6C
-&nbsp;    const val CHAR_M_BYTE: Byte = 0x6D
-&nbsp;    const val CHAR_N_BYTE: Byte = 0x6E
-&nbsp;    const val CHAR_O_BYTE: Byte = 0x6F
-&nbsp;    const val CHAR_P_BYTE: Byte = 0x70
-&nbsp;    const val CHAR_Q_BYTE: Byte = 0x71
-&nbsp;    const val CHAR_R_BYTE: Byte = 0x72
-&nbsp;    const val CHAR_S_BYTE: Byte = 0x73
-&nbsp;    const val CHAR_T_BYTE: Byte = 0x74
-&nbsp;    const val CHAR_U_BYTE: Byte = 0x75
-&nbsp;    const val LOWERCASE_A_BYTE: Byte = 0x61
-&nbsp;    const val UPPERCASE_A_BYTE: Byte = 0x41
-&nbsp;    const val ONE_BYTE: Byte = 0x31
-&nbsp;    const val SEVEN_BYTE: Byte = 0x37
-&nbsp;
-&nbsp;    const val ESCAPE_SLASH_BYTE: Byte = 0x2F
-&nbsp;    const val LOWERCASE_E_BYTE: Byte = 0x65
-&nbsp;    const val UPPERCASE_E_BYTE: Byte = 0x45
-&nbsp;    const val LOWERCASE_L_BYTE: Byte = 0x6C
-&nbsp;    const val UPPERCASE_L_BYTE: Byte = 0x4C
-&nbsp;    const val LOWERCASE_R_BYTE: Byte = 0x72
-&nbsp;    const val LOWERCASE_U_BYTE: Byte = 0x75
-&nbsp;    const val UPPERCASE_U_BYTE: Byte = 0x55
-&nbsp;    const val LOWERCASE_V_BYTE: Byte = 0x76
-&nbsp;    const val UPPERCASE_P_BYTE: Byte = 0x50
-&nbsp;    const val UNDERSCORE_BYTE: Byte = 0x5F
-&nbsp;    const val LOWERCASE_S_BYTE: Byte = 0x73
-&nbsp;
-&nbsp;    // ── Boolean / null scalar first bytes ────────────────────────────────────
-&nbsp;
-&nbsp;    /** &#39;t&#39; — start of &#39;true&#39; */
-&nbsp;    const val LOWERCASE_T_BYTE: Byte = 0x74
-&nbsp;
-&nbsp;    /** &#39;T&#39; — start of &#39;True&#39; / &#39;TRUE&#39; */
-&nbsp;    const val UPPERCASE_T_BYTE: Byte = 0x54
-&nbsp;
-&nbsp;    /** &#39;f&#39; — start of &#39;false&#39; */
-&nbsp;    const val LOWERCASE_F_BYTE: Byte = 0x66
-&nbsp;
-&nbsp;    /** &#39;F&#39; — start of &#39;False&#39; / &#39;FALSE&#39; */
-&nbsp;    const val UPPERCASE_F_BYTE: Byte = 0x46
-&nbsp;
-&nbsp;    /** &#39;n&#39; — start of &#39;null&#39; / &#39;Null&#39; / &#39;NULL&#39; */
-&nbsp;    const val LOWERCASE_N_BYTE: Byte = 0x6E
-&nbsp;
-&nbsp;    /** &#39;N&#39; — start of &#39;Null&#39; / &#39;NULL&#39; */
-&nbsp;    const val UPPERCASE_N_BYTE: Byte = 0x4E
-&nbsp;
-&nbsp;    /** &#39;~&#39; — YAML null shorthand */
-&nbsp;    const val TILDE_BYTE: Byte = 0x7E
-&nbsp;
-&nbsp;    // ── Bitwise masks for hot-path validations ────────────────────────────────
-&nbsp;
-&nbsp;    /** Bounds for an ASCII decimal digit (0-9), used as `b in DIGIT_LOWER_BOUND..DIGIT_UPPER_BOUND`. */
-&nbsp;    const val DIGIT_LOWER_BOUND: Byte = ZERO_BYTE   // 0x30
-&nbsp;    const val DIGIT_UPPER_BOUND: Byte = NINE_BYTE   // 0x39
-&nbsp;
-&nbsp;    /** Mask to convert a known-alphabetic lowercase ASCII byte to uppercase. */
-&nbsp;    const val ASCII_TO_UPPER_MASK: Int = 0xDF
-&nbsp;
-&nbsp;    /** Mask to convert a known-alphabetic uppercase ASCII byte to lowercase. */
-&nbsp;    const val ASCII_TO_LOWER_MASK: Int = 0x20
-&nbsp;
-&nbsp;    // ── Scalar byte packing (same as JSON reader) ─────────────────────────────
-&nbsp;
-&nbsp;    /**
-&nbsp;     * Maximum key length for perfect-hash dispatch.
-&nbsp;     * Keys longer than this use a fallback linear comparison.
-&nbsp;     */
-&nbsp;    const val MAX_PACKED_KEY_BYTES: Int = 8
-&nbsp;
-&nbsp;    // ── Indentation ───────────────────────────────────────────────────────────
-&nbsp;
-&nbsp;    /** Sentinel value for &quot;no indentation level set yet&quot;. */
-&nbsp;    const val INDENT_UNSET: Int = -1
-&nbsp;
-&nbsp;    /** Maximum supported nesting depth. */
-&nbsp;    const val MAX_DEPTH: Int = 64
-&nbsp;
-&nbsp;    // ── String literals / Control strings ──────────────────────────────────────
-&nbsp;    const val STR_TRUE = &quot;true&quot;
-&nbsp;    const val STR_FALSE = &quot;false&quot;
-&nbsp;    const val STR_DOT_INF = &quot;.inf&quot;
-&nbsp;    const val STR_PLUS_DOT_INF = &quot;+.inf&quot;
-&nbsp;    const val STR_MINUS_DOT_INF = &quot;-.inf&quot;
-&nbsp;    const val STR_DOT_NAN = &quot;.nan&quot;
-&nbsp;
-&nbsp;    const val STR_MERGE_KEY = &quot;&lt;&lt;&quot;
-&nbsp;    const val STR_TAG_KEY = &quot;_tag&quot;
-&nbsp;    const val STR_TAG_DIRECTIVE = &quot;TAG&quot;
-&nbsp;    const val STR_YAML_DIRECTIVE = &quot;YAML&quot;
-&nbsp;    const val STR_EXCLAMATION = &quot;!&quot;
-&nbsp;
-&nbsp;    // ── Bit shift constants for parsing numeric bases ──────────────────────────
-&nbsp;    const val HEX_SHIFT = 4
-&nbsp;    const val OCTAL_SHIFT = 3
-&nbsp;    const val BINARY_SHIFT = 1
-&nbsp;
-&nbsp;    // ── Int counterparts for control characters (Writer path) ──────────────────
-&nbsp;    const val SPACE_INT: Int = 0x20
-&nbsp;    const val DASH_INT: Int = 0x2D
-&nbsp;    const val NEWLINE_INT: Int = 0x0A
-&nbsp;    const val DOUBLE_QUOTE_INT: Int = 0x22
-&nbsp;    const val BACKSLASH_INT: Int = 0x5C
-&nbsp;    const val COLON_INT: Int = 0x3A
-&nbsp;    const val ZERO_INT: Int = 0x30
-&nbsp;    const val TILDE_INT: Int = 0x7E
-&nbsp;    const val LEFT_BRACE_INT: Int = 0x7B
-&nbsp;    const val RIGHT_BRACE_INT: Int = 0x7D
-&nbsp;    const val LEFT_BRACKET_INT: Int = 0x5B
-&nbsp;    const val RIGHT_BRACKET_INT: Int = 0x5D
-&nbsp;
-&nbsp;    const val CHAR_LF_INT: Int = 10
-&nbsp;    const val CHAR_CR_INT: Int = 13
-&nbsp;    const val CHAR_TAB_INT: Int = 9
-&nbsp;    const val CHAR_BS_INT: Int = 8
-&nbsp;    const val CHAR_FF_INT: Int = 12
-&nbsp;    const val CHAR_SPACE_INT: Int = 32
-&nbsp;
-&nbsp;    const val CHAR_N_INT: Int = 0x6E
-&nbsp;    const val CHAR_R_INT: Int = 0x72
-&nbsp;    const val CHAR_T_INT: Int = 0x74
-&nbsp;    const val CHAR_B_INT: Int = 0x62
-&nbsp;    const val CHAR_F_INT: Int = 0x66
-&nbsp;    const val CHAR_U_INT: Int = 0x75
-&nbsp;
-&nbsp;    const val STR_HEX_CHARS = &quot;0123456789abcdef&quot;
-&nbsp;    const val STR_NULL = &quot;null&quot;
-&nbsp;    const val STR_MIN_LONG_ABS = &quot;9223372036854775808&quot;
-&nbsp;
-<b class="fc">&nbsp;    val HEX_CHARS_ARR = STR_HEX_CHARS.encodeToByteArray()</b>
-&nbsp;
-&nbsp;    // ── Structural &amp; formatting helpers (Writer path) ──────────────────────────
-&nbsp;    const val SPACES_PER_LEVEL = 2
-&nbsp;    const val TYPE_OBJECT = 1
-&nbsp;    const val TYPE_ARRAY = 2
-&nbsp;    const val PLAIN_ASCII_LIMIT = 64
-&nbsp;    const val SHIFT_12 = 12
-&nbsp;    const val SHIFT_8 = 8
-&nbsp;    const val SHIFT_4 = 4
-&nbsp;    const val HEX_MASK = 0x0F
-&nbsp;    const val TEN_LONG = 10L
-&nbsp;    const val ASCII_LIMIT = 128
-&nbsp;
-&nbsp;    // ── Pre-encoded JSON Header extraction constants ──────────────────────────
-&nbsp;    const val HEADER_MIN_SIZE = 3
-&nbsp;    const val HEADER_QUOTE_START_OFFSET = 0
-&nbsp;    const val HEADER_QUOTE_END_OFFSET_SUB = 2
-&nbsp;    const val HEADER_COLON_OFFSET_SUB = 1
-&nbsp;    const val SUBSTRING_START_OFFSET = 1
-&nbsp;
-&nbsp;    // ── UTF-8 and Escape code parsing constants (Reader path) ──────────────────
-&nbsp;    const val BUFFER_SCALE_FACTOR = 2
-&nbsp;    const val UTF8_1BYTE_MAX = 0x7F
-&nbsp;    const val UTF8_2BYTE_MAX = 0x7FF
-&nbsp;    const val UTF8_3BYTE_MAX = 0xFFFF
-&nbsp;    const val UTF8_2BYTE_PREFIX = 0xC0
-&nbsp;    const val UTF8_3BYTE_PREFIX = 0xE0
-&nbsp;    const val UTF8_4BYTE_PREFIX = 0xF0
-&nbsp;    const val UTF8_CONT_PREFIX = 0x80
-&nbsp;    const val UTF8_CONT_MASK = 0x3F
-&nbsp;    const val HEX_SHIFT_4 = 4
-&nbsp;    const val HEX_RADIX_10 = 10
-&nbsp;    const val SHIFT_18_BITS = 18
-&nbsp;    const val SHIFT_6_BITS = 6
-&nbsp;
-&nbsp;    const val CODE_ZERO = 0
-&nbsp;    const val CODE_BEL = 7
-&nbsp;    const val CODE_BS = 8
-&nbsp;    const val CODE_TAB = 9
-&nbsp;    const val CODE_FF = 12
-&nbsp;    const val CODE_CR = 13
-&nbsp;    const val CODE_VTAB = 11
-&nbsp;    const val CODE_ESC = 27
-&nbsp;    const val CODE_NEXT_LINE = 133
-&nbsp;    const val CODE_NBSP = 160
-&nbsp;    const val CODE_LINE_SEP = 8232
-&nbsp;    const val CODE_PARA_SEP = 8233
-&nbsp;
-&nbsp;    // ── Document markers ─────────────────────────────────────────────────────
-&nbsp;    const val STR_DOC_START = &quot;---&quot;
-&nbsp;    const val STR_DOC_END = &quot;...&quot;
-&nbsp;    const val DOC_MARKER_LEN = 3
-&nbsp;
-&nbsp;    // ── Sizes ────────────────────────────────────────────────────────────────
-&nbsp;    const val DEFAULT_MAP_CAPACITY = 8
-&nbsp;    const val SCRATCH_BUFFER_SIZE = 256
-&nbsp;    const val HEX_ESCAPE_X_LEN = 2
-&nbsp;    const val HEX_ESCAPE_U_LEN = 4
-&nbsp;    const val HEX_ESCAPE_U32_LEN = 8
-&nbsp;
-&nbsp;    // ── Error messages (parser / writer / extensions) ────────────────────────
-&nbsp;    const val ERR_EXPECTED_MAP_PREFIX = &quot;Expected Map but found &quot;
-&nbsp;    const val ERR_EXPECTED_INT_PREFIX = &quot;Expected Int but found &quot;
-&nbsp;    const val ERR_EXPECTED_LONG_PREFIX = &quot;Expected Long but found &quot;
-&nbsp;    const val ERR_EXPECTED_ULONG_PREFIX = &quot;Expected ULong but found &quot;
-&nbsp;    const val ERR_EXPECTED_DOUBLE_PREFIX = &quot;Expected Double but found &quot;
-&nbsp;    const val ERR_EXPECTED_FLOAT_PREFIX = &quot;Expected Float but found &quot;
-&nbsp;    const val ERR_EXPECTED_BOOLEAN_PREFIX = &quot;Expected Boolean but found &quot;
-&nbsp;    const val ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX = &quot;Expected single-character string but found length &quot;
-&nbsp;    const val ERR_EXPECTED_LIST_PREFIX = &quot;Expected List but found &quot;
-&nbsp;
-&nbsp;    const val ERR_PLAIN_SCALAR_PERCENT =
-&nbsp;        &quot;A plain scalar cannot start with &#39;%&#39; — reserved for directives&quot;
-&nbsp;    const val ERR_MAX_NESTING_DEPTH_PREFIX = &quot;Maximum nesting depth (&quot;
-&nbsp;    const val ERR_MAX_NESTING_DEPTH_SUFFIX = &quot;) exceeded&quot;
-&nbsp;    const val ERR_TAB_IN_BLOCK_MAPPING_INDENT =
-&nbsp;        &quot;Tab character not allowed in block mapping indentation&quot;
-&nbsp;    /** YAML [GhostYamlException] position suffix: `&quot;$message$ERR_AT_POSITION_PAREN_PREFIX$pos$ERR_AT_POSITION_PAREN_SUFFIX&quot;`. */
-&nbsp;    const val ERR_AT_POSITION_PAREN_PREFIX = &quot; (position=&quot;
-&nbsp;    const val ERR_AT_POSITION_PAREN_SUFFIX = &quot;)&quot;
-&nbsp;    const val ERR_EXPECTED_COLON_AFTER_KEY_PREFIX = &quot;Expected &#39;:&#39; after key &#39;&quot;
-&nbsp;    const val ERR_EXPECTED_COLON_AFTER_KEY_MID = &quot;&#39; at position &quot;
-&nbsp;    const val ERR_TAB_IN_BLOCK_SEQUENCE_INDENT =
-&nbsp;        &quot;Tab character not allowed in block sequence indentation&quot;
-&nbsp;    const val ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON =
-&nbsp;        &quot;Unexpected &#39;:&#39; — a nested mapping can&#39;t start inline on the same line as its enclosing key&quot;
-&nbsp;    const val ERR_LONE_DASH_IN_FLOW =
-&nbsp;        &quot;A lone &#39;-&#39; is not a valid plain scalar in flow context&quot;
-&nbsp;    const val ERR_PLAIN_CONTINUATION_MAPPING_KEY =
-&nbsp;        &quot;Plain scalar continuation cannot contain a mapping key indicator&quot;
-&nbsp;    const val ERR_ANCHOR_TAG_PREFIX_NEEDS_KEY =
-&nbsp;        &quot;Anchor/tag prefix on a key must be followed by the key itself&quot;
-&nbsp;    const val ERR_IMPLICIT_KEY_MULTILINE = &quot;Implicit keys cannot span multiple lines&quot;
-&nbsp;    const val ERR_PARSER_NO_PROGRESS_PREFIX = &quot;Parser made no progress at position &quot;
-&nbsp;    const val ERR_PARSER_NO_PROGRESS_SUFFIX = &quot; — malformed content&quot;
-&nbsp;    const val ERR_UNEXPECTED_AFTER_DOCUMENT_VALUE = &quot;Unexpected content after document value&quot;
-&nbsp;    const val ERR_DIRECTIVES_NEED_DOC_END =
-&nbsp;        &quot;Directives must be preceded by an explicit document end marker (...)&quot;
-&nbsp;
-&nbsp;    const val ERR_UNEXPECTED_COMMA_FLOW_MAPPING =
-&nbsp;        &quot;Unexpected &#39;,&#39; in flow mapping — empty entries are not allowed&quot;
-&nbsp;    const val ERR_EXPECTED_COLON_AFTER_FLOW_KEY_PREFIX = &quot;Expected &#39;:&#39; after flow mapping key &#39;&quot;
-&nbsp;    const val ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_MAP = &quot;Expected &#39;,&#39; or &#39;}&#39; in flow mapping&quot;
-&nbsp;    const val ERR_UNEXPECTED_COMMA_FLOW_SEQUENCE =
-&nbsp;        &quot;Unexpected &#39;,&#39; in flow sequence — empty entries are not allowed&quot;
-&nbsp;    const val ERR_EXPECTED_COMMA_OR_CLOSE_FLOW_SEQ = &quot;Expected &#39;,&#39; or &#39;]&#39; in flow sequence&quot;
-&nbsp;
-&nbsp;    const val ERR_UNTERMINATED_DOUBLE_QUOTED = &quot;Unterminated double-quoted string&quot;
-&nbsp;    const val ERR_UNTERMINATED_SINGLE_QUOTED = &quot;Unterminated single-quoted string&quot;
-&nbsp;    const val ERR_DOC_MARKER_IN_QUOTED_SCALAR_PREFIX = &quot;Document marker &#39;&quot;
-&nbsp;    const val ERR_DOC_MARKER_IN_QUOTED_SCALAR_SUFFIX = &quot;&#39; not allowed inside a quoted scalar&quot;
-&nbsp;    const val ERR_INCOMPLETE_X_ESCAPE = &quot;Incomplete \\x escape&quot;
-&nbsp;    const val ERR_INCOMPLETE_U_ESCAPE = &quot;Incomplete \\u escape&quot;
-&nbsp;    const val ERR_INCOMPLETE_U32_ESCAPE = &quot;Incomplete \\U escape&quot;
-&nbsp;    const val ERR_UNKNOWN_ESCAPE_PREFIX = &quot;Unknown escape: \\&quot;
-&nbsp;    const val ERR_INVALID_HEX_IN_ESCAPE = &quot;Invalid hex char in escape sequence&quot;
-&nbsp;
-&nbsp;    const val ERR_BLOCK_INDENT_INDICATOR_DIGIT =
-&nbsp;        &quot;Block scalar indentation indicator must be a single digit&quot;
-&nbsp;    const val ERR_BLOCK_INDENT_RANGE_1_9 =
-&nbsp;        &quot;Block scalar indentation indicator must be between 1 and 9&quot;
-&nbsp;    const val ERR_COMMENT_AFTER_BLOCK_INDICATOR_WS =
-&nbsp;        &quot;Comment after block scalar indicator must be preceded by whitespace&quot;
-&nbsp;    const val ERR_INVALID_TEXT_AFTER_BLOCK_INDICATOR = &quot;Invalid text after block scalar indicator&quot;
-&nbsp;    const val ERR_LEADING_EMPTY_LINE_OVERINDENTED =
-&nbsp;        &quot;Leading empty line in block scalar is more indented than its first content line&quot;
-&nbsp;
-&nbsp;    const val ERR_EOF_AFTER_TAG = &quot;Unexpected end of input after tag indicator&quot;
-&nbsp;    const val ERR_TAG_HANDLE_UNDEFINED_PREFIX = &quot;Tag handle &#39;&quot;
-&nbsp;    const val ERR_TAG_HANDLE_UNDEFINED_SUFFIX =
-&nbsp;        &quot;&#39; is not defined by a %TAG directive in this document&quot;
-&nbsp;    const val ERR_INVALID_CHAR_AFTER_TAG = &quot;Invalid character immediately after tag&quot;
-&nbsp;
-&nbsp;    const val ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX = &quot;Anchor &#39;&quot;
-&nbsp;    const val ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX = &quot;&#39; cannot be immediately followed by an alias&quot;
-&nbsp;    const val ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX =
-&nbsp;        &quot;&#39; cannot be immediately followed by a block sequence entry on the same line&quot;
-&nbsp;    const val ERR_ANCHOR_NOT_FOUND_PREFIX = &quot;Anchor &#39;&quot;
-&nbsp;    const val ERR_ANCHOR_NOT_FOUND_SUFFIX = &quot;&#39; not found&quot;
-&nbsp;
-&nbsp;    const val ERR_COMMENT_NEEDS_WHITESPACE = &quot;Comment must be preceded by whitespace&quot;
-&nbsp;    const val ERR_DUPLICATE_YAML_DIRECTIVE = &quot;Duplicate %YAML directive&quot;
-&nbsp;    const val ERR_MALFORMED_YAML_VERSION_PREFIX = &quot;Malformed %YAML directive version: &quot;
-&nbsp;    const val ERR_UNEXPECTED_AFTER_YAML_DIRECTIVE = &quot;Unexpected content after %YAML directive&quot;
-&nbsp;    const val ERR_DIRECTIVES_NEED_DOC_START =
-&nbsp;        &quot;Directives must be followed by a document-start marker (---)&quot;
-&nbsp;    const val ERR_UNEXPECTED_AFTER_DOC_END = &quot;Unexpected content after document-end marker&quot;
-&nbsp;
-&nbsp;    const val ERR_MAX_DEPTH_EXCEEDED = &quot;Max depth exceeded&quot;
-&nbsp;    const val ERR_NAME_OUTSIDE_OBJECT = &quot;Cannot write name outside of object scope&quot;
-&nbsp;
-&nbsp;    const val ERR_SERIALIZER_NOT_FOUND_PREFIX = &quot;Serializer not found for &quot;
-&nbsp;    const val ERR_NOT_YAML_SERIALIZER_PREFIX = &quot;Serializer for &quot;
-&nbsp;    const val ERR_NOT_YAML_SERIALIZER_SUFFIX = &quot; does not implement GhostYamlSerializer&quot;
-&nbsp;    const val ERR_YAML_LIST_NEEDS_YAML_ITEM_PREFIX =
-&nbsp;        &quot;GhostYamlListSerializer requires a GhostYamlSerializer item serializer, got &quot;
-&nbsp;    const val ERR_YAML_SET_NEEDS_YAML_ITEM_PREFIX =
-&nbsp;        &quot;GhostYamlSetSerializer requires a GhostYamlSerializer item serializer, got &quot;
-&nbsp;    const val ERR_YAML_MAP_NEEDS_YAML_VALUE_PREFIX =
-&nbsp;        &quot;GhostYamlMapSerializer requires a GhostYamlSerializer value serializer, got &quot;
-&nbsp;    const val STR_UNKNOWN_TYPE = &quot;unknown&quot;
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.writer.bytes
+&nbsp;
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonTokens.QUOTE_INT
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.DOT_ZERO
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.FALSE_BS
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.NULL_BS
+&nbsp;import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.TRUE_BS
+&nbsp;import okio.BufferedSink
+&nbsp;import okio.ByteString
+&nbsp;
+&nbsp;/** [GhostByteSink] backed by an Okio [BufferedSink] — the streaming write path. */
+<b class="fc">&nbsp;internal class BufferGhostByteSink(private val sink: BufferedSink) : GhostByteSink {</b>
+&nbsp;
+<b class="fc">&nbsp;    private val buffer = sink.buffer</b>
+&nbsp;
+&nbsp;    override fun flush() {
+<b class="fc">&nbsp;        sink.emit()</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write(bytes: ByteArray) {
+<b class="fc">&nbsp;        buffer.write(bytes)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write(bytes: ByteArray, offset: Int, length: Int) {
+<b class="fc">&nbsp;        buffer.write(bytes, offset, length)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write(byteString: ByteString) {
+<b class="fc">&nbsp;        buffer.write(byteString)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun write2Bytes(firstByte: Int, secondByte: Int) {
+<b class="fc">&nbsp;        buffer.writeByte(firstByte)</b>
+<b class="fc">&nbsp;        buffer.writeByte(secondByte)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeByte(byteAsInt: Int) {
+<b class="fc">&nbsp;        buffer.writeByte(byteAsInt)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeDotZero() {
+<b class="fc">&nbsp;        buffer.write(DOT_ZERO)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeFalse() {
+<b class="fc">&nbsp;        buffer.write(FALSE_BS)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeNull() {
+<b class="fc">&nbsp;        buffer.write(NULL_BS)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeQuotedAscii(text: String, length: Int) {
+<b class="fc">&nbsp;        buffer.writeByte(QUOTE_INT)</b>
+<b class="fc">&nbsp;        buffer.writeUtf8(text)</b>
+<b class="fc">&nbsp;        buffer.writeByte(QUOTE_INT)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeQuotedBmpCodeUnit(codePoint: Int) {
+<b class="nc">&nbsp;        buffer.writeQuotedBmpCodeUnit(codePoint = codePoint)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeTrue() {
+<b class="fc">&nbsp;        buffer.write(TRUE_BS)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeUtf8(text: String) {
+<b class="fc">&nbsp;        buffer.writeUtf8(text)</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    override fun writeUtf8(text: String, beginIndex: Int, endIndex: Int) {
+<b class="fc">&nbsp;        buffer.writeUtf8(text, beginIndex, endIndex)</b>
+&nbsp;    }
 &nbsp;}
-&nbsp;
 </code>
 </pre>
 </div>
@@ -543,7 +189,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

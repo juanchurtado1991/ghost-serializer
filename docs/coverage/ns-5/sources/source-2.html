@@ -103,7 +103,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.squareup.kotlinpoet.ClassName
 &nbsp;import com.squareup.kotlinpoet.CodeBlock
-&nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 &nbsp;
 &nbsp;/**
 &nbsp; * Shared multiline formatting for generated call sites that would otherwise become
@@ -117,21 +117,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;     */
 &nbsp;    fun invoke(name: String, args: List&lt;String&gt;): CodeBlock {
 <b class="pc">&nbsp;        if (args.isEmpty()) {</b>
-<b class="nc">&nbsp;            return CodeBlock.of(C.TEMPLATE_INVOKE_EMPTY, name)</b>
+<b class="nc">&nbsp;            return CodeBlock.of(CG.TEMPLATE_INVOKE_EMPTY, name)</b>
 &nbsp;        }
-<b class="pc">&nbsp;        if (args.size == 1 &amp;&amp; name.length + args[0].length &lt;= C.COMPACT_CALL_MAX_INLINE_LENGTH) {</b>
-<b class="nc">&nbsp;            return CodeBlock.of(C.TEMPLATE_INVOKE_ONE, name, args[0])</b>
+<b class="pc">&nbsp;        if (args.size == 1 &amp;&amp; name.length + args[0].length &lt;= CG.COMPACT_CALL_MAX_INLINE_LENGTH) {</b>
+<b class="nc">&nbsp;            return CodeBlock.of(CG.TEMPLATE_INVOKE_ONE, name, args[0])</b>
 &nbsp;        }
 <b class="fc">&nbsp;        return CodeBlock.builder()</b>
-<b class="fc">&nbsp;            .add(C.TEMPLATE_INVOKE_OPEN, name)</b>
+<b class="fc">&nbsp;            .add(CG.TEMPLATE_INVOKE_OPEN, name)</b>
 <b class="fc">&nbsp;            .indent()</b>
 <b class="fc">&nbsp;            .apply {</b>
 <b class="fc">&nbsp;                args.forEach { arg -&gt;</b>
-<b class="fc">&nbsp;                    add(C.TEMPLATE_ARG_LINE, arg)</b>
+<b class="fc">&nbsp;                    add(CG.TEMPLATE_ARG_LINE, arg)</b>
 <b class="fc">&nbsp;                }</b>
 <b class="fc">&nbsp;            }</b>
 <b class="fc">&nbsp;            .unindent()</b>
-<b class="fc">&nbsp;            .add(C.STR_CLOSE_PAREN_FLOW)</b>
+<b class="fc">&nbsp;            .add(CG.STR_CLOSE_PAREN_FLOW)</b>
 <b class="fc">&nbsp;            .build()</b>
 &nbsp;    }
 &nbsp;
@@ -145,22 +145,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        names: List&lt;String&gt;,
 &nbsp;    ): CodeBlock {
 <b class="fc">&nbsp;        return CodeBlock.builder()</b>
-<b class="fc">&nbsp;            .add(C.TEMPLATE_TYPED_OF_OPEN, optionsClass)</b>
+<b class="fc">&nbsp;            .add(CG.TEMPLATE_TYPED_OF_OPEN, optionsClass)</b>
 <b class="fc">&nbsp;            .indent()</b>
-<b class="fc">&nbsp;            .add(C.TEMPLATE_ARG_LINE, shift)</b>
-<b class="fc">&nbsp;            .add(C.TEMPLATE_ARG_LINE, multiplier)</b>
-<b class="fc">&nbsp;            .add(C.TEMPLATE_ARG_LINE, tableSize)</b>
-<b class="fc">&nbsp;            .add(C.TEMPLATE_ARG_LINE, textChannel)</b>
+<b class="fc">&nbsp;            .add(CG.TEMPLATE_ARG_LINE, shift)</b>
+<b class="fc">&nbsp;            .add(CG.TEMPLATE_ARG_LINE, multiplier)</b>
+<b class="fc">&nbsp;            .add(CG.TEMPLATE_ARG_LINE, tableSize)</b>
+<b class="fc">&nbsp;            .add(CG.TEMPLATE_ARG_LINE, textChannel)</b>
 <b class="fc">&nbsp;            .apply {</b>
 <b class="pc">&nbsp;                if (extendedKeyHash) {</b>
-<b class="nc">&nbsp;                    add(C.TEMPLATE_ARG_LINE, true)</b>
+<b class="nc">&nbsp;                    add(CG.TEMPLATE_ARG_LINE, true)</b>
 &nbsp;                }
 <b class="fc">&nbsp;                names.forEach { name -&gt;</b>
-<b class="fc">&nbsp;                    add(C.TEMPLATE_STRING_ARG_LINE, name)</b>
+<b class="fc">&nbsp;                    add(CG.TEMPLATE_STRING_ARG_LINE, name)</b>
 <b class="fc">&nbsp;                }</b>
 <b class="fc">&nbsp;            }</b>
 <b class="fc">&nbsp;            .unindent()</b>
-<b class="fc">&nbsp;            .add(C.STR_CLOSE_PAREN_FLOW)</b>
+<b class="fc">&nbsp;            .add(CG.STR_CLOSE_PAREN_FLOW)</b>
 <b class="fc">&nbsp;            .build()</b>
 &nbsp;    }
 &nbsp;}
@@ -187,7 +187,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>

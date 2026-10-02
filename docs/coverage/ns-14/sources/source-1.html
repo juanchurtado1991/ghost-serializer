@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostCharSwarKt</title>
+  <title>GhostSerialization Coverage Report > GhostJsonNumericLimits</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.ghost.serialization.parser.strings</a>
+    <a href="../index.html">com.ghost.serialization.parser.common.constants</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostCharSwarKt (com.ghost.serialization.parser.strings)</h1>
+<h1>Coverage Summary for Class: GhostJsonNumericLimits (com.ghost.serialization.parser.common.constants)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,21 +49,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostCharSwarKt</td>
+  <td class="name">GhostJsonNumericLimits</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
     (1/1)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +79,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (61/61)
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (94/94)
   </span>
 </td>
 </tr>
@@ -99,34 +99,70 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.strings
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common.constants
 &nbsp;
-&nbsp;import com.ghost.serialization.parser.common.GhostJsonConstants as C
+&nbsp;import kotlin.math.pow
 &nbsp;
-&nbsp;private const val CHAR_OFFSET_1 = 1
-&nbsp;private const val CHAR_OFFSET_2 = 2
-&nbsp;private const val CHAR_OFFSET_3 = 3
+&nbsp;/** Numeric overflow bounds and formatting precision/tables. */
+&nbsp;object GhostJsonNumericLimits {
+&nbsp;    const val MIN_INT_STR = &quot;-2147483648&quot;
+&nbsp;    const val MIN_LONG_STR = &quot;-9223372036854775808&quot;
 &nbsp;
-&nbsp;/**
-&nbsp; * Packs [C.LONG_CHARS] UTF-16 code units starting at [index] into one [Long] ([C.SHIFT_16] bits
-&nbsp; * per char, `chars[index]` in the low bits). Pure Kotlin bit-packing — no memory
-&nbsp; * reinterpretation, so (unlike the byte-channel `ghostReadLong8`) this needs no `expect`/`actual`:
-&nbsp; * the layout is chosen here, not platform-defined. Caller must guarantee
-&nbsp; * `index + C.LONG_CHARS &lt;= chars.size`.
-&nbsp; */
-&nbsp;internal inline fun packChars4(chars: CharArray, index: Int): Long =
-<b class="fc">&nbsp;    chars[index].code.toLong() or</b>
-<b class="fc">&nbsp;        (chars[index + CHAR_OFFSET_1].code.toLong() shl C.SHIFT_16) or</b>
-<b class="fc">&nbsp;        (chars[index + CHAR_OFFSET_2].code.toLong() shl C.SHIFT_32) or</b>
-<b class="fc">&nbsp;        (chars[index + CHAR_OFFSET_3].code.toLong() shl C.SHIFT_48)</b>
+&nbsp;    const val MAX_SAFE_INTEGER_DOUBLE = 1e15
+&nbsp;    const val MIN_SAFE_INTEGER_DOUBLE = -1e15
+&nbsp;    const val WHOLE_NUMBER_CHECK = 1.0
+&nbsp;    const val ZERO_DOUBLE = 0.0
+&nbsp;    const val HUNDRED_LONG = 100L
+&nbsp;    const val TEN_LONG = 10L
 &nbsp;
-&nbsp;/**
-&nbsp; * `ghostCharSwarLengthMasks[n]` keeps the low `n` packed chars ([C.SHIFT_16] bits each) of a
-&nbsp; * [packChars4] result, zeroing the rest — masking `packChars4(chars, i) and
-&nbsp; * ghostCharSwarLengthMasks[n]` compares only the first `n` chars at `i`.
-&nbsp; */
-<b class="fc">&nbsp;internal val ghostCharSwarLengthMasks: LongArray = LongArray(C.LONG_CHARS + 1) { n -&gt;</b>
-<b class="fc">&nbsp;    if (n &gt;= C.LONG_CHARS) -1L else (1L shl (C.SHIFT_16 * n)) - 1L</b>
+&nbsp;    /** Max digits of precision for numeric formatting. */
+&nbsp;    const val DOUBLE_PRECISION_LIMIT = 17
+&nbsp;    const val FLOAT_PRECISION_LIMIT = 9
+&nbsp;
+&nbsp;    const val DEFAULT_PRIMITIVE_COLLECTION_CAPACITY = 16
+&nbsp;
+&nbsp;    /** Expected UTF-16 code-unit count when decoding a JSON [Char] field. */
+&nbsp;    const val SINGLE_CHAR_SIZE = 1
+&nbsp;    const val SINGLE_CHAR_JSON_LENGTH = SINGLE_CHAR_SIZE
+&nbsp;    const val UNICODE_ESCAPE_PREFIX_SIZE = 2
+&nbsp;    const val INT_SAFE_DIGITS = 9
+&nbsp;    const val LONG_SAFE_DIGITS = 18
+&nbsp;
+&nbsp;    const val NUMERIC_HEADER_QUOTED = 1
+&nbsp;    const val NUMERIC_HEADER_NEGATIVE = 2
+&nbsp;
+&nbsp;    const val MAX_DEPTH = 255
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Largest exponent for which `10^n` is exactly representable as a [Double] — beyond this,
+&nbsp;     * [POWERS_OF_TEN] entries are themselves rounded, so scaling by them is no longer
+&nbsp;     * correctly-rounded. See `finalizeParsedDouble`.
+&nbsp;     */
+&nbsp;    const val MAX_EXACT_DOUBLE_POWER_OF_TEN = 22
+&nbsp;
+&nbsp;    /** Largest [Long] mantissa exactly representable as a [Double] (2^53). */
+&nbsp;    const val MAX_EXACT_DOUBLE_MANTISSA = 1L shl 53
+&nbsp;
+&nbsp;    const val EXPONENT_CLAMP_THRESHOLD = 1000
+&nbsp;
+&nbsp;    // --- Overflow Checks ---
+&nbsp;    const val LONG_OVERFLOW_LIMIT = 922337203685477580L
+&nbsp;    const val LONG_MIN_LAST_DIGIT = 8
+&nbsp;    const val LONG_MAX_LAST_DIGIT = 7
+&nbsp;    const val INT_OVERFLOW_LIMIT = 214748364
+&nbsp;    const val INT_MIN_LAST_DIGIT = 8
+&nbsp;    const val INT_MAX_LAST_DIGIT = 7
+&nbsp;
+&nbsp;    /** Pre-calculated powers of ten to avoid expensive Math.pow calls. */
+<b class="fc">&nbsp;    val POWERS_OF_TEN = DoubleArray(size = 309).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 10.0.pow(x = i.toDouble())</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val POWERS_OF_TEN_FLOAT = FloatArray(size = 39).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 10.0f.pow(x = i.toDouble().toFloat())</b>
+<b class="fc">&nbsp;    }</b>
+<b class="fc">&nbsp;    val INVERSE_POWERS_OF_TEN_FLOAT = FloatArray(size = 39).apply {</b>
+<b class="fc">&nbsp;        for (i in indices) this[i] = 1.0f / 10.0f.pow(x = i.toDouble().toFloat())</b>
+<b class="fc">&nbsp;    }</b>
 &nbsp;}
 </code>
 </pre>
@@ -151,7 +187,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-09-02 17:08</div>
+    <div style="float:right;">generated on 2026-10-02 04:58</div>
 </div>
 </body>
 </html>
