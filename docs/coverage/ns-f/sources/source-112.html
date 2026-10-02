@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > TwitterResponseJsonAdapter</title>
+  <title>GhostSerialization Coverage Report > TweetMetadataJsonAdapter</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: TwitterResponseJsonAdapter (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: TweetMetadataJsonAdapter (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">TwitterResponseJsonAdapter</td>
+  <td class="name">TweetMetadataJsonAdapter</td>
 <td class="coverageStat">
   <span class="percent">
     0%
@@ -71,7 +71,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/10)
+    (0/15)
   </span>
 </td>
 <td class="coverageStat">
@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/20)
+    (0/25)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/133)
+    (0/171)
   </span>
 </td>
 </tr>
@@ -108,31 +108,32 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.squareup.moshi.JsonReader
 &nbsp;import com.squareup.moshi.JsonWriter
 &nbsp;import com.squareup.moshi.Moshi
-&nbsp;import com.squareup.moshi.Types
 &nbsp;import com.squareup.moshi.`internal`.Util
 &nbsp;import java.lang.NullPointerException
 &nbsp;import kotlin.String
 &nbsp;import kotlin.Suppress
-&nbsp;import kotlin.collections.List
 &nbsp;import kotlin.collections.emptySet
 &nbsp;import kotlin.text.buildString
 &nbsp;
-<b class="nc">&nbsp;public class TwitterResponseJsonAdapter(</b>
+<b class="nc">&nbsp;public class TweetMetadataJsonAdapter(</b>
 &nbsp;  moshi: Moshi,
-&nbsp;) : JsonAdapter&lt;TwitterResponse&gt;() {
-<b class="nc">&nbsp;  private val options: JsonReader.Options = JsonReader.Options.of(&quot;statuses&quot;)</b>
+&nbsp;) : JsonAdapter&lt;TweetMetadata&gt;() {
+&nbsp;  private val options: JsonReader.Options =
+<b class="nc">&nbsp;      JsonReader.Options.of(&quot;result_type&quot;, &quot;iso_language_code&quot;)</b>
 &nbsp;
-&nbsp;  private val listOfTweetAdapter: JsonAdapter&lt;List&lt;Tweet&gt;&gt; =
-<b class="nc">&nbsp;      moshi.adapter(Types.newParameterizedType(List::class.java, Tweet::class.java), emptySet(), &quot;statuses&quot;)</b>
+&nbsp;  private val stringAdapter: JsonAdapter&lt;String&gt; =
+<b class="nc">&nbsp;      moshi.adapter(String::class.java, emptySet(), &quot;resultType&quot;)</b>
 &nbsp;
-<b class="nc">&nbsp;  override fun toString(): String = buildString(37) { append(&quot;GeneratedJsonAdapter(&quot;).append(&quot;TwitterResponse&quot;).append(&#39;)&#39;) }</b>
+<b class="nc">&nbsp;  override fun toString(): String = buildString(35) { append(&quot;GeneratedJsonAdapter(&quot;).append(&quot;TweetMetadata&quot;).append(&#39;)&#39;) }</b>
 &nbsp;
-&nbsp;  override fun fromJson(reader: JsonReader): TwitterResponse {
-<b class="nc">&nbsp;    var statuses: List&lt;Tweet&gt;? = null</b>
+&nbsp;  override fun fromJson(reader: JsonReader): TweetMetadata {
+<b class="nc">&nbsp;    var resultType: String? = null</b>
+<b class="nc">&nbsp;    var isoLanguageCode: String? = null</b>
 <b class="nc">&nbsp;    reader.beginObject()</b>
 <b class="nc">&nbsp;    while (reader.hasNext()) {</b>
 <b class="nc">&nbsp;      when (reader.selectName(options)) {</b>
-<b class="nc">&nbsp;        0 -&gt; statuses = listOfTweetAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;statuses&quot;, &quot;statuses&quot;, reader)</b>
+<b class="nc">&nbsp;        0 -&gt; resultType = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;resultType&quot;, &quot;result_type&quot;, reader)</b>
+<b class="nc">&nbsp;        1 -&gt; isoLanguageCode = stringAdapter.fromJson(reader) ?: throw Util.unexpectedNull(&quot;isoLanguageCode&quot;, &quot;iso_language_code&quot;, reader)</b>
 &nbsp;        -1 -&gt; {
 &nbsp;          // Unknown name, skip it.
 <b class="nc">&nbsp;          reader.skipName()</b>
@@ -141,18 +142,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;      }
 &nbsp;    }
 <b class="nc">&nbsp;    reader.endObject()</b>
-<b class="nc">&nbsp;    return TwitterResponse(</b>
-<b class="nc">&nbsp;        statuses = statuses ?: throw Util.missingProperty(&quot;statuses&quot;, &quot;statuses&quot;, reader)</b>
+<b class="nc">&nbsp;    return TweetMetadata(</b>
+<b class="nc">&nbsp;        resultType = resultType ?: throw Util.missingProperty(&quot;resultType&quot;, &quot;result_type&quot;, reader),</b>
+<b class="nc">&nbsp;        isoLanguageCode = isoLanguageCode ?: throw Util.missingProperty(&quot;isoLanguageCode&quot;, &quot;iso_language_code&quot;, reader)</b>
 &nbsp;    )
 &nbsp;  }
 &nbsp;
-&nbsp;  override fun toJson(writer: JsonWriter, value_: TwitterResponse?) {
+&nbsp;  override fun toJson(writer: JsonWriter, value_: TweetMetadata?) {
 <b class="nc">&nbsp;    if (value_ == null) {</b>
 <b class="nc">&nbsp;      throw NullPointerException(&quot;value_ was null! Wrap in .nullSafe() to write nullable values.&quot;)</b>
 &nbsp;    }
 <b class="nc">&nbsp;    writer.beginObject()</b>
-<b class="nc">&nbsp;    writer.name(&quot;statuses&quot;)</b>
-<b class="nc">&nbsp;    listOfTweetAdapter.toJson(writer, value_.statuses)</b>
+<b class="nc">&nbsp;    writer.name(&quot;result_type&quot;)</b>
+<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.resultType)</b>
+<b class="nc">&nbsp;    writer.name(&quot;iso_language_code&quot;)</b>
+<b class="nc">&nbsp;    stringAdapter.toJson(writer, value_.isoLanguageCode)</b>
 <b class="nc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;}
@@ -179,7 +183,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

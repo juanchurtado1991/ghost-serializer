@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostHeuristics_jvmKt</title>
+  <title>GhostSerialization Coverage Report > GhostHeuristicDefaults</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostHeuristics_jvmKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostHeuristicDefaults (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostHeuristics_jvmKt</td>
+  <td class="name">GhostHeuristicDefaults</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -44,55 +44,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING&quot;)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;package com.ghost.serialization.parser.common
+&nbsp;/**
+&nbsp; * Baseline values behind [GhostHeuristics]&#39;s per-platform `actual`s. Platforms that need no special
+&nbsp; * tuning (Native, Wasm) use these directly; JVM and Android name only the values they deviate on.
+&nbsp; */
+&nbsp;internal object GhostHeuristicDefaults {
+&nbsp;    const val BYTES_PER_KIB = 1024
+&nbsp;    const val BYTES_PER_MIB = 1024 * BYTES_PER_KIB
 &nbsp;
-&nbsp;private const val PROP_INITIAL_COLLECTION_CAPACITY = &quot;ghost.initialCollectionCapacity&quot;
-&nbsp;private const val PROP_MAX_STRING_POOL_LENGTH = &quot;ghost.maxStringPoolLength&quot;
-&nbsp;private const val PROP_MAX_COLLECTION_SIZE = &quot;ghost.maxCollectionSize&quot;
-&nbsp;private const val PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE = &quot;ghost.maxDiscriminatorPeekDistance&quot;
-&nbsp;private const val PROP_MAX_WARM_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmWriteBufferCapacity&quot;
-&nbsp;private const val PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = &quot;ghost.maxWarmCharWriteBufferCapacity&quot;
-&nbsp;
-&nbsp;/** JVM has headroom the other platforms don&#39;t, so it defaults higher than [GhostHeuristicDefaults]. */
-&nbsp;private const val JVM_MAX_COLLECTION_SIZE = 1_000_000
-&nbsp;private const val JVM_MAX_DISCRIMINATOR_PEEK_DISTANCE = 2 * GhostHeuristicDefaults.BYTES_PER_KIB
-&nbsp;private const val JVM_MAX_WARM_WRITE_BUFFER_CAPACITY = 8 * GhostHeuristicDefaults.BYTES_PER_MIB
-&nbsp;private const val JVM_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = 2 * GhostHeuristicDefaults.BYTES_PER_MIB
-&nbsp;
-&nbsp;actual object GhostHeuristics {
-&nbsp;    actual val initialCollectionCapacity: Int = System
-&nbsp;        .getProperty(PROP_INITIAL_COLLECTION_CAPACITY)
-&nbsp;        ?.toIntOrNull()
-&nbsp;        ?: GhostHeuristicDefaults.INITIAL_COLLECTION_CAPACITY
-&nbsp;
-&nbsp;    actual val maxStringPoolLength: Int = System
-&nbsp;        .getProperty(PROP_MAX_STRING_POOL_LENGTH)
-&nbsp;        ?.toIntOrNull()
-&nbsp;        ?: GhostHeuristicDefaults.MAX_STRING_POOL_LENGTH
-&nbsp;
-&nbsp;    actual val maxCollectionSize: Int = System
-&nbsp;        .getProperty(PROP_MAX_COLLECTION_SIZE)
-&nbsp;        ?.toIntOrNull()
-&nbsp;        ?: JVM_MAX_COLLECTION_SIZE
-&nbsp;
-&nbsp;    actual val maxDiscriminatorPeekDistance: Int = System
-&nbsp;        .getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)
-&nbsp;        ?.toIntOrNull()
-&nbsp;        ?: JVM_MAX_DISCRIMINATOR_PEEK_DISTANCE
-&nbsp;
-&nbsp;    actual val maxWarmWriteBufferCapacity: Int = System
-&nbsp;        .getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)
-&nbsp;        ?.toIntOrNull()
-&nbsp;        ?: JVM_MAX_WARM_WRITE_BUFFER_CAPACITY
-&nbsp;
-&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int = System
-&nbsp;        .getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)
-&nbsp;        ?.toIntOrNull()
-&nbsp;        ?: JVM_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY
-&nbsp;
-&nbsp;    actual val encodeToStringViaUtf8Bytes: Boolean = false
+&nbsp;    const val INITIAL_COLLECTION_CAPACITY = 10
+&nbsp;    const val MAX_STRING_POOL_LENGTH = 64
+&nbsp;    const val MAX_COLLECTION_SIZE = 500_000
+&nbsp;    const val MAX_DISCRIMINATOR_PEEK_DISTANCE = 1024
+&nbsp;    const val MAX_WARM_WRITE_BUFFER_CAPACITY = BYTES_PER_MIB
+&nbsp;    const val MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = 512 * BYTES_PER_KIB
 &nbsp;}
 </code>
 </pre>
@@ -117,7 +84,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

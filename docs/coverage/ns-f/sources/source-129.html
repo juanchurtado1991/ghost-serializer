@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UserMention</title>
+  <title>GhostSerialization Coverage Report > UserEntitiesSerializer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UserMention (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: UserEntitiesSerializer (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,51 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UserMention</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    50%
-  </span>
-  <span class="absValue">
-    (1/2)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (8/8)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    95.8%
-  </span>
-  <span class="absValue">
-    (113/118)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">UserMention$Companion</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-    <td class="coverageStat"/>
+  <td class="name">UserEntitiesSerializer</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -101,48 +60,38 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    76.9%
   </span>
   <span class="absValue">
-    (4/4)
-  </span>
-</td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (4/4)
+    (10/13)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    50%
+    64.7%
   </span>
   <span class="absValue">
-    (1/2)
+    (22/34)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    100%
+    77.1%
   </span>
   <span class="absValue">
-    (9/9)
+    (84/109)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    95.9%
+    79.3%
   </span>
   <span class="absValue">
-    (117/122)
+    (311/392)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -150,27 +99,253 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
-&nbsp;import com.ghost.serialization.annotations.GhostName
-&nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.squareup.moshi.Json
-&nbsp;import com.squareup.moshi.JsonClass
-&nbsp;import kotlinx.serialization.SerialName
-&nbsp;import kotlinx.serialization.Serializable
+&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
-<b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class UserMention(
-<b class="fc">&nbsp;    @Json(name = &quot;screen_name&quot;)</b>
-<b class="fc">&nbsp;    @SerialName(&quot;screen_name&quot;) @GhostName(&quot;screen_name&quot;) val screenName: String,</b>
-<b class="fc">&nbsp;    val name: String,</b>
-<b class="fc">&nbsp;    val id: Long,</b>
-<b class="fc">&nbsp;    @Json(name = &quot;id_str&quot;)</b>
-<b class="fc">&nbsp;    @SerialName(&quot;id_str&quot;) @GhostName(&quot;id_str&quot;) val idStr: String,</b>
-<b class="fc">&nbsp;    val indices: List&lt;Int&gt;</b>
-&nbsp;)
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.contract.AbstractGhostSerializer
+&nbsp;import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
+&nbsp;import com.ghost.serialization.parser.common.json.JsonReaderOptions
+&nbsp;import com.ghost.serialization.parser.streaming.GhostJsonReader
+&nbsp;import com.ghost.serialization.parser.streaming.beginObject
+&nbsp;import com.ghost.serialization.parser.streaming.consumeNull
+&nbsp;import com.ghost.serialization.parser.streaming.endObject
+&nbsp;import com.ghost.serialization.parser.streaming.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.streaming.selectNameAndConsume
+&nbsp;import com.ghost.serialization.parser.streaming.skipValue
+&nbsp;import com.ghost.serialization.parser.strings.GhostJsonStringReader
+&nbsp;import com.ghost.serialization.parser.strings.beginObject
+&nbsp;import com.ghost.serialization.parser.strings.consumeNull
+&nbsp;import com.ghost.serialization.parser.strings.endObject
+&nbsp;import com.ghost.serialization.parser.strings.isNextNullValue
+&nbsp;import com.ghost.serialization.parser.strings.selectNameAndConsume
+&nbsp;import com.ghost.serialization.parser.strings.skipValue
+&nbsp;import com.ghost.serialization.writer.bytes.GhostJsonWriter
+&nbsp;import com.ghost.serialization.writer.strings.GhostJsonStringWriter
+&nbsp;import okio.ByteString
+&nbsp;import okio.ByteString.Companion.encodeUtf8
+&nbsp;
+&nbsp;/**
+&nbsp; * High-performance serializer for [UserEntities].
+&nbsp; * Generated by GhostSerialization. Do not modify manually.
+&nbsp; */
+&nbsp;object UserEntitiesSerializer : AbstractGhostSerializer&lt;UserEntities&gt;() {
+<b class="nc">&nbsp;  override val isProto: Boolean = false</b>
+&nbsp;
+<b class="fc">&nbsp;  override val typeName: String = &quot;UserEntities&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val OPTIONS: JsonReaderOptions = JsonReaderOptions.of(</b>
+<b class="fc">&nbsp;        0,</b>
+<b class="fc">&nbsp;        31,</b>
+<b class="fc">&nbsp;        128,</b>
+<b class="fc">&nbsp;        true,</b>
+<b class="fc">&nbsp;        &quot;url&quot;,</b>
+<b class="fc">&nbsp;        &quot;description&quot;,</b>
+&nbsp;      )
+&nbsp;
+<b class="fc">&nbsp;  private val H_DESCRIPTION: ByteString = &quot;\&quot;description\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_DESCRIPTION: String = &quot;\&quot;description\&quot;:&quot;</b>
+&nbsp;
+<b class="fc">&nbsp;  private val H_URL: ByteString = &quot;\&quot;url\&quot;:&quot;.encodeUtf8()</b>
+&nbsp;
+<b class="fc">&nbsp;  private val HS_URL: String = &quot;\&quot;url\&quot;:&quot;</b>
+&nbsp;
+&nbsp;  private const val MASK_URL: Long = 1L
+&nbsp;
+&nbsp;  private const val MASK_DESCRIPTION: Long = 2L
+&nbsp;
+&nbsp;  private const val MASK_OPTS_URL: Long = 1L
+&nbsp;
+<b class="nc">&nbsp;  override val isResilient: Boolean = false</b>
+&nbsp;
+&nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonReader) {
+<b class="fc">&nbsp;    if ((mask0 and MASK_DESCRIPTION) == 0L) {</b>
+<b class="fc">&nbsp;      reader.throwMissingRequiredField(&quot;description&quot;)</b>
+&nbsp;    }
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [UserEntities].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonReader): UserEntities {
+<b class="fc">&nbsp;    var urlValue: UrlContainer? = null</b>
+<b class="fc">&nbsp;    var descriptionValue: UrlContainer? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="nc">&nbsp;          urlValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="nc">&nbsp;                UrlContainerSerializer.deserialize(reader)</b>
+&nbsp;              }
+<b class="nc">&nbsp;          mask0 = mask0 or MASK_URL</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          descriptionValue = UrlContainerSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_DESCRIPTION</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="pc">&nbsp;    if ((mask0 and MASK_OPTS_URL) == MASK_OPTS_URL) {</b>
+<b class="nc">&nbsp;      return UserEntities(</b>
+<b class="nc">&nbsp;        description = descriptionValue!!,</b>
+<b class="nc">&nbsp;        url = urlValue,</b>
+&nbsp;      )
+&nbsp;    }
+<b class="fc">&nbsp;    return UserEntities(</b>
+<b class="fc">&nbsp;      description = descriptionValue!!,</b>
+&nbsp;    )
+&nbsp;  }
+&nbsp;
+&nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonFlatReader) {
+<b class="pc">&nbsp;    if ((mask0 and MASK_DESCRIPTION) == 0L) {</b>
+<b class="nc">&nbsp;      reader.throwMissingRequiredField(&quot;description&quot;)</b>
+&nbsp;    }
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [UserEntities].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonFlatReader): UserEntities {
+<b class="fc">&nbsp;    var urlValue: UrlContainer? = null</b>
+<b class="fc">&nbsp;    var descriptionValue: UrlContainer? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="pc">&nbsp;          urlValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="fc">&nbsp;                UrlContainerSerializer.deserialize(reader)</b>
+&nbsp;              }
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_URL</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          descriptionValue = UrlContainerSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_DESCRIPTION</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    if ((mask0 and MASK_OPTS_URL) == MASK_OPTS_URL) {</b>
+<b class="fc">&nbsp;      return UserEntities(</b>
+<b class="fc">&nbsp;        description = descriptionValue!!,</b>
+<b class="fc">&nbsp;        url = urlValue,</b>
+&nbsp;      )
+&nbsp;    }
+<b class="fc">&nbsp;    return UserEntities(</b>
+<b class="fc">&nbsp;      description = descriptionValue!!,</b>
+&nbsp;    )
+&nbsp;  }
+&nbsp;
+&nbsp;  private fun validateRequiredFields(mask0: Long, reader: GhostJsonStringReader) {
+<b class="fc">&nbsp;    if ((mask0 and MASK_DESCRIPTION) == 0L) {</b>
+<b class="fc">&nbsp;      reader.throwMissingRequiredField(&quot;description&quot;)</b>
+&nbsp;    }
+&nbsp;  }
+&nbsp;
+&nbsp;  /**
+&nbsp;   * Robust deserialization for [UserEntities].
+&nbsp;   */
+&nbsp;  override fun deserialize(reader: GhostJsonStringReader): UserEntities {
+<b class="fc">&nbsp;    var urlValue: UrlContainer? = null</b>
+<b class="fc">&nbsp;    var descriptionValue: UrlContainer? = null</b>
+<b class="fc">&nbsp;    var mask0 = 0L</b>
+<b class="fc">&nbsp;    reader.beginObject()</b>
+<b class="fc">&nbsp;    while (true) {</b>
+<b class="fc">&nbsp;      val index = reader.selectNameAndConsume(OPTIONS)</b>
+<b class="pc">&nbsp;      when (index) {</b>
+&nbsp;        0 -&gt; {
+<b class="pc">&nbsp;          urlValue = if (reader.isNextNullValue()) {</b>
+<b class="nc">&nbsp;                reader.consumeNull()</b>
+<b class="nc">&nbsp;                null</b>
+&nbsp;              } else {
+<b class="fc">&nbsp;                UrlContainerSerializer.deserialize(reader)</b>
+&nbsp;              }
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_URL</b>
+&nbsp;        }
+&nbsp;        1 -&gt; {
+<b class="fc">&nbsp;          descriptionValue = UrlContainerSerializer.deserialize(reader)</b>
+<b class="fc">&nbsp;          mask0 = mask0 or MASK_DESCRIPTION</b>
+&nbsp;        }
+&nbsp;        -1 -&gt; break
+&nbsp;        -2 -&gt; {
+<b class="nc">&nbsp;          reader.skipValue()</b>
+&nbsp;        }
+&nbsp;      }
+&nbsp;    }
+<b class="fc">&nbsp;    validateRequiredFields(mask0, reader)</b>
+<b class="fc">&nbsp;    reader.endObject()</b>
+<b class="fc">&nbsp;    if ((mask0 and MASK_OPTS_URL) == MASK_OPTS_URL) {</b>
+<b class="fc">&nbsp;      return UserEntities(</b>
+<b class="fc">&nbsp;        description = descriptionValue!!,</b>
+<b class="fc">&nbsp;        url = urlValue,</b>
+&nbsp;      )
+&nbsp;    }
+<b class="fc">&nbsp;    return UserEntities(</b>
+<b class="fc">&nbsp;      description = descriptionValue!!,</b>
+&nbsp;    )
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonWriter, `value`: UserEntities) {
+<b class="fc">&nbsp;    writer.beginObject()</b>
+<b class="fc">&nbsp;    if (value.url != null) {</b>
+<b class="fc">&nbsp;      writer.writeNameRaw(H_URL)</b>
+<b class="fc">&nbsp;      UrlContainerSerializer.serialize(writer, value.url)</b>
+&nbsp;    }
+<b class="fc">&nbsp;    writer.writeNameRaw(H_DESCRIPTION)</b>
+<b class="fc">&nbsp;    UrlContainerSerializer.serialize(writer, value.description)</b>
+<b class="fc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun serialize(writer: GhostJsonStringWriter, `value`: UserEntities) {
+<b class="nc">&nbsp;    writer.beginObject()</b>
+<b class="nc">&nbsp;    if (value.url != null) {</b>
+<b class="nc">&nbsp;      writer.writeNameRaw(HS_URL)</b>
+<b class="nc">&nbsp;      UrlContainerSerializer.serialize(writer, value.url)</b>
+&nbsp;    }
+<b class="nc">&nbsp;    writer.writeNameRaw(HS_DESCRIPTION)</b>
+<b class="nc">&nbsp;    UrlContainerSerializer.serialize(writer, value.description)</b>
+<b class="nc">&nbsp;    writer.endObject()</b>
+&nbsp;  }
+&nbsp;
+&nbsp;  override fun warmUp() {
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader1 = GhostJsonReader(</b>
+<b class="fc">&nbsp;            &quot;{\&quot;description\&quot;:{}}&quot;.encodeToByteArray()</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader1)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;    try {
+<b class="fc">&nbsp;      val reader3 = GhostJsonStringReader(</b>
+<b class="fc">&nbsp;            &quot;{\&quot;description\&quot;:{}}&quot;</b>
+&nbsp;          )
+<b class="fc">&nbsp;      deserialize(reader3)</b>
+&nbsp;    } catch (_: Exception) {
+&nbsp;    }
+&nbsp;  }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -194,7 +369,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

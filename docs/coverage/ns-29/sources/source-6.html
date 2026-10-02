@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostWrappedKeys</title>
+  <title>GhostSerialization Coverage Report > GhostStrict</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostWrappedKeys (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostStrict (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostWrappedKeys</td>
+  <td class="name">GhostStrict</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,28 +47,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Collapses sibling JSON keys at the current object level into a single Kotlin property.
-&nbsp; * Inverse of [GhostWrap]: wire payloads expose flat keys (`type`, `dth`, …) while the model
-&nbsp; * groups them under one property.
-&nbsp; *
-&nbsp; * Deserialize captures each [keys] entry as a zero-copy `RawJson` slice and assembles a synthetic
-&nbsp; * wrapper object before parsing the property type; serialize unwraps it back to sibling keys at
-&nbsp; * the same JSON depth.
-&nbsp; *
-&nbsp; * @param keys JSON field names at the current object level that belong to the wrapper property.
-&nbsp; * @param omitIfEmpty When `true`, if every captured key is absent or JSON `null`, the wrapper
-&nbsp; *   property is set to `null` instead of an object with all-null fields. The property must be
-&nbsp; *   nullable.
-&nbsp; * @param omitIfAbsent When any listed key is absent or JSON `null`, the wrapper property is set
-&nbsp; *   to `null` instead of being deserialized. Use for optional integration blocks.
+&nbsp; * Enforces strict JSON syntax checking (missing/duplicate/trailing commas, unmapped fields)
+&nbsp; * during deserialization, on the annotated endpoint, parameter, or controller.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
-&nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostWrappedKeys(
-&nbsp;    val keys: Array&lt;String&gt;,
-&nbsp;    val omitIfEmpty: Boolean = false,
-&nbsp;    val omitIfAbsent: Array&lt;String&gt; = [],
+&nbsp;@Target(
+&nbsp;    AnnotationTarget.FUNCTION,
+&nbsp;    AnnotationTarget.VALUE_PARAMETER,
+&nbsp;    AnnotationTarget.CLASS
 &nbsp;)
+&nbsp;@Retention(AnnotationRetention.RUNTIME)
+&nbsp;annotation class GhostStrict
 </code>
 </pre>
 </div>
@@ -92,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

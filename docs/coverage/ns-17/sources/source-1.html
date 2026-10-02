@@ -68,26 +68,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    79.7%
+    80.5%
   </span>
   <span class="absValue">
-    (94/118)
+    (95/118)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.2%
+    93.6%
   </span>
   <span class="absValue">
-    (232/249)
+    (233/249)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    90.9%
+    91.4%
   </span>
   <span class="absValue">
-    (1192/1312)
+    (1199/1312)
   </span>
 </td>
 </tr>
@@ -387,8 +387,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;    @InternalGhostApi
 &nbsp;    fun skipAndValidateLiteral(expected: ByteString) {
 <b class="fc">&nbsp;        val size = expected.size</b>
-<b class="pc">&nbsp;        val isValid = if (isStreaming) {</b>
-<b class="nc">&nbsp;            source.contentEquals(start = position, expected = expected)</b>
+<b class="fc">&nbsp;        val isValid = if (isStreaming) {</b>
+<b class="fc">&nbsp;            source.contentEquals(start = position, expected = expected)</b>
 &nbsp;        } else {
 <b class="fc">&nbsp;            position + size &lt;= limit &amp;&amp; expected.rangeEquals(0, rawData, position, size)</b>
 &nbsp;        }
@@ -606,7 +606,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

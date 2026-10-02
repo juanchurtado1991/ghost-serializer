@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostAnalyzer</title>
+  <title>GhostSerialization Coverage Report > EnvelopeAnalyzer</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,12 +22,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.compiler.analysis</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostAnalyzer (com.ghost.serialization.compiler.analysis)</h1>
+<h1>Coverage Summary for Class: EnvelopeAnalyzer (com.ghost.serialization.compiler.analysis)</h1>
 
 <table class="coverageStats">
-
 <tr>
   <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -46,79 +49,49 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostAnalyzer</td>
+  <td class="name">EnvelopeAnalyzer</td>
 <td class="coverageStat">
   <span class="percent">
-    94.4%
+    100%
   </span>
   <span class="absValue">
-    (17/18)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.7%
+    88.9%
   </span>
   <span class="absValue">
-    (146/198)
+    (8/9)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    98.4%
+    67.1%
   </span>
   <span class="absValue">
-    (248/252)
+    (110/164)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.2%
+    72.3%
   </span>
   <span class="absValue">
-    (1240/1331)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">GhostAnalyzer$Companion</td>
-    <td class="coverageStat"/>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
-<td class="coverageStat">
-  <span class="percent">
-    94.4%
-  </span>
-  <span class="absValue">
-    (17/18)
+    (102/141)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    73.7%
+    80.6%
   </span>
   <span class="absValue">
-    (146/198)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    98.4%
-  </span>
-  <span class="absValue">
-    (248/252)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    93.2%
-  </span>
-  <span class="absValue">
-    (1240/1331)
+    (749/929)
   </span>
 </td>
 </tr>
+
 </table>
 
 <br/>
@@ -128,468 +101,246 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
 &nbsp;
+&nbsp;import com.ghost.serialization.compiler.model.EnvelopePayloadMapping
+&nbsp;import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 &nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
-&nbsp;import com.ghost.serialization.compiler.model.InferredSubclassModel
-&nbsp;import com.ghost.serialization.compiler.model.WrappedKeysModel
 &nbsp;import com.google.devtools.ksp.processing.KSPLogger
-&nbsp;import com.google.devtools.ksp.symbol.ClassKind
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 &nbsp;import com.google.devtools.ksp.symbol.KSType
-&nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
-&nbsp;import com.google.devtools.ksp.symbol.Modifier
 &nbsp;import com.squareup.kotlinpoet.ksp.toClassName
-&nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
 &nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
 &nbsp;import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 &nbsp;
 &nbsp;
-&nbsp;/**
-&nbsp; * Validates a class declaration against Ghost&#39;s serialization rules (class kind, property
-&nbsp; * visibility, map key type, unique JSON names) and converts its properties into [GhostPropertyModel]s.
-&nbsp; */
-<b class="fc">&nbsp;internal class GhostAnalyzer(private val logger: KSPLogger) {</b>
+&nbsp;/** Resolves `@GhostJsonEnvelope` metadata and validates payload field conventions. */
+<b class="fc">&nbsp;internal class EnvelopeAnalyzer(private val logger: KSPLogger) {</b>
 &nbsp;
-<b class="fc">&nbsp;    private val wrappedKeysAnalyzer = WrappedKeysAnalyzer(logger = logger)</b>
-<b class="fc">&nbsp;    private val customCoderAnalyzer = CustomCoderAnalyzer(logger = logger)</b>
-&nbsp;
-&nbsp;    fun analyze(classDeclaration: KSClassDeclaration): List&lt;GhostPropertyModel&gt; {
-<b class="fc">&nbsp;        val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)</b>
-<b class="fc">&nbsp;        val isData = classDeclaration.modifiers.contains(Modifier.DATA)</b>
-<b class="fc">&nbsp;        val isValue = classDeclaration.modifiers.contains(Modifier.VALUE) ||</b>
-<b class="fc">&nbsp;                classDeclaration.modifiers.contains(Modifier.INLINE)</b>
-<b class="pc">&nbsp;        val isObject = classDeclaration.classKind == ClassKind.OBJECT</b>
-&nbsp;
-<b class="fc">&nbsp;        val isEnum = classDeclaration.classKind == ClassKind.ENUM_CLASS</b>
-&nbsp;
-<b class="pc">&nbsp;        if (isObject) return emptyList()</b>
-&nbsp;
-<b class="fc">&nbsp;        validateClassKind(</b>
-<b class="fc">&nbsp;            classDeclaration = classDeclaration,</b>
-<b class="fc">&nbsp;            isData = isData,</b>
-<b class="fc">&nbsp;            isSealed = isSealed,</b>
-<b class="fc">&nbsp;            isValue = isValue,</b>
-<b class="fc">&nbsp;            isEnum = isEnum</b>
-&nbsp;        )
-&nbsp;
-<b class="pc">&nbsp;        val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()</b>
-&nbsp;
-<b class="fc">&nbsp;        val allProps = classDeclaration.getAllProperties().toList()</b>
-<b class="fc">&nbsp;        val overriddenProps = allProps.mapNotNull { it.findOverridee() }.toSet()</b>
-<b class="fc">&nbsp;        val properties = allProps</b>
-<b class="fc">&nbsp;            .filterNot { it in overriddenProps }</b>
-<b class="fc">&nbsp;            .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }</b>
-<b class="fc">&nbsp;            .toList()</b>
-&nbsp;
-<b class="fc">&nbsp;        validatePropertyVisibility(classDeclaration = classDeclaration, properties = properties)</b>
-&nbsp;
-<b class="fc">&nbsp;        val enumValues = getEnumValues(classDeclaration = classDeclaration, isEnum = isEnum)</b>
-<b class="fc">&nbsp;        val propertyModels =</b>
-<b class="fc">&nbsp;            resolvePropertyModels(</b>
-<b class="fc">&nbsp;                classDeclaration = classDeclaration,</b>
-<b class="fc">&nbsp;                properties = properties,</b>
-<b class="fc">&nbsp;                parameters = parameters,</b>
-<b class="fc">&nbsp;                isEnum = isEnum,</b>
-<b class="fc">&nbsp;                enumValues = enumValues</b>
-&nbsp;            )
-&nbsp;
-<b class="fc">&nbsp;        val finalModels = resolveSealedSubclasses(</b>
-<b class="fc">&nbsp;            classDeclaration = classDeclaration,</b>
-<b class="fc">&nbsp;            propertyModels = propertyModels,</b>
-<b class="fc">&nbsp;            isSealed = isSealed</b>
-&nbsp;        )
-&nbsp;
-<b class="fc">&nbsp;        validateNames(properties = finalModels, clazz = classDeclaration)</b>
-<b class="fc">&nbsp;        wrappedKeysAnalyzer.validateWrappedKeys(properties = finalModels, clazz = classDeclaration)</b>
-<b class="fc">&nbsp;        return finalModels</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun buildPropertyModel(
-&nbsp;        prop: KSPropertyDeclaration,
-&nbsp;        parameters: List&lt;KSValueParameter&gt;
-&nbsp;    ): GhostPropertyModel {
-<b class="fc">&nbsp;        val type = prop.type.resolve()</b>
-<b class="pc">&nbsp;        val qualifiedName = type.declaration.qualifiedName?.asString()</b>
-&nbsp;
-<b class="fc">&nbsp;        val isList = qualifiedName == AC.LIST_QUALIFIED</b>
-<b class="fc">&nbsp;        val isSet = qualifiedName == AC.SET_QUALIFIED</b>
-<b class="fc">&nbsp;        val isMap = qualifiedName == AC.MAP_QUALIFIED</b>
-&nbsp;
-<b class="fc">&nbsp;        val innerType = if (isList || isSet) {</b>
-<b class="fc">&nbsp;            resolveFirstTypeArg(type = type)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            null</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val mapKeyType = if (isMap) {</b>
-<b class="fc">&nbsp;            resolveFirstTypeArg(type = type)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            null</b>
-&nbsp;        }
-<b class="fc">&nbsp;        val mapValueType = if (isMap) {</b>
-<b class="fc">&nbsp;            resolveSecondTypeArg(type = type)</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            null</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        validateMapKey(prop = prop, isMap = isMap, mapKeyType = mapKeyType)</b>
-&nbsp;
-<b class="pc">&nbsp;        val param = parameters.find {</b>
-<b class="pc">&nbsp;            it.name?.asString() == prop.simpleName.asString()</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val isPrimitiveArray = qualifiedName in PRIMITIVE_ARRAYS</b>
-<b class="fc">&nbsp;        val primitiveArrayType =</b>
-<b class="fc">&nbsp;            if (isPrimitiveArray) {</b>
-<b class="pc">&nbsp;                qualifiedName?.removePrefix(AC.STR_KOTLIN_DOT)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                null</b>
-&nbsp;            }
-&nbsp;
-<b class="fc">&nbsp;        val customDecoder = customCoderAnalyzer.resolveCustomCoder(prop = prop, annotationName = AC.GHOST_DECODER)</b>
-<b class="fc">&nbsp;        val customEncoder = customCoderAnalyzer.resolveCustomCoder(prop = prop, annotationName = AC.GHOST_ENCODER)</b>
-&nbsp;
-<b class="fc">&nbsp;        val flattenPath = resolvePathAnnotation(prop = prop, annotationName = AC.GHOST_FLATTEN)</b>
-<b class="fc">&nbsp;        val wrapPath = resolvePathAnnotation(prop = prop, annotationName = AC.GHOST_WRAP)</b>
-<b class="fc">&nbsp;        val wrappedKeysConfig = wrappedKeysAnalyzer.resolveWrappedKeysAnnotation(prop = prop)</b>
-&nbsp;
-<b class="fc">&nbsp;        customCoderAnalyzer.warnIfCustomCoder(</b>
-<b class="fc">&nbsp;            propName = prop.simpleName.asString(),</b>
-<b class="fc">&nbsp;            customDecoder = customDecoder,</b>
-<b class="fc">&nbsp;            customEncoder = customEncoder</b>
-&nbsp;        )
-&nbsp;
-<b class="pc">&nbsp;        val parentClass = prop.parentDeclaration as? KSClassDeclaration</b>
-<b class="pc">&nbsp;        val hasProto = parentClass?.annotations?.any {</b>
-<b class="fc">&nbsp;            it.shortName.asString() == CC.ANNOTATION_GHOST_PROTO_SERIALIZATION</b>
-<b class="fc">&nbsp;        } == true</b>
-&nbsp;
-<b class="fc">&nbsp;        val serialNameAnnotation = prop.annotations.any {</b>
-<b class="fc">&nbsp;            val name = it.shortName.asString()</b>
-<b class="pc">&nbsp;            name == AC.GHOST_NAME || name == AC.SERIAL_NAME || name.endsWith(AC.STR_SERIAL_NAME_SUFFIX)</b>
-&nbsp;        }
-&nbsp;
-<b class="pc">&nbsp;        var jsonName = flattenPath?.last() ?: getJsonName(prop = prop)</b>
-<b class="pc">&nbsp;        if (hasProto &amp;&amp; !serialNameAnnotation) {</b>
-<b class="fc">&nbsp;            jsonName = toLowerCamelCase(str = jsonName)</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        val wrappedUnwrapFields = if (wrappedKeysConfig != null) {</b>
-<b class="fc">&nbsp;            wrappedKeysAnalyzer.resolveWrappedUnwrapFields(</b>
-<b class="fc">&nbsp;                type = type.makeNotNullable(),</b>
-<b class="fc">&nbsp;                wrapperPath = emptyList(),</b>
-<b class="fc">&nbsp;                sourceKeys = wrappedKeysConfig.keys,</b>
-&nbsp;            )
-&nbsp;        } else {
-<b class="fc">&nbsp;            emptyList()</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return GhostPropertyModel(</b>
-<b class="fc">&nbsp;            kotlinName = prop.simpleName.asString(),</b>
-<b class="fc">&nbsp;            jsonName = jsonName,</b>
-<b class="fc">&nbsp;            type = type,</b>
-<b class="fc">&nbsp;            typeName = type.toTypeName(),</b>
-<b class="fc">&nbsp;            isNullable = type.isMarkedNullable,</b>
-<b class="fc">&nbsp;            isGhost = isGhostType(type = type),</b>
-<b class="fc">&nbsp;            isList = isList,</b>
-<b class="fc">&nbsp;            isSet = isSet,</b>
-<b class="fc">&nbsp;            listInnerType = innerType,</b>
-<b class="fc">&nbsp;            isEnum = isEnumType(type = type),</b>
-<b class="fc">&nbsp;            listInnerIsGhost = innerType?.let { isGhostType(type = it) } ?: false,</b>
-<b class="fc">&nbsp;            listInnerIsEnum = innerType?.let { isEnumType(type = it) } ?: false,</b>
-<b class="pc">&nbsp;            hasDefaultValue = param?.hasDefault ?: false,</b>
-<b class="fc">&nbsp;            defaultExpression = param</b>
-<b class="pc">&nbsp;                ?.takeIf { it.hasDefault }</b>
-<b class="fc">&nbsp;                ?.let { DefaultExpressionExtractor.extract(param = it) },</b>
-<b class="pc">&nbsp;            isInConstructor = param != null,</b>
-<b class="fc">&nbsp;            isMap = isMap,</b>
-<b class="fc">&nbsp;            mapValueType = mapValueType,</b>
-<b class="fc">&nbsp;            mapValueIsGhost = mapValueType?.let { isGhostType(type = it) } ?: false,</b>
-<b class="fc">&nbsp;            isPrimitiveArray = isPrimitiveArray,</b>
-<b class="fc">&nbsp;            primitiveArrayType = primitiveArrayType,</b>
-<b class="fc">&nbsp;            isValueClass = isValueClass(type = type) &amp;&amp; !type.isKotlinUnsignedPrimitive(),</b>
-<b class="fc">&nbsp;            valueClassProperty = if (isValueClass(type = type) &amp;&amp; !type.isKotlinUnsignedPrimitive()) {</b>
-<b class="fc">&nbsp;                resolveValueClassProperty(type = type, isProto = hasProto)</b>
-&nbsp;            } else {
-<b class="fc">&nbsp;                null</b>
-&nbsp;            },
-<b class="fc">&nbsp;            isSealedClass = isSealedClass(type = type),</b>
-<b class="fc">&nbsp;            sealedSubclasses = resolveSealedSubclassesForType(type = type),</b>
-<b class="fc">&nbsp;            isResilient = isResilientProperty(prop = prop),</b>
-<b class="fc">&nbsp;            isContextual = isContextualType(</b>
-<b class="fc">&nbsp;                type = type,</b>
-<b class="fc">&nbsp;                isList = isList,</b>
-<b class="fc">&nbsp;                isSet = isSet,</b>
-<b class="fc">&nbsp;                isMap = isMap,</b>
-<b class="fc">&nbsp;                isPrimitiveArray = isPrimitiveArray</b>
-&nbsp;            ),
-<b class="fc">&nbsp;            customDecoder = customDecoder,</b>
-<b class="fc">&nbsp;            customEncoder = customEncoder,</b>
-<b class="fc">&nbsp;            flattenPath = flattenPath,</b>
-<b class="fc">&nbsp;            wrapPath = wrapPath,</b>
-<b class="fc">&nbsp;            wrappedKeys = wrappedKeysConfig?.let {</b>
-<b class="fc">&nbsp;                WrappedKeysModel(</b>
-<b class="fc">&nbsp;                    sourceKeys = it.keys,</b>
-<b class="fc">&nbsp;                    omitIfEmpty = it.omitIfEmpty,</b>
-<b class="fc">&nbsp;                    omitIfAbsent = it.omitIfAbsent,</b>
-<b class="fc">&nbsp;                    unwrapFields = wrappedUnwrapFields,</b>
-<b class="fc">&nbsp;                )</b>
-&nbsp;            },
-<b class="fc">&nbsp;            isInferredSignature = prop.hasAnnotation(name = AC.GHOST_SIGNATURE),</b>
-<b class="fc">&nbsp;            isProto = hasProto</b>
-&nbsp;        )
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun getEnumValues(
+&nbsp;    fun analyze(
 &nbsp;        classDeclaration: KSClassDeclaration,
-&nbsp;        isEnum: Boolean
-&nbsp;    ): Map&lt;String, String&gt;? {
-<b class="fc">&nbsp;        return if (isEnum) {</b>
-<b class="fc">&nbsp;            classDeclaration.declarations</b>
-<b class="pc">&nbsp;                .filter { it is KSClassDeclaration &amp;&amp; it.classKind == ClassKind.ENUM_ENTRY }</b>
-<b class="fc">&nbsp;                .map { it as KSClassDeclaration }</b>
-<b class="fc">&nbsp;                .associate { entry -&gt; entry.simpleName.asString() to getSerialName(declaration = entry) }</b>
-<b class="fc">&nbsp;        } else null</b>
-&nbsp;    }
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;
+&nbsp;    ): GhostEnvelopeModel? {
+<b class="fc">&nbsp;        val envelopeAnnotation = classDeclaration.annotations.find {</b>
+<b class="fc">&nbsp;            it.shortName.asString() == AC.STR_GHOST_JSON_ENVELOPE</b>
+<b class="fc">&nbsp;        } ?: return null</b>
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Checks if a type requires contextual serialization (e.g., non-built-in/third-party types).
-&nbsp;     */
-&nbsp;    private fun isContextualType(
-&nbsp;        type: KSType,
-&nbsp;        isList: Boolean,
-&nbsp;        isSet: Boolean,
-&nbsp;        isMap: Boolean,
-&nbsp;        isPrimitiveArray: Boolean
-&nbsp;    ): Boolean {
-<b class="fc">&nbsp;        val isCollectionOrPrimitiveArray = isList || isSet || isMap || isPrimitiveArray</b>
-<b class="fc">&nbsp;        if (isCollectionOrPrimitiveArray) {</b>
-<b class="fc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="fc">&nbsp;        if (isGhostType(type = type)) {</b>
-<b class="fc">&nbsp;            return false</b>
-&nbsp;        }
-<b class="pc">&nbsp;        if (isEnumType(type = type)) {</b>
-<b class="nc">&nbsp;            return false</b>
-&nbsp;        }
+<b class="pc">&nbsp;        val discriminatorField = envelopeAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == AC.ARG_ENVELOPE_DISCRIMINATOR }</b>
+<b class="pc">&nbsp;            ?.value as? String</b>
+<b class="nc">&nbsp;            ?: AC.STR_DEFAULT_DISCRIMINATOR</b>
 &nbsp;
-<b class="pc">&nbsp;        val qualifiedName = type.declaration.qualifiedName?.asString()</b>
-<b class="pc">&nbsp;        val isBuiltIn = qualifiedName?.startsWith(AC.STR_KOTLIN_PREFIX) == true ||</b>
-<b class="pc">&nbsp;                qualifiedName?.startsWith(AC.STR_JAVA_PREFIX) == true</b>
+<b class="pc">&nbsp;        val timeField = (envelopeAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == AC.ARG_ENVELOPE_TIME_FIELD }</b>
+<b class="pc">&nbsp;            ?.value as? String)</b>
+<b class="pc">&nbsp;            ?.takeIf { it.isNotEmpty() }</b>
 &nbsp;
-<b class="fc">&nbsp;        if (isBuiltIn) {</b>
-<b class="pc">&nbsp;            return when (qualifiedName) {</b>
-&nbsp;                AC.K_STRING, AC.K_INT, AC.K_LONG, AC.K_ULONG, AC.K_UINT, AC.K_USHORT, AC.K_UBYTE,
-&nbsp;                AC.K_DOUBLE, AC.K_FLOAT,
-&nbsp;                AC.K_BOOLEAN, AC.K_BYTE, AC.K_SHORT, AC.K_CHAR, AC.K_UNIT, AC.K_ANY,
-<b class="fc">&nbsp;                AC.K_BYTE_ARRAY -&gt; false</b>
+<b class="pc">&nbsp;        val dataField = (envelopeAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == AC.ARG_ENVELOPE_DATA_FIELD }</b>
+<b class="pc">&nbsp;            ?.value as? String)</b>
+<b class="pc">&nbsp;            ?.takeIf { it.isNotEmpty() }</b>
 &nbsp;
-<b class="nc">&nbsp;                else -&gt; true</b>
-&nbsp;            }
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        if (qualifiedName == AC.K_RAW_JSON) {</b>
-<b class="fc">&nbsp;            return false</b>
-&nbsp;        }
-&nbsp;
-<b class="fc">&nbsp;        return true // Third party types</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    /** True if the property or its declaring class is annotated `@GhostResilient`. */
-&nbsp;    private fun isResilientProperty(prop: KSPropertyDeclaration): Boolean {
-<b class="pc">&nbsp;        return prop.hasAnnotation(name = AC.GHOST_RESILIENT) || prop.parentDeclaration</b>
-<b class="pc">&nbsp;            ?.let {</b>
-<b class="pc">&nbsp;                it is KSClassDeclaration &amp;&amp;</b>
-<b class="fc">&nbsp;                        it.annotations.any { ann -&gt; ann.shortName.asString() == AC.GHOST_RESILIENT }</b>
-<b class="nc">&nbsp;            } ?: false</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun resolvePathAnnotation(
-&nbsp;        prop: KSPropertyDeclaration,
-&nbsp;        annotationName: String
-&nbsp;    ): List&lt;String&gt;? {
-<b class="fc">&nbsp;        return prop.annotations.find {</b>
-<b class="fc">&nbsp;            it.shortName.asString() == annotationName</b>
-<b class="fc">&nbsp;        }?.let { ann -&gt;</b>
-<b class="pc">&nbsp;            val path = ann.arguments.find { it.name?.asString() == AC.PATH_ARG }?.value as? String</b>
-<b class="pc">&nbsp;            path?.split(CC.STR_DOT)</b>
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    /** For enums, returns a single synthetic `name` property model; otherwise maps declared properties. */
-&nbsp;    private fun resolvePropertyModels(
-&nbsp;        classDeclaration: KSClassDeclaration,
-&nbsp;        properties: List&lt;KSPropertyDeclaration&gt;,
-&nbsp;        parameters: List&lt;KSValueParameter&gt;,
-&nbsp;        isEnum: Boolean,
-&nbsp;        enumValues: Map&lt;String, String&gt;?
-&nbsp;    ): List&lt;GhostPropertyModel&gt; {
-<b class="fc">&nbsp;        return if (isEnum) {</b>
-<b class="fc">&nbsp;            listOf(</b>
-<b class="fc">&nbsp;                GhostPropertyModel(</b>
-<b class="fc">&nbsp;                    kotlinName = AC.NAME,</b>
-<b class="fc">&nbsp;                    jsonName = AC.NAME,</b>
-<b class="fc">&nbsp;                    type = classDeclaration.asType(emptyList()),</b>
-<b class="fc">&nbsp;                    typeName = classDeclaration.toClassName(),</b>
-<b class="fc">&nbsp;                    isNullable = false,</b>
-<b class="fc">&nbsp;                    isGhost = false,</b>
-<b class="fc">&nbsp;                    isList = false,</b>
-<b class="fc">&nbsp;                    isSet = false,</b>
-<b class="fc">&nbsp;                    isEnum = true,</b>
-<b class="fc">&nbsp;                    enumValues = enumValues</b>
+<b class="pc">&nbsp;        val discriminatorProperty = resolveProperty(properties = properties, fieldName = discriminatorField)</b>
+<b class="nc">&nbsp;            ?: run {</b>
+<b class="nc">&nbsp;                logger.error(</b>
+<b class="nc">&nbsp;                    &quot;${AC.STR_ERR_ENVELOPE_DISC_1}$discriminatorField${AC.STR_ERR_ENVELOPE_DISC_2}${</b>
+<b class="nc">&nbsp;                        classDeclaration.simpleName.asString()</b>
+&nbsp;                    }${AC.STR_ERR_ENVELOPE_DISC_3}&quot;,
+<b class="nc">&nbsp;                    classDeclaration</b>
 &nbsp;                )
-&nbsp;            )
-&nbsp;        } else {
-<b class="fc">&nbsp;            properties.map { prop -&gt; buildPropertyModel(prop = prop, parameters = parameters) }</b>
-&nbsp;        }
-&nbsp;    }
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
 &nbsp;
-&nbsp;    /**
-&nbsp;     * Attaches inferred subclass metadata for sealed classes; falls back to a placeholder
-&nbsp;     * property model when the class has none of its own.
-&nbsp;     */
-&nbsp;    private fun resolveSealedSubclasses(
-&nbsp;        classDeclaration: KSClassDeclaration,
-&nbsp;        propertyModels: List&lt;GhostPropertyModel&gt;,
-&nbsp;        isSealed: Boolean
-&nbsp;    ): List&lt;GhostPropertyModel&gt; {
-<b class="fc">&nbsp;        return if (isSealed) {</b>
-<b class="fc">&nbsp;            val inferredSubclasses = classDeclaration</b>
-<b class="fc">&nbsp;                .getSealedSubclasses()</b>
-<b class="fc">&nbsp;                .map { subclass -&gt;</b>
-<b class="fc">&nbsp;                    InferredSubclassModel(</b>
-<b class="fc">&nbsp;                        declaration = subclass,</b>
-<b class="fc">&nbsp;                        properties = analyze(subclass)</b>
+<b class="pc">&nbsp;        if (!isStringType(type = discriminatorProperty.type)) {</b>
+<b class="nc">&nbsp;            logger.error(</b>
+<b class="nc">&nbsp;                &quot;${AC.STR_ERR_ENVELOPE_DISC_TYPE_1}${discriminatorProperty.kotlinName}${AC.STR_ERR_ENVELOPE_DISC_TYPE_2}&quot;,</b>
+<b class="nc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val timeKotlinName = timeField?.let { fieldName -&gt;</b>
+<b class="pc">&nbsp;            resolveProperty(properties = properties, fieldName = fieldName)?.kotlinName</b>
+<b class="nc">&nbsp;                ?: run {</b>
+<b class="nc">&nbsp;                    logger.warn(</b>
+<b class="nc">&nbsp;                        &quot;${AC.STR_WARN_ENVELOPE_TIME_1}$fieldName${AC.STR_WARN_ENVELOPE_TIME_2}&quot;,</b>
+<b class="nc">&nbsp;                        classDeclaration</b>
 &nbsp;                    )
-&nbsp;                }
-<b class="fc">&nbsp;                .toList()</b>
-<b class="fc">&nbsp;            propertyModels.map { it.copy(inferredSubclasses = inferredSubclasses) }</b>
-<b class="pc">&nbsp;                .ifEmpty {</b>
-<b class="fc">&nbsp;                    listOf(</b>
-<b class="fc">&nbsp;                        GhostPropertyModel(</b>
-<b class="fc">&nbsp;                            kotlinName = CC.STR_EMPTY,</b>
-<b class="fc">&nbsp;                            jsonName = CC.STR_EMPTY,</b>
-<b class="fc">&nbsp;                            type = classDeclaration.asType(emptyList()),</b>
-<b class="fc">&nbsp;                            typeName = classDeclaration.toClassName(),</b>
-<b class="fc">&nbsp;                            isNullable = false,</b>
-<b class="fc">&nbsp;                            isGhost = false,</b>
-<b class="fc">&nbsp;                            isList = false,</b>
-<b class="fc">&nbsp;                            isSet = false,</b>
-<b class="fc">&nbsp;                            isEnum = false,</b>
-<b class="fc">&nbsp;                            inferredSubclasses = inferredSubclasses</b>
-&nbsp;                        )
-<b class="fc">&nbsp;                    )</b>
+<b class="nc">&nbsp;                    null</b>
+<b class="fc">&nbsp;                }</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val propertyDeclarations = classDeclaration.getAllProperties()</b>
+<b class="fc">&nbsp;            .filterNot { prop -&gt; prop.annotations.any { it.shortName.asString() == AC.GHOST_IGNORE } }</b>
+<b class="fc">&nbsp;            .associateBy { it.simpleName.asString() }</b>
+&nbsp;
+<b class="fc">&nbsp;        val fallbackDeclarations = propertyDeclarations.values.filter { prop -&gt;</b>
+<b class="fc">&nbsp;            prop.annotations.any { it.shortName.asString() == AC.STR_GHOST_ENVELOPE_FALLBACK }</b>
+&nbsp;        }
+<b class="pc">&nbsp;        if (fallbackDeclarations.size &gt; CC.VAL_ONE) {</b>
+<b class="nc">&nbsp;            logger.error(AC.STR_ERR_ENVELOPE_MULTI_FALLBACK, classDeclaration)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val fallbackMapping = fallbackDeclarations.firstOrNull()?.let { prop -&gt;</b>
+<b class="fc">&nbsp;            buildFallbackMapping(prop = prop, properties = properties)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val isGenericMode = dataField != null</b>
+<b class="fc">&nbsp;        val genericDataProperty = if (isGenericMode) {</b>
+<b class="pc">&nbsp;            resolveProperty(properties = properties, fieldName = dataField!!)</b>
+<b class="nc">&nbsp;                ?: run {</b>
+<b class="nc">&nbsp;                    logger.error(</b>
+<b class="nc">&nbsp;                        &quot;${AC.STR_ERR_ENVELOPE_DATA_1}$dataField${AC.STR_ERR_ENVELOPE_DATA_2}&quot;,</b>
+<b class="nc">&nbsp;                        classDeclaration</b>
+&nbsp;                    )
+<b class="nc">&nbsp;                    return null</b>
 &nbsp;                }
 &nbsp;        } else {
-<b class="fc">&nbsp;            propertyModels</b>
+<b class="fc">&nbsp;            null</b>
 &nbsp;        }
-&nbsp;    }
 &nbsp;
-&nbsp;    private fun resolveSealedSubclassesForType(type: KSType): List&lt;KSClassDeclaration&gt; {
-<b class="fc">&nbsp;        return if (isSealedClass(type = type)) {</b>
-<b class="fc">&nbsp;            (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()</b>
-&nbsp;        } else {
-<b class="fc">&nbsp;            emptyList()</b>
+<b class="fc">&nbsp;        if (isGenericMode) {</b>
+<b class="fc">&nbsp;            validateOpaquePayload(prop = genericDataProperty!!, classDeclaration = classDeclaration)</b>
 &nbsp;        }
-&nbsp;    }
 &nbsp;
-&nbsp;    private fun resolveValueClassProperty(
-&nbsp;        type: KSType,
-<b class="nc">&nbsp;        isProto: Boolean = false</b>
-&nbsp;    ): GhostPropertyModel? {
-<b class="pc">&nbsp;        val declaration = type.declaration as? KSClassDeclaration ?: return null</b>
-<b class="pc">&nbsp;        val primaryConstructor = declaration.primaryConstructor ?: return null</b>
-<b class="pc">&nbsp;        val param = primaryConstructor.parameters.firstOrNull() ?: return null</b>
-<b class="pc">&nbsp;        val prop = declaration.getAllProperties()</b>
-<b class="pc">&nbsp;            .find { it.simpleName.asString() == param.name?.asString() } ?: return null</b>
-&nbsp;        // The value class itself (e.g. `UserId`) is never @GhostProtoSerialization-annotated;
-&nbsp;        // it inherits proto-ness from whichever outer property wraps it.
-<b class="fc">&nbsp;        return buildPropertyModel(prop = prop, parameters = listOf(param)).copy(isProto = isProto)</b>
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun validateClassKind(
-&nbsp;        classDeclaration: KSClassDeclaration,
-&nbsp;        isData: Boolean,
-&nbsp;        isSealed: Boolean,
-&nbsp;        isValue: Boolean,
-&nbsp;        isEnum: Boolean
-&nbsp;    ) {
-<b class="fc">&nbsp;        val isRegularClass = !isData &amp;&amp; !isSealed &amp;&amp; !isValue &amp;&amp; !isEnum</b>
-<b class="fc">&nbsp;        if (isRegularClass) {</b>
-<b class="fc">&nbsp;            logger.error(</b>
-&nbsp;                AC.STR_ERR_CLASS_1 +
-&nbsp;                        &quot;${AC.STR_ERR_CLASS_2}${
-<b class="fc">&nbsp;                            classDeclaration</b>
-<b class="fc">&nbsp;                                .simpleName</b>
-<b class="fc">&nbsp;                                .asString()</b>
-&nbsp;                        }${AC.STR_ERR_CLASS_3}&quot;,
-<b class="fc">&nbsp;                classDeclaration</b>
-&nbsp;            )
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun validateMapKey(
-&nbsp;        prop: KSPropertyDeclaration,
-&nbsp;        isMap: Boolean,
-&nbsp;        mapKeyType: KSType?
-&nbsp;    ) {
-<b class="pc">&nbsp;        if (isMap &amp;&amp; mapKeyType?.declaration?.qualifiedName?.asString() != AC.STRING_QUALIFIED) {</b>
-<b class="fc">&nbsp;            logger.error(</b>
-<b class="fc">&nbsp;                &quot;${AC.STR_ERR_MAP_1}${prop.simpleName.asString()}${AC.STR_ERR_MAP_2}&quot; +</b>
-&nbsp;                        AC.STR_ERR_MAP_3,
-<b class="fc">&nbsp;                prop</b>
-&nbsp;            )
-&nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    private fun validateNames(
-&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
-&nbsp;        clazz: KSClassDeclaration
-&nbsp;    ) {
-<b class="fc">&nbsp;        val names = properties.groupBy { it.jsonName }</b>
-<b class="fc">&nbsp;        names.forEach { (name, props) -&gt;</b>
-<b class="fc">&nbsp;            if (props.size &gt; CC.VAL_ONE) {</b>
-<b class="fc">&nbsp;                logger.error(</b>
-<b class="fc">&nbsp;                    &quot;${AC.STR_ERR_DUP_1}$name${AC.STR_ERR_DUP_2}${</b>
-<b class="fc">&nbsp;                        clazz</b>
-<b class="fc">&nbsp;                            .simpleName</b>
-<b class="fc">&nbsp;                            .asString()</b>
-&nbsp;                    }${AC.STR_ERR_DUP_3}&quot; +
-<b class="fc">&nbsp;                            &quot;${AC.STR_ERR_DUP_4}${props.joinToString { it.kotlinName }}&quot;,</b>
-<b class="fc">&nbsp;                    clazz</b>
-&nbsp;                )
+<b class="fc">&nbsp;        val payloadMappings = if (isGenericMode) {</b>
+<b class="fc">&nbsp;            properties.filter { prop -&gt;</b>
+<b class="fc">&nbsp;                prop.kotlinName != discriminatorProperty.kotlinName &amp;&amp;</b>
+<b class="pc">&nbsp;                        prop.kotlinName != timeKotlinName &amp;&amp;</b>
+<b class="pc">&nbsp;                        prop.kotlinName != fallbackMapping?.kotlinName</b>
+<b class="fc">&nbsp;            }.mapNotNull { prop -&gt;</b>
+<b class="pc">&nbsp;                val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null</b>
+<b class="pc">&nbsp;                val payloadAnnotation = declaration.annotations.find {</b>
+<b class="fc">&nbsp;                    it.shortName.asString() == AC.STR_GHOST_ENVELOPE_PAYLOAD</b>
+<b class="fc">&nbsp;                } ?: return@mapNotNull null</b>
+<b class="fc">&nbsp;                buildPayloadMapping(</b>
+<b class="fc">&nbsp;                    payloadAnnotation = payloadAnnotation,</b>
+<b class="fc">&nbsp;                    prop = prop,</b>
+<b class="fc">&nbsp;                    classDeclaration = classDeclaration</b>
+<b class="fc">&nbsp;                )</b>
 &nbsp;            }
-<b class="fc">&nbsp;        }</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            properties.mapNotNull { prop -&gt;</b>
+<b class="fc">&nbsp;                val isEnvelopeMetadataProperty = prop.kotlinName == discriminatorProperty.kotlinName ||</b>
+<b class="fc">&nbsp;                    prop.kotlinName == timeKotlinName ||</b>
+<b class="fc">&nbsp;                    prop.kotlinName == fallbackMapping?.kotlinName</b>
+<b class="fc">&nbsp;                if (isEnvelopeMetadataProperty) {</b>
+<b class="fc">&nbsp;                    return@mapNotNull null</b>
+&nbsp;                }
+<b class="pc">&nbsp;                val declaration = propertyDeclarations[prop.kotlinName] ?: return@mapNotNull null</b>
+<b class="pc">&nbsp;                val payloadAnnotation = declaration.annotations.find {</b>
+<b class="fc">&nbsp;                    it.shortName.asString() == AC.STR_GHOST_ENVELOPE_PAYLOAD</b>
+<b class="nc">&nbsp;                } ?: run {</b>
+<b class="nc">&nbsp;                    if (prop.isNullable &amp;&amp; prop.type.isRawJson()) {</b>
+<b class="nc">&nbsp;                        logger.warn(</b>
+<b class="nc">&nbsp;                            &quot;${AC.STR_WARN_ENVELOPE_UNTAGGED_1}${prop.kotlinName}${AC.STR_WARN_ENVELOPE_UNTAGGED_2}&quot;,</b>
+<b class="nc">&nbsp;                            declaration</b>
+&nbsp;                        )
+&nbsp;                    }
+<b class="nc">&nbsp;                    return@mapNotNull null</b>
+&nbsp;                }
+<b class="fc">&nbsp;                validateOpaquePayload(prop = prop, classDeclaration = classDeclaration)</b>
+<b class="fc">&nbsp;                buildPayloadMapping(</b>
+<b class="fc">&nbsp;                    payloadAnnotation = payloadAnnotation,</b>
+<b class="fc">&nbsp;                    prop = prop,</b>
+<b class="fc">&nbsp;                    classDeclaration = classDeclaration</b>
+<b class="fc">&nbsp;                )</b>
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+<b class="pc">&nbsp;        if (!isGenericMode &amp;&amp; payloadMappings.isEmpty()) {</b>
+<b class="nc">&nbsp;            logger.error(AC.STR_ERR_ENVELOPE_NO_PAYLOADS, classDeclaration)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val duplicateValues =</b>
+<b class="pc">&nbsp;            payloadMappings.groupBy { it.discriminatorValue }.filter { it.value.size &gt; 1 }</b>
+<b class="fc">&nbsp;        duplicateValues.forEach { (value, mappings) -&gt;</b>
+<b class="nc">&nbsp;            logger.error(</b>
+<b class="nc">&nbsp;                &quot;${AC.STR_ERR_ENVELOPE_DUP_VALUE_1}$value${AC.STR_ERR_ENVELOPE_DUP_VALUE_2}${</b>
+<b class="nc">&nbsp;                    mappings.joinToString { it.kotlinName }</b>
+&nbsp;                }&quot;,
+<b class="nc">&nbsp;                classDeclaration</b>
+&nbsp;            )
+<b class="nc">&nbsp;        }</b>
+&nbsp;
+<b class="fc">&nbsp;        return GhostEnvelopeModel(</b>
+<b class="fc">&nbsp;            discriminatorKotlinName = discriminatorProperty.kotlinName,</b>
+<b class="fc">&nbsp;            discriminatorJsonName = discriminatorProperty.jsonName,</b>
+<b class="fc">&nbsp;            timeKotlinName = timeKotlinName,</b>
+<b class="fc">&nbsp;            isGenericMode = isGenericMode,</b>
+<b class="fc">&nbsp;            genericDataKotlinName = genericDataProperty?.kotlinName,</b>
+<b class="fc">&nbsp;            payloadMappings = payloadMappings,</b>
+<b class="fc">&nbsp;            fallbackMapping = fallbackMapping</b>
+&nbsp;        )
 &nbsp;    }
 &nbsp;
-&nbsp;    /** Rejects properties declared private. */
-&nbsp;    private fun validatePropertyVisibility(
-&nbsp;        classDeclaration: KSClassDeclaration,
-&nbsp;        properties: List&lt;KSPropertyDeclaration&gt;
-&nbsp;    ) {
-<b class="fc">&nbsp;        val hasPrivateProperties = properties.any {</b>
-<b class="fc">&nbsp;            it.modifiers.contains(Modifier.PRIVATE)</b>
+&nbsp;    private fun buildFallbackMapping(
+&nbsp;        prop: KSPropertyDeclaration,
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;
+&nbsp;    ): EnvelopePayloadMapping? {
+<b class="pc">&nbsp;        val model = properties.find { it.kotlinName == prop.simpleName.asString() } ?: return null</b>
+<b class="fc">&nbsp;        validateOpaquePayload(prop = model, classDeclaration = prop.parentDeclaration as KSClassDeclaration)</b>
+<b class="fc">&nbsp;        return EnvelopePayloadMapping(</b>
+<b class="fc">&nbsp;            discriminatorValue = CC.STR_EMPTY,</b>
+<b class="fc">&nbsp;            kotlinName = model.kotlinName,</b>
+<b class="fc">&nbsp;            isRawJson = model.type.isRawJson(),</b>
+<b class="fc">&nbsp;            targetType = null</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun buildPayloadMapping(
+&nbsp;        payloadAnnotation: com.google.devtools.ksp.symbol.KSAnnotation,
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        classDeclaration: KSClassDeclaration
+&nbsp;    ): EnvelopePayloadMapping? {
+<b class="pc">&nbsp;        val value = payloadAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == AC.STR_VALUE_ARG }</b>
+<b class="pc">&nbsp;            ?.value as? String</b>
+<b class="nc">&nbsp;            ?: run {</b>
+<b class="nc">&nbsp;                logger.error(AC.STR_ERR_ENVELOPE_PAYLOAD_VALUE, classDeclaration)</b>
+<b class="nc">&nbsp;                return null</b>
+&nbsp;            }
+&nbsp;
+<b class="pc">&nbsp;        val targetType = payloadAnnotation.arguments</b>
+<b class="pc">&nbsp;            .find { it.name?.asString() == AC.ARG_ENVELOPE_TARGET }</b>
+<b class="pc">&nbsp;            ?.value as? KSType</b>
+&nbsp;
+<b class="pc">&nbsp;        val targetClassName = if (targetType != null &amp;&amp; !isSentinelTarget(type = targetType)) {</b>
+<b class="fc">&nbsp;            targetType.toClassName()</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            null</b>
 &nbsp;        }
-<b class="fc">&nbsp;        if (hasPrivateProperties) {</b>
-<b class="fc">&nbsp;            logger.error(</b>
-&nbsp;                AC.STR_ERR_PRIV_1 +
-&nbsp;                        &quot;${AC.STR_ERR_PRIV_2}${
-<b class="fc">&nbsp;                            classDeclaration</b>
-<b class="fc">&nbsp;                                .simpleName</b>
-<b class="fc">&nbsp;                                .asString()</b>
-&nbsp;                        }${AC.STR_ERR_PRIV_3}&quot;,
-<b class="fc">&nbsp;                classDeclaration</b>
+&nbsp;
+<b class="fc">&nbsp;        return EnvelopePayloadMapping(</b>
+<b class="fc">&nbsp;            discriminatorValue = value,</b>
+<b class="fc">&nbsp;            kotlinName = prop.kotlinName,</b>
+<b class="fc">&nbsp;            isRawJson = prop.type.isRawJson(),</b>
+<b class="fc">&nbsp;            targetType = targetClassName</b>
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isSentinelTarget(type: KSType): Boolean {
+<b class="pc">&nbsp;        val name = type.declaration.qualifiedName?.asString()</b>
+<b class="fc">&nbsp;        return name == AC.K_UNIT || name == AC.K_NOTHING</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isStringType(type: KSType): Boolean =
+<b class="pc">&nbsp;        type.declaration.qualifiedName?.asString() == AC.STRING_QUALIFIED</b>
+&nbsp;
+&nbsp;    private fun resolveProperty(
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;        fieldName: String
+&nbsp;    ): GhostPropertyModel? =
+<b class="pc">&nbsp;        properties.find { it.jsonName == fieldName || it.kotlinName == fieldName }</b>
+&nbsp;
+&nbsp;    private fun validateOpaquePayload(
+&nbsp;        prop: GhostPropertyModel,
+&nbsp;        classDeclaration: KSClassDeclaration
+&nbsp;    ) {
+<b class="pc">&nbsp;        if (!prop.isNullable || !prop.type.isRawJson()) {</b>
+<b class="nc">&nbsp;            logger.error(</b>
+<b class="nc">&nbsp;                &quot;${AC.STR_ERR_ENVELOPE_PAYLOAD_TYPE_1}${prop.kotlinName}${AC.STR_ERR_ENVELOPE_PAYLOAD_TYPE_2}&quot;,</b>
+<b class="nc">&nbsp;                classDeclaration</b>
 &nbsp;            )
 &nbsp;        }
-&nbsp;    }
-&nbsp;
-&nbsp;    companion object {
-<b class="fc">&nbsp;        private val PRIMITIVE_ARRAYS = setOf(</b>
-<b class="fc">&nbsp;            AC.STR_TYPE_INT_ARRAY,</b>
-<b class="fc">&nbsp;            AC.STR_TYPE_LONG_ARRAY,</b>
-<b class="fc">&nbsp;            AC.STR_TYPE_FLOAT_ARRAY,</b>
-<b class="fc">&nbsp;            AC.STR_TYPE_DOUBLE_ARRAY,</b>
-<b class="fc">&nbsp;            AC.STR_TYPE_BOOLEAN_ARRAY</b>
-&nbsp;        )
 &nbsp;    }
 &nbsp;}
 </code>
@@ -615,7 +366,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

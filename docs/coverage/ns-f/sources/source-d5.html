@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > ProtoOneofEvent</title>
+  <title>GhostSerialization Coverage Report > ProtoBenchUser</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: ProtoOneofEvent (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: ProtoBenchUser (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">ProtoOneofEvent</td>
+  <td class="name">ProtoBenchUser</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,7 +63,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (1/1)
   </span>
 </td>
     <td class="coverageStat"/>
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (43/43)
   </span>
 </td>
 </tr>
@@ -95,13 +95,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostProtoSerialization
-&nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
 &nbsp;
+&nbsp;/** Flat proto3-JSON benchmark fixture — representative `@GhostProtoSerialization` message. */
 <b class="fc">&nbsp;@GhostProtoSerialization</b>
-&nbsp;data class ProtoOneofEvent(
-<b class="fc">&nbsp;    val id: String,</b>
-<b class="fc">&nbsp;    @GhostWrappedKeys(keys = [&quot;text&quot;, &quot;code&quot;])</b>
-<b class="fc">&nbsp;    val payload: OneofPayload,</b>
+&nbsp;data class ProtoBenchUser(
+<b class="fc">&nbsp;    val user_id: Long,</b>
+<b class="fc">&nbsp;    val name: String,</b>
+<b class="fc">&nbsp;    val email: String,</b>
+<b class="fc">&nbsp;    val score: Double,</b>
+<b class="fc">&nbsp;    val is_active: Boolean = true,</b>
+<b class="fc">&nbsp;    val role: String = &quot;VIEWER&quot;,</b>
+<b class="fc">&nbsp;    val bio: String? = null,</b>
 &nbsp;)
 </code>
 </pre>
@@ -126,7 +130,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

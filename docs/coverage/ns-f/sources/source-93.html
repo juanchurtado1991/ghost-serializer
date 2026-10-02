@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > NestedDeviceStub</title>
+  <title>GhostSerialization Coverage Report > NestedDefaultsEvent</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: NestedDeviceStub (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: NestedDefaultsEvent (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,15 +46,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">NestedDeviceStub</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
+  <td class="name">NestedDefaultsEvent</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +61,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,11 +69,122 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (7/7)
+    (49/49)
   </span>
 </td>
 </tr>
-
+  <tr>
+    <td class="name">NestedDefaultsEvent$Kind</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (18/18)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">NestedDefaultsEvent$Lifecycle</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/2)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">NestedDefaultsEvent$Lifecycle$Type</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/24)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/4)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (10/11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.8%
+  </span>
+  <span class="absValue">
+    (91/93)
+  </span>
+</td>
+</tr>
 </table>
 
 <br/>
@@ -96,10 +196,28 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
+&nbsp;/**
+&nbsp; * More than four defaults (single-shot construction) whose defaults name classes nested in the model,
+&nbsp; * the shape that generated uncompilable serializers before 1.3.3 (`Unresolved reference &#39;Lifecycle&#39;`).
+&nbsp; */
 <b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;data class NestedDeviceStub(
+&nbsp;data class NestedDefaultsEvent(
 <b class="fc">&nbsp;    val id: String,</b>
-&nbsp;)
+<b class="fc">&nbsp;    val kind: Kind = Kind.UNKNOWN,</b>
+<b class="fc">&nbsp;    val lifecycleType: Lifecycle.Type = Lifecycle.Type.UNKNOWN,</b>
+<b class="fc">&nbsp;    val ownerId: String? = null,</b>
+<b class="fc">&nbsp;    val locationId: String? = null,</b>
+<b class="fc">&nbsp;    val roomId: String? = null,</b>
+<b class="fc">&nbsp;    val principal: String? = null</b>
+&nbsp;) {
+&nbsp;    @GhostSerialization
+<b class="fc">&nbsp;    enum class Kind { CREATED, UNKNOWN }</b>
+&nbsp;
+<b class="nc">&nbsp;    sealed class Lifecycle {</b>
+&nbsp;        @GhostSerialization
+<b class="fc">&nbsp;        enum class Type { CREATE, DELETE, UNKNOWN }</b>
+&nbsp;    }
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -123,7 +241,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

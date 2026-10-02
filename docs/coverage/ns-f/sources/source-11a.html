@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > UniCodeModel</title>
+  <title>GhostSerialization Coverage Report > TwitterSpecialTweet</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,15 +22,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: UniCodeModel (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: TwitterSpecialTweet (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
+
 <tr>
   <th class="name">Class</th>
-<th class="coverageStat 
-">
-  Class, %
-</th>
 <th class="coverageStat 
 ">
   Method, %
@@ -49,15 +46,42 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">UniCodeModel</td>
+  <td class="name">TwitterSpecialTweet</td>
 <td class="coverageStat">
   <span class="percent">
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (3/3)
   </span>
 </td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    65.4%
+  </span>
+  <span class="absValue">
+    (70/107)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TwitterSpecialTweet$Companion</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +96,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (1/1)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,11 +104,45 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (17/17)
+    (4/4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (10/10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (74/111)
   </span>
 </td>
 </tr>
-
 </table>
 
 <br/>
@@ -94,13 +152,27 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostFlatten
+&nbsp;import com.ghost.serialization.annotations.GhostIgnore
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-<b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;data class UniCodeModel(
+<b class="pc">&nbsp;@Serializable</b>
+&nbsp;@GhostSerialization
+&nbsp;data class TwitterSpecialTweet(
+<b class="fc">&nbsp;    val id: Long,</b>
+&nbsp;
+<b class="fc">&nbsp;    @GhostFlatten(&quot;user.screen_name&quot;)</b>
+<b class="fc">&nbsp;    val screenName: String,</b>
+&nbsp;
+<b class="fc">&nbsp;    @GhostFlatten(&quot;metadata.result_type&quot;)</b>
+<b class="fc">&nbsp;    val resultType: String,</b>
+&nbsp;
+&nbsp;    // No GhostWrap: stays parseable from the original JSON
 <b class="fc">&nbsp;    val text: String,</b>
-<b class="fc">&nbsp;    val emoji: String,</b>
-<b class="fc">&nbsp;    val escaped: String</b>
+&nbsp;
+<b class="fc">&nbsp;    @GhostIgnore</b>
+<b class="fc">&nbsp;    val source: String = &quot;&quot;</b>
 &nbsp;)
 </code>
 </pre>
@@ -125,7 +197,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

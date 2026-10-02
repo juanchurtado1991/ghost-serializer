@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostFlatten</title>
+  <title>GhostSerialization Coverage Report > GhostCoerce</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostFlatten (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostCoerce (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostFlatten</td>
+  <td class="name">GhostCoerce</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -47,14 +47,16 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
 &nbsp;/**
-&nbsp; * Maps a nested JSON property directly to a field in the annotated class, avoiding intermediate
-&nbsp; * wrapper classes and their allocations.
-&nbsp; *
-&nbsp; * @param path The dot-separated path to the JSON property.
+&nbsp; * Enables loose type coercion (stringified numbers/booleans converted to primitives) during
+&nbsp; * deserialization, on the annotated endpoint, parameter, or controller.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
-&nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostFlatten(val path: String)
+&nbsp;@Target(
+&nbsp;    AnnotationTarget.FUNCTION,
+&nbsp;    AnnotationTarget.VALUE_PARAMETER,
+&nbsp;    AnnotationTarget.CLASS
+&nbsp;)
+&nbsp;@Retention(AnnotationRetention.RUNTIME)
+&nbsp;annotation class GhostCoerce
 </code>
 </pre>
 </div>
@@ -78,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

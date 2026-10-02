@@ -1,0 +1,414 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>GhostSerialization Coverage Report > WrappedKeysConfig</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope: GhostSerialization<span class="separator">|</span>    <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.ghost.serialization.compiler.analysis</a>
+</div>
+
+<h1>Coverage Summary for Class: WrappedKeysConfig (com.ghost.serialization.compiler.analysis)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+<th class="coverageStat 
+">
+  Instruction, %
+</th>
+</tr>
+<tr>
+  <td class="name">WrappedKeysConfig</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (17/17)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
+&nbsp;
+&nbsp;import com.ghost.serialization.annotations.GhostWrappedKeys
+&nbsp;import com.ghost.serialization.compiler.model.GhostPropertyModel
+&nbsp;import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
+&nbsp;import com.google.devtools.ksp.KspExperimental
+&nbsp;import com.google.devtools.ksp.getAnnotationsByType
+&nbsp;import com.google.devtools.ksp.processing.KSPLogger
+&nbsp;import com.google.devtools.ksp.symbol.KSAnnotated
+&nbsp;import com.google.devtools.ksp.symbol.KSAnnotation
+&nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSType
+&nbsp;import com.google.devtools.ksp.symbol.KSValueParameter
+&nbsp;import com.google.devtools.ksp.symbol.Modifier
+&nbsp;import com.squareup.kotlinpoet.ksp.toClassName
+&nbsp;import com.squareup.kotlinpoet.ksp.toTypeName
+&nbsp;import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+&nbsp;import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+&nbsp;
+&nbsp;/**
+&nbsp; * Resolves and validates `@GhostWrappedKeys`: collapsing several wire keys into one Kotlin
+&nbsp; * property, and the reverse mapping an emitter needs to read each collapsed key back out of a
+&nbsp; * nested/sealed type. Split out of [GhostAnalyzer] since this changes for a different reason —
+&nbsp; * the wrapped-keys wire format — than class validation or sealed-subclass resolution does.
+&nbsp; */
+&nbsp;@OptIn(KspExperimental::class)
+&nbsp;internal class WrappedKeysAnalyzer(private val logger: KSPLogger) {
+&nbsp;
+&nbsp;    fun resolveWrappedKeysAnnotation(prop: KSPropertyDeclaration): WrappedKeysConfig? {
+&nbsp;        resolveWrappedKeysFromAnnotated(annotated = prop)?.let { return it }
+&nbsp;
+&nbsp;        val classDecl = prop.parentDeclaration as? KSClassDeclaration
+&nbsp;        val parameter = classDecl?.primaryConstructor?.parameters?.firstOrNull {
+&nbsp;            it.name?.asString() == prop.simpleName.asString()
+&nbsp;        }
+&nbsp;        parameter?.let { resolveWrappedKeysFromAnnotated(annotated = it) }?.let { return it }
+&nbsp;
+&nbsp;        return null
+&nbsp;    }
+&nbsp;
+&nbsp;    fun resolveWrappedUnwrapFields(
+&nbsp;        type: KSType,
+&nbsp;        wrapperPath: List&lt;String&gt;,
+&nbsp;        sourceKeys: List&lt;String&gt;,
+&nbsp;    ): List&lt;WrappedUnwrapFieldModel&gt; {
+&nbsp;        val declaration = type.declaration as? KSClassDeclaration ?: return emptyList()
+&nbsp;        if (!isGhostType(type = type)) {
+&nbsp;            return emptyList()
+&nbsp;        }
+&nbsp;
+&nbsp;        val properties = declaration.getAllProperties()
+&nbsp;            .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }
+&nbsp;            .toList()
+&nbsp;
+&nbsp;        return sourceKeys.mapNotNull { wireKey -&gt;
+&nbsp;            resolveUnwrapFieldForWireKey(
+&nbsp;                properties = properties,
+&nbsp;                wrapperPath = wrapperPath,
+&nbsp;                wireKey = wireKey,
+&nbsp;                ownerType = type
+&nbsp;            )
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    fun validateWrappedKeys(
+&nbsp;        properties: List&lt;GhostPropertyModel&gt;,
+&nbsp;        clazz: KSClassDeclaration,
+&nbsp;    ) {
+&nbsp;        val wireKeys = mutableMapOf&lt;String, String&gt;()
+&nbsp;        properties.forEach { prop -&gt;
+&nbsp;            prop.wrappedKeys?.sourceKeys?.forEach { key -&gt;
+&nbsp;                val owner = wireKeys.put(key, prop.kotlinName)
+&nbsp;                if (owner != null &amp;&amp; owner != prop.kotlinName) {
+&nbsp;                    logger.error(
+&nbsp;                        AC.STR_ERR_WRAPPED_DUP_KEY_1 + key + AC.STR_ERR_WRAPPED_DUP_KEY_2 +
+&nbsp;                                clazz.simpleName.asString() + AC.STR_ERR_WRAPPED_DUP_KEY_3 + owner +
+&nbsp;                                AC.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + AC.STR_ERR_WRAPPED_DUP_KEY_5,
+&nbsp;                        clazz,
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;            if (prop.wrappedKeys?.omitIfEmpty == true &amp;&amp; !prop.isNullable) {
+&nbsp;                logger.error(
+&nbsp;                    AC.STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 + prop.kotlinName + AC.STR_ERR_WRAPPED_OMIT_IF_EMPTY_2,
+&nbsp;                    clazz,
+&nbsp;                )
+&nbsp;            }
+&nbsp;            if (prop.flattenPath != null || prop.wrapPath != null) {
+&nbsp;                if (prop.wrappedKeys != null) {
+&nbsp;                    logger.error(
+&nbsp;                        AC.STR_ERR_WRAPPED_COMBINE_1 + prop.kotlinName + AC.STR_ERR_WRAPPED_COMBINE_2,
+&nbsp;                        clazz,
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;        properties.forEach { prop -&gt;
+&nbsp;            if (prop.wrappedKeys == null) {
+&nbsp;                return@forEach
+&nbsp;            }
+&nbsp;            prop.wrappedKeys.sourceKeys.forEach { key -&gt;
+&nbsp;                if (properties.any { it.wrappedKeys == null &amp;&amp; it.jsonName == key }) {
+&nbsp;                    logger.error(
+&nbsp;                        AC.STR_ERR_WRAPPED_KEY_CONFLICT_1 + key + AC.STR_ERR_WRAPPED_KEY_CONFLICT_2 +
+&nbsp;                                clazz.simpleName.asString() + AC.STR_ERR_WRAPPED_KEY_CONFLICT_3,
+&nbsp;                        clazz,
+&nbsp;                    )
+&nbsp;                }
+&nbsp;            }
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KSAnnotation.readBooleanArgument(argName: String): Boolean {
+&nbsp;        return arguments.find { it.name?.asString() == argName }?.value as? Boolean ?: false
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun KSAnnotation.readStringArrayArgument(argName: String): List&lt;String&gt; {
+&nbsp;        val value = arguments.find { it.name?.asString() == argName }?.value ?: return emptyList()
+&nbsp;        return when (value) {
+&nbsp;            is Array&lt;*&gt; -&gt; value.filterIsInstance&lt;String&gt;()
+&nbsp;            is List&lt;*&gt; -&gt; value.filterIsInstance&lt;String&gt;()
+&nbsp;            else -&gt; emptyList()
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun resolveUnwrapFieldForWireKey(
+&nbsp;        properties: List&lt;KSPropertyDeclaration&gt;,
+&nbsp;        wrapperPath: List&lt;String&gt;,
+&nbsp;        wireKey: String,
+&nbsp;        ownerType: KSType,
+&nbsp;    ): WrappedUnwrapFieldModel? {
+&nbsp;        val direct = properties.find { getJsonName(prop = it) == wireKey }
+&nbsp;        if (direct != null) {
+&nbsp;            val directType = direct.type.resolve()
+&nbsp;            return WrappedUnwrapFieldModel(
+&nbsp;                jsonName = wireKey,
+&nbsp;                kotlinPath = wrapperPath + direct.simpleName.asString(),
+&nbsp;                isNullable = directType.isMarkedNullable,
+&nbsp;                typeName = directType.toTypeName(),
+&nbsp;                type = directType,
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        for (property in properties) {
+&nbsp;            val nestedConfig = resolveWrappedKeysAnnotation(prop = property) ?: continue
+&nbsp;            if (wireKey !in nestedConfig.keys) {
+&nbsp;                continue
+&nbsp;            }
+&nbsp;            val nestedType = property.type.resolve().makeNotNullable()
+&nbsp;            val nestedPath = wrapperPath + property.simpleName.asString()
+&nbsp;            val nestedDecl = nestedType.declaration as? KSClassDeclaration ?: continue
+&nbsp;            val nestedProps = nestedDecl.getAllProperties()
+&nbsp;                .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }
+&nbsp;                .toList()
+&nbsp;            val leaf = resolveUnwrapFieldForWireKey(
+&nbsp;                properties = nestedProps,
+&nbsp;                wrapperPath = nestedPath,
+&nbsp;                wireKey = wireKey,
+&nbsp;                ownerType = nestedType
+&nbsp;            )
+&nbsp;            if (leaf != null) {
+&nbsp;                return leaf
+&nbsp;            }
+&nbsp;        }
+&nbsp;
+&nbsp;        resolveUnwrapFieldFromSealedSubclass(
+&nbsp;            wrapperPath = wrapperPath,
+&nbsp;            wireKey = wireKey,
+&nbsp;            ownerType = ownerType
+&nbsp;        )?.let { return it }
+&nbsp;
+&nbsp;        logger.warn(
+&nbsp;            AC.STR_WARN_WRAPPED_UNMAPPED_1 + wireKey + AC.STR_WARN_WRAPPED_UNMAPPED_2 +
+&nbsp;                    ownerType.declaration.simpleName.asString(),
+&nbsp;        )
+&nbsp;        return null
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * proto3 `oneof` support: when the wrapped type is sealed, wire keys live on its subclasses
+&nbsp;     * rather than the parent. Resolves the key against each subclass and tags the result with it
+&nbsp;     * so the emitter can smart-cast before accessing it.
+&nbsp;     */
+&nbsp;    private fun resolveUnwrapFieldFromSealedSubclass(
+&nbsp;        wrapperPath: List&lt;String&gt;,
+&nbsp;        wireKey: String,
+&nbsp;        ownerType: KSType,
+&nbsp;    ): WrappedUnwrapFieldModel? {
+&nbsp;        val ownerDecl = ownerType.declaration as? KSClassDeclaration ?: return null
+&nbsp;        if (!ownerDecl.modifiers.contains(Modifier.SEALED)) {
+&nbsp;            return null
+&nbsp;        }
+&nbsp;
+&nbsp;        for (subclass in ownerDecl.getSealedSubclasses()) {
+&nbsp;            val subclassProps = subclass.getAllProperties()
+&nbsp;                .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }
+&nbsp;                .toList()
+&nbsp;            val direct = subclassProps.find { getJsonName(prop = it) == wireKey } ?: continue
+&nbsp;            val directType = direct.type.resolve()
+&nbsp;            return WrappedUnwrapFieldModel(
+&nbsp;                jsonName = wireKey,
+&nbsp;                kotlinPath = wrapperPath + direct.simpleName.asString(),
+&nbsp;                isNullable = directType.isMarkedNullable,
+&nbsp;                typeName = directType.toTypeName(),
+&nbsp;                type = directType,
+&nbsp;                sealedSubclassName = subclass.toClassName(),
+&nbsp;            )
+&nbsp;        }
+&nbsp;        return null
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun resolveWrappedKeysFromAnnotated(annotated: KSAnnotated): WrappedKeysConfig? {
+&nbsp;        try {
+&nbsp;            when (annotated) {
+&nbsp;                is KSPropertyDeclaration -&gt; {
+&nbsp;                    annotated.getAnnotationsByType(GhostWrappedKeys::class)
+&nbsp;                        .firstOrNull()
+&nbsp;                        ?.let { wrappedKeysConfigFromAnnotation(annotation = it, source = annotated) }
+&nbsp;                        ?.let { return it }
+&nbsp;                }
+&nbsp;
+&nbsp;                is KSValueParameter -&gt; {
+&nbsp;                    annotated.getAnnotationsByType(GhostWrappedKeys::class)
+&nbsp;                        .firstOrNull()
+&nbsp;                        ?.let { wrappedKeysConfigFromAnnotation(annotation = it, source = annotated) }
+&nbsp;                        ?.let { return it }
+&nbsp;                }
+&nbsp;            }
+&nbsp;        } catch (_: Exception) {
+&nbsp;            // kspCommonMainKotlinMetadata may throw on getAnnotationsByType for array args.
+&nbsp;        }
+&nbsp;
+&nbsp;        return annotated.annotations
+&nbsp;            .find { it.shortName.asString() == AC.GHOST_WRAPPED_KEYS }
+&nbsp;            ?.let { wrappedKeysConfigFromKsAnnotation(annotation = it, source = annotated) }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun wrappedKeysConfigFromAnnotation(
+&nbsp;        annotation: GhostWrappedKeys,
+&nbsp;        source: KSAnnotated,
+&nbsp;    ): WrappedKeysConfig {
+&nbsp;        return wrappedKeysConfigFromValues(
+&nbsp;            keys = annotation.keys.toList(),
+&nbsp;            omitIfEmpty = annotation.omitIfEmpty,
+&nbsp;            omitIfAbsent = annotation.omitIfAbsent.toList(),
+&nbsp;            source = source,
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun wrappedKeysConfigFromKsAnnotation(
+&nbsp;        annotation: KSAnnotation,
+&nbsp;        source: KSAnnotated,
+&nbsp;    ): WrappedKeysConfig {
+&nbsp;        return wrappedKeysConfigFromValues(
+&nbsp;            keys = annotation.readStringArrayArgument(argName = AC.KEYS_ARG),
+&nbsp;            omitIfEmpty = annotation.readBooleanArgument(argName = AC.OMIT_IF_EMPTY_ARG),
+&nbsp;            omitIfAbsent = annotation.readStringArrayArgument(argName = AC.OMIT_IF_ABSENT_ARG),
+&nbsp;            source = source,
+&nbsp;        )
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun wrappedKeysConfigFromValues(
+&nbsp;        keys: List&lt;String&gt;,
+&nbsp;        omitIfEmpty: Boolean,
+&nbsp;        omitIfAbsent: List&lt;String&gt;,
+&nbsp;        source: KSAnnotated,
+&nbsp;    ): WrappedKeysConfig {
+&nbsp;        if (keys.isEmpty()) {
+&nbsp;            val name = when (source) {
+&nbsp;                is KSPropertyDeclaration -&gt; source.simpleName.asString()
+&nbsp;                is KSValueParameter -&gt; source.name?.asString() ?: CC.STR_EMPTY
+&nbsp;                else -&gt; CC.STR_EMPTY
+&nbsp;            }
+&nbsp;            logger.error(
+&nbsp;                AC.STR_ERR_WRAPPED_EMPTY_KEYS_1 + name + AC.STR_ERR_WRAPPED_EMPTY_KEYS_2,
+&nbsp;                source,
+&nbsp;            )
+&nbsp;            return WrappedKeysConfig(keys = emptyList(), omitIfEmpty = false, omitIfAbsent = emptyList())
+&nbsp;        }
+&nbsp;        return WrappedKeysConfig(
+&nbsp;            keys = keys,
+&nbsp;            omitIfEmpty = omitIfEmpty,
+&nbsp;            omitIfAbsent = omitIfAbsent,
+&nbsp;        )
+&nbsp;    }
+&nbsp;}
+&nbsp;
+<b class="fc">&nbsp;internal data class WrappedKeysConfig(</b>
+<b class="fc">&nbsp;    val keys: List&lt;String&gt;,</b>
+<b class="fc">&nbsp;    val omitIfEmpty: Boolean,</b>
+<b class="fc">&nbsp;    val omitIfAbsent: List&lt;String&gt;,</b>
+&nbsp;)
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
+</div>
+</body>
+</html>

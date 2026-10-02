@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > TagsProbe</title>
+  <title>GhostSerialization Coverage Report > SyncStatus</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: TagsProbe (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: SyncStatus (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">TagsProbe</td>
+  <td class="name">SyncStatus</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (24/24)
   </span>
 </td>
 </tr>
@@ -96,11 +96,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-<b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;data class TagsProbe(
-<b class="fc">&nbsp;    val tags: List&lt;String&gt;,</b>
-<b class="fc">&nbsp;    val count: Int,</b>
-&nbsp;)
+&nbsp;@GhostSerialization
+&nbsp;enum class SyncStatus {
+<b class="fc">&nbsp;    SYNCED,</b>
+<b class="fc">&nbsp;    PENDING,</b>
+<b class="fc">&nbsp;    UNKNOWN</b>
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -124,7 +125,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > RawPayloadModel</title>
+  <title>GhostSerialization Coverage Report > RawJsonListModel</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: RawPayloadModel (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: RawJsonListModel (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">RawPayloadModel</td>
+  <td class="name">RawJsonListModel</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (12/12)
+    (7/7)
   </span>
 </td>
 </tr>
@@ -95,9 +95,12 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.types.RawJson
 &nbsp;
 <b class="fc">&nbsp;@GhostSerialization</b>
-<b class="fc">&nbsp;data class RawPayloadModel(val id: String, val body: ByteArray)</b>
+&nbsp;data class RawJsonListModel(
+<b class="fc">&nbsp;    val items: List&lt;RawJson&gt;</b>
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -121,7 +124,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 04:58</div>
+    <div style="float:right;">generated on 2026-10-02 07:30</div>
 </div>
 </body>
 </html>
