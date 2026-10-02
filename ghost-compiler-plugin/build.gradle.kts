@@ -13,10 +13,13 @@ kotlin {
 }
 
 dependencies {
-    // Provided by the consumer's Kotlin compiler at build time; never bundled.
+    // Provided by the consumer's Kotlin compiler at build time; never bundled or published
+    // (kotlin.stdlib.default.dependency=false in this module's gradle.properties).
     compileOnly(libs.kotlin.compiler.embeddable)
+    compileOnly(kotlin("stdlib"))
 
     testImplementation(libs.kotlin.compiler.embeddable)
+    testImplementation(kotlin("stdlib"))
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.compile.testing)
     testImplementation(libs.kotlin.compile.testing.ksp)
