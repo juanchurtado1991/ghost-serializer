@@ -254,6 +254,7 @@ class GhostPluginTest {
         )
     }
 
+    @OptIn(ExperimentalWasmDsl::class)
     @Test
     fun `compiler plugin option follows autoRegistration`() {
         val project = kmpProjectWithJvmAndWasm()

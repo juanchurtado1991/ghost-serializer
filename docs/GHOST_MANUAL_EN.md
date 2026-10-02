@@ -552,7 +552,7 @@ fun initGhostRuntime() {
 }
 ```
 
-**Kotlin versions:** compiler-plugin APIs are not stable across Kotlin releases. `ghost-compiler-plugin` is built and tested against Kotlin 2.2.21; on any other Kotlin version the Gradle plugin still applies it but logs a warning. If a Native/Wasm compilation fails because of it, set `autoRegistration` to `false` and use `addRegistry`.
+**Kotlin versions:** compiler-plugin APIs are not stable across Kotlin releases. `ghost-compiler-plugin` is compiled against Kotlin 2.2.21 and verified in CI on 2.2.21, 2.3.21 and 2.4.0 (`compat-tests/kotlin-consumer`, `-PkotlinVersion`); `GhostCompilerCompat` bridges the APIs whose JVM signatures changed in 2.4. On any other Kotlin version the Gradle plugin still applies it but logs a warning. If a Native/Wasm compilation fails because of it, set `autoRegistration` to `false` and use `addRegistry`.
 
 **Rejected alternative:** a generated top-level property with `@EagerInitialization` calling `addRegistry`. That annotation is deprecated, behaves differently per backend and gives no ordering guarantee across modules.
 

@@ -11,8 +11,6 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
-import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
 import org.jetbrains.kotlin.ir.types.classOrNull
@@ -66,11 +64,9 @@ internal class GhostSerializerLinkExtension(
         pluginContext: IrPluginContext
     ): IrConstructorCall {
         val serializerType = serializer.owner.defaultType
-        val annotation = IrConstructorCallImpl.fromSymbolOwner(
-            startOffset = UNDEFINED_OFFSET,
-            endOffset = UNDEFINED_OFFSET,
+        val annotation = GhostCompilerCompat.newAnnotation(
             type = linkClass.owner.defaultType,
-            constructorSymbol = linkConstructor
+            constructor = linkConstructor
         )
         annotation.arguments[0] = IrClassReferenceImpl(
             startOffset = UNDEFINED_OFFSET,

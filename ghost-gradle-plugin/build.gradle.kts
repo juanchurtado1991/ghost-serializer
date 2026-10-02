@@ -18,9 +18,9 @@ java {
 val generateGhostVersions by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/ghost")
     val publishVersion = libs.versions.publish.version.get()
-    val kotlinVersion = libs.versions.kotlin.sdk.get()
+    val testedKotlinVersions = libs.versions.kotlin.plugin.tested.get()
     inputs.property("publishVersion", publishVersion)
-    inputs.property("kotlinVersion", kotlinVersion)
+    inputs.property("testedKotlinVersions", testedKotlinVersions)
     outputs.dir(outputDir)
     doLast {
         val dir = outputDir.get().asFile
@@ -31,7 +31,7 @@ val generateGhostVersions by tasks.registering {
             |
             |internal const val DEFAULT_VERSION = "$publishVersion"
             |
-            |internal const val TESTED_KOTLIN_VERSION = "$kotlinVersion"
+            |internal const val TESTED_KOTLIN_VERSIONS = "$testedKotlinVersions"
             |
             """.trimMargin()
         )

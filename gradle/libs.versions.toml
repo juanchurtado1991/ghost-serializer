@@ -1,6 +1,8 @@
 [versions]
 # Core Ecosystem
 kotlin-sdk                      = "2.2.21"
+# Kotlin versions ghost-compiler-plugin is verified against (compat-tests/kotlin-consumer in CI).
+kotlin-plugin-tested            = "2.2.21,2.3.21,2.4.0"
 #noinspection AndroidGradlePluginVersion
 agp                             = "9.1.1"
 ksp                             = "2.3.12"

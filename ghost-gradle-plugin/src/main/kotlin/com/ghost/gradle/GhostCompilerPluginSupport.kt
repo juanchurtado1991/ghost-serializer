@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
  *
  * The `enabled` option is passed as a lazy [Provider] of [GhostExtension.autoRegistration], so it
  * is read after the build script's `ghost { }` block. Compiler-plugin APIs are not stable across
- * Kotlin releases: the plugin is built and tested against [TESTED_KOTLIN_VERSION], and any other
+ * Kotlin releases: the plugin is verified in CI against [TESTED_KOTLIN_VERSIONS], and any other
  * Kotlin version still gets it applied but logs a warning naming the opt-out.
  */
 class GhostCompilerPluginSupport : KotlinCompilerPluginSupportPlugin {
@@ -26,7 +26,8 @@ class GhostCompilerPluginSupport : KotlinCompilerPluginSupportPlugin {
         target: Project
     ) {
         val kotlinVersion = target.getKotlinPluginVersion()
-        if (kotlinVersion != TESTED_KOTLIN_VERSION) {
+        val isTestedVersion = kotlinVersion in TESTED_KOTLIN_VERSIONS.split(VERSION_SEPARATOR)
+        if (!isTestedVersion) {
             target.logger.warn(UNTESTED_VERSION_PREFIX + kotlinVersion + UNTESTED_VERSION_SUFFIX)
         }
     }
@@ -69,8 +70,10 @@ class GhostCompilerPluginSupport : KotlinCompilerPluginSupportPlugin {
             KotlinPlatformType.wasm
         )
 
+        private const val VERSION_SEPARATOR = ","
+
         private const val UNTESTED_VERSION_PREFIX = "Ghost: the compiler plugin is tested with Kotlin " +
-            TESTED_KOTLIN_VERSION + " but this build uses Kotlin "
+            TESTED_KOTLIN_VERSIONS + " but this build uses Kotlin "
         private const val UNTESTED_VERSION_SUFFIX = ". If Kotlin/Native or Kotlin/Wasm compilation fails, " +
             "set ghost { autoRegistration = false } and register modules with Ghost.addRegistry."
     }

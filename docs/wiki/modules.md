@@ -70,7 +70,7 @@ ksp(libs.ghost.compiler)
 ---
 
 ### `ghost-compiler-plugin` — Native/Wasm Serializer Linking
-A small Kotlin compiler plugin that attaches each `@GhostSerialization` class to its generated serializer as an associated object, so Kotlin/Native (iOS) and Kotlin/Wasm resolve serializers with no `Ghost.addRegistry` call. The Gradle plugin applies it to Native/Wasm compilations only; JVM/Android keep ServiceLoader discovery. Opt out with `ghost { autoRegistration.set(false) }`. Built and tested against Kotlin 2.2.21.
+A small Kotlin compiler plugin that attaches each `@GhostSerialization` class to its generated serializer as an associated object, so Kotlin/Native (iOS) and Kotlin/Wasm resolve serializers with no `Ghost.addRegistry` call. The Gradle plugin applies it to Native/Wasm compilations only; JVM/Android keep ServiceLoader discovery. Opt out with `ghost { autoRegistration.set(false) }`. Verified in CI on Kotlin 2.2.21, 2.3.21 and 2.4.0.
 
 **Targets:** JVM only (runs inside the Kotlin compiler)
 

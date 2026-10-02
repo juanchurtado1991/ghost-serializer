@@ -98,7 +98,7 @@ object GhostBridge {
 > The registry class name is derived from `ghost.moduleName`. If you set `arg("ghost.moduleName", "shared_utils")`, the generated class is `GhostModuleRegistry_shared_utils`. Call `prewarm()` once at app launch — typically in `AppDelegate` or the SwiftUI `@main` entry point.
 
 > [!IMPORTANT]
-> Automatic registration needs the `com.ghostserializer.ghost` Gradle plugin. Without it, or with `ghost { autoRegistration.set(false) }`, the `addRegistry` call above is **required**. The compiler plugin is built for Kotlin 2.2.21; on another Kotlin version the build logs a warning, and if Native compilation fails, disable `autoRegistration` and register manually.
+> Automatic registration needs the `com.ghostserializer.ghost` Gradle plugin. Without it, or with `ghost { autoRegistration.set(false) }`, the `addRegistry` call above is **required**. The compiler plugin is verified on Kotlin 2.2.21, 2.3.21 and 2.4.0; on another Kotlin version the build logs a warning, and if Native compilation fails, disable `autoRegistration` and register manually.
 
 ---
 

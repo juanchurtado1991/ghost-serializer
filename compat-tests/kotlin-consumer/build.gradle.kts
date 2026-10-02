@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform") version "2.2.21"
+    kotlin("multiplatform")
     id("com.google.devtools.ksp") version "2.3.12"
     id("com.android.kotlin.multiplatform.library") version "9.1.1"
     id("com.ghostserializer.ghost")

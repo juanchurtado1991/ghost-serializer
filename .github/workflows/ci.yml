@@ -161,6 +161,38 @@ jobs:
             exit 1
           fi
 
+  consumer-compat-newer-kotlin:
+    name: Consumer compatibility (Kotlin ${{ matrix.kotlin }})
+    # The same consumer on newer Kotlin releases. ghost-compiler-plugin is compiled against 2.2.21 and must
+    # still load on newer compilers (their plugin APIs change between releases — see GhostCompilerCompat).
+    # compileKotlinIosArm64 runs the plugin on Kotlin/Native without a Mac; the simulator run stays in
+    # consumer-compat. Keep the matrix in sync with kotlin-plugin-tested in gradle/libs.versions.toml.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        kotlin: [ '2.3.21', '2.4.0' ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Publish Ghost to mavenLocal
+        run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-compiler-plugin:publishToMavenLocal :ghost-gradle-plugin:publishToMavenLocal :ghost-ktor:publishToMavenLocal -PskipTests --console=plain
+
+      - name: Build and test the consumer on Kotlin ${{ matrix.kotlin }} (JVM, Android, Wasm, Native compile)
+        run: ./gradlew -p compat-tests/kotlin-consumer -PkotlinVersion=${{ matrix.kotlin }} jvmTest wasmJsNodeTest compileAndroidMain compileKotlinIosArm64 --console=plain
+
   test-wasm:
     name: Tests (WasmJs)
     runs-on: ubuntu-latest

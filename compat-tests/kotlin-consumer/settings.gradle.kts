@@ -2,7 +2,7 @@
 // published to mavenLocal, with the consumer's own Kotlin/KSP versions, to prove that the
 // published klibs/metadata, the KSP-generated code and the Ghost Gradle plugin (including
 // automatic Kotlin/Native and Kotlin/Wasm registration across modules) work for the minimum
-// supported Kotlin.
+// supported Kotlin (and, via -PkotlinVersion, newer ones).
 pluginManagement {
     repositories {
         mavenLocal()
@@ -12,8 +12,9 @@ pluginManagement {
     }
     resolutionStrategy {
         eachPlugin {
-            if (requested.id.id == "com.ghostserializer.ghost") {
-                useVersion(gradle.extra["ghostVersion"] as String)
+            when {
+                requested.id.id == "com.ghostserializer.ghost" -> useVersion(gradle.extra["ghostVersion"] as String)
+                requested.id.namespace == "org.jetbrains.kotlin" -> useVersion(gradle.extra["kotlinVersion"] as String)
             }
         }
     }
@@ -34,6 +35,9 @@ gradle.extra["ghostVersion"] = providers.gradleProperty("ghostVersion").getOrEls
         ?.groupValues?.get(1)
         ?: error("publish-version not found in gradle/libs.versions.toml")
 )
+
+/** Consumer Kotlin version: `-PkotlinVersion=…` (CI matrix), else the minimum supported one. */
+gradle.extra["kotlinVersion"] = providers.gradleProperty("kotlinVersion").getOrElse("2.2.21")
 
 rootProject.name = "ghost-kotlin-consumer"
 include(":models")
