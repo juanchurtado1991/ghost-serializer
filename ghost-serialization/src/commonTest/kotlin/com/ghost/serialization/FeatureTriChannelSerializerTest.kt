@@ -2,6 +2,7 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.readSet
@@ -28,9 +29,7 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
 
-/**
- * Unit-level tri-channel tests for built-in serializers (pending 1.2.5 release).
- */
+/** Tri-channel coverage for built-in serializers, pending the 1.2.5 release. */
 class FeatureTriChannelSerializerTest {
 
     @Test
@@ -40,12 +39,24 @@ class FeatureTriChannelSerializerTest {
 
         val fromFlat = RawJsonSerializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = RawJsonSerializer.deserialize(GhostJsonReader(bytes))
-        val fromString = RawJsonSerializer.deserialize(GhostJsonStringReader(json))
+        val fromString = RawJsonSerializer.deserialize(GhostJsonStringReader(rawData = json))
 
-        assertSame(bytes, fromFlat.storage)
-        assertSame(bytes, fromStreaming.storage)
-        assertNotSame(bytes, fromString.storage)
-        assertEquals(json, fromString.decodeToString())
+        assertSame(
+            expected = bytes,
+            actual = fromFlat.storage
+        )
+        assertSame(
+            expected = bytes,
+            actual = fromStreaming.storage
+        )
+        assertNotSame(
+            illegal = bytes,
+            actual = fromString.storage
+        )
+        assertEquals(
+            expected = json,
+            actual = fromString.decodeToString()
+        )
     }
 
     @Test
@@ -56,17 +67,26 @@ class FeatureTriChannelSerializerTest {
 
         val streamingSink = Buffer()
         RawJsonSerializer.serialize(GhostJsonWriter(streamingSink), value)
-        assertEquals("""{"x":1}""", streamingSink.readUtf8())
+        assertEquals(
+            expected = """{"x":1}""",
+            actual = streamingSink.readUtf8()
+        )
 
         val flatBytes = ghostInternalEncodeWithWriter { writer: GhostJsonWriter ->
             RawJsonSerializer.serialize(writer, value)
         }
-        assertContentEquals("""{"x":1}""".encodeToByteArray(), flatBytes)
+        assertContentEquals(
+            expected = """{"x":1}""".encodeToByteArray(),
+            actual = flatBytes
+        )
 
         val asString = ghostInternalEncodeToString { writer: GhostJsonStringWriter ->
             RawJsonSerializer.serialize(writer, value)
         }
-        assertEquals("""{"x":1}""", asString)
+        assertEquals(
+            expected = """{"x":1}""",
+            actual = asString
+        )
     }
 
     @Test
@@ -85,90 +105,138 @@ class FeatureTriChannelSerializerTest {
                 ),
             )
         }
-        assertEquals("""{"x":1}""", second)
+        assertEquals(
+            expected = """{"x":1}""",
+            actual = second
+        )
     }
 
     @Test
     fun setSerializerRoundTripsOnAllReaders() {
         val json = """["a","b","c"]"""
         val bytes = json.encodeToByteArray()
-        val serializer = SetSerializer(StringSerializer)
+        val serializer = SetSerializer(itemSerializer = StringSerializer)
 
         val fromFlat = serializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = serializer.deserialize(GhostJsonReader(bytes))
-        val fromString = serializer.deserialize(GhostJsonStringReader(json))
+        val fromString = serializer.deserialize(GhostJsonStringReader(rawData = json))
 
-        assertEquals(setOf("a", "b", "c"), fromFlat)
-        assertEquals(fromFlat, fromStreaming)
-        assertEquals(fromFlat, fromString)
+        assertEquals(
+            expected = setOf("a", "b", "c"),
+            actual = fromFlat
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromStreaming
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromString
+        )
     }
 
     @Test
     fun setSerializerTopLevelStringUsesNativeStringReader() {
         val json = """["x","y","z"]"""
         val restored = Ghost.deserialize<Set<String>>(json)
-        assertEquals(setOf("x", "y", "z"), restored)
+        assertEquals(
+            expected = setOf("x", "y", "z"),
+            actual = restored
+        )
     }
 
     @Test
     fun listSerializerRoundTripsOnAllReaders() {
         val json = """["a","b","c"]"""
         val bytes = json.encodeToByteArray()
-        val serializer = ListSerializer(StringSerializer)
+        val serializer = ListSerializer(itemSerializer = StringSerializer)
 
         val fromFlat = serializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = serializer.deserialize(GhostJsonReader(bytes))
-        val fromString = serializer.deserialize(GhostJsonStringReader(json))
+        val fromString = serializer.deserialize(GhostJsonStringReader(rawData = json))
 
-        assertEquals(listOf("a", "b", "c"), fromFlat)
-        assertEquals(fromFlat, fromStreaming)
-        assertEquals(fromFlat, fromString)
+        assertEquals(
+            expected = listOf("a", "b", "c"),
+            actual = fromFlat
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromStreaming
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromString
+        )
     }
 
     @Test
     fun listSerializerTopLevelStringUsesNativeStringReader() {
         val json = """["one","two"]"""
-        assertEquals(listOf("one", "two"), Ghost.deserialize<List<String>>(json))
+        assertEquals(
+            expected = listOf("one", "two"),
+            actual = Ghost.deserialize<List<String>>(json)
+        )
     }
 
     @Test
     fun mapSerializerRoundTripsOnAllReaders() {
         val json = """{"x":1,"y":2}"""
         val bytes = json.encodeToByteArray()
-        val serializer = MapSerializer(IntSerializer)
+        val serializer = MapSerializer(valueSerializer = IntSerializer)
 
         val fromFlat = serializer.deserialize(GhostJsonReader(bytes))
         val fromStreaming = serializer.deserialize(GhostJsonReader(bytes))
-        val fromString = serializer.deserialize(GhostJsonStringReader(json))
+        val fromString = serializer.deserialize(GhostJsonStringReader(rawData = json))
 
-        assertEquals(mapOf("x" to 1, "y" to 2), fromFlat)
-        assertEquals(fromFlat, fromStreaming)
-        assertEquals(fromFlat, fromString)
+        assertEquals(
+            expected = mapOf("x" to 1, "y" to 2),
+            actual = fromFlat
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromStreaming
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromString
+        )
     }
 
     @Test
     fun mapSerializerTopLevelStringUsesNativeStringReader() {
         val json = """{"count":42}"""
-        assertEquals(mapOf("count" to 42), Ghost.deserialize<Map<String, Int>>(json))
+        assertEquals(
+            expected = mapOf("count" to 42),
+            actual = Ghost.deserialize<Map<String, Int>>(json)
+        )
     }
 
     @Test
     fun extendedScalarsRoundTripOnAllReaders() {
-        assertScalarRoundTrip(FloatSerializer, "1.5", 1.5f)
-        assertScalarRoundTrip(ByteSerializer, "42", 42.toByte())
-        assertScalarRoundTrip(ShortSerializer, "8080", 8080.toShort())
-        assertScalarRoundTrip(CharSerializer, "\"Z\"", 'Z')
+        assertScalarRoundTrip(serializer = FloatSerializer, json = "1.5", expected = 1.5f)
+        assertScalarRoundTrip(serializer = ByteSerializer, json = "42", expected = 42.toByte())
+        assertScalarRoundTrip(serializer = ShortSerializer, json = "8080", expected = 8080.toShort())
+        assertScalarRoundTrip(serializer = CharSerializer, json = "\"Z\"", expected = 'Z')
     }
 
-    private inline fun <T : Any> assertScalarRoundTrip(
-        serializer: com.ghost.serialization.contract.GhostSerializer<T>,
+    private fun <T : Any> assertScalarRoundTrip(
+        serializer: GhostSerializer<T>,
         json: String,
         expected: T
     ) {
         val bytes = json.encodeToByteArray()
-        assertEquals(expected, serializer.deserialize(GhostJsonReader(bytes)))
-        assertEquals(expected, serializer.deserialize(GhostJsonReader(bytes)))
-        assertEquals(expected, serializer.deserialize(GhostJsonStringReader(json)))
+        assertEquals(
+            expected = expected,
+            actual = serializer.deserialize(GhostJsonReader(bytes))
+        )
+        assertEquals(
+            expected = expected,
+            actual = serializer.deserialize(GhostJsonReader(bytes))
+        )
+        assertEquals(
+            expected = expected,
+            actual = serializer.deserialize(GhostJsonStringReader(rawData = json))
+        )
     }
 
     @Test
@@ -182,11 +250,20 @@ class FeatureTriChannelSerializerTest {
         val streamingReader = GhostJsonReader(bytes)
         val fromStreaming = streamingReader.readSet { streamingReader.nextString() }
 
-        val stringReader = GhostJsonStringReader(json)
+        val stringReader = GhostJsonStringReader(rawData = json)
         val fromString = stringReader.readSet { stringReader.nextString() }
 
-        assertEquals(setOf("x", "y"), fromFlat)
-        assertEquals(fromFlat, fromStreaming)
-        assertEquals(fromFlat, fromString)
+        assertEquals(
+            expected = setOf("x", "y"),
+            actual = fromFlat
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromStreaming
+        )
+        assertEquals(
+            expected = fromFlat,
+            actual = fromString
+        )
     }
 }

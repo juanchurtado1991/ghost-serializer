@@ -4,7 +4,7 @@ package com.ghost.benchmark
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.integration.model.ExternalColor
 import com.ghost.serialization.integration.model.ExternalColorSerializer
@@ -52,7 +52,7 @@ internal object BenchmarkEnvironment {
      *   (callers should exit the JVM with a non-zero status).
      */
     fun init(): ThreadMXBean? {
-        Ghost.addRegistry(manualRegistry)
+        Ghost.addRegistry(registry = manualRegistry)
         Ghost.prewarm()
         return initializePlatformDiagnostics()
     }
@@ -69,47 +69,32 @@ internal object BenchmarkEnvironment {
         )
     }
 
-    private val manualRegistry = object : GhostRegistry {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
-            return when (clazz) {
-                ExternalColor::class -> ExternalColorSerializer as GhostSerializer<T>
-                ExternalDate::class -> ExternalDateSerializer as GhostSerializer<T>
-                ProtoDuration::class -> ProtoDurationSerializer as GhostSerializer<T>
-                ProtoTimestamp::class -> ProtoTimestampSerializer as GhostSerializer<T>
-                ProtoAny::class -> ProtoAnySerializer as GhostSerializer<T>
-                ProtoValue::class -> ProtoValueSerializer as GhostSerializer<T>
-                ProtoBoolValue::class -> ProtoBoolValueSerializer as GhostSerializer<T>
-                ProtoStringValue::class -> ProtoStringValueSerializer as GhostSerializer<T>
-                ProtoBytesValue::class -> ProtoBytesValueSerializer as GhostSerializer<T>
-                ProtoDoubleValue::class -> ProtoDoubleValueSerializer as GhostSerializer<T>
-                ProtoFloatValue::class -> ProtoFloatValueSerializer as GhostSerializer<T>
-                ProtoInt32Value::class -> ProtoInt32ValueSerializer as GhostSerializer<T>
-                ProtoInt64Value::class -> ProtoInt64ValueSerializer as GhostSerializer<T>
-                ProtoUInt32Value::class -> ProtoUInt32ValueSerializer as GhostSerializer<T>
-                ProtoUInt64Value::class -> ProtoUInt64ValueSerializer as GhostSerializer<T>
-                else -> null
-            }
-        }
+    /** Single source of truth for [manualRegistry] — was duplicated verbatim as a `when` in
+     * `getSerializer` and a `mapOf` in `getAllSerializers`; adding a manual serializer now means
+     * adding one entry here instead of two. */
+    private val manualSerializers: Map<KClass<*>, GhostSerializer<*>> = mapOf(
+        ExternalColor::class to ExternalColorSerializer,
+        ExternalDate::class to ExternalDateSerializer,
+        ProtoDuration::class to ProtoDurationSerializer,
+        ProtoTimestamp::class to ProtoTimestampSerializer,
+        ProtoAny::class to ProtoAnySerializer,
+        ProtoValue::class to ProtoValueSerializer,
+        ProtoBoolValue::class to ProtoBoolValueSerializer,
+        ProtoStringValue::class to ProtoStringValueSerializer,
+        ProtoBytesValue::class to ProtoBytesValueSerializer,
+        ProtoDoubleValue::class to ProtoDoubleValueSerializer,
+        ProtoFloatValue::class to ProtoFloatValueSerializer,
+        ProtoInt32Value::class to ProtoInt32ValueSerializer,
+        ProtoInt64Value::class to ProtoInt64ValueSerializer,
+        ProtoUInt32Value::class to ProtoUInt32ValueSerializer,
+        ProtoUInt64Value::class to ProtoUInt64ValueSerializer
+    )
 
-        override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
-            return mapOf(
-                ExternalColor::class to ExternalColorSerializer,
-                ExternalDate::class to ExternalDateSerializer,
-                ProtoDuration::class to ProtoDurationSerializer,
-                ProtoTimestamp::class to ProtoTimestampSerializer,
-                ProtoAny::class to ProtoAnySerializer,
-                ProtoValue::class to ProtoValueSerializer,
-                ProtoBoolValue::class to ProtoBoolValueSerializer,
-                ProtoStringValue::class to ProtoStringValueSerializer,
-                ProtoBytesValue::class to ProtoBytesValueSerializer,
-                ProtoDoubleValue::class to ProtoDoubleValueSerializer,
-                ProtoFloatValue::class to ProtoFloatValueSerializer,
-                ProtoInt32Value::class to ProtoInt32ValueSerializer,
-                ProtoInt64Value::class to ProtoInt64ValueSerializer,
-                ProtoUInt32Value::class to ProtoUInt32ValueSerializer,
-                ProtoUInt64Value::class to ProtoUInt64ValueSerializer
-            )
-        }
+    private val manualRegistry = object : AbstractGhostRegistry() {
+        override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = manualSerializers
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
+            manualSerializers[clazz] as? GhostSerializer<T>
     }
 }

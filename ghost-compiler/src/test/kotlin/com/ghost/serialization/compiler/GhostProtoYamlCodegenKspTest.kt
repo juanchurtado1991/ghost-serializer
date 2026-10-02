@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -18,7 +19,7 @@ class GhostProtoYamlCodegenKspTest {
     @Test
     fun protoModelGeneratesYamlSerializerWithQuotedInt64Write() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoYamlCounter.kt",
                 """
                 package fixtures
@@ -35,23 +36,23 @@ class GhostProtoYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlSerializer<ProtoYamlCounter>" in generated,
-            "Expected GhostYamlSerializer superinterface:\n$generated"
+            actual = "GhostYamlSerializer<ProtoYamlCounter>" in generated,
+            message = "Expected GhostYamlSerializer superinterface:\n$generated"
         )
         assertTrue(
-            "writer.value(value.request_id.toString())" in generated,
-            "Expected quoted int64 YAML write for request_id:\n$generated"
+            actual = "writer.value(value.request_id.toString())" in generated,
+            message = "Expected quoted int64 YAML write for request_id:\n$generated"
         )
         assertTrue(
-            "override fun deserialize(reader: GhostYamlFlatReader" in generated,
-            "Expected YAML deserialize method:\n$generated"
+            actual = "override fun deserialize(reader: GhostYamlFlatReader" in generated,
+            message = "Expected YAML deserialize method:\n$generated"
         )
     }
 
     @Test
     fun protoByteArrayUsesBase64OnYamlSerializePath() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoYamlBlob.kt",
                 """
                 package fixtures
@@ -68,8 +69,8 @@ class GhostProtoYamlCodegenKspTest {
         )
 
         assertTrue(
-            "writer.value(encodeBase64String(value.payload))" in generated,
-            "Expected Base64 YAML write for proto ByteArray:\n$generated"
+            actual = "writer.value(encodeBase64String(value.payload))" in generated,
+            message = "Expected Base64 YAML write for proto ByteArray:\n$generated"
         )
     }
 
@@ -86,11 +87,11 @@ class GhostProtoYamlCodegenKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

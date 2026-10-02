@@ -4,26 +4,15 @@ package com.ghost.serialization.proto.parser
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
-import com.ghost.serialization.parser.common.GhostJsonConstants
-import com.ghost.serialization.parser.common.JsonReaderOptions
-import com.ghost.serialization.parser.bytes.readQuotedString
+import com.ghost.serialization.parser.bytes.extensions.readQuotedString
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
-import com.ghost.serialization.parser.streaming.beginArray
-import com.ghost.serialization.parser.streaming.beginObject
-import com.ghost.serialization.parser.streaming.consumeArraySeparator
-import com.ghost.serialization.parser.streaming.consumeKeySeparator
-import com.ghost.serialization.parser.streaming.endArray
-import com.ghost.serialization.parser.streaming.endObject
-import com.ghost.serialization.parser.streaming.nextBoolean
-import com.ghost.serialization.parser.streaming.nextKey
-import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.proto.protoReaderOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 
 class GhostProtoFlatReaderEdgeCaseTest {
 
@@ -31,37 +20,52 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun quotedInt32Accepted() {
-        val reader = protoReaderOf("""{"retries":"42"}""")
+        val reader = protoReaderOf(json = """{"retries":"42"}""")
         reader.beginObject()
-        assertEquals("retries", reader.nextKey())
+        assertEquals(
+            expected = "retries",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
     @Test
     fun bareInt32Accepted() {
-        val reader = protoReaderOf("""{"retries":42}""")
+        val reader = protoReaderOf(json = """{"retries":42}""")
         reader.beginObject()
-        assertEquals("retries", reader.nextKey())
+        assertEquals(
+            expected = "retries",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
     @Test
     fun quotedInt32WithWholeFractionAccepted() {
-        val reader = protoReaderOf("""{"retries":"1.0"}""")
+        val reader = protoReaderOf(json = """{"retries":"1.0"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
     @Test
     fun quotedInt32WithFractionalPartRejected() {
-        val reader = protoReaderOf("""{"retries":"1.5"}""")
+        val reader = protoReaderOf(json = """{"retries":"1.5"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -70,7 +74,7 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun bareInt32WithFractionalPartRejected() {
-        val reader = protoReaderOf("""{"retries":1.5}""")
+        val reader = protoReaderOf(json = """{"retries":1.5}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -79,27 +83,33 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun quotedInt64Accepted() {
-        val reader = protoReaderOf("""{"deviceId":"9223372036854775807"}""")
+        val reader = protoReaderOf(json = """{"deviceId":"9223372036854775807"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
         reader.endObject()
     }
 
     @Test
     fun bareInt64Accepted() {
-        val reader = protoReaderOf("""{"deviceId":9223372036854775807}""")
+        val reader = protoReaderOf(json = """{"deviceId":9223372036854775807}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
         reader.endObject()
     }
 
     @Test
     fun truncatedInt64OverflowThrows() {
-        val reader = protoReaderOf("""{"deviceId":"92233720368547758089"}""")
+        val reader = protoReaderOf(json = """{"deviceId":"92233720368547758089"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
@@ -110,20 +120,26 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun validBase64Decodes() {
-        val reader = protoReaderOf("\"YWJjMTIzIT8kKiYoKSctPUB+\"")
-        assertEquals("abc123!?$*&()'-=@~", reader.nextProtoBytes().decodeToString())
+        val reader = protoReaderOf(json = "\"YWJjMTIzIT8kKiYoKSctPUB+\"")
+        assertEquals(
+            expected = "abc123!?$*&()'-=@~",
+            actual = reader.nextProtoBytes().decodeToString()
+        )
     }
 
     @Test
     fun invalidBase64CharacterThrows() {
-        val reader = protoReaderOf("\"!!!not-base64!!!\"")
+        val reader = protoReaderOf(json = "\"!!!not-base64!!!\"")
         assertFailsWith<GhostJsonException> { reader.nextProtoBytes() }
     }
 
     @Test
     fun emptyBase64StringDecodesToEmptyBytes() {
-        val reader = protoReaderOf("\"\"")
-        assertEquals(0, reader.nextProtoBytes().size)
+        val reader = protoReaderOf(json = "\"\"")
+        assertEquals(
+            expected = 0,
+            actual = reader.nextProtoBytes().size
+        )
     }
 
     // ── C. MALFORMATIONS & DoS ───────────────────────────────────────
@@ -131,7 +147,7 @@ class GhostProtoFlatReaderEdgeCaseTest {
     @Test
     fun deepNestingRespectsMaxDepthLimit() {
         val deepJson = "[".repeat(300) + "]".repeat(300)
-        val reader = protoReaderOf(deepJson)
+        val reader = protoReaderOf(json = deepJson)
         assertFailsWith<GhostJsonException> {
             repeat(300) { reader.beginArray() }
         }
@@ -139,12 +155,15 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun truncatedJsonThrowsOnRead() {
-        val reader = protoReaderOf("""{"id": 1, "name": "Ju""")
+        val reader = protoReaderOf(json = """{"id": 1, "name": "Ju""")
         reader.beginObject()
         reader.skipWhitespace()
         reader.readQuotedString()
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.consumeArraySeparator()
         reader.skipWhitespace()
         reader.readQuotedString()
@@ -154,7 +173,7 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun malformedObjectMissingValueThrows() {
-        val reader = protoReaderOf("""{ "k": }""")
+        val reader = protoReaderOf(json = """{ "k": }""")
         assertFailsWith<GhostJsonException> {
             reader.beginObject()
             reader.nextKey()
@@ -165,7 +184,7 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun malformedArrayTrailingCommaThrows() {
-        val reader = protoReaderOf("[1, 2, ]")
+        val reader = protoReaderOf(json = "[1, 2, ]")
         reader.beginArray()
         reader.nextInt()
         reader.consumeArraySeparator()
@@ -175,14 +194,14 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun emptyObjectParsesSuccessfully() {
-        val reader = protoReaderOf("{}")
+        val reader = protoReaderOf(json = "{}")
         reader.beginObject()
         reader.endObject()
     }
 
     @Test
     fun emptyArrayParsesSuccessfully() {
-        val reader = protoReaderOf("[]")
+        val reader = protoReaderOf(json = "[]")
         reader.beginArray()
         reader.endArray()
     }
@@ -191,27 +210,45 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun skipValueIgnoresUnknownNestedObject() {
-        val reader = protoReaderOf("""{"known":"x","unknown":{"deep":1},"after":2}""")
+        val reader = protoReaderOf(json = """{"known":"x","unknown":{"deep":1},"after":2}""")
         reader.beginObject()
-        assertEquals("known", reader.nextKey())
+        assertEquals(
+            expected = "known",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals("x", reader.nextString())
-        assertEquals("unknown", reader.nextKey())
+        assertEquals(
+            expected = "x",
+            actual = reader.nextString()
+        )
+        assertEquals(
+            expected = "unknown",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
         reader.skipValue()
-        assertEquals("after", reader.nextKey())
+        assertEquals(
+            expected = "after",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals(2, reader.nextInt())
+        assertEquals(
+            expected = 2,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
     @Test
     fun skipValueIgnoresUnknownArray() {
-        val reader = protoReaderOf("""{"known":1,"noise":[1,{"a":2},3]}""")
+        val reader = protoReaderOf(json = """{"known":1,"noise":[1,{"a":2},3]}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.nextKey()
         reader.consumeKeySeparator()
         reader.skipValue()
@@ -223,21 +260,30 @@ class GhostProtoFlatReaderEdgeCaseTest {
     @Test
     fun enumAcceptsQuotedNameAndBareNumber() {
         val options = JsonReaderOptions.of("UNKNOWN", "FOO", "BAR")
-        val readerStr = protoReaderOf("\"BAR\"")
-        assertEquals(2, readerStr.nextProtoEnum(options))
+        val readerStr = protoReaderOf(json = "\"BAR\"")
+        assertEquals(
+            expected = 2,
+            actual = readerStr.nextProtoEnum(options = options)
+        )
 
-        val readerInt = protoReaderOf("1")
-        assertEquals(1, readerInt.nextProtoEnum(options))
+        val readerInt = protoReaderOf(json = "1")
+        assertEquals(
+            expected = 1,
+            actual = readerInt.nextProtoEnum(options = options)
+        )
     }
 
     @Test
     fun handlesExcessiveWhitespace() {
-        val reader = protoReaderOf("  {  \"v\"  :  42  }  ")
+        val reader = protoReaderOf(json = "  {  \"v\"  :  42  }  ")
         reader.beginObject()
         reader.skipWhitespace()
         reader.readQuotedString()
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -245,11 +291,14 @@ class GhostProtoFlatReaderEdgeCaseTest {
 
     @Test
     fun resetReusesReaderWithDifferentPayloadSizes() {
-        val reader = GhostProtoJsonFlatReader("""{"short":1}""".encodeToByteArray())
+        val reader = GhostProtoJsonFlatReader(rawData = """{"short":1}""".encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(1, reader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = reader.nextInt()
+        )
         reader.endObject()
 
         val longerJson = """{"very_long_field_name_indeed":"9223372036854775807"}"""
@@ -257,21 +306,33 @@ class GhostProtoFlatReaderEdgeCaseTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Long.MAX_VALUE, reader.nextLong())
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = reader.nextLong()
+        )
         reader.endObject()
 
         reader.reset("""{"flag":true}""".encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.nextBoolean())
+        assertTrue(actual = reader.nextBoolean())
         reader.endObject()
     }
 
     @Test
     fun peekNextTokenReportsStructure() {
-        assertEquals(GhostJsonConstants.OPEN_OBJ_INT, protoReaderOf("{}").peekNextToken())
-        assertEquals(GhostJsonConstants.OPEN_ARR_INT, protoReaderOf("[]").peekNextToken())
-        assertEquals(GhostJsonConstants.QUOTE_INT, protoReaderOf("\"hello\"").peekNextToken())
+        assertEquals(
+            expected = TOK.OPEN_OBJ_INT,
+            actual = protoReaderOf(json = "{}").peekNextToken()
+        )
+        assertEquals(
+            expected = TOK.OPEN_ARR_INT,
+            actual = protoReaderOf(json = "[]").peekNextToken()
+        )
+        assertEquals(
+            expected = TOK.QUOTE_INT,
+            actual = protoReaderOf(json = "\"hello\"").peekNextToken()
+        )
     }
 }

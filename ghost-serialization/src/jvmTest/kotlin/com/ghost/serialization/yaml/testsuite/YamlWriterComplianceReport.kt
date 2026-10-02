@@ -12,7 +12,7 @@ import kotlin.system.exitProcess
  * can never quietly disagree.
  */
 fun main() {
-    val writableCases = YamlTestSuiteLoader.cases.filter { decodeOriginal(it) != null }
+    val writableCases = YamlTestSuiteLoader.cases.filter { decodeOriginal(case = it) != null }
     val roundTripDeviationIds = writerRoundTripDeviations.map { it.id }.toSet()
     val kamlOracleDeviationIds = writerKamlOracleDeviations.map { it.id }.toSet()
 
@@ -21,7 +21,7 @@ fun main() {
     val roundTripUnexpected = mutableListOf<String>()
     for (case in writableCases) {
         val expectedToMatch = case.id !in roundTripDeviationIds
-        val matches = writerRoundTripMatches(case)
+        val matches = writerRoundTripMatches(case = case)
         when {
             matches == expectedToMatch && case.id !in roundTripDeviationIds -> roundTripPass++
             matches == expectedToMatch && case.id in roundTripDeviationIds -> roundTripKnown++
@@ -34,7 +34,7 @@ fun main() {
     val kamlUnexpected = mutableListOf<String>()
     for (case in writableCases) {
         val expectedToMatch = case.id !in kamlOracleDeviationIds
-        val matches = writerOutputIsKamlAcceptable(case)
+        val matches = writerOutputIsKamlAcceptable(case = case)
         when {
             matches == expectedToMatch && case.id !in kamlOracleDeviationIds -> kamlPass++
             matches == expectedToMatch && case.id in kamlOracleDeviationIds -> kamlKnown++

@@ -1,6 +1,6 @@
 package com.ghost.serialization.compiler
 
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -14,12 +14,12 @@ class GhostSerializationProcessorTest {
     @Test
     fun providerIsDiscoverable() {
         val provider = GhostSerializationProvider()
-        assertNotNull(provider)
-        assertEquals("GhostSerializationProvider", provider::class.simpleName)
+        assertNotNull(actual = provider)
+        assertEquals(expected = "GhostSerializationProvider", actual = provider::class.simpleName)
     }
 
     @Test
     fun registryPrefixIsStable() {
-        assertEquals("GhostModuleRegistry", GhostEmitterConstants.STR_REGISTRY_PREFIX)
+        assertEquals(expected = "GhostModuleRegistry", actual = GhostProcessorConstants.STR_REGISTRY_PREFIX)
     }
 }

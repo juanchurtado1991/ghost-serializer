@@ -1,6 +1,6 @@
 package com.ghost.serialization
 
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import kotlin.reflect.KClass
 import kotlin.test.Test
@@ -11,7 +11,7 @@ class DeepPrewarmValidationTest {
 
     @Test
     fun `prewarm should populate serializer cache eagerly`() {
-        val mockRegistry = object : GhostRegistry {
+        val mockRegistry = object : AbstractGhostRegistry() {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = null
 
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
@@ -19,19 +19,23 @@ class DeepPrewarmValidationTest {
                     String::class to com.ghost.serialization.serializers.StringSerializer as GhostSerializer<*>
                 )
             }
+
         }
 
         Ghost.serializerCache.clear()
-        Ghost.addRegistry(mockRegistry)
+        Ghost.addRegistry(registry = mockRegistry)
 
         // serializerCache is internal; verified indirectly via the prewarm effect below
         Ghost.prewarm()
 
         val serializer = Ghost.getSerializer(String::class)
         assertTrue(
-            Ghost.serializerCache.containsKey(String::class),
-            "Cache should contain String::class after deep prewarm"
+            actual = Ghost.serializerCache.containsKey(key = String::class),
+            message = "Cache should contain String::class after deep prewarm"
         )
-        assertEquals(com.ghost.serialization.serializers.StringSerializer, serializer)
+        assertEquals(
+            expected = com.ghost.serialization.serializers.StringSerializer,
+            actual = serializer
+        )
     }
 }

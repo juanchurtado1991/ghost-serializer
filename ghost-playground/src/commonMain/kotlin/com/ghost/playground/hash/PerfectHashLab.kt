@@ -31,53 +31,53 @@ object PerfectHashLab {
         TABLE_SIZE_8192,
     )
 
-    fun findPerfectHash(names: List<String>): PerfectHashConfig {
-        if (names.isEmpty()) {
-            return PerfectHashConfig(
-                0,
-                HASH_MULTIPLIER_START,
-                EMPTY_TABLE_SIZE,
-                extendedKeyHash = false
-            )
-        }
-        findInternal(names, useExtendedKeyHash = false)?.let { return it.config }
-        findInternal(names, useExtendedKeyHash = true)?.let { return it.config }
-        error("Could not find a collision-free perfect hash for fields: ${names.joinToString()}")
-    }
-
-    /** Returns the hash configuration and dispatch indices (`-1` marks an empty slot). */
-    fun dispatchTable(names: List<String>): Pair<PerfectHashConfig, IntArray> {
-        if (names.isEmpty()) {
-            return PerfectHashConfig(
-                0,
-                HASH_MULTIPLIER_START,
-                EMPTY_TABLE_SIZE,
-                extendedKeyHash = false
-            ) to
-                    IntArray(EMPTY_TABLE_SIZE) { EMPTY_SLOT }
-        }
-        findInternal(names, useExtendedKeyHash = false)?.let { return it.config to it.dispatch }
-        findInternal(names, useExtendedKeyHash = true)?.let { return it.config to it.dispatch }
-        error("Could not find a collision-free perfect hash for fields: ${names.joinToString()}")
-    }
-
     /**
      * All dispatch slots plus a human-readable hash summary for the preview UI.
      * The full table must be returned: the minimum size is 128, and fields may hash
      * into slots above 64, so truncating the preview would hide occupied entries.
      */
     fun dispatchPreview(names: List<String>): Pair<List<DispatchSlot>, String> {
-        val (cfg, table) = dispatchTable(names)
+        val (cfg, table) = dispatchTable(names = names)
         val slots = List(cfg.tableSize) { slotIndex ->
             val fieldIndex = table.getOrNull(slotIndex) ?: EMPTY_SLOT
             val name = if (fieldIndex >= 0) names[fieldIndex] else null
-            DispatchSlot(slotIndex, name, name != null)
+            DispatchSlot(index = slotIndex, fieldName = name, occupied = name != null)
         }
         val summary = buildString {
             append("table=${cfg.tableSize}, multiplier=${cfg.multiplier}, shift=${cfg.shift}")
             if (cfg.extendedKeyHash) append(", extended keys")
         }
         return slots to summary
+    }
+
+    /** Returns the hash configuration and dispatch indices (`-1` marks an empty slot). */
+    fun dispatchTable(names: List<String>): Pair<PerfectHashConfig, IntArray> {
+        if (names.isEmpty()) {
+            return PerfectHashConfig(
+                shift = 0,
+                multiplier = HASH_MULTIPLIER_START,
+                tableSize = EMPTY_TABLE_SIZE,
+                extendedKeyHash = false
+            ) to
+                    IntArray(EMPTY_TABLE_SIZE) { EMPTY_SLOT }
+        }
+        findInternal(names = names, useExtendedKeyHash = false)?.let { return it.config to it.dispatch }
+        findInternal(names = names, useExtendedKeyHash = true)?.let { return it.config to it.dispatch }
+        error("Could not find a collision-free perfect hash for fields: ${names.joinToString()}")
+    }
+
+    fun findPerfectHash(names: List<String>): PerfectHashConfig {
+        if (names.isEmpty()) {
+            return PerfectHashConfig(
+                shift = 0,
+                multiplier = HASH_MULTIPLIER_START,
+                tableSize = EMPTY_TABLE_SIZE,
+                extendedKeyHash = false
+            )
+        }
+        findInternal(names = names, useExtendedKeyHash = false)?.let { return it.config }
+        findInternal(names = names, useExtendedKeyHash = true)?.let { return it.config }
+        error("Could not find a collision-free perfect hash for fields: ${names.joinToString()}")
     }
 
     private data class HashResult(val config: PerfectHashConfig, val dispatch: IntArray) {
@@ -100,42 +100,20 @@ object PerfectHashLab {
         }
     }
 
-    private fun findInternal(names: List<String>, useExtendedKeyHash: Boolean): HashResult? {
-        val rawBytes = names.map { it.encodeToByteArray() }
-        val hasCollisions = useExtendedKeyHash || detectPrefixLengthCollisions(rawBytes)
-        for (tableSize in TABLE_SIZES) {
-            val tableMask = tableSize - 1
-            for (multiplier in HASH_MULTIPLIER_START..HASH_MULTIPLIER_LIMIT step HASH_MULTIPLIER_STEP) {
-                for (shift in 0..HASH_SHIFT_LIMIT) {
-                    val dispatch = IntArray(tableSize) { EMPTY_SLOT }
-                    var collision = false
-                    for (index in rawBytes.indices) {
-                        val bytes = rawBytes[index]
-                        if (bytes.isEmpty()) continue
-                        val key = computeDispatchKey(bytes, hasCollisions)
-                        val hash = ((key * multiplier + bytes.size) shr shift) and tableMask
-                        if (dispatch[hash] == EMPTY_SLOT) {
-                            dispatch[hash] = index
-                        } else {
-                            collision = true
-                            break
-                        }
-                    }
-                    if (!collision) {
-                        return HashResult(
-                            PerfectHashConfig(
-                                shift,
-                                multiplier,
-                                tableSize,
-                                extendedKeyHash = hasCollisions
-                            ),
-                            dispatch,
-                        )
-                    }
-                }
+    private fun computeDispatchKey(bytes: ByteArray, hasCollisions: Boolean): Int {
+        var key = 0
+        if (bytes.isNotEmpty()) key = key or (bytes[0].toInt() and BYTE_MASK)
+        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
+        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
+        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
+        if (hasCollisions) {
+            var ci = 4
+            while (ci < bytes.size) {
+                key = key * COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and BYTE_MASK)
+                ci++
             }
         }
-        return null
+        return key
     }
 
     private fun detectPrefixLengthCollisions(rawBytes: List<ByteArray>): Boolean {
@@ -153,19 +131,41 @@ object PerfectHashLab {
         return false
     }
 
-    private fun computeDispatchKey(bytes: ByteArray, hasCollisions: Boolean): Int {
-        var key = 0
-        if (bytes.isNotEmpty()) key = key or (bytes[0].toInt() and BYTE_MASK)
-        if (bytes.size >= 2) key = key or ((bytes[1].toInt() and BYTE_MASK) shl SHIFT_8)
-        if (bytes.size >= 3) key = key or ((bytes[2].toInt() and BYTE_MASK) shl SHIFT_16)
-        if (bytes.size >= 4) key = key or ((bytes[3].toInt() and BYTE_MASK) shl SHIFT_24)
-        if (hasCollisions) {
-            var ci = 4
-            while (ci < bytes.size) {
-                key = key * COLLISION_HASH_MULTIPLIER + (bytes[ci].toInt() and BYTE_MASK)
-                ci++
+    private fun findInternal(names: List<String>, useExtendedKeyHash: Boolean): HashResult? {
+        val rawBytes = names.map { it.encodeToByteArray() }
+        val hasCollisions = useExtendedKeyHash || detectPrefixLengthCollisions(rawBytes = rawBytes)
+        for (tableSize in TABLE_SIZES) {
+            val tableMask = tableSize - 1
+            for (multiplier in HASH_MULTIPLIER_START..HASH_MULTIPLIER_LIMIT step HASH_MULTIPLIER_STEP) {
+                for (shift in 0..HASH_SHIFT_LIMIT) {
+                    val dispatch = IntArray(tableSize) { EMPTY_SLOT }
+                    var collision = false
+                    for (index in rawBytes.indices) {
+                        val bytes = rawBytes[index]
+                        if (bytes.isEmpty()) continue
+                        val key = computeDispatchKey(bytes = bytes, hasCollisions = hasCollisions)
+                        val hash = ((key * multiplier + bytes.size) shr shift) and tableMask
+                        if (dispatch[hash] == EMPTY_SLOT) {
+                            dispatch[hash] = index
+                        } else {
+                            collision = true
+                            break
+                        }
+                    }
+                    if (!collision) {
+                        return HashResult(
+                            config = PerfectHashConfig(
+                                shift = shift,
+                                multiplier = multiplier,
+                                tableSize = tableSize,
+                                extendedKeyHash = hasCollisions
+                            ),
+                            dispatch = dispatch,
+                        )
+                    }
+                }
             }
         }
-        return key
+        return null
     }
 }

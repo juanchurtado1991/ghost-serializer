@@ -3,7 +3,7 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
@@ -19,42 +19,21 @@ import com.ghost.serialization.parser.strings.endObject
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+import com.ghost.serialization.proto.GhostProtoConstants as PC
 
-
-/**
- * Serializer for [ProtoStruct].
- */
-object ProtoStructSerializer : GhostSerializer<ProtoStruct> {
-    override val typeName: String get() = C.WKT_STRUCT_TYPE
-
-    override fun serialize(writer: GhostJsonWriter, value: ProtoStruct) {
-        writer.beginObject()
-        for ((mapKey, mapValue) in value) {
-            writer.name(mapKey)
-            ProtoValueSerializer.serialize(writer, mapValue)
-        }
-        writer.endObject()
-    }
-
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoStruct) {
-        writer.beginObject()
-        for ((mapKey, mapValue) in value) {
-            writer.name(mapKey)
-            ProtoValueSerializer.serialize(writer, mapValue)
-        }
-        writer.endObject()
-    }
+object ProtoStructSerializer : AbstractGhostSerializer<ProtoStruct>() {
+    override val typeName: String get() = PC.WKT_STRUCT_TYPE
 
     override fun deserialize(reader: GhostJsonReader): ProtoStruct {
         val map = mutableMapOf<String, ProtoValue>()
         reader.beginObject()
-        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {
             val key = reader.nextString()
             reader.consumeKeySeparator()
-            val value = ProtoValueSerializer.deserialize(reader)
+            val value = ProtoValueSerializer.deserialize(reader = reader)
             map[key] = value
-            if (reader.peekNextToken() == C.COMMA_INT) {
+            if (reader.peekNextToken() == TOK.COMMA_INT) {
                 reader.consumeArraySeparator()
             }
         }
@@ -65,12 +44,12 @@ object ProtoStructSerializer : GhostSerializer<ProtoStruct> {
     override fun deserialize(reader: GhostJsonFlatReader): ProtoStruct {
         val map = mutableMapOf<String, ProtoValue>()
         reader.beginObject()
-        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {
             val key = reader.nextString()
             reader.consumeKeySeparator()
-            val value = ProtoValueSerializer.deserialize(reader)
+            val value = ProtoValueSerializer.deserialize(reader = reader)
             map[key] = value
-            if (reader.peekNextToken() == C.COMMA_INT) {
+            if (reader.peekNextToken() == TOK.COMMA_INT) {
                 reader.consumeArraySeparator()
             }
         }
@@ -81,16 +60,34 @@ object ProtoStructSerializer : GhostSerializer<ProtoStruct> {
     override fun deserialize(reader: GhostJsonStringReader): ProtoStruct {
         val map = mutableMapOf<String, ProtoValue>()
         reader.beginObject()
-        while (reader.peekNextToken() != C.CLOSE_OBJ_INT) {
+        while (reader.peekNextToken() != TOK.CLOSE_OBJ_INT) {
             val key = reader.nextString()
             reader.consumeKeySeparator()
-            val value = ProtoValueSerializer.deserialize(reader)
+            val value = ProtoValueSerializer.deserialize(reader = reader)
             map[key] = value
-            if (reader.peekNextToken() == C.COMMA_INT) {
+            if (reader.peekNextToken() == TOK.COMMA_INT) {
                 reader.consumeArraySeparator()
             }
         }
         reader.endObject()
         return map
+    }
+
+    override fun serialize(writer: GhostJsonWriter, value: ProtoStruct) {
+        writer.beginObject()
+        for ((mapKey, mapValue) in value) {
+            writer.name(key = mapKey)
+            ProtoValueSerializer.serialize(writer = writer, value = mapValue)
+        }
+        writer.endObject()
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: ProtoStruct) {
+        writer.beginObject()
+        for ((mapKey, mapValue) in value) {
+            writer.name(key = mapKey)
+            ProtoValueSerializer.serialize(writer = writer, value = mapValue)
+        }
+        writer.endObject()
     }
 }

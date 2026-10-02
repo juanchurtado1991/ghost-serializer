@@ -4,7 +4,8 @@ package com.ghost.serialization.proto
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
@@ -30,36 +31,36 @@ import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import kotlin.reflect.KClass
 
-/** Minimal proto-flavored model for entry-point and leniency tests. */
-object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> {
+/** Hand-written [GhostSerializer] for [ProtoEntryPointDevice], covering all reader flavors. */
+object ProtoEntryPointDeviceSerializer : AbstractGhostSerializer<ProtoEntryPointDevice>() {
     override val typeName: String = "ProtoEntryPointDevice"
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoEntryPointDevice) {
         writer.beginObject()
-        writer.name("deviceId")
+        writer.name(key = "deviceId")
         writer.value(value.deviceId.toString())
-        writer.name("label")
+        writer.name(key = "label")
         writer.value(value.label)
         writer.endObject()
     }
 
     override fun serialize(writer: GhostJsonStringWriter, value: ProtoEntryPointDevice) {
         writer.beginObject()
-        writer.name("deviceId")
+        writer.name(key = "deviceId")
         writer.value(value.deviceId.toString())
-        writer.name("label")
+        writer.name(key = "label")
         writer.value(value.label)
         writer.endObject()
     }
 
     override fun deserialize(reader: GhostJsonReader): ProtoEntryPointDevice =
-        deserializeImpl(reader)
+        deserializeImpl(reader = reader)
 
     override fun deserialize(reader: GhostJsonFlatReader): ProtoEntryPointDevice =
-        deserializeImpl(reader)
+        deserializeImpl(reader = reader)
 
     override fun deserialize(reader: GhostJsonStringReader): ProtoEntryPointDevice =
-        deserializeImpl(reader)
+        deserializeImpl(reader = reader)
 
     private fun deserializeImpl(reader: Any): ProtoEntryPointDevice {
         var deviceId = 0L
@@ -136,14 +137,14 @@ object ProtoEntryPointDeviceSerializer : GhostSerializer<ProtoEntryPointDevice> 
 
             else -> error("Unsupported reader: $reader")
         }
-        return ProtoEntryPointDevice(deviceId, label)
+        return ProtoEntryPointDevice(deviceId = deviceId, label = label)
     }
 }
 
 /** Registers [ProtoDuration] and [ProtoEntryPointDevice] for proto test suites. */
 fun registerProtoTestFixtures() {
     Ghost.addRegistry(
-        object : GhostRegistry {
+        registry = object : AbstractGhostRegistry() {
             private val map =
                 mapOf<KClass<*>, GhostSerializer<*>>(
                     ProtoDuration::class to ProtoDurationSerializer,
@@ -155,9 +156,10 @@ fun registerProtoTestFixtures() {
                 map[clazz] as? GhostSerializer<T>
 
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = map
+
         },
     )
 }
 
 fun protoReaderOf(json: String): GhostProtoJsonFlatReader =
-    GhostProtoJsonFlatReader(json.encodeToByteArray())
+    GhostProtoJsonFlatReader(rawData = json.encodeToByteArray())

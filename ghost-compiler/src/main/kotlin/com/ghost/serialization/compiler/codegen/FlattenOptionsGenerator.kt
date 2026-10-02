@@ -6,19 +6,13 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
-/**
- * Generator that handles recursive emission of nested perfect hash lookup options
- * for flattened properties structures in a serializer type builder.
- */
+/** Emits nested perfect-hash lookup options for `@GhostFlatten` property structures. */
 internal object FlattenOptionsGenerator {
 
-    /**
-     * Collects and triggers recursive generation of nested perfect hash lookup options
-     * for flattened properties structures.
-     */
     fun generateNestedOptions(
         typeSpecBuilder: TypeSpec.Builder,
         properties: List<GhostPropertyModel>,
@@ -32,7 +26,7 @@ internal object FlattenOptionsGenerator {
             var currentMap = rootNodes
             path.forEachIndexed { index, segment ->
                 val isLast = index == path.size - 1
-                val node = currentMap.getOrPut(segment) { FlattenNode(segment) }
+                val node = currentMap.getOrPut(segment) { FlattenNode(segment = segment) }
                 if (isLast) {
                     node.properties.add(prop)
                 } else {
@@ -47,16 +41,13 @@ internal object FlattenOptionsGenerator {
                 properties = properties,
                 fullPaths = fullPaths,
                 node = node,
-                parentPrefix = C.STR_EMPTY,
+                parentPrefix = CC.STR_EMPTY,
                 currentPath = listOf(node.segment),
                 textChannel = textChannel
             )
         }
     }
 
-    /**
-     * Recursively traverses nodes and emits private nested perfect hash options properties.
-     */
     private fun emitNestedOptionsRecursive(
         typeSpecBuilder: TypeSpec.Builder,
         properties: List<GhostPropertyModel>,
@@ -73,9 +64,9 @@ internal object FlattenOptionsGenerator {
         val currentPrefix = if (parentPrefix.isEmpty()) {
             node.segment
         } else {
-            parentPrefix + C.STR_UNDERSCORE + node.segment
+            parentPrefix + CC.STR_UNDERSCORE + node.segment
         }
-        val optionsName = C.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
+        val optionsName = CG.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
 
         val depth = currentPath.size
         val names = properties.mapIndexedNotNull { index, _ ->
@@ -87,9 +78,9 @@ internal object FlattenOptionsGenerator {
             }
         }.distinct()
 
-        val hashConfig = PerfectHashFinder.findPerfectHash(names)
+        val hashConfig = PerfectHashFinder.findPerfectHash(names = names)
 
-        val optionsClass = ClassName(C.PKG_PARSER_COMMON, C.STR_OPTIONS_CLASS)
+        val optionsClass = ClassName(CC.PKG_PARSER_COMMON_JSON, CG.STR_OPTIONS_CLASS)
         val optionsInitializer = GeneratedCallFormat.jsonReaderOptionsOf(
             optionsClass = optionsClass,
             shift = hashConfig.shift,
@@ -120,9 +111,6 @@ internal object FlattenOptionsGenerator {
         }
     }
 
-    /**
-     * Node descriptor representing a segment in a flattened path hierarchy tree.
-     */
     private class FlattenNode(val segment: String) {
         val children = mutableMapOf<String, FlattenNode>()
         val properties = mutableListOf<GhostPropertyModel>()

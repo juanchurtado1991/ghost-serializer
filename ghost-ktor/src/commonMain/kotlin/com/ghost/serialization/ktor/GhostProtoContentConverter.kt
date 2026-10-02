@@ -2,10 +2,10 @@ package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.contract.GhostRegistry
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
 import com.ghost.serialization.proto.ghostProtoInternalUseFlatReader
 import io.ktor.http.ContentType
-import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
 import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
@@ -21,49 +21,50 @@ import kotlin.reflect.KClass
  * int64, lenient int32, quoted `"NaN"`/`"Infinity"`). Encoding reuses [Ghost.encodeToBytes]
  * since proto3 wire correctness is generated into the serializer's own `serialize()`.
  *
+ * Resolves serializers through [registry] (defaults to the global [Ghost] singleton) rather than
+ * calling [Ghost] directly, so tests can substitute a fake [GhostRegistry] — only for the
+ * plain-[KClass] fallback path, since generic-type resolution (`List<T>`/`Set<T>`/`Map<K, V>`
+ * via [TypeInfo.kotlinType]) always goes through [Ghost] itself, which is the only place that
+ * capability exists.
+ *
  * ```kotlin
  * install(ContentNegotiation) { ghostProto() }
  * ```
  */
 @OptIn(InternalGhostApi::class)
 class GhostProtoContentConverter(
+    private val registry: GhostRegistry = Ghost,
     private val configurer: ((GhostProtoJsonFlatReader) -> Unit)? = null
 ) : ContentConverter {
 
-    @Suppress("UNCHECKED_CAST")
-    override suspend fun serialize(
-        contentType: ContentType,
-        charset: Charset,
-        typeInfo: TypeInfo,
-        value: Any?
-    ): OutgoingContent? {
-        if (value == null) return null
-        val clazz = typeInfo.type
-
-        val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }
-            ?: Ghost.getSerializer(clazz as KClass<Any>)
-            ?: return null
-
-        val bytes = Ghost.encodeToBytes(serializer, value)
-
-        return ByteArrayContent(bytes, contentType)
-    }
-
-    @Suppress("UNCHECKED_CAST")
     override suspend fun deserialize(
         charset: Charset,
         typeInfo: TypeInfo,
         content: ByteReadChannel
     ): Any? {
-        val serializer = typeInfo.kotlinType?.let { Ghost.getSerializer(it) }
-            ?: Ghost.getSerializer(typeInfo.type as KClass<Any>)
-            ?: return null
+        val serializer = resolveKtorSerializer(
+            typeInfo = typeInfo,
+            fallbackClass = typeInfo.type,
+            registry = registry
+        ) ?: return null
 
         return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
-            ghostProtoInternalUseFlatReader(scratch, length = offset) { reader ->
+            ghostProtoInternalUseFlatReader(bytes = scratch, length = offset) { reader ->
                 configurer?.invoke(reader)
                 serializer.deserialize(reader)
             }
         }
     }
+
+    override suspend fun serialize(
+        contentType: ContentType,
+        charset: Charset,
+        typeInfo: TypeInfo,
+        value: Any?
+    ): OutgoingContent? = encodeKtorContent(
+        value = value,
+        contentType = contentType,
+        typeInfo = typeInfo,
+        registry = registry
+    )
 }

@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -33,8 +34,8 @@ class GhostSerializationKspTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
-            kspOutput.any { "UserSerializer.kt" in it },
-            "Expected UserSerializer.kt in kspSourcesDir walk. Compiler Output:\n${result.messages}\nFiles:\n$kspOutput"
+            actual = kspOutput.any { "UserSerializer.kt" in it },
+            message = "Expected UserSerializer.kt in kspSourcesDir walk. Compiler Output:\n${result.messages}\nFiles:\n$kspOutput"
         )
     }
 
@@ -56,7 +57,7 @@ class GhostSerializationKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
-        assertTrue(kspOutput.any { "GhostModuleRegistry" in it }, "Expected registry: $kspOutput")
+        assertTrue(actual = kspOutput.any { "GhostModuleRegistry" in it }, message = "Expected registry: $kspOutput")
     }
 
     @Test
@@ -78,8 +79,8 @@ class GhostSerializationKspTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val kspOutput = compilation.kspSourcesDir.walk().map { it.path }.toList()
         assertTrue(
-            kspOutput.any { "StatusSerializer.kt" in it },
-            "Expected enum serializer: $kspOutput"
+            actual = kspOutput.any { "StatusSerializer.kt" in it },
+            message = "Expected enum serializer: $kspOutput"
         )
     }
 
@@ -99,7 +100,7 @@ class GhostSerializationKspTest {
             )
         )
 
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
         assertTrue(
             result.messages.contains("data class", ignoreCase = true) ||
                     result.messages.contains("GhostSerialization", ignoreCase = true),
@@ -111,13 +112,11 @@ class GhostSerializationKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc can't read metadata from jars built with a newer
-            // Kotlin via inheritClassPath; this flag skips that version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
         }
         return compilation to compilation.compile()
     }

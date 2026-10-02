@@ -3,73 +3,89 @@
 
 package com.ghost.serialization.parser.bytes
 
-
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
+import com.ghost.serialization.parser.bytes.extensions.internalSelect
+import com.ghost.serialization.parser.bytes.extensions.nextDoubleExtension
+import com.ghost.serialization.parser.bytes.extensions.nextFloatExtension
+import com.ghost.serialization.parser.bytes.extensions.nextIntExtension
+import com.ghost.serialization.parser.bytes.extensions.nextLongExtension
+import com.ghost.serialization.parser.bytes.extensions.readQuotedString
+import com.ghost.serialization.parser.bytes.extensions.skipNumber
+import com.ghost.serialization.parser.bytes.extensions.skipQuotedString
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostHeuristics.initialCollectionCapacity
-import com.ghost.serialization.parser.common.GhostJsonConstants
-import com.ghost.serialization.parser.common.GhostJsonPathTracker
+import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
+import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
-import com.ghost.serialization.parser.common.skipValueCore
+import com.ghost.serialization.parser.common.matchCoerceBooleanBytes
+import com.ghost.serialization.parser.common.json.skipValueCore
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.captureRawJson
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
+import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
  * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
  * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
+ *
+ * @property strictMode When true, rejects unknown/unmapped fields and enforces strict comma
+ * validation; `false` favors lenient parsing performance.
+ * @property materializeRawJsonCaptures When true, [captureRawJson] copies into an owned array
+ * instead of slicing [rawData]; set by the [GhostJsonStringReader] deserialize bridge.
+ * @property source String-decoding backend ([GhostSource.decodeJsonStringRange]); built via
+ * [createByteArraySource] so JVM/Android use ISO-8859-1 for known 7-bit spans. Typed as
+ * [ByteArrayGhostSource] so [resetSlice] can rebind its buffer without reallocating.
+ * @property predictedFieldIndex Optimistic hint for [internalSelect]: the field index expected
+ * next, assuming declaration-order JSON (the common case for machine-generated payloads). A hit
+ * skips straight to a single compare instead of hash+verify; a miss falls back transparently, so
+ * only speed is at stake, never correctness. Reset on [beginObject].
+ * @property pathTracker Scratch stack for the error JSONPath, rebuilt by re-scanning the input only
+ * when [throwError] builds an exception (nothing is tracked on the happy path).
+ *
+ * [beginObject]/[beginArray] enforce [maxDepth] against stack overflow. [getByte] masks to a
+ * positive int since Kotlin's [Byte] is signed — the same `and BYTE_MASK` pattern recurs
+ * throughout for direct byte access. [selectNameAndConsume] matches a field name via
+ * [JsonReaderOptions]'s perfect hash and consumes the following `:`; [selectString] does the same
+ * without consuming a separator (e.g. enum values). [peekStringField] is the codegen-facing alias
+ * for [peekDiscriminator], used for sealed class discriminators. [throwMissingRequiredField]
+ * pushes the field name onto the JSONPath itself, since that validation runs after the object
+ * loop already finished — [endObject] would have popped it by then. [resetSlice] rebinds to a
+ * sub-range of a buffer with no copy. `GhostProtoJsonFlatReader` overrides [nextProtoUInt64] for
+ * the full [ULong] range.
  */
 open class GhostJsonFlatReader(
     var rawData: ByteArray,
-    var maxDepth: Int = C.MAX_DEPTH,
-    /**
-     * When true, enables strict JSON validation: rejects unknown/unmapped fields
-     * and performs strict bitwise syntax validation on missing or duplicate commas.
-     * Defaults to false for maximum lenient parsing performance.
-     */
+    var maxDepth: Int = NUM.MAX_DEPTH,
     var strictMode: Boolean = false,
     var coerceStringsToNumbers: Boolean = false,
     var coerceBooleans: Boolean = false,
     var maxCollectionSize: Int = GhostHeuristics.maxCollectionSize,
-    /**
-     * When true, [captureRawJson] copies captured UTF-8 into an owned array (offset 0)
-     * instead of slicing [rawData]. Set by the [GhostJsonStringReader] deserialize bridge.
-     */
     var materializeRawJsonCaptures: Boolean = false,
 ) {
 
-    /**
-     * Platform source used for string materialization ([GhostSource.decodeJsonStringRange]).
-     * Constructed via [createByteArraySource] so JVM/Android use ISO-8859-1 for known 7-bit
-     * spans instead of full UTF-8 [ByteArray.decodeToString]. Typed as [ByteArrayGhostSource]
-     * so [resetSlice] can rebind [ByteArrayGhostSource.data] without reallocating the wrapper.
-     */
     @PublishedApi
     internal val source: ByteArrayGhostSource =
-        createByteArraySource(rawData) as ByteArrayGhostSource
+        createByteArraySource(data = rawData) as ByteArrayGhostSource
 
     var limit: Int = rawData.size
 
     var position: Int = 0
 
-    var nextTokenByte: Int = C.RESET_TOKEN_BYTE
+    var nextTokenByte: Int = SCN.RESET_TOKEN_BYTE
 
     @InternalGhostApi
     fun _getPosition(): Int = position
-
-    @InternalGhostApi
-    fun _setPosition(position: Int) {
-        this.position = position
-    }
 
     @InternalGhostApi
     fun _getRawData(): ByteArray = rawData
@@ -79,21 +95,17 @@ open class GhostJsonFlatReader(
         nextTokenByte = tokenByte
     }
 
-    internal val stringPool = arrayOfNulls<String>(C.STR_POOL_SIZE)
-    internal val stringPoolHashes = IntArray(C.STR_POOL_SIZE)
+    @InternalGhostApi
+    fun _setPosition(position: Int) {
+        this.position = position
+    }
+
+    internal val stringPool = arrayOfNulls<String>(SCN.STR_POOL_SIZE)
+    internal val stringPoolHashes = IntArray(SCN.STR_POOL_SIZE)
 
     internal var lastScanContentWas7BitOnly: Boolean = false
 
-    /**
-     * Optimistic hint for [internalSelect]: the field index expected next, assuming JSON
-     * objects list their fields in declaration order (the common case for machine-generated
-     * payloads). When the incoming key matches this candidate,
-     * key identification collapses from three byte passes (scan + hash + verify) to a single
-     * compare pass. A misprediction transparently falls back to the hashed dispatch, so the
-     * hint never affects correctness — only speed. Reset to
-     * [GhostJsonConstants.FIELD_PREDICTION_START] on [beginObject].
-     */
-    internal var predictedFieldIndex: Int = C.FIELD_PREDICTION_START
+    internal var predictedFieldIndex: Int = SCN.FIELD_PREDICTION_START
 
     var depth: Int = 0
 
@@ -103,192 +115,83 @@ open class GhostJsonFlatReader(
     @PublishedApi
     internal var commaConsumedMask: Long = 0L
 
-    /** JSONPath breadcrumbs — formatted only when [throwError] builds an exception. */
     @PublishedApi
     internal val pathTracker: GhostJsonPathTracker = GhostJsonPathTracker()
 
-    /**
-     * Gets the byte at the specified index, masking it to a positive integer.
-     */
+    private var sliceStart: Int = 0
+
+    fun beginArray() {
+        if (nextNonWhitespace() != TOK.OPEN_ARR_INT) throwError(EM.ERR_EXPECTED_BEGIN_ARR)
+        depth++
+
+        if (depth > maxDepth) throwError(EM.ERR_DEPTH_EXCEEDED)
+
+        if (depth < SCN.MAX_BITMASK_DEPTH) {
+            val bit = SCN.BITMASK_UNIT shl depth
+            needsCommaMask = needsCommaMask and bit.inv()
+            commaConsumedMask = commaConsumedMask and bit.inv()
+        }
+
+    }
+
+    fun beginObject() {
+        if (nextNonWhitespace() != TOK.OPEN_OBJ_INT) throwError(EM.ERR_EXPECTED_BEGIN_OBJ)
+        predictedFieldIndex = SCN.FIELD_PREDICTION_START
+        depth++
+
+        if (depth > maxDepth) throwError(EM.ERR_DEPTH_EXCEEDED)
+
+        if (depth < SCN.MAX_BITMASK_DEPTH) {
+            val bit = SCN.BITMASK_UNIT shl depth
+            needsCommaMask = needsCommaMask and bit.inv()
+            commaConsumedMask = commaConsumedMask and bit.inv()
+        }
+
+    }
+
+    fun endArray() {
+        if (nextNonWhitespace() != TOK.CLOSE_ARR_INT) throwError(EM.ERR_EXPECTED_END_ARR)
+        if (depth > 0) depth--
+
+    }
+
+    fun endObject() {
+        if (nextNonWhitespace() != TOK.CLOSE_OBJ_INT) throwError(EM.ERR_EXPECTED_END_OBJ)
+        if (depth > 0) depth--
+
+    }
+
     @Suppress("NOTHING_TO_INLINE")
     inline fun getByte(index: Int): Int {
-        return rawData[index].toInt() and C.BYTE_MASK
+        return rawData[index].toInt() and TOK.BYTE_MASK
     }
 
-    /**
-     * Throws a structured [GhostJsonException] with exact position, line, column, and JSONPath.
-     */
-    fun throwError(message: String): Nothing {
-        val errorPosition = position
-        val errorEnd = if (errorPosition > limit) {
-            limit
-        } else {
-            errorPosition
-        }
-        val errorPath = pathTracker.formatPath()
-
-        throw GhostJsonException(
-            baseMessage = "$message${C.ERR_AT_POSITION_PREFIX}$errorPosition",
-            computeLineCol = {
-                var columnNumber = 0
-                var lineNumber = 0
-                var byteIndex = 0
-                while (byteIndex < errorEnd) {
-                    if ((rawData[byteIndex].toInt() and C.BYTE_MASK) == C.NEWLINE_INT) {
-                        lineNumber++
-                        columnNumber = 0
-                    } else {
-                        columnNumber++
-                    }
-                    byteIndex++
-                }
-                intArrayOf(lineNumber, columnNumber)
-            },
-            path = errorPath,
-            hint = hintForJsonError(message),
-        )
-    }
-
-    /**
-     * Throws for a missing required field, pushing [jsonName] onto the JSONPath so the
-     * exception points at `$.….<jsonName>` even though the object loop has already finished
-     * selecting keys (validation runs before [endObject]).
-     */
-    fun throwMissingRequiredField(jsonName: String): Nothing {
-        pathTracker.pushKey(jsonName)
-        throwError("${C.ERR_REQUIRED_FIELD_PREFIX}$jsonName${C.ERR_REQUIRED_FIELD_SUFFIX}")
-    }
-
-    /**
-     * Skips forward in the byte array by [byteCount] bytes and resets [nextTokenByte].
-     */
     fun internalSkip(byteCount: Int) {
         position += byteCount
-        nextTokenByte = C.RESET_TOKEN_BYTE
+        nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
 
-    /**
-     * Advances the position past any whitespace and caches the next non-whitespace token byte.
-     */
-    fun skipWhitespace() {
-        val data = rawData
-        val byteLimit = limit
-        var cursor = position
-        while (true) {
-            // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
-            // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
-            // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
-            while (cursor + C.LONG_BYTES <= byteLimit &&
-                ghostReadLong8(data, cursor) == C.SPACE_RUN_LONG
-            ) {
-                cursor += C.LONG_BYTES
-            }
-            if (cursor >= byteLimit) {
-                position = byteLimit
-                nextTokenByte = C.MATCH_END
-                return
-            }
-            val tokenByte = data[cursor].toInt() and C.BYTE_MASK
-            if (tokenByte > C.SPACE_INT) {
-                position = cursor
-                nextTokenByte = tokenByte
-                return
-            }
-            // Non-space whitespace (tab / LF / CR) or a control byte; mirror WHITESPACE_MASK.
-            if (tokenByte != C.SPACE_INT && tokenByte != C.LF_INT && tokenByte != C.CR_INT && tokenByte != C.TAB_INT) {
-                position = cursor
-                nextTokenByte = tokenByte
-                return
-            }
-            cursor++
-        }
-    }
+    open fun nextDouble(): Double = nextDoubleExtension()
 
-    /**
-     * Peeks at the next key to see if it matches the discriminator name without consuming it.
-     */
-    fun peekDiscriminator(key: String = C.DEFAULT_DISCRIMINATOR_KEY): String? {
-        if (key == C.DEFAULT_DISCRIMINATOR_KEY) {
-            return peekDiscriminator(C.TYPE_BS)
-        }
-        return peekDiscriminator(key.encodeUtf8())
-    }
+    open fun nextFloat(): Float = nextFloatExtension()
 
-    /**
-     * Peeks at the next key to see if it matches the discriminator byte string without consuming it.
-     */
-    fun peekDiscriminator(key: ByteString): String? {
-        return GhostDiscriminatorPeeker.peek(
-            source,
-            rawData,
-            false,
-            position,
-            limit,
-            key
-        )
-    }
+    open fun nextInt(): Int = nextIntExtension()
 
-    /**
-     * Peeks and returns the next token byte in the stream, skipping preceding whitespaces.
-     */
-    fun peekNextToken(): Int {
-        val cached = nextTokenByte
-        if (cached != -1) {
-            return cached
-        }
-        skipWhitespace()
-        return nextTokenByte
-    }
-
-    /**
-     * Peeks and returns the next token byte as a [Byte].
-     */
-    fun peekByte(): Byte = peekNextToken().toByte()
+    open fun nextLong(): Long = nextLongExtension()
 
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
-        if (nextToken == -1) {
-            throwError(C.ERR_UNEXPECTED_EOF)
-        }
+        if (nextToken == -1) throwError(EM.ERR_UNEXPECTED_EOF)
+
         internalSkip(1)
         return nextToken
     }
 
-    /**
-     * Skips and validates that the next characters in the stream match the [expected] byte sequence.
-     */
-    @InternalGhostApi
-    fun skipAndValidateLiteral(expected: ByteString) {
-        val size = expected.size
-        if (
-            position + size > limit || !expected.rangeEquals(
-                offset = 0,
-                other = rawData,
-                otherOffset = position,
-                byteCount = size
-            )
-        ) {
-            throwError(C.ERR_EXPECTED_LITERAL + expected.utf8())
-        }
-        position += size
-        nextTokenByte = C.RESET_TOKEN_BYTE
-    }
-
-    open fun nextFloat(): Float = nextFloatExtension()
-    open fun nextDouble(): Double = nextDoubleExtension()
-    open fun nextInt(): Int = nextIntExtension()
-    open fun nextLong(): Long = nextLongExtension()
-
-    /**
-     * proto3 `uint64` scalar — quoted decimal string on the wire; bare JSON numbers accepted
-     * on read when they fit in [Long]. Subclasses (e.g. `GhostProtoJsonFlatReader`)
-     * override for full [ULong] range.
-     */
     open fun nextProtoUInt64(): ULong {
         val saved = coerceStringsToNumbers
         coerceStringsToNumbers = true
         return try {
-            if (peekNextToken() == C.QUOTE_INT) {
+            if (peekNextToken() == TOK.QUOTE_INT) {
                 nextString().toULong()
             } else {
                 nextLong().toULong()
@@ -298,7 +201,6 @@ open class GhostJsonFlatReader(
         }
     }
 
-    /** Plain JSON/YAML scalar `ULong` — quoted decimal string for full range, bare number when it fits in [Long]. */
     open fun nextULong(): ULong = nextProtoUInt64()
 
     fun nextULongOrNull(): ULong? {
@@ -309,302 +211,222 @@ open class GhostJsonFlatReader(
         return nextULong()
     }
 
-    /**
-     * Resets the reader's state to process a new byte payload.
-     */
-    fun reset(newData: ByteArray, newLimit: Int = newData.size) {
-        resetSlice(newData, offset = 0, length = newLimit)
+    fun peekByte(): Byte = peekNextToken().toByte()
+
+    fun peekDiscriminator(key: String = TOK.DEFAULT_DISCRIMINATOR_KEY): String? {
+        if (key == TOK.DEFAULT_DISCRIMINATOR_KEY) return peekDiscriminator(key = WR.TYPE_BS)
+        return peekDiscriminator(key = key.encodeUtf8())
     }
 
-    /**
-     * Resets the reader to parse a sub-range of [buffer] without copying (zero-copy slice decode).
-     */
+    fun peekDiscriminator(
+        key: ByteString
+    ): String? = GhostDiscriminatorPeeker.peek(
+        source = source,
+        rawData = rawData,
+        isStreaming = false,
+        start = position,
+        limit = limit,
+        key = key
+    )
+
+    fun peekNextToken(): Int {
+        val cached = nextTokenByte
+        if (cached != -1) return cached
+
+        val cursor = position
+        if (cursor + 1 < limit) {
+            val data = rawData
+            val firstByte = data[cursor].toInt() and TOK.BYTE_MASK
+            if (firstByte > TOK.SPACE_INT) {
+                nextTokenByte = firstByte
+                return firstByte
+            }
+            val secondByte = data[cursor + 1].toInt() and TOK.BYTE_MASK
+            val isSingleSpaceBeforeToken = firstByte == TOK.SPACE_INT && secondByte > TOK.SPACE_INT
+            if (isSingleSpaceBeforeToken) {
+                position = cursor + 1
+                nextTokenByte = secondByte
+                return secondByte
+            }
+        }
+        skipWhitespace()
+        return nextTokenByte
+    }
+
+    fun reset(newData: ByteArray, newLimit: Int = newData.size) {
+        resetSlice(buffer = newData, offset = 0, length = newLimit)
+    }
+
     fun resetSlice(buffer: ByteArray, offset: Int, length: Int) {
         rawData = buffer
         source.data = buffer
+        sliceStart = offset
         position = offset
         limit = offset + length
-        nextTokenByte = C.RESET_TOKEN_BYTE
+        nextTokenByte = SCN.RESET_TOKEN_BYTE
         depth = 0
         needsCommaMask = 0L
         commaConsumedMask = 0L
         strictMode = false
         coerceStringsToNumbers = false
         coerceBooleans = false
-        maxDepth = C.MAX_DEPTH
+        maxDepth = NUM.MAX_DEPTH
         maxCollectionSize = GhostHeuristics.maxCollectionSize
         lastScanContentWas7BitOnly = false
-        pathTracker.reset()
     }
 
-    /**
-     * Begins consumption of a JSON object '{'. Increments validation depth.
-     */
-    fun beginObject() {
-        if (nextNonWhitespace() != C.OPEN_OBJ_INT) {
-            throwError(C.ERR_EXPECTED_BEGIN_OBJ)
-        }
-        predictedFieldIndex = C.FIELD_PREDICTION_START
-        depth++
-        if (depth > maxDepth) {
-            throwError(C.ERR_DEPTH_EXCEEDED)
-        }
-        if (depth < C.MAX_BITMASK_DEPTH) {
-            val bit = C.BITMASK_UNIT shl depth
-            needsCommaMask = needsCommaMask and bit.inv()
-            commaConsumedMask = commaConsumedMask and bit.inv()
-        }
-        pathTracker.pushObject()
+    @InternalGhostApi
+    fun skipAndValidateLiteral(expected: ByteString) {
+        val size = expected.size
+        val literalMismatch = position + size > limit || !expected.rangeEquals(
+            offset = 0,
+            other = rawData,
+            otherOffset = position,
+            byteCount = size
+        )
+        if (literalMismatch) throwError(EM.ERR_EXPECTED_LITERAL + expected.utf8())
+
+        position += size
+        nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
 
-    /**
-     * Ends consumption of a JSON object '}'. Decrements validation depth.
-     */
-    fun endObject() {
-        if (nextNonWhitespace() != C.CLOSE_OBJ_INT) {
-            throwError(C.ERR_EXPECTED_END_OBJ)
-        }
-        if (depth > 0) {
-            depth--
-        }
-        pathTracker.finishObjectValue()
-    }
-
-    /**
-     * Begins consumption of a JSON array '['. Increments validation depth.
-     */
-    fun beginArray() {
-        if (nextNonWhitespace() != C.OPEN_ARR_INT) {
-            throwError(C.ERR_EXPECTED_BEGIN_ARR)
-        }
-        depth++
-        if (depth > maxDepth) {
-            throwError(C.ERR_DEPTH_EXCEEDED)
-        }
-        if (depth < C.MAX_BITMASK_DEPTH) {
-            val bit = C.BITMASK_UNIT shl depth
-            needsCommaMask = needsCommaMask and bit.inv()
-            commaConsumedMask = commaConsumedMask and bit.inv()
-        }
-        pathTracker.pushArray()
-    }
-
-    /**
-     * Ends consumption of a JSON array ']'. Decrements validation depth.
-     */
-    fun endArray() {
-        if (nextNonWhitespace() != C.CLOSE_ARR_INT) {
-            throwError(C.ERR_EXPECTED_END_ARR)
-        }
-        if (depth > 0) {
-            depth--
-        }
-        pathTracker.finishArrayValue()
-    }
-
-    /**
-     * Checks if there are more elements in the current JSON container.
-     */
-    fun hasNext(): Boolean {
-        val token = peekNextToken()
-        if (
-            token == C.CLOSE_ARR_INT ||
-            token == C.CLOSE_OBJ_INT ||
-            token == C.MATCH_END
-        ) {
-            return false
-        }
-        if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-            val bit = C.BITMASK_UNIT shl depth
-            if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-                if (token == C.COMMA_INT) {
-                    commaConsumedMask = commaConsumedMask and bit.inv()
-                    needsCommaMask = needsCommaMask or bit
-                }
+    fun skipWhitespace() {
+        val data = rawData
+        val byteLimit = limit
+        var cursor = position
+        while (true) {
+            // SWAR fast path: swallow LONG_BYTES runs of ASCII space (SPACE_INT), which dominate
+            // the byte volume of pretty-printed JSON indentation. SPACE_RUN_LONG is
+            // byte-symmetric, so the platform byte order of ghostReadLong8 is irrelevant.
+            while (cursor + SCN.LONG_BYTES <= byteLimit &&
+                ghostReadLong8(data = data, index = cursor) == SCN.SPACE_RUN_LONG
+            ) {
+                cursor += SCN.LONG_BYTES
             }
-            if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-                commaConsumedMask = commaConsumedMask and bit.inv()
-                needsCommaMask = needsCommaMask or bit
-            } else {
-                val required = (needsCommaMask and bit) != C.RESULT_NONE
-                if (token == C.COMMA_INT) {
-                    if (!required) {
-                        throwError(C.ERR_UNEXPECTED_COMMA)
-                    }
-                    internalSkip(1)
-                    val next = peekNextToken()
-                    if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
-                        throwError(C.ERR_TRAILING_COMMA)
-                    }
-                    commaConsumedMask = commaConsumedMask or bit
-                    needsCommaMask = needsCommaMask and bit.inv()
-                } else {
-                    if (required) throwError(C.ERR_EXPECTED_COMMA)
-                    needsCommaMask = needsCommaMask or bit
-                }
+            if (cursor >= byteLimit) {
+                position = byteLimit
+                nextTokenByte = SCN.MATCH_END
+                return
             }
+            val tokenByte = data[cursor].toInt() and TOK.BYTE_MASK
+            if (tokenByte > TOK.SPACE_INT) {
+                position = cursor
+                nextTokenByte = tokenByte
+                return
+            }
+            // Non-space whitespace (tab / LF / CR) or a control byte; mirror WHITESPACE_MASK.
+            val isNonWhitespaceControlByte = tokenByte != TOK.SPACE_INT &&
+                    tokenByte != TOK.LF_INT && tokenByte != TOK.CR_INT && tokenByte != TOK.TAB_INT
+            if (isNonWhitespaceControlByte) {
+                position = cursor
+                nextTokenByte = tokenByte
+                return
+            }
+            cursor++
+        }
+    }
+
+    fun throwError(message: String): Nothing = throwErrorWithPath(
+        message = message,
+        missingKey = null
+    )
+
+    fun throwMissingRequiredField(jsonName: String): Nothing = throwErrorWithPath(
+        message = "${EM.ERR_REQUIRED_FIELD_PREFIX}$jsonName${EM.ERR_REQUIRED_FIELD_SUFFIX}",
+        missingKey = jsonName
+    )
+
+    private fun throwErrorWithPath(
+        message: String,
+        missingKey: String?
+    ): Nothing {
+        val errorPosition = position
+        val errorEnd = if (errorPosition > limit) {
+            limit
         } else {
-            if (token == C.COMMA_INT) {
-                internalSkip(1)
-                val next = peekNextToken()
-                if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-            }
+            errorPosition
         }
-        pathTracker.enterArrayElement()
-        return true
+        val localData = rawData
+        val tracker = GhostJsonPathReconstruction.reconstruct(
+            tracker = pathTracker,
+            start = sliceStart,
+            end = errorEnd,
+            limit = limit,
+            getByte = { localData[it].toInt() and TOK.BYTE_MASK },
+            decodeRange = { from, to -> localData.decodeToString(startIndex = from, endIndex = to) }
+        )
+        if (missingKey != null) {
+            tracker.finishScalarValue()
+            tracker.pushKey(name = missingKey)
+        }
+        val errorPath = tracker.formatPath()
+
+        throw GhostJsonException(
+            baseMessage = "$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition",
+            computeLineCol = {
+                var columnNumber = 0
+                var lineNumber = 0
+                var byteIndex = 0
+                while (byteIndex < errorEnd) {
+                    if ((rawData[byteIndex].toInt() and TOK.BYTE_MASK) == TOK.NEWLINE_INT) {
+                        lineNumber++
+                        columnNumber = 0
+                    } else {
+                        columnNumber++
+                    }
+                    byteIndex++
+                }
+                intArrayOf(lineNumber, columnNumber)
+            },
+            path = errorPath,
+            hint = message.hintForJsonError(),
+        )
     }
 
-    /**
-     * Consumes any comma separator and returns the next object key string. Returns null if object ends.
-     */
-    fun nextKey(): String? {
-        val token = peekNextToken()
-        if (token == C.CLOSE_OBJ_INT) {
-            return null
-        }
-        if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-            val bit = C.BITMASK_UNIT shl depth
-            // If comma was already consumed by consumeArraySeparator(), skip re-requiring it.
-            if ((commaConsumedMask and bit) != C.RESULT_NONE) {
-                commaConsumedMask = commaConsumedMask and bit.inv()
-                needsCommaMask = needsCommaMask or bit
-            } else {
-                val required = (needsCommaMask and bit) != C.RESULT_NONE
-                if (token == C.COMMA_INT) {
-                    if (!required) {
-                        throwError(C.ERR_UNEXPECTED_COMMA)
-                    }
-                    internalSkip(1)
-                    if (peekNextToken() == C.CLOSE_OBJ_INT) {
-                        throwError(C.ERR_TRAILING_COMMA)
-                    }
-                    needsCommaMask = needsCommaMask or bit
-                } else {
-                    if (required) {
-                        throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
-                    }
-                    needsCommaMask = needsCommaMask or bit
-                }
-            }
-        } else {
-            if (token == C.COMMA_INT) {
-                internalSkip(1)
-                if (peekNextToken() == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
-            }
-        }
-        val key = readQuotedString()
-        pathTracker.pushKey(key)
-        return key
+
+    /** Whether [token] closes either container kind (`]` or `}`). */
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun isCloseToken(token: Int): Boolean =
+        token == TOK.CLOSE_ARR_INT || token == TOK.CLOSE_OBJ_INT
+
+    /** Skips a comma already confirmed present, rejecting one immediately followed by a close token. */
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun skipCommaRejectingTrailing() {
+        internalSkip(1)
+        if (isCloseToken(token = peekNextToken())) throwError(EM.ERR_TRAILING_COMMA)
     }
 
-    /**
-     * Consumes the ':' key-value separator character.
-     */
-    fun consumeKeySeparator() {
-        if (nextNonWhitespace() != C.COLON_INT) {
-            throwError(C.ERR_EXPECTED_COLON)
-        }
-    }
-
-    /**
-     * Consumes the array element separating comma if present.
-     */
     fun consumeArraySeparator() {
-        if (strictMode && depth < C.MAX_BITMASK_DEPTH) {
-            val bit = C.BITMASK_UNIT shl depth
+        if (strictMode && depth < SCN.MAX_BITMASK_DEPTH) {
+            val bit = SCN.BITMASK_UNIT shl depth
             // If hasNext() already consumed the comma, honor that.
-            if ((commaConsumedMask and bit) != C.RESULT_NONE) {
+            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {
                 commaConsumedMask = commaConsumedMask and bit.inv()
                 needsCommaMask = needsCommaMask or bit
                 return
             }
             val token = peekNextToken()
-            val required = (needsCommaMask and bit) != C.RESULT_NONE
-            if (token == C.COMMA_INT) {
-                // Consume the comma and signal to the next nextKey()/selectNameAndConsume() that
-                // it was already consumed, so they don't re-require one.
-                internalSkip(1)
-                val next = peekNextToken()
-                if (next == C.CLOSE_ARR_INT || next == C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
+            if (token == TOK.COMMA_INT) {
+                skipCommaRejectingTrailing()
                 commaConsumedMask = commaConsumedMask or bit
-            } else if (required) {
-                if (token != C.CLOSE_ARR_INT && token != C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)
-                }
             } else {
-                // First call at this depth: no prior comma needed, but if a non-separator token
-                // follows (neither comma nor closing bracket), the JSON is malformed.
-                if (token != C.CLOSE_ARR_INT && token != C.CLOSE_OBJ_INT) {
-                    throwError(C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)
-                }
+                // Whether a comma was required (a prior element exists) or not (first call at
+                // this depth), a non-separator token here is only valid as the closing bracket.
+                if (!isCloseToken(token = token)) throwError(EM.ERR_EXPECTED_COMMA_OR_CLOSE_ARR)
             }
             needsCommaMask = needsCommaMask or bit
         } else {
             val token = peekNextToken()
-            if (token == C.COMMA_INT) {
+            if (token == TOK.COMMA_INT) {
                 internalSkip(1)
-                if (peekNextToken() == C.CLOSE_ARR_INT) {
-                    throwError(C.ERR_TRAILING_COMMA)
-                }
+                if (peekNextToken() == TOK.CLOSE_ARR_INT) throwError(EM.ERR_TRAILING_COMMA)
             }
         }
     }
 
-    /**
-     * Parses and returns the next [Boolean] value.
-     */
-    fun nextBoolean(): Boolean {
-        val token = peekNextToken()
-        if (token == C.TRUE_CHAR_INT) {
-            skipAndValidateLiteral(C.TRUE_BS)
-            pathTracker.finishScalarValue()
-            return true
-        }
-        if (token == C.FALSE_CHAR_INT) {
-            skipAndValidateLiteral(C.FALSE_BS)
-            pathTracker.finishScalarValue()
-            return false
-        }
-        if (coerceBooleans) {
-            if (token == C.ONE_INT) {
-                internalSkip(1)
-                pathTracker.finishScalarValue()
-                return true
-            }
-            if (token == C.ZERO_INT) {
-                internalSkip(1)
-                pathTracker.finishScalarValue()
-                return false
-            }
-            if (token == C.QUOTE_INT) {
-                // can the quoted string bytes directly. No String allocation.
-                val coerced = matchCoerceBooleanBytes()
-                pathTracker.finishScalarValue()
-                return coerced
-            }
-        }
-        throwError(C.ERR_EXPECTED_BOOLEAN)
+    fun consumeKeySeparator() {
+        if (nextNonWhitespace() != TOK.COLON_INT) throwError(EM.ERR_EXPECTED_COLON)
     }
-
-    /**
-     * Parses and returns the next string literal.
-     */
-    fun nextString(): String {
-        val value = readQuotedString()
-        pathTracker.finishScalarValue()
-        return value
-    }
-
-    /**
-     * Peeks whether the next JSON token is the null value token.
-     */
-    fun isNextNullValue(): Boolean = peekNextToken() == C.NULL_CHAR_INT
 
     /**
      * Consumes the null value literal from the stream.
@@ -615,105 +437,197 @@ open class GhostJsonFlatReader(
     fun consumeNull() {
         val cursor = position
         val data = rawData
-        if (cursor + 4 > limit ||
-            (data[cursor].toInt() and C.BYTE_MASK) != C.NULL_CHAR_INT ||
-            (data[cursor + 1].toInt() and C.BYTE_MASK) != C.U_BYTE_INT ||
-            (data[cursor + 2].toInt() and C.BYTE_MASK) != C.L_BYTE_INT ||
-            (data[cursor + 3].toInt() and C.BYTE_MASK) != C.L_BYTE_INT
-        ) {
-            throwError(C.ERR_EXPECTED_LITERAL + C.LITERAL_NULL)
+        val isNotNullLiteral = cursor + TOK.LITERAL_NULL_LEN > limit ||
+            (data[cursor].toInt() and TOK.BYTE_MASK) != TOK.NULL_CHAR_INT ||
+            (data[cursor + 1].toInt() and TOK.BYTE_MASK) != TOK.U_BYTE_INT ||
+            (data[cursor + 2].toInt() and TOK.BYTE_MASK) != TOK.L_BYTE_INT ||
+            (data[cursor + 3].toInt() and TOK.BYTE_MASK) != TOK.L_BYTE_INT
+        if (isNotNullLiteral) {
+            throwError(EM.ERR_EXPECTED_LITERAL + TOK.LITERAL_NULL)
         }
-        position = cursor + 4
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        pathTracker.finishScalarValue()
+        position = cursor + TOK.LITERAL_NULL_LEN
+        nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
 
-    /** Reads a JSON string, or `null` when the next token is the `null` literal. */
-    fun nextStringOrNull(): String? {
-        if (peekNextToken() == C.NULL_CHAR_INT) {
-            consumeNull()
-            return null
+    /** Returns whether the current container has more elements; rejects trailing commas. */
+    fun hasNext(): Boolean {
+        val token = peekNextToken()
+        val containerExhausted = isCloseToken(token = token) || token == SCN.MATCH_END
+        if (containerExhausted) return false
+
+        if (strictMode && depth < SCN.MAX_BITMASK_DEPTH) {
+            val bit = SCN.BITMASK_UNIT shl depth
+            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {
+                if (token == TOK.COMMA_INT) {
+                    commaConsumedMask = commaConsumedMask and bit.inv()
+                    needsCommaMask = needsCommaMask or bit
+                }
+            }
+            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {
+                commaConsumedMask = commaConsumedMask and bit.inv()
+                needsCommaMask = needsCommaMask or bit
+            } else {
+                val required = (needsCommaMask and bit) != SCN.RESULT_NONE
+                if (token == TOK.COMMA_INT) {
+                    if (!required) throwError(EM.ERR_UNEXPECTED_COMMA)
+
+                    skipCommaRejectingTrailing()
+                    commaConsumedMask = commaConsumedMask or bit
+                    needsCommaMask = needsCommaMask and bit.inv()
+                } else {
+                    if (required) throwError(EM.ERR_EXPECTED_COMMA)
+                    needsCommaMask = needsCommaMask or bit
+                }
+            }
+        } else {
+            if (token == TOK.COMMA_INT) skipCommaRejectingTrailing()
         }
-        return nextString()
+        return true
     }
 
-    /** Reads a JSON int, or `null` when the next token is the `null` literal. */
-    fun nextIntOrNull(): Int? {
-        if (peekNextToken() == C.NULL_CHAR_INT) {
-            consumeNull()
-            return null
+    fun isNextNullValue(): Boolean = peekNextToken() == TOK.NULL_CHAR_INT
+
+    /** Parses the next boolean; if [coerceBooleans]
+     *  also accepts `0`/`1` and matching strings. */
+    fun nextBoolean(): Boolean {
+        val token = peekNextToken()
+        if (token == TOK.TRUE_CHAR_INT) {
+            skipAndValidateLiteral(WR.TRUE_BS)
+            return true
         }
-        return nextInt()
+        if (token == TOK.FALSE_CHAR_INT) {
+            skipAndValidateLiteral(WR.FALSE_BS)
+            return false
+        }
+        if (coerceBooleans) {
+            if (token == TOK.ONE_INT) {
+                internalSkip(1)
+                return true
+            }
+            if (token == TOK.ZERO_INT) {
+                internalSkip(1)
+                return false
+            }
+            if (token == TOK.QUOTE_INT) {
+                // Scans the quoted string bytes directly — no String allocation.
+                val coerced = matchCoerceBooleanBytes()
+                return coerced
+            }
+        }
+        throwError(EM.ERR_EXPECTED_BOOLEAN)
     }
 
-    /** Reads a JSON long, or `null` when the next token is the `null` literal. */
-    fun nextLongOrNull(): Long? {
-        if (peekNextToken() == C.NULL_CHAR_INT) {
-            consumeNull()
-            return null
-        }
-        return nextLong()
-    }
-
-    /** Reads a JSON boolean, or `null` when the next token is the `null` literal. */
     fun nextBooleanOrNull(): Boolean? {
-        if (peekNextToken() == C.NULL_CHAR_INT) {
+        if (peekNextToken() == TOK.NULL_CHAR_INT) {
             consumeNull()
             return null
         }
         return nextBoolean()
     }
 
-    /**
-     * Zero-copy boolean coercion matcher. Delegates byte comparison to
-     * [matchCoerceBooleanBytes] in GhostParserUtils — single source of truth.
-     */
+    fun nextIntOrNull(): Int? {
+        if (peekNextToken() == TOK.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextInt()
+    }
+
+    /** Consumes any comma separator
+     *  returns the next key or `null` if the object has ended. */
+    fun nextKey(): String? {
+        val token = peekNextToken()
+        if (token == TOK.CLOSE_OBJ_INT) {
+            return null
+        }
+        if (strictMode && depth < SCN.MAX_BITMASK_DEPTH) {
+            val bit = SCN.BITMASK_UNIT shl depth
+            // If comma was already consumed by consumeArraySeparator(), skip re-requiring it.
+            if ((commaConsumedMask and bit) != SCN.RESULT_NONE) {
+                commaConsumedMask = commaConsumedMask and bit.inv()
+                needsCommaMask = needsCommaMask or bit
+            } else {
+                val required = (needsCommaMask and bit) != SCN.RESULT_NONE
+                if (token == TOK.COMMA_INT) {
+                    if (!required) throwError(EM.ERR_UNEXPECTED_COMMA)
+
+                    internalSkip(1)
+                    if (peekNextToken() == TOK.CLOSE_OBJ_INT) throwError(EM.ERR_TRAILING_COMMA)
+
+                    needsCommaMask = needsCommaMask or bit
+                } else {
+                    if (required) throwError(EM.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ)
+                    needsCommaMask = needsCommaMask or bit
+                }
+            }
+        } else {
+            if (token == TOK.COMMA_INT) {
+                internalSkip(1)
+                if (peekNextToken() == TOK.CLOSE_OBJ_INT) throwError(EM.ERR_TRAILING_COMMA)
+            }
+        }
+        val key = readQuotedString()
+        return key
+    }
+
+    fun nextLongOrNull(): Long? {
+        if (peekNextToken() == TOK.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextLong()
+    }
+
+    fun nextString(): String {
+        val value = readQuotedString()
+        return value
+    }
+
+    fun nextStringOrNull(): String? {
+        if (peekNextToken() == TOK.NULL_CHAR_INT) {
+            consumeNull()
+            return null
+        }
+        return nextString()
+    }
+
+    /** Zero-copy boolean coercion matcher
+     *  delegates byte comparison to the shared helper in GhostParserUtils. */
     private fun matchCoerceBooleanBytes(): Boolean {
         val localData = rawData
         val byteLimit = limit
         val contentStart = position + 1 // skip opening
-        val end = findClosingQuoteImpl(contentStart, byteLimit) {
-            localData[it].toInt() and C.BYTE_MASK
+        val end = findClosingQuoteImpl(position = contentStart, limit = byteLimit) {
+            localData[it].toInt() and TOK.BYTE_MASK
         }
-        if (end == -1) throwError(C.UNTERMINATED_STRING_ERROR)
+        if (end == -1) throwError(EM.UNTERMINATED_STRING_ERROR)
         val length = end - contentStart
         position = end + 1
-        nextTokenByte = C.RESET_TOKEN_BYTE
-        return com.ghost.serialization.parser.common.matchCoerceBooleanBytes(
+        nextTokenByte = SCN.RESET_TOKEN_BYTE
+        return matchCoerceBooleanBytes(
             start = contentStart,
             length = length,
-            onError = { throwError(C.ERR_EXPECTED_BOOLEAN) },
-            getByte = { localData[it].toInt() and C.BYTE_MASK },
+            onError = { throwError(EM.ERR_EXPECTED_BOOLEAN) },
+            getByte = { localData[it].toInt() and TOK.BYTE_MASK },
         )
     }
 
-    /**
-     * Selects name and consumes the key separator.
-     */
+    fun peekStringField(
+        name: String
+    ): String? = peekDiscriminator(key = name)
+
     fun selectNameAndConsume(options: JsonReaderOptions): Int {
-        val index = internalSelect(options, consumeSeparator = true)
+        val index = internalSelect(options = options, consumeSeparator = true)
         if (index >= 0) {
-            pathTracker.pushKey(options.rawStrings[index])
         }
         return index
     }
 
-    /**
-     * Selects matching string options.
-     */
     fun selectString(options: JsonReaderOptions): Int =
-        internalSelect(options, consumeSeparator = false)
+        internalSelect(options = options, consumeSeparator = false)
 
-    /**
-     * Peeks at a key name and returns it if it is a string match.
-     */
-    fun peekStringField(name: String): String? {
-        return peekDiscriminator(name)
-    }
-
-    /**
-     * Skips the next complete value token (object, array, string, number, boolean, null) from the stream.
-     */
+    /** Skips the next complete JSON value
+     * (object, array, string, number, boolean, null), balancing nesting. */
     fun skipValue() {
         skipValueCore(
             peekNextToken = { peekNextToken() },
@@ -730,144 +644,4 @@ open class GhostJsonFlatReader(
             throwError = { throwError(it) },
         )
     }
-
-    /**
-     * Reads a list of items using the provided [itemParser].
-     */
-    inline fun <T> readList(crossinline itemParser: () -> T): List<T> {
-        beginArray()
-        if (peekNextToken() == C.CLOSE_ARR_INT) {
-            endArray()
-            return emptyList()
-        }
-        val list = ArrayList<T>(initialCollectionCapacity)
-        val maxSize = maxCollectionSize
-
-        while (true) {
-            pathTracker.enterArrayElement()
-            list.add(itemParser())
-            val next = nextNonWhitespace()
-            if (next == C.CLOSE_ARR_INT) {
-                if (depth > 0) {
-                    depth--
-                }
-                pathTracker.finishArrayValue()
-                break
-            }
-            if (next != C.COMMA_INT) {
-                throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
-            }
-            if (list.size > maxSize) {
-                throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-            }
-        }
-        return list
-    }
-
-    /**
-     * Reads a set of items using the provided [itemParser].
-     * Builds a [HashSet] directly — no intermediate [List] allocation.
-     */
-    inline fun <T> readSet(crossinline itemParser: () -> T): Set<T> {
-        beginArray()
-        if (peekNextToken() == C.CLOSE_ARR_INT) {
-            endArray()
-            return emptySet()
-        }
-        val set = HashSet<T>(initialCollectionCapacity)
-        val maxSize = maxCollectionSize
-
-        while (true) {
-            pathTracker.enterArrayElement()
-            set.add(itemParser())
-            val next = nextNonWhitespace()
-            if (next == C.CLOSE_ARR_INT) {
-                if (depth > 0) {
-                    depth--
-                }
-                pathTracker.finishArrayValue()
-                break
-            }
-            if (next != C.COMMA_INT) {
-                throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_ARR} but found $next")
-            }
-            if (set.size > maxSize) {
-                throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-            }
-        }
-        return set
-    }
-
-    /**
-     * Reads a map of keys and values using the provided [keyParser] and [valueParser].
-     */
-    inline fun <K, V> readMap(
-        crossinline keyParser: () -> K,
-        crossinline valueParser: () -> V
-    ): Map<K, V> {
-        beginObject()
-        if (peekNextToken() == C.CLOSE_OBJ_INT) {
-            endObject()
-            return emptyMap()
-        }
-
-        val map = HashMap<K, V>(initialCollectionCapacity)
-        val maxSize = maxCollectionSize
-
-        while (true) {
-            val key = keyParser()
-            consumeKeySeparator()
-            val value = valueParser()
-            map[key] = value
-
-            val next = nextNonWhitespace()
-            if (next == C.CLOSE_OBJ_INT) {
-                if (depth > 0) {
-                    depth--
-                }
-                pathTracker.finishObjectValue()
-                break
-            }
-            if (next != C.COMMA_INT) {
-                throwError("${C.ERR_EXPECTED_COMMA_OR_CLOSE_OBJ} but found $next")
-            }
-            // The comma was consumed directly via nextNonWhitespace(); clear needsCommaMask so
-            // the next keyParser() (nextKey()) doesn't re-require another comma.
-            if (depth < C.MAX_BITMASK_DEPTH) {
-                val bit = C.BITMASK_UNIT shl depth
-                needsCommaMask = needsCommaMask and bit.inv()
-            }
-            if (map.size > maxSize) {
-                throwError("${C.ERR_MAX_COLLECTION_SIZE} ($maxSize)")
-            }
-        }
-        return map
-    }
-
-    /**
-     * Resiliently decodes a value. If an error occurs, skips the value and returns null.
-     */
-    @InternalGhostApi
-    inline fun <T> decodeResilient(crossinline block: () -> T): T? {
-        val savedPos = position
-        val savedToken = nextTokenByte
-        val savedDepth = depth
-        val savedNeedsCommaMask = needsCommaMask
-        val savedCommaConsumedMask = commaConsumedMask
-        val savedPathMark = pathTracker.mark()
-        try {
-            return block()
-        } catch (_: GhostJsonException) {
-            position = savedPos
-            nextTokenByte = savedToken
-            depth = savedDepth
-            needsCommaMask = savedNeedsCommaMask
-            commaConsumedMask = savedCommaConsumedMask
-            pathTracker.resetTo(savedPathMark)
-            skipValue()
-            pathTracker.finishScalarValue()
-            return null
-        }
-    }
-
 }

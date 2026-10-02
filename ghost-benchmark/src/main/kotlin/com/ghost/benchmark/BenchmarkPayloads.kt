@@ -36,15 +36,15 @@ internal data class BenchmarkPayloads(
 
         /** Builds every synthetic payload from generated in-memory models. */
         fun create(): BenchmarkPayloads {
-            val smallComplex = generateComplexData(SMALL_USER_COUNT)
-            val smallBytes = generateNeutralJson(smallComplex).encodeUtf8()
+            val smallComplex = generateComplexData(count = SMALL_USER_COUNT)
+            val smallBytes = generateNeutralJson(data = smallComplex).encodeUtf8()
             val listMediumBytes =
-                generateNeutralJson(generateComplexData(LIST_MEDIUM_USER_COUNT)).encodeUtf8()
+                generateNeutralJson(data = generateComplexData(count = LIST_MEDIUM_USER_COUNT)).encodeUtf8()
             val syncLargeBytes =
-                generateNeutralJson(generateComplexData(SYNC_LARGE_USER_COUNT)).encodeUtf8()
-            val writingComplex = generateComplexData(WRITING_USER_COUNT)
-            val writingBytes = generateNeutralJson(writingComplex).encodeUtf8()
-            val stressTreeBytes = generateNeutralJson(createTree(STRESS_TREE_DEPTH)).encodeUtf8()
+                generateNeutralJson(data = generateComplexData(count = SYNC_LARGE_USER_COUNT)).encodeUtf8()
+            val writingComplex = generateComplexData(count = WRITING_USER_COUNT)
+            val writingBytes = generateNeutralJson(data = writingComplex).encodeUtf8()
+            val stressTreeBytes = generateNeutralJson(data = createTree(depth = STRESS_TREE_DEPTH)).encodeUtf8()
             val failureMalformed = smallBytes.utf8().substring(0, smallBytes.size / 2)
             return BenchmarkPayloads(
                 smallComplex = smallComplex,

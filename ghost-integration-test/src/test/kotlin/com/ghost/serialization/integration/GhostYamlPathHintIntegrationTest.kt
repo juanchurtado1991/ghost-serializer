@@ -26,10 +26,10 @@ class GhostYamlPathHintIntegrationTest {
                 """.trimIndent()
             )
         }
-        assertEquals("$.email", ex.path)
-        assertTrue(ex.message.contains("Required field 'email'"))
-        assertNotNull(ex.hint)
-        assertTrue(ex.message.contains("Hint:"))
+        assertEquals(expected = "$.email", actual = ex.path)
+        assertTrue(actual = ex.message.contains("Required field 'email'"))
+        assertNotNull(actual = ex.hint)
+        assertTrue(actual = ex.message.contains("Hint:"))
     }
 
     @Test
@@ -45,8 +45,8 @@ class GhostYamlPathHintIntegrationTest {
                 """.trimIndent()
             )
         }
-        assertEquals("$.id", ex.path)
-        assertNotNull(ex.hint)
+        assertEquals(expected = "$.id", actual = ex.path)
+        assertNotNull(actual = ex.hint)
     }
 
     @Test
@@ -58,7 +58,7 @@ class GhostYamlPathHintIntegrationTest {
                 """.trimIndent()
             )
         }
-        assertEquals("$.name", ex.path)
-        assertNotNull(ex.hint)
+        assertEquals(expected = "$.name", actual = ex.path)
+        assertNotNull(actual = ex.hint)
     }
 }

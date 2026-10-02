@@ -122,7 +122,7 @@ Structural JSON-only features (`@GhostResilient`, `@GhostFlatten`, sealed polymo
 
 ## 8. Benchmarks
 
-Ghost-only YAML round-trip numbers (`GhostYamlFlatReader` / `GhostYamlFlatWriter` on `YamlBenchUser`):
+Ghost-only YAML round-trip numbers (`GhostYamlFlatReader` / `GhostYamlWriter` on `YamlBenchUser`):
 
 ```bash
 ./gradlew :ghost-benchmark:benchmarkYaml -PskipTests

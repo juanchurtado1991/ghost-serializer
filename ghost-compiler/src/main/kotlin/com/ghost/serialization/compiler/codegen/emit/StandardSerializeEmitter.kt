@@ -3,22 +3,20 @@ package com.ghost.serialization.compiler.codegen.emit
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Standard serializer code generator for standard-sized DTOs (typically < 40 properties).
- * Handles structured opening and closing of nested JSON brackets for flattened or wrapped properties.
+ * Serializer for standard-sized DTOs (typically < 40 properties); handles opening/closing
+ * nested JSON brackets for flattened or wrapped properties.
  */
 internal class StandardSerializeEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
     writerClass: ClassName
-) : BaseSerializeEmitter(properties, originalClassName, writerClass) {
+) : BaseSerializeEmitter(properties = properties, originalClassName = originalClassName, writerClass = writerClass) {
 
-    /**
-     * Emits the standard object serialization instructions.
-     */
     fun emit(
         code: CodeBlock.Builder,
         discriminator: String?,
@@ -42,16 +40,16 @@ internal class StandardSerializeEmitter(
                 ?: emptyList()
 
             // Close objects that are not in the new target path
-            while (currentPath.isNotEmpty() && !isPrefix(currentPath, targetPath)) {
+            while (currentPath.isNotEmpty() && !isPrefix(prefix = currentPath, full = targetPath)) {
                 code.addStatement(C.STR_WRITER_END_OBJ)
                 currentPath.removeAt(currentPath.size - 1)
             }
 
             val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
             val prefix = if (isStringWriter) {
-                C.STR_HS_PREFIX
+                CG.STR_HS_PREFIX
             } else {
-                C.STR_H_VAL_PREFIX
+                CG.STR_H_VAL_PREFIX
             }
             // Open new objects in the target path
             targetPath.drop(currentPath.size).forEach { segment ->
@@ -63,7 +61,7 @@ internal class StandardSerializeEmitter(
                 currentPath.add(segment)
             }
 
-            emitProperty(code, prop)
+            emitProperty(code = code, prop = prop)
         }
 
         // Close remaining open objects
@@ -74,9 +72,6 @@ internal class StandardSerializeEmitter(
         code.addStatement(C.STR_WRITER_END_OBJ)
     }
 
-    /**
-     * Checks if a path prefix is a subset of the full path.
-     */
     private fun isPrefix(prefix: List<String>, full: List<String>): Boolean {
         if (prefix.size > full.size) {
             return false

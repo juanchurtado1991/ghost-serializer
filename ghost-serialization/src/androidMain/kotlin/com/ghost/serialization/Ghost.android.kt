@@ -19,7 +19,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
         override fun hasNext(): Boolean {
             if (!fastLoaded) {
                 fastLoaded = true
-                loadFastRegistries(fast)
+                loadFastRegistries(out = fast)
             }
             if (index < fast.size) {
                 return true
@@ -27,7 +27,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             val slowIterator = slow ?: runCatching {
                 ServiceLoader.load(GhostRegistry::class.java).iterator()
             }
-                .getOrDefault(emptyList<GhostRegistry>().iterator())
+                .getOrDefault(defaultValue = emptyList<GhostRegistry>().iterator())
                 .also { slow = it }
             return slowIterator.hasNext()
         }
@@ -39,7 +39,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             return if (index < fast.size) {
                 fast[index++]
             } else {
-                checkNotNull(slow).next()
+                checkNotNull(value = slow).next()
             }
         }
     }
@@ -58,7 +58,7 @@ private fun loadFastRegistries(
                 .getOrNull()
                 ?: clazz.getDeclaredField(Ghost.INSTANCE_FIELD)
 
-            (field.get(null) as? GhostRegistry)?.let { out.add(it) }
+            (field.get(null) as? GhostRegistry)?.let { out.add(element = it) }
         }
     }
 }

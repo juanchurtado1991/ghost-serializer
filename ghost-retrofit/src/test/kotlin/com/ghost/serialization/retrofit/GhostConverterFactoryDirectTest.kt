@@ -41,7 +41,7 @@ class GhostConverterFactoryDirectTest {
 
     @BeforeEach
     fun setup() {
-        Ghost.addRegistry(RetrofitTestRegistry)
+        Ghost.addRegistry(registry = RetrofitTestRegistry)
         factory = GhostConverterFactory.create()
         retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
     }
@@ -49,58 +49,76 @@ class GhostConverterFactoryDirectTest {
     @Test
     fun responseBodyConverter_returnsNullForUnregisteredType() {
         val converter =
-            factory.responseBodyConverter(Unregistered::class.java, emptyArray(), retrofit)
-        assertNull(converter)
+            factory.responseBodyConverter(
+                type = Unregistered::class.java,
+                annotations = emptyArray(),
+                retrofit = retrofit
+            )
+        assertNull(actual = converter)
     }
 
     @Test
     fun requestBodyConverter_returnsNullForUnregisteredType() {
         val converter = factory.requestBodyConverter(
-            Unregistered::class.java,
-            emptyArray(),
-            emptyArray(),
-            retrofit
+            type = Unregistered::class.java,
+            parameterAnnotations = emptyArray(),
+            methodAnnotations = emptyArray(),
+            retrofit = retrofit
         )
-        assertNull(converter)
+        assertNull(actual = converter)
     }
 
     @Test
     fun responseBodyConverter_resolvesSetGenericType() {
         val genericType = SetGenericHolder::class.java.getMethod("set").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )
             ?: error("Expected a converter for Set<RetrofitUser>")
 
         val body = """[{"id":1,"name":"a","isActive":true}]"""
-            .toResponseBody("application/json; charset=UTF-8".toMediaType())
+            .toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(body) as Set<RetrofitUser>
-        assertEquals(setOf(RetrofitUser(1, "a", true)), result)
+        assertEquals(expected = setOf(RetrofitUser(id = 1, name = "a", isActive = true)), actual = result)
     }
 
     @Test
     fun responseBodyConverter_resolvesStringKeyMapGenericType() {
         val genericType = MapGenericHolder::class.java.getMethod("stringKey").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )
             ?: error("Expected a converter for Map<String, RetrofitUser>")
 
         val body = """{"a":{"id":1,"name":"a","isActive":true}}"""
-            .toResponseBody("application/json; charset=UTF-8".toMediaType())
+            .toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(body) as Map<String, RetrofitUser>
-        assertEquals(RetrofitUser(1, "a", true), result["a"])
+        assertEquals(expected = RetrofitUser(id = 1, name = "a", isActive = true), actual = result["a"])
     }
 
     @Test
     fun responseBodyConverter_returnsNullForNonStringKeyMap() {
         val genericType = MapGenericHolder::class.java.getMethod("intKey").genericReturnType
-        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
+        assertNull(
+            actual = factory.responseBodyConverter(type = genericType, annotations = emptyArray(), retrofit = retrofit)
+        )
     }
 
     @Test
     fun responseBodyConverter_returnsNullForUnsupportedNestedGenericType() {
         val genericType = UnsupportedGenericHolder::class.java.getMethod("holder").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)
-        assertNull(converter)
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )
+        assertNull(actual = converter)
     }
 
     @Test
@@ -108,12 +126,16 @@ class GhostConverterFactoryDirectTest {
         val longName = "n".repeat(600_000)
         val json = """{"id":1,"name":"$longName","isActive":true}"""
         val converter =
-            factory.responseBodyConverter(RetrofitUser::class.java, emptyArray(), retrofit)
+            factory.responseBodyConverter(
+                type = RetrofitUser::class.java,
+                annotations = emptyArray(),
+                retrofit = retrofit
+            )
                 ?: error("Expected a converter for a registered type")
 
-        val body = json.toResponseBody("application/json; charset=UTF-8".toMediaType())
+        val body = json.toResponseBody(GhostRetrofitMediaTypes.APPLICATION_JSON_UTF8.toMediaType())
         val result = converter.convert(body)
 
-        assertEquals(RetrofitUser(1, longName, true), result)
+        assertEquals(expected = RetrofitUser(id = 1, name = longName, isActive = true), actual = result)
     }
 }

@@ -12,28 +12,28 @@ class GhostInferredPolymorphismTest {
     fun testInferredTempEvent() {
         val json = """{"temperature": 25.5, "unit": "C"}"""
         val event = Ghost.deserialize<SmartEvent>(json)
-        assertEquals(SmartEvent.TempEvent(25.5, "C"), event)
+        assertEquals(expected = SmartEvent.TempEvent(temperature = 25.5, unit = "C"), actual = event)
     }
 
     @Test
     fun testInferredHumidityEvent() {
         val json = """{"humidity": 60.0}"""
         val event = Ghost.deserialize<SmartEvent>(json)
-        assertEquals(SmartEvent.HumidityEvent(60.0), event)
+        assertEquals(expected = SmartEvent.HumidityEvent(humidity = 60.0), actual = event)
     }
 
     @Test
     fun testInferredMixedEvent() {
         val json = """{"temperature": 22.0, "humidity": 55.0}"""
         val event = Ghost.deserialize<SmartEvent>(json)
-        assertEquals(SmartEvent.MixedEvent(22.0, 55.0), event)
+        assertEquals(expected = SmartEvent.MixedEvent(temperature = 22.0, humidity = 55.0), actual = event)
     }
 
     @Test
     fun testInferredMotionEventWithSignature() {
         val json = """{"motion": true}"""
         val event = Ghost.deserialize<SmartEvent>(json)
-        assertEquals(SmartEvent.MotionEvent(true), event)
+        assertEquals(expected = SmartEvent.MotionEvent(motion = true), actual = event)
     }
 
     @Test
@@ -52,12 +52,15 @@ class GhostInferredPolymorphismTest {
 
         val container = Ghost.deserialize<InferredNestedContainer>(json)
 
-        assertEquals("dev_123", container.id)
-        assertEquals(SmartEvent.HumidityEvent(45.0), container.event)
-        assertEquals(3, container.commands.size)
-        assertEquals(DeviceCommand.Reboot(true), container.commands[0])
-        assertEquals(DeviceCommand.SetBrightness(80), container.commands[1])
-        assertEquals(DeviceCommand.UpdateFirmware("http://ghost.io", "1.2"), container.commands[2])
+        assertEquals(expected = "dev_123", actual = container.id)
+        assertEquals(expected = SmartEvent.HumidityEvent(humidity = 45.0), actual = container.event)
+        assertEquals(expected = 3, actual = container.commands.size)
+        assertEquals(expected = DeviceCommand.Reboot(force = true), actual = container.commands[0])
+        assertEquals(expected = DeviceCommand.SetBrightness(level = 80), actual = container.commands[1])
+        assertEquals(
+            expected = DeviceCommand.UpdateFirmware(url = "http://ghost.io", version = "1.2"),
+            actual = container.commands[2]
+        )
     }
 
     @Test
@@ -72,7 +75,7 @@ class GhostInferredPolymorphismTest {
             }
         """.trimIndent()
         val event = Ghost.deserialize<SmartEvent>(json)
-        assertEquals(SmartEvent.TempEvent(10.0, "K"), event)
+        assertEquals(expected = SmartEvent.TempEvent(temperature = 10.0, unit = "K"), actual = event)
     }
 
     @Test

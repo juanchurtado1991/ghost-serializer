@@ -1,8 +1,10 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.google.protobuf.BoolValue
 import com.google.protobuf.BytesValue
 import com.google.protobuf.DoubleValue
@@ -22,7 +24,6 @@ import kotlin.reflect.KClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
 
 /**
  * Cross-checks Ghost's proto3 JSON output against `protobuf-java` (Google's own reference
@@ -49,12 +50,13 @@ class ProtoJsonConformanceTest {
             ProtoUInt32Value::class to ProtoUInt32ValueSerializer,
             ProtoUInt64Value::class to ProtoUInt64ValueSerializer,
         )
-        Ghost.addRegistry(object : GhostRegistry {
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             @Suppress("UNCHECKED_CAST")
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
                 map[clazz] as? GhostSerializer<T>
 
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = map
+
         })
     }
 
@@ -63,18 +65,18 @@ class ProtoJsonConformanceTest {
     @Test
     fun durationMatchesReferenceImplementation() {
         val cases = listOf(
-            ProtoDuration(123456L, 789) to Duration.newBuilder().setSeconds(123456L).setNanos(789)
+            ProtoDuration(seconds = 123456L, nanos = 789) to Duration.newBuilder().setSeconds(123456L).setNanos(789)
                 .build(),
-            ProtoDuration(-123L, -450000000) to Duration.newBuilder().setSeconds(-123L)
+            ProtoDuration(seconds = -123L, nanos = -450000000) to Duration.newBuilder().setSeconds(-123L)
                 .setNanos(-450000000).build(),
-            ProtoDuration(0L, 0) to Duration.getDefaultInstance(),
-            ProtoDuration(1L, 0) to Duration.newBuilder().setSeconds(1L).build(),
+            ProtoDuration(seconds = 0L, nanos = 0) to Duration.getDefaultInstance(),
+            ProtoDuration(seconds = 1L, nanos = 0) to Duration.newBuilder().setSeconds(1L).build(),
         )
         for ((ghostValue, javaValue) in cases) {
             assertEquals(
-                printer.print(javaValue),
-                Ghost.encodeToString(ghostValue),
-                "seconds=${ghostValue.seconds} nanos=${ghostValue.nanos}"
+                expected = printer.print(javaValue),
+                actual = Ghost.encodeToString(ghostValue),
+                message = "seconds=${ghostValue.seconds} nanos=${ghostValue.nanos}"
             )
         }
     }
@@ -84,17 +86,17 @@ class ProtoJsonConformanceTest {
     @Test
     fun timestampMatchesReferenceImplementation() {
         val cases = listOf(
-            ProtoTimestamp(1783515300L, 123456789) to Timestamp.newBuilder().setSeconds(1783515300L)
+            ProtoTimestamp(seconds = 1783515300L, nanos = 123456789) to Timestamp.newBuilder().setSeconds(1783515300L)
                 .setNanos(123456789).build(),
-            ProtoTimestamp(0L, 0) to Timestamp.getDefaultInstance(),
-            ProtoTimestamp(1783447200L, 125000000) to Timestamp.newBuilder().setSeconds(1783447200L)
+            ProtoTimestamp(seconds = 0L, nanos = 0) to Timestamp.getDefaultInstance(),
+            ProtoTimestamp(seconds = 1783447200L, nanos = 125000000) to Timestamp.newBuilder().setSeconds(1783447200L)
                 .setNanos(125000000).build(),
         )
         for ((ghostValue, javaValue) in cases) {
             assertEquals(
-                printer.print(javaValue),
-                Ghost.encodeToString(ghostValue),
-                "seconds=${ghostValue.seconds} nanos=${ghostValue.nanos}"
+                expected = printer.print(javaValue),
+                actual = Ghost.encodeToString(ghostValue),
+                message = "seconds=${ghostValue.seconds} nanos=${ghostValue.nanos}"
             )
         }
     }
@@ -103,64 +105,73 @@ class ProtoJsonConformanceTest {
 
     @Test
     fun boolValueMatchesReferenceImplementation() {
-        assertEquals(printer.print(BoolValue.of(true)), Ghost.encodeToString(ProtoBoolValue(true)))
         assertEquals(
-            printer.print(BoolValue.of(false)),
-            Ghost.encodeToString(ProtoBoolValue(false))
+            expected = printer.print(BoolValue.of(true)),
+            actual = Ghost.encodeToString(ProtoBoolValue(value = true))
+        )
+        assertEquals(
+            expected = printer.print(BoolValue.of(false)),
+            actual = Ghost.encodeToString(ProtoBoolValue(value = false))
         )
     }
 
     @Test
     fun stringValueMatchesReferenceImplementation() {
         assertEquals(
-            printer.print(StringValue.of("hello world")),
-            Ghost.encodeToString(ProtoStringValue("hello world"))
+            expected = printer.print(StringValue.of("hello world")),
+            actual = Ghost.encodeToString(ProtoStringValue(value = "hello world"))
         )
-        assertEquals(printer.print(StringValue.of("")), Ghost.encodeToString(ProtoStringValue("")))
+        assertEquals(
+            expected = printer.print(StringValue.of("")),
+            actual = Ghost.encodeToString(ProtoStringValue(value = ""))
+        )
     }
 
     @Test
     fun doubleValueMatchesReferenceImplementation() {
         assertEquals(
-            printer.print(DoubleValue.of(42.5)),
-            Ghost.encodeToString(ProtoDoubleValue(42.5))
+            expected = printer.print(DoubleValue.of(42.5)),
+            actual = Ghost.encodeToString(ProtoDoubleValue(value = 42.5))
         )
     }
 
     @Test
     fun floatValueMatchesReferenceImplementation() {
         assertEquals(
-            printer.print(FloatValue.of(12.25f)),
-            Ghost.encodeToString(ProtoFloatValue(12.25f))
+            expected = printer.print(FloatValue.of(12.25f)),
+            actual = Ghost.encodeToString(ProtoFloatValue(value = 12.25f))
         )
     }
 
     @Test
     fun int32ValueMatchesReferenceImplementation() {
-        assertEquals(printer.print(Int32Value.of(123)), Ghost.encodeToString(ProtoInt32Value(123)))
         assertEquals(
-            printer.print(Int32Value.of(Int.MIN_VALUE)),
-            Ghost.encodeToString(ProtoInt32Value(Int.MIN_VALUE))
+            expected = printer.print(Int32Value.of(123)),
+            actual = Ghost.encodeToString(ProtoInt32Value(value = 123))
+        )
+        assertEquals(
+            expected = printer.print(Int32Value.of(Int.MIN_VALUE)),
+            actual = Ghost.encodeToString(ProtoInt32Value(value = Int.MIN_VALUE))
         )
     }
 
     @Test
     fun int64ValueMatchesReferenceImplementation() {
         assertEquals(
-            printer.print(Int64Value.of(Long.MAX_VALUE)),
-            Ghost.encodeToString(ProtoInt64Value(Long.MAX_VALUE))
+            expected = printer.print(Int64Value.of(Long.MAX_VALUE)),
+            actual = Ghost.encodeToString(ProtoInt64Value(value = Long.MAX_VALUE))
         )
         assertEquals(
-            printer.print(Int64Value.of(Long.MIN_VALUE)),
-            Ghost.encodeToString(ProtoInt64Value(Long.MIN_VALUE))
+            expected = printer.print(Int64Value.of(Long.MIN_VALUE)),
+            actual = Ghost.encodeToString(ProtoInt64Value(value = Long.MIN_VALUE))
         )
     }
 
     @Test
     fun uInt32ValueMatchesReferenceImplementation() {
         assertEquals(
-            printer.print(UInt32Value.of(4294967295L.toInt())),
-            Ghost.encodeToString(ProtoUInt32Value(4294967295L))
+            expected = printer.print(UInt32Value.of(4294967295L.toInt())),
+            actual = Ghost.encodeToString(ProtoUInt32Value(value = 4294967295L))
         )
     }
 
@@ -169,20 +180,20 @@ class ProtoJsonConformanceTest {
         // protobuf-java's UInt64Value.of takes a signed Long whose bit pattern is interpreted as
         // unsigned — Long.MAX_VALUE is within both representations, a safe cross-check value.
         assertEquals(
-            printer.print(UInt64Value.of(Long.MAX_VALUE)),
-            Ghost.encodeToString(ProtoUInt64Value(Long.MAX_VALUE.toULong()))
+            expected = printer.print(UInt64Value.of(Long.MAX_VALUE)),
+            actual = Ghost.encodeToString(ProtoUInt64Value(value = Long.MAX_VALUE.toULong()))
         )
     }
 
     @Test
     fun bytesValueMatchesReferenceImplementation() {
         val bytes = "abc+123".encodeToByteArray()
-        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
-        ProtoBytesValueSerializer.serialize(writer, ProtoBytesValue(bytes))
+        val flatBuffer = FlatByteArrayWriter(initialCapacity = 64)
+        val writer = GhostJsonWriter(flatBuffer)
+        ProtoBytesValueSerializer.serialize(writer, ProtoBytesValue(value = bytes))
         assertEquals(
-            printer.print(BytesValue.of(com.google.protobuf.ByteString.copyFrom(bytes))),
-            flatBuffer.toStringUtf8(),
+            expected = printer.print(BytesValue.of(com.google.protobuf.ByteString.copyFrom(bytes))),
+            actual = flatBuffer.toStringUtf8()
         )
     }
 
@@ -192,11 +203,11 @@ class ProtoJsonConformanceTest {
     fun structMatchesReferenceImplementation() {
         val ghostStruct: ProtoStruct = mapOf(
             "a" to ProtoValue.Null,
-            "b" to ProtoValue.Number(123.45),
-            "c" to ProtoValue.Str("hello"),
-            "d" to ProtoValue.Bool(true),
-            "e" to ProtoValue.Struct(mapOf("x" to ProtoValue.Number(1.0))),
-            "f" to ProtoValue.List(listOf(ProtoValue.Number(2.0), ProtoValue.Str("y"))),
+            "b" to ProtoValue.Number(value = 123.45),
+            "c" to ProtoValue.Str(value = "hello"),
+            "d" to ProtoValue.Bool(value = true),
+            "e" to ProtoValue.Struct(value = mapOf("x" to ProtoValue.Number(value = 1.0))),
+            "f" to ProtoValue.List(value = listOf(ProtoValue.Number(value = 2.0), ProtoValue.Str(value = "y"))),
         )
         val javaStruct = Struct.newBuilder()
             .putFields("a", Value.newBuilder().setNullValueValue(0).build())
@@ -220,22 +231,25 @@ class ProtoJsonConformanceTest {
             )
             .build()
 
-        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(512)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
+        val flatBuffer = FlatByteArrayWriter(initialCapacity = 512)
+        val writer = GhostJsonWriter(flatBuffer)
         ProtoStructSerializer.serialize(writer, ghostStruct)
-        assertEquals(printer.print(javaStruct), flatBuffer.toStringUtf8())
+        assertEquals(
+            expected = printer.print(javaStruct),
+            actual = flatBuffer.toStringUtf8()
+        )
     }
 
     // --- Empty ---
 
     @Test
     fun emptyMatchesReferenceImplementation() {
-        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(16)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
+        val flatBuffer = FlatByteArrayWriter(initialCapacity = 16)
+        val writer = GhostJsonWriter(flatBuffer)
         ProtoEmptySerializer.serialize(writer, ProtoEmpty)
         assertEquals(
-            printer.print(com.google.protobuf.Empty.getDefaultInstance()),
-            flatBuffer.toStringUtf8()
+            expected = printer.print(com.google.protobuf.Empty.getDefaultInstance()),
+            actual = flatBuffer.toStringUtf8()
         )
     }
 }

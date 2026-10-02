@@ -27,17 +27,17 @@ class GhostResilienceAndFallbackTest {
         """.trimIndent()
 
         val home = Ghost.deserialize<SmartHome>(json)
-        assertEquals("home_1", home.id)
-        assertEquals(2, home.devices.size)
+        assertEquals(expected = "home_1", actual = home.id)
+        assertEquals(expected = 2, actual = home.devices.size)
 
         val light = home.devices[0]
-        assertTrue(light is SmartDevice.Light)
-        assertEquals(80, light.brightness)
+        assertTrue(actual = light is SmartDevice.Light)
+        assertEquals(expected = 80, actual = light.brightness)
 
         val unknown = home.devices[1]
-        assertTrue(unknown is SmartDevice.UnknownDevice)
+        assertTrue(actual = unknown is SmartDevice.UnknownDevice)
         // rawData falls back to its default — there's no mechanism yet to capture unknown data
-        assertEquals("unknown", unknown.rawData)
+        assertEquals(expected = "unknown", actual = unknown.rawData)
     }
 
     @Test
@@ -54,15 +54,15 @@ class GhostResilienceAndFallbackTest {
         """.trimIndent()
 
         val home = Ghost.deserialize<SmartHome>(json)
-        assertEquals("home_2", home.id)
+        assertEquals(expected = "home_2", actual = home.id)
 
         // active is nullable and resilient, should become null
-        assertEquals(null, home.active)
+        assertEquals(expected = null, actual = home.active)
 
         // deviceCount is non-nullable with default 0, should become 0
-        assertEquals(0, home.deviceCount)
+        assertEquals(expected = 0, actual = home.deviceCount)
 
-        assertEquals(HomeStatus.ONLINE, home.status)
+        assertEquals(expected = HomeStatus.ONLINE, actual = home.status)
     }
 
     @Test
@@ -78,10 +78,10 @@ class GhostResilienceAndFallbackTest {
         """.trimIndent()
 
         val home = Ghost.deserialize<SmartHome>(json)
-        assertEquals("home_3", home.id)
+        assertEquals(expected = "home_3", actual = home.id)
 
         // status is resilient and nullable, should be null
-        assertEquals(null, home.status)
+        assertEquals(expected = null, actual = home.status)
     }
 
     @Test
@@ -99,7 +99,7 @@ class GhostResilienceAndFallbackTest {
         val home = Ghost.deserialize<SmartHome>(json) {
             it.coerceBooleans = true
         }
-        assertEquals(true, home.active)
+        assertEquals(expected = true, actual = home.active)
 
         val jsonFalse = """
         {
@@ -113,7 +113,7 @@ class GhostResilienceAndFallbackTest {
         val homeFalse = Ghost.deserialize<SmartHome>(jsonFalse) {
             it.coerceBooleans = true
         }
-        assertEquals(false, homeFalse.active)
+        assertEquals(expected = false, actual = homeFalse.active)
     }
 
     @Test
@@ -130,9 +130,9 @@ class GhostResilienceAndFallbackTest {
         """.trimIndent()
 
         val home = Ghost.deserialize<SmartHome>(json)
-        assertEquals("home_5", home.id)
+        assertEquals(expected = "home_5", actual = home.id)
 
         // config is malformed but @GhostResilient, should be null instead of crashing
-        assertEquals(null, home.config)
+        assertEquals(expected = null, actual = home.config)
     }
 }

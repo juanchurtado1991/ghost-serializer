@@ -1,6 +1,8 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
+import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -10,30 +12,44 @@ class ProtoWktEdgeCasesTest {
 
     @Test
     fun testTimestampPrecisionAndMath() {
-        // Positive timezone offset
-        val ts1 = parseTimestamp("2026-07-07T20:00:00+02:00")
-        // Expected epoch seconds for 2026-07-07 18:00:00 UTC
-        assertEquals(1783447200L, ts1.seconds)
+        val ts1 = parseTimestamp(timestampString = "2026-07-07T20:00:00+02:00")
+        // 1783447200L = 2026-07-07 18:00:00 UTC
+        assertEquals(
+            expected = 1783447200L,
+            actual = ts1.seconds
+        )
 
-        // Date formatting round-trip
-        val formatted = formatTimestamp(ProtoTimestamp(1783447200L, 125000000))
-        assertEquals("2026-07-07T18:00:00.125Z", formatted)
+        val formatted = formatTimestamp(timestamp = ProtoTimestamp(seconds = 1783447200L, nanos = 125000000))
+        assertEquals(
+            expected = "2026-07-07T18:00:00.125Z",
+            actual = formatted
+        )
     }
 
     @Test
     fun testDurationSignCoherence() {
-        // Positive ok
-        val d1 = parseDuration("10.500s")
-        assertEquals(10L, d1.seconds)
-        assertEquals(500000000, d1.nanos)
+        val d1 = parseDuration(durationString = "10.500s")
+        assertEquals(
+            expected = 10L,
+            actual = d1.seconds
+        )
+        assertEquals(
+            expected = 500000000,
+            actual = d1.nanos
+        )
 
-        // Negative ok
-        val d2 = parseDuration("-10.500s")
-        assertEquals(-10L, d2.seconds)
-        assertEquals(-500000000, d2.nanos)
+        val d2 = parseDuration(durationString = "-10.500s")
+        assertEquals(
+            expected = -10L,
+            actual = d2.seconds
+        )
+        assertEquals(
+            expected = -500000000,
+            actual = d2.nanos
+        )
 
-        // Mismatched sign -> fails
-        assertFails { parseDuration("-10.500s").copy(nanos = 500000000) } // sign rule check inside serializer
+        // seconds/nanos must carry the same sign; the serializer enforces this.
+        assertFails { parseDuration(durationString = "-10.500s").copy(nanos = 500000000) }
     }
 
     @Test
@@ -42,32 +58,65 @@ class ProtoWktEdgeCasesTest {
         // complement. formatLong/writeLongToBytes must not naively negate the full value —
         // previously this silently corrupted the output to "-0"/"-0s" instead of throwing
         // or producing the correct digits.
-        val formattedDuration = formatDuration(ProtoDuration(Long.MIN_VALUE, 0))
-        assertEquals("-9223372036854775808s", formattedDuration)
+        val formattedDuration = formatDuration(duration = ProtoDuration(seconds = Long.MIN_VALUE, nanos = 0))
+        assertEquals(
+            expected = "-9223372036854775808s",
+            actual = formattedDuration
+        )
 
-        val flatBuffer = com.ghost.serialization.writer.bytes.FlatByteArrayWriter(64)
-        val writer = com.ghost.serialization.writer.bytes.GhostJsonWriter(flatBuffer)
-        ProtoInt64ValueSerializer.serialize(writer, ProtoInt64Value(Long.MIN_VALUE))
-        assertEquals("\"-9223372036854775808\"", flatBuffer.toStringUtf8())
+        val flatBuffer = FlatByteArrayWriter(initialCapacity = 64)
+        val writer = GhostJsonWriter(flatBuffer)
+        ProtoInt64ValueSerializer.serialize(writer, ProtoInt64Value(value = Long.MIN_VALUE))
+        assertEquals(
+            expected = "\"-9223372036854775808\"",
+            actual = flatBuffer.toStringUtf8()
+        )
     }
 
     @Test
     fun testBase64StringEscapes() {
         // YWJjKzEyMw== -> abc+123 (escaped 'Y' to verify unicode escape)
-        val readerEscaped = GhostProtoJsonFlatReader("\"\\u0059WJjKzEyMw==\"".encodeToByteArray())
+        val readerEscaped = GhostProtoJsonFlatReader(rawData = "\"\\u0059WJjKzEyMw==\"".encodeToByteArray())
         val decoded = readerEscaped.nextProtoBytes()
-        assertEquals("abc+123", decoded.decodeToString())
+        assertEquals(
+            expected = "abc+123",
+            actual = decoded.decodeToString()
+        )
 
         // Standard slashes escaped: YWJj/zEyMw== -> abc[255]123
-        val readerSlash = GhostProtoJsonFlatReader("\"YWJj\\/zEyMw==\"".encodeToByteArray())
+        val readerSlash = GhostProtoJsonFlatReader(rawData = "\"YWJj\\/zEyMw==\"".encodeToByteArray())
         val decodedSlash = readerSlash.nextProtoBytes()
-        assertEquals(7, decodedSlash.size)
-        assertEquals('a'.code.toByte(), decodedSlash[0])
-        assertEquals('b'.code.toByte(), decodedSlash[1])
-        assertEquals('c'.code.toByte(), decodedSlash[2])
-        assertEquals(255.toByte(), decodedSlash[3])
-        assertEquals('1'.code.toByte(), decodedSlash[4])
-        assertEquals('2'.code.toByte(), decodedSlash[5])
-        assertEquals('3'.code.toByte(), decodedSlash[6])
+        assertEquals(
+            expected = 7,
+            actual = decodedSlash.size
+        )
+        assertEquals(
+            expected = 'a'.code.toByte(),
+            actual = decodedSlash[0]
+        )
+        assertEquals(
+            expected = 'b'.code.toByte(),
+            actual = decodedSlash[1]
+        )
+        assertEquals(
+            expected = 'c'.code.toByte(),
+            actual = decodedSlash[2]
+        )
+        assertEquals(
+            expected = 255.toByte(),
+            actual = decodedSlash[3]
+        )
+        assertEquals(
+            expected = '1'.code.toByte(),
+            actual = decodedSlash[4]
+        )
+        assertEquals(
+            expected = '2'.code.toByte(),
+            actual = decodedSlash[5]
+        )
+        assertEquals(
+            expected = '3'.code.toByte(),
+            actual = decodedSlash[6]
+        )
     }
 }

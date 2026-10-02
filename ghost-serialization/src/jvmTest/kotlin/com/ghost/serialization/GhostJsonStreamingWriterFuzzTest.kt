@@ -34,10 +34,10 @@ class GhostJsonStreamingWriterFuzzTest {
 
     @FuzzTest
     fun fuzzJsonStreamingStringValueRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val buffer = Buffer()
-        GhostJsonWriter(buffer).beginObject().name("v").value(expected).endObject().flush()
+        GhostJsonWriter(buffer).beginObject().name(key = "v").value(expected).endObject().flush()
 
         val reader = GhostJsonReader(buffer.readByteArray())
         reader.beginObject()
@@ -53,10 +53,10 @@ class GhostJsonStreamingWriterFuzzTest {
 
     @FuzzTest
     fun fuzzJsonStreamingKeyRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val buffer = Buffer()
-        GhostJsonWriter(buffer).beginObject().name(expected).value(1).endObject().flush()
+        GhostJsonWriter(buffer).beginObject().name(key = expected).value(1).endObject().flush()
 
         val reader = GhostJsonReader(buffer.readByteArray())
         reader.beginObject()

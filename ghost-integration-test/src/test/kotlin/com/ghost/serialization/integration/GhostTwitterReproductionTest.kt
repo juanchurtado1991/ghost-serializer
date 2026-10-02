@@ -15,7 +15,7 @@ class GhostTwitterReproductionTest {
     @Test
     fun testTwitterDatasetDecoding() {
         val resource = this::class.java.classLoader.getResource("twitter_macro.json")
-        assertNotNull(resource, "Could not find twitter_macro.json resource")
+        assertNotNull(actual = resource, message = "Could not find twitter_macro.json resource")
         val jsonString = resource.readText()
         println("Successfully read twitter_macro.json. Length: ${jsonString.length}")
 
@@ -47,7 +47,7 @@ class GhostTwitterReproductionTest {
                     break
                 }
             }
-            assertEquals(referenceResponse, ghostResponse)
+            assertEquals(expected = referenceResponse, actual = ghostResponse)
         }
         println("Deep validation passed! Ghost parsed 100% of the dataset structurally identical to Kotlinx.")
 
@@ -55,9 +55,9 @@ class GhostTwitterReproductionTest {
         val deserializedRoundtrip = Ghost.deserialize<TwitterResponse>(serializedBytes)
 
         assertEquals(
-            ghostResponse,
-            deserializedRoundtrip,
-            "Roundtrip data loss detected! Serialization -> Deserialization returned a mismatched object."
+            expected = ghostResponse,
+            actual = deserializedRoundtrip,
+            message = "Roundtrip data loss detected! Serialization -> Deserialization returned a mismatched object."
         )
         println("Roundtrip validation passed! Ghost serializes and deserializes the dataset with 0% data loss.")
     }
@@ -65,35 +65,35 @@ class GhostTwitterReproductionTest {
     @Test
     fun testTwitterSpecialFeatures() {
         val resource = this::class.java.classLoader.getResource("twitter_macro.json")
-        assertNotNull(resource, "Could not find twitter_macro.json resource")
+        assertNotNull(actual = resource, message = "Could not find twitter_macro.json resource")
         val jsonString = resource.readText()
 
         println("Deserializing Twitter macro dataset using Ghost Special Features...")
         val response = Ghost.deserialize<TwitterSpecialResponse>(jsonString)
 
-        assertTrue(response.statuses.isNotEmpty(), "Statuses list should not be empty")
+        assertTrue(actual = response.statuses.isNotEmpty(), message = "Statuses list should not be empty")
 
         val firstTweet = response.statuses.first()
-        assertEquals(505874924095815700L, firstTweet.id)
+        assertEquals(expected = 505874924095815700L, actual = firstTweet.id)
 
         // GhostFlatten: user.screen_name -> screenName
         assertEquals(
-            "ayuu0123",
-            firstTweet.screenName,
-            "GhostFlatten failed to extract nested screen_name correctly"
+            expected = "ayuu0123",
+            actual = firstTweet.screenName,
+            message = "GhostFlatten failed to extract nested screen_name correctly"
         )
 
         // GhostFlatten: metadata.result_type -> resultType
         assertEquals(
-            "recent",
-            firstTweet.resultType,
-            "GhostFlatten failed to extract nested result_type correctly"
+            expected = "recent",
+            actual = firstTweet.resultType,
+            message = "GhostFlatten failed to extract nested result_type correctly"
         )
 
         assertEquals(
-            "",
-            firstTweet.source,
-            "GhostIgnore failed; the field was populated when it should have been ignored"
+            expected = "",
+            actual = firstTweet.source,
+            message = "GhostIgnore failed; the field was populated when it should have been ignored"
         )
 
         println("Deserialization and special features extraction successful!")
@@ -103,17 +103,17 @@ class GhostTwitterReproductionTest {
         val serializedJson = String(serializedBytes, Charsets.UTF_8)
 
         assertTrue(
-            !serializedJson.contains("\"source\":"),
-            "GhostIgnore failed! Ignored property 'source' was found in the serialized JSON."
+            actual = !serializedJson.contains("\"source\":"),
+            message = "GhostIgnore failed! Ignored property 'source' was found in the serialized JSON."
         )
 
         println("Performing roundtrip deserialization on serialized special features JSON...")
         val roundtripResponse = Ghost.deserialize<TwitterSpecialResponse>(serializedBytes)
 
         assertEquals(
-            response,
-            roundtripResponse,
-            "Roundtrip comparison failed for Ghost Special Features model!"
+            expected = response,
+            actual = roundtripResponse,
+            message = "Roundtrip comparison failed for Ghost Special Features model!"
         )
         println("Ghost Special Features roundtrip validated successfully with 0% data loss!")
     }
@@ -130,16 +130,16 @@ class GhostTwitterReproductionTest {
         val json = String(serializedBytes, Charsets.UTF_8)
 
         assertTrue(
-            json.contains("\"details\":{\"text\":\"Hello Twitter Wrap!\"}"),
-            "GhostWrap failed! Property was not correctly wrapped in the serialized JSON: $json"
+            actual = json.contains("\"details\":{\"text\":\"Hello Twitter Wrap!\"}"),
+            message = "GhostWrap failed! Property was not correctly wrapped in the serialized JSON: $json"
         )
         println("GhostWrap serialization validated successfully! Output: $json")
 
         val deserialized = Ghost.deserialize<TwitterWrappedTweet>(serializedBytes)
         assertEquals(
-            tweet,
-            deserialized,
-            "GhostWrap deserialization failed! Roundtrip object does not match original."
+            expected = tweet,
+            actual = deserialized,
+            message = "GhostWrap deserialization failed! Roundtrip object does not match original."
         )
         println("GhostWrap roundtrip deserialization validated successfully!")
     }

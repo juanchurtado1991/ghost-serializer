@@ -51,8 +51,8 @@ class RepoSourceHygieneTest {
         }
 
         assertTrue(
-            violations.isEmpty(),
-            "Wildcard imports are forbidden; use explicit imports instead:\n" +
+            actual = violations.isEmpty(),
+            message = "Wildcard imports are forbidden; use explicit imports instead:\n" +
                     violations.joinToString("\n"),
         )
     }

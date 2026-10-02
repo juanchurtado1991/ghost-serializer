@@ -26,8 +26,8 @@ class GhostMaliceTest {
         }
 
         assertTrue(
-            exception.message.contains("Reached maximum recursion depth"),
-            "Should throw depth exceeded error"
+            actual = exception.message.contains("Reached maximum recursion depth"),
+            message = "Should throw depth exceeded error"
         )
     }
 
@@ -60,7 +60,7 @@ class GhostMaliceTest {
         }
 
         val result = Ghost.deserialize<CollisionModel>(json.encodeToByteArray())
-        assertEquals(result.a1, 1, "a1 should be 1")
-        assertEquals(result.a100, 100, "a100 should be 100")
+        assertEquals(expected = result.a1, actual = 1, message = "a1 should be 1")
+        assertEquals(expected = result.a100, actual = 100, message = "a100 should be 100")
     }
 }

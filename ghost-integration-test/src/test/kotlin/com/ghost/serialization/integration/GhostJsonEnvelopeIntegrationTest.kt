@@ -25,9 +25,9 @@ class GhostJsonEnvelopeIntegrationTest {
         """.trimIndent().encodeToByteArray()
 
         val payload = SseEventEnvelopeSerializer.parsePayload(json)
-        assertEquals(RawJsonKind.OBJECT, payload?.kind())
-        assertSame(json, payload?.storage)
-        assertTrue(payload!!.storageOffset > 0)
+        assertEquals(expected = RawJsonKind.OBJECT, actual = payload?.kind())
+        assertSame(expected = json, actual = payload?.storage)
+        assertTrue(actual = payload!!.storageOffset > 0)
     }
 
     @Test
@@ -37,7 +37,7 @@ class GhostJsonEnvelopeIntegrationTest {
         """.trimIndent().encodeToByteArray()
 
         val typed = SseEventEnvelopeSerializer.parseTyped(json)
-        assertEquals(ModeEventPayload("away"), typed)
+        assertEquals(expected = ModeEventPayload(mode = "away"), actual = typed)
     }
 
     @Test
@@ -47,7 +47,7 @@ class GhostJsonEnvelopeIntegrationTest {
         """.trimIndent().encodeToByteArray()
 
         val payload = SseEventEnvelopeSerializer.parsePayload(json)
-        assertEquals(RawJsonKind.OBJECT, payload?.kind())
+        assertEquals(expected = RawJsonKind.OBJECT, actual = payload?.kind())
     }
 
     @Test
@@ -55,7 +55,7 @@ class GhostJsonEnvelopeIntegrationTest {
         val json = """{"type":"invoice.paid","data":{"amount":999}}""".encodeToByteArray()
 
         val typed = WebhookEnvelopeSerializer.parseTyped(json)
-        assertEquals(InvoicePaidPayload(999), typed)
+        assertEquals(expected = InvoicePaidPayload(amount = 999), actual = typed)
     }
 
     @Test
@@ -63,13 +63,13 @@ class GhostJsonEnvelopeIntegrationTest {
         val json = """{"type":"customer.created","data":{"id":"cus_1"}}""".encodeToByteArray()
 
         val payload = WebhookEnvelopeSerializer.parsePayload(json)
-        assertEquals(RawJsonKind.OBJECT, payload?.kind())
+        assertEquals(expected = RawJsonKind.OBJECT, actual = payload?.kind())
     }
 
     @Test
     fun routePayload_knownTypeWithoutPayloadReturnsNull() {
         val json = """{"eventType":"DEVICE_EVENT","eventTime":0}""".encodeToByteArray()
-        assertNull(SseEventEnvelopeSerializer.parsePayload(json))
+        assertNull(actual = SseEventEnvelopeSerializer.parsePayload(json))
     }
 
     @Test
@@ -79,8 +79,8 @@ class GhostJsonEnvelopeIntegrationTest {
         """.trimIndent().encodeToByteArray()
         val envelope = com.ghost.serialization.Ghost.deserialize<SseEventEnvelope>(json)
         assertEquals(
-            SseEventEnvelopeSerializer.routePayload(envelope),
-            SseEventEnvelopeSerializer.parsePayload(json)
+            expected = SseEventEnvelopeSerializer.routePayload(envelope),
+            actual = SseEventEnvelopeSerializer.parsePayload(json)
         )
     }
 
@@ -89,6 +89,9 @@ class GhostJsonEnvelopeIntegrationTest {
         val json = """
             {"eventType":"DEVICE_EVENT","eventTime":0,"deviceEvent":{"deviceId":"hub-1"}}
         """.trimIndent().encodeToByteArray()
-        assertEquals(DeviceEventPayload("hub-1"), SseEventEnvelopeSerializer.parseTyped(json))
+        assertEquals(
+            expected = DeviceEventPayload(deviceId = "hub-1"),
+            actual = SseEventEnvelopeSerializer.parseTyped(json)
+        )
     }
 }

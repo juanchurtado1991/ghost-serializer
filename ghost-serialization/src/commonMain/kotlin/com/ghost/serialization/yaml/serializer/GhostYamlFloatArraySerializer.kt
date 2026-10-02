@@ -5,20 +5,21 @@ import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 object GhostYamlFloatArraySerializer : GhostYamlSerializer<FloatArray> {
+    override fun deserialize(
+        reader: GhostYamlFlatReader
+    ): FloatArray = readYamlArrayCore(
+        beginArray = { reader.beginArray() },
+        hasNextArrayElement = { reader.hasNextArrayElement() },
+        readElement = { reader.nextFloat() },
+        endArray = { reader.endArray() },
+    ).toFloatArray()
+
     override fun serialize(writer: GhostYamlWriter, value: FloatArray) {
         writeYamlArrayCore(
             size = value.size,
             beginArray = { writer.beginArray() },
-            writeElement = { writer.value(value[it]) },
+            writeElement = { writer.value(number = value[it]) },
             endArray = { writer.endArray() },
         )
     }
-
-    override fun deserialize(reader: GhostYamlFlatReader): FloatArray =
-        readYamlArrayCore(
-            beginArray = { reader.beginArray() },
-            hasNextArrayElement = { reader.hasNextArrayElement() },
-            readElement = { reader.nextFloat() },
-            endArray = { reader.endArray() },
-        ).toFloatArray()
 }

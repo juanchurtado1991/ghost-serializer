@@ -18,56 +18,92 @@ class ProtoWktTest {
 
     @Test
     fun getSerializerResolvesBuiltInWktTypes() {
-        assertSame(ProtoTimestampSerializer, Ghost.getSerializer(ProtoTimestamp::class))
-        assertSame(ProtoDurationSerializer, Ghost.getSerializer(ProtoDuration::class))
-        assertSame(ProtoFieldMaskSerializer, Ghost.getSerializer(ProtoFieldMask::class))
-        assertNotNull(Ghost.getSerializer(ProtoEmpty::class))
-        assertNotNull(Ghost.getSerializer(ProtoAny::class))
-        assertNotNull(Ghost.getSerializer(ProtoValue::class))
+        assertSame(
+            expected = ProtoTimestampSerializer,
+            actual = Ghost.getSerializer(ProtoTimestamp::class)
+        )
+        assertSame(
+            expected = ProtoDurationSerializer,
+            actual = Ghost.getSerializer(ProtoDuration::class)
+        )
+        assertSame(
+            expected = ProtoFieldMaskSerializer,
+            actual = Ghost.getSerializer(ProtoFieldMask::class)
+        )
+        assertNotNull(actual = Ghost.getSerializer(ProtoEmpty::class))
+        assertNotNull(actual = Ghost.getSerializer(ProtoAny::class))
+        assertNotNull(actual = Ghost.getSerializer(ProtoValue::class))
     }
 
     @Test
     fun fieldMaskSerializerRoundTrips() {
-        val original = ProtoFieldMask(listOf("user.display_name", "photo"))
+        val original = ProtoFieldMask(paths = listOf("user.display_name", "photo"))
         val buffer = FlatByteArrayWriter()
         val writer = GhostJsonWriter(buffer)
         ProtoFieldMaskSerializer.serialize(writer, original)
         val json = buffer.toByteArray().decodeToString()
-        assertEquals("\"user.displayName,photo\"", json)
+        assertEquals(
+            expected = "\"user.displayName,photo\"",
+            actual = json
+        )
         val restored =
             ProtoFieldMaskSerializer.deserialize(GhostJsonReader(json.encodeToByteArray()))
-        assertEquals(original, restored)
         assertEquals(
-            original,
-            Ghost.deserialize(ProtoFieldMaskSerializer, json.encodeToByteArray()),
+            expected = original,
+            actual = restored
+        )
+        assertEquals(
+            expected = original,
+            actual = Ghost.deserialize(ProtoFieldMaskSerializer, json.encodeToByteArray())
         )
     }
 
     @Test
     fun testTimestampParse() {
-        val ts = parseTimestamp("1972-01-01T10:00:20.021Z")
-        assertEquals(21000000, ts.nanos)
+        val ts = parseTimestamp(timestampString = "1972-01-01T10:00:20.021Z")
+        assertEquals(
+            expected = 21000000,
+            actual = ts.nanos
+        )
     }
 
     @Test
     fun testDurationRoundtrip() {
-        val d = parseDuration("1.000340012s")
-        assertEquals(1L, d.seconds)
-        assertEquals(340012, d.nanos)
+        val d = parseDuration(durationString = "1.000340012s")
+        assertEquals(
+            expected = 1L,
+            actual = d.seconds
+        )
+        assertEquals(
+            expected = 340012,
+            actual = d.nanos
+        )
 
-        val formatted = formatDuration(d)
-        assertEquals("1.000340012s", formatted)
+        val formatted = formatDuration(duration = d)
+        assertEquals(
+            expected = "1.000340012s",
+            actual = formatted
+        )
 
-        val dNeg = parseDuration("-120.500s")
-        assertEquals(-120L, dNeg.seconds)
-        assertEquals(-500000000, dNeg.nanos)
+        val dNeg = parseDuration(durationString = "-120.500s")
+        assertEquals(
+            expected = -120L,
+            actual = dNeg.seconds
+        )
+        assertEquals(
+            expected = -500000000,
+            actual = dNeg.nanos
+        )
         // Proto3 JSON always emits 3/6/9 fractional digits, never an arbitrary trim.
-        assertEquals("-120.500s", formatDuration(dNeg))
+        assertEquals(
+            expected = "-120.500s",
+            actual = formatDuration(duration = dNeg)
+        )
     }
 
     @Test
     fun testDurationInvalid() {
-        assertFails { parseDuration("10") }
-        assertFails { parseDuration("10a") }
+        assertFails { parseDuration(durationString = "10") }
+        assertFails { parseDuration(durationString = "10a") }
     }
 }

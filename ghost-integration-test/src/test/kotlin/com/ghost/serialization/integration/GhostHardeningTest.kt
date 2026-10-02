@@ -14,8 +14,8 @@ class GhostHardeningTest {
         val json = "{\"id\":1, \"id\":2, \"name\":\"Juan\"}"
         val result = Ghost.deserialize<IgnoreModel>(json)
         // Standard behavior: last one wins
-        assertEquals(2, result.id)
-        assertEquals("Juan", result.name)
+        assertEquals(expected = 2, actual = result.id)
+        assertEquals(expected = "Juan", actual = result.name)
     }
 
     @Test

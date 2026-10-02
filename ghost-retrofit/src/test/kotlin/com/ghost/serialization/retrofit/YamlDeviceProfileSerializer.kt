@@ -3,7 +3,7 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
@@ -11,18 +11,18 @@ import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 
 object YamlDeviceProfileSerializer :
-    GhostSerializer<YamlDeviceProfile>,
+    AbstractGhostSerializer<YamlDeviceProfile>(),
     GhostYamlSerializer<YamlDeviceProfile> {
     override val typeName: String = "com.ghost.serialization.retrofit.YamlDeviceProfile"
 
     override fun serialize(writer: GhostJsonWriter, value: YamlDeviceProfile) = Unit
-    override fun deserialize(reader: GhostJsonReader): YamlDeviceProfile = YamlDeviceProfile(0, "")
+    override fun deserialize(reader: GhostJsonReader): YamlDeviceProfile = YamlDeviceProfile(deviceId = 0, label = "")
 
     override fun serialize(writer: GhostYamlWriter, value: YamlDeviceProfile) {
         writer.beginObject()
-        writer.name("deviceId")
+        writer.name(key = "deviceId")
         writer.value(value.deviceId)
-        writer.name("label")
+        writer.name(key = "label")
         writer.value(value.label)
         writer.endObject()
     }
@@ -39,6 +39,6 @@ object YamlDeviceProfileSerializer :
             }
         }
         reader.endObject()
-        return YamlDeviceProfile(deviceId, label)
+        return YamlDeviceProfile(deviceId = deviceId, label = label)
     }
 }

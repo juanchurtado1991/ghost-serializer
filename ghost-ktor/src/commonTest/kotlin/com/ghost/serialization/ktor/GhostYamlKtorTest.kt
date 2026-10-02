@@ -4,7 +4,7 @@ package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -26,14 +26,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-private val YAML_MEDIA_TYPE = ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML)
-
 class GhostYamlKtorTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(YamlKtorUser::class to YamlKtorUserSerializer)
 
@@ -53,7 +50,7 @@ class GhostYamlKtorTest {
                     isActive: true
                 """.trimIndent(),
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, YAML_MEDIA_TYPE.toString())
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.APPLICATION_YAML.toString())
             )
         }
 
@@ -62,9 +59,9 @@ class GhostYamlKtorTest {
         }
 
         val response: YamlKtorUser = client.get("/user").body()
-        assertEquals(42, response.id)
-        assertEquals("John", response.name)
-        assertEquals(true, response.isActive)
+        assertEquals(expected = 42, actual = response.id)
+        assertEquals(expected = "John", actual = response.name)
+        assertEquals(expected = true, actual = response.isActive)
     }
 
     @Test
@@ -77,13 +74,13 @@ class GhostYamlKtorTest {
 
                 else -> error("Unsupported body type: ${body::class}")
             }
-            assertTrue(bodyText.contains("id: 100"))
-            assertTrue(bodyText.contains("name: \"Alice\"") || bodyText.contains("name: Alice"))
-            assertTrue(bodyText.contains("isActive: false"))
+            assertTrue(actual = bodyText.contains("id: 100"))
+            assertTrue(actual = bodyText.contains("name: \"Alice\"") || bodyText.contains("name: Alice"))
+            assertTrue(actual = bodyText.contains("isActive: false"))
             respond(
                 content = bodyText,
                 status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, YAML_MEDIA_TYPE.toString())
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.APPLICATION_YAML.toString())
             )
         }
 
@@ -92,10 +89,10 @@ class GhostYamlKtorTest {
         }
 
         val response: YamlKtorUser = client.post("/user") {
-            contentType(YAML_MEDIA_TYPE)
-            setBody(YamlKtorUser(100, "Alice", false))
+            contentType(GhostKtorMediaTypes.APPLICATION_YAML)
+            setBody(YamlKtorUser(id = 100, name = "Alice", isActive = false))
         }.body()
 
-        assertEquals(100, response.id)
+        assertEquals(expected = 100, actual = response.id)
     }
 }

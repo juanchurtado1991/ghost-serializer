@@ -15,40 +15,40 @@ class SpeedTestEngineJvmTest {
 
     @BeforeTest
     fun registerModule() {
-        Ghost.addRegistry(GhostModuleRegistry_playground.INSTANCE)
+        Ghost.addRegistry(registry = GhostModuleRegistry_playground.INSTANCE)
     }
 
     @Test
     fun bundledTwitterDatasetRoundTripsThroughAllEngines() = runBlocking {
         val payload = SpeedTestEngine.loadPayload()
         assertTrue(
-            payload.text.length > 5_000,
-            "expected a non-trivial twitter_macro.json payload, got ${payload.text.length} chars"
+            actual = payload.text.length > 5_000,
+            message = "expected a non-trivial twitter_macro.json payload, got ${payload.text.length} chars"
         )
-        assertEquals(payload.utf8.size.toLong(), payload.sizeBytes)
-        assertEquals(payload.text, payload.utf8.decodeToString())
+        assertEquals(expected = payload.utf8.size.toLong(), actual = payload.sizeBytes)
+        assertEquals(expected = payload.text, actual = payload.utf8.decodeToString())
 
         val ghostDecoded = Ghost.deserialize<TwitterResponse>(payload.text)
-        assertTrue(ghostDecoded.statuses.isNotEmpty())
+        assertTrue(actual = ghostDecoded.statuses.isNotEmpty())
         val ghostEncoded = Ghost.encodeToString(ghostDecoded)
-        assertTrue(ghostEncoded.contains("\"statuses\""))
+        assertTrue(actual = ghostEncoded.contains("\"statuses\""))
         val ghostRoundTripped = Ghost.deserialize<TwitterResponse>(ghostEncoded)
-        assertEquals(ghostDecoded.statuses.size, ghostRoundTripped.statuses.size)
+        assertEquals(expected = ghostDecoded.statuses.size, actual = ghostRoundTripped.statuses.size)
 
         val json = Json { ignoreUnknownKeys = true }
         val kserDecoded = json.decodeFromString<TwitterResponse>(payload.text)
         assertEquals(
-            ghostDecoded.statuses.size,
-            kserDecoded.statuses.size,
-            "Ghost and kser disagree on tweet count"
+            expected = ghostDecoded.statuses.size,
+            actual = kserDecoded.statuses.size,
+            message = "Ghost and kser disagree on tweet count"
         )
-        assertEquals(ghostDecoded.statuses.first().id, kserDecoded.statuses.first().id)
+        assertEquals(expected = ghostDecoded.statuses.first().id, actual = kserDecoded.statuses.first().id)
         assertEquals(
-            ghostDecoded.statuses.first().user.screenName,
-            kserDecoded.statuses.first().user.screenName
+            expected = ghostDecoded.statuses.first().user.screenName,
+            actual = kserDecoded.statuses.first().user.screenName
         )
 
-        MoshiBench.roundTrip(payload.text)
+        MoshiBench.roundTrip(payload = payload.text)
     }
 
     @Test
@@ -72,20 +72,20 @@ class SpeedTestEngineJvmTest {
             if (sample.phase == SpeedTestPhase.Done) sawDone = true
 
             if (sample.phase == SpeedTestPhase.RunningMoshi || sample.phase == SpeedTestPhase.RunningGhost || sample.phase == SpeedTestPhase.Done) {
-                assertTrue(sample.kserOpsPerSec > 0.0, "kser rate should hold after its phase")
+                assertTrue(actual = sample.kserOpsPerSec > 0.0, message = "kser rate should hold after its phase")
             }
             if (sample.phase == SpeedTestPhase.RunningGhost || sample.phase == SpeedTestPhase.Done) {
-                assertTrue(sample.moshiOpsPerSec > 0.0, "moshi rate should hold after its phase")
+                assertTrue(actual = sample.moshiOpsPerSec > 0.0, message = "moshi rate should hold after its phase")
             }
         }
 
-        assertTrue(sawDone, "expected a final Done sample")
-        assertTrue(SpeedTestPhase.Warmup in phases, "expected warmup samples")
-        assertTrue(SpeedTestPhase.RunningKser in phases, "expected kser phase samples")
-        assertTrue(SpeedTestPhase.RunningMoshi in phases, "expected moshi phase samples")
-        assertTrue(SpeedTestPhase.RunningGhost in phases, "expected ghost phase samples")
-        assertTrue(lastGhostOps > 0, "Ghost should have completed at least one round-trip")
-        assertTrue(lastKserOps > 0, "kser should have completed at least one round-trip")
-        assertTrue(lastMoshiOps > 0, "Moshi should have completed at least one round-trip")
+        assertTrue(actual = sawDone, message = "expected a final Done sample")
+        assertTrue(actual = SpeedTestPhase.Warmup in phases, message = "expected warmup samples")
+        assertTrue(actual = SpeedTestPhase.RunningKser in phases, message = "expected kser phase samples")
+        assertTrue(actual = SpeedTestPhase.RunningMoshi in phases, message = "expected moshi phase samples")
+        assertTrue(actual = SpeedTestPhase.RunningGhost in phases, message = "expected ghost phase samples")
+        assertTrue(actual = lastGhostOps > 0, message = "Ghost should have completed at least one round-trip")
+        assertTrue(actual = lastKserOps > 0, message = "kser should have completed at least one round-trip")
+        assertTrue(actual = lastMoshiOps > 0, message = "Moshi should have completed at least one round-trip")
     }
 }

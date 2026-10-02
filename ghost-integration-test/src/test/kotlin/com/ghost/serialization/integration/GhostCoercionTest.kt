@@ -26,8 +26,8 @@ class GhostCoercionTest {
             options = { it.coerceBooleans = true }
         )
 
-        assertEquals(true, result.isActive)
-        assertEquals(false, result.isEnabled)
+        assertEquals(expected = true, actual = result.isActive)
+        assertEquals(expected = false, actual = result.isEnabled)
     }
 
     @Test
@@ -43,8 +43,8 @@ class GhostCoercionTest {
             options = { it.coerceStringsToNumbers = true }
         )
 
-        assertEquals(UserId(123), result.id)
-        assertEquals("Coerced User", result.name)
+        assertEquals(expected = UserId(value = 123), actual = result.id)
+        assertEquals(expected = "Coerced User", actual = result.name)
     }
 
     @Test
@@ -54,6 +54,6 @@ class GhostCoercionTest {
             json.encodeToByteArray(),
             options = { it.coerceStringsToNumbers = true }
         )
-        assertEquals(UserId(456), result.id)
+        assertEquals(expected = UserId(value = 456), actual = result.id)
     }
 }

@@ -9,6 +9,8 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
@@ -24,7 +26,7 @@ internal class SerializeCodeEmitter(
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
     private val discriminator: String? = null,
-    private val sealedDiscriminatorKey: String = C.STR_DEFAULT_DISCRIMINATOR
+    private val sealedDiscriminatorKey: String = AC.STR_DEFAULT_DISCRIMINATOR
 ) {
     // Sorts properties to group flattened paths together, avoiding duplicate bracket opens/closes.
     private val sortedProperties = run {
@@ -39,7 +41,7 @@ internal class SerializeCodeEmitter(
         }
 
         val propertyPaths = properties.associateWith { prop ->
-            prop.flattenPath?.joinToString(C.STR_DOT) ?: prop.jsonName
+            prop.flattenPath?.joinToString(CC.STR_DOT) ?: prop.jsonName
         }
 
         properties.sortedWith { p1, p2 ->
@@ -66,9 +68,6 @@ internal class SerializeCodeEmitter(
 
     private var activeEmitter: BaseSerializeEmitter? = null
 
-    /**
-     * Builds the `FunSpec` of the serialize function.
-     */
     fun build(
         writerClass: ClassName,
         typeSpecBuilder: TypeSpec.Builder
@@ -77,37 +76,37 @@ internal class SerializeCodeEmitter(
 
         when {
             isSealed -> {
-                emitSealedDispatch(code)
+                emitSealedDispatch(code = code)
             }
 
             isValue -> {
-                emitValueUnboxing(code, writerClass)
+                emitValueUnboxing(code = code, writerClass = writerClass)
             }
 
             isEnum -> {
-                emitEnumSerialization(code)
+                emitEnumSerialization(code = code)
             }
 
             properties.size > C.PROPERTY_MAX_SIZE -> {
                 val fragmented = FragmentedSerializeEmitter(
-                    sortedProperties,
-                    originalClassName,
-                    writerClass
+                    properties = sortedProperties,
+                    originalClassName = originalClassName,
+                    writerClass = writerClass
                 )
                 activeEmitter = fragmented
                 fragmented.emit(
-                    code,
-                    typeSpecBuilder,
-                    discriminator,
-                    sealedDiscriminatorKey
+                    code = code,
+                    typeSpecBuilder = typeSpecBuilder,
+                    discriminator = discriminator,
+                    sealedDiscriminatorKey = sealedDiscriminatorKey
                 )
             }
 
             else -> {
                 val standard = StandardSerializeEmitter(
-                    sortedProperties,
-                    originalClassName,
-                    writerClass
+                    properties = sortedProperties,
+                    originalClassName = originalClassName,
+                    writerClass = writerClass
                 )
                 activeEmitter = standard
                 standard.emit(
@@ -126,16 +125,10 @@ internal class SerializeCodeEmitter(
             .build()
     }
 
-    /**
-     * Forwards the contextual serializers injection call to the active delegated emitter.
-     */
     fun injectContextualSerializers(typeSpecBuilder: TypeSpec.Builder) {
-        activeEmitter?.injectContextualSerializers(typeSpecBuilder)
+        activeEmitter?.injectContextualSerializers(typeSpecBuilder = typeSpecBuilder)
     }
 
-    /**
-     * Emits enum serialization statements.
-     */
     private fun emitEnumSerialization(code: CodeBlock.Builder) {
         val enumValues = properties.firstOrNull()?.enumValues
         if (enumValues != null) {
@@ -154,9 +147,6 @@ internal class SerializeCodeEmitter(
         }
     }
 
-    /**
-     * Emits polymorphic sealed class type-matching dispatch blocks.
-     */
     private fun emitSealedDispatch(code: CodeBlock.Builder) {
         code.beginControlFlow(C.STR_WHEN_VALUE)
         sealedSubclasses.forEach { subclass ->
@@ -171,9 +161,6 @@ internal class SerializeCodeEmitter(
         code.endControlFlow()
     }
 
-    /**
-     * Emits value class unboxing statement.
-     */
     private fun emitValueUnboxing(code: CodeBlock.Builder, writerClass: ClassName) {
         val prop = properties.firstOrNull() ?: return
         val accessor = CodeBlock.of(
@@ -182,11 +169,11 @@ internal class SerializeCodeEmitter(
             prop.kotlinName
         )
         val valueEmitter = StandardSerializeEmitter(
-            properties,
-            originalClassName,
-            writerClass
+            properties = properties,
+            originalClassName = originalClassName,
+            writerClass = writerClass
         )
         activeEmitter = valueEmitter
-        valueEmitter.emitValue(code, prop, accessor)
+        valueEmitter.emitValue(code = code, prop = prop, accessor = accessor)
     }
 }

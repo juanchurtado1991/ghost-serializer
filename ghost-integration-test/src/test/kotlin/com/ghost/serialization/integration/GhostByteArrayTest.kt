@@ -23,10 +23,10 @@ class GhostByteArrayTest {
         val json = Ghost.serialize(model)
         val restored = Ghost.deserialize<RawPayloadModel>(json)
 
-        assertEquals(model.id, restored.id)
+        assertEquals(expected = model.id, actual = restored.id)
         assertTrue(
-            model.body.contentEquals(restored.body),
-            "ByteArray content must survive round-trip"
+            actual = model.body.contentEquals(restored.body),
+            message = "ByteArray content must survive round-trip"
         )
     }
 
@@ -38,6 +38,6 @@ class GhostByteArrayTest {
         val serialized = Ghost.serialize(model)
         val restored = Ghost.deserialize<RawPayloadModel>(serialized)
 
-        assertEquals(rawJson, restored.body.decodeToString())
+        assertEquals(expected = rawJson, actual = restored.body.decodeToString())
     }
 }

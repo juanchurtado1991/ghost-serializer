@@ -11,67 +11,129 @@ import kotlin.test.assertNull
  */
 class RawJsonNumberScanningTest {
 
-    private fun raw(json: String): RawJson = RawJson.fromString(json)
+    private fun raw(
+        json: String
+    ): RawJson = RawJson.fromString(json = json)
 
     @Test
     fun kindRejectsLeadingZeroFollowedByDigits() {
-        assertEquals(RawJsonKind.INVALID, raw("01").kind())
-        assertEquals(RawJsonKind.INVALID, raw("-01").kind())
-        assertEquals(RawJsonKind.NUMBER, raw("0").kind())
-        assertEquals(RawJsonKind.NUMBER, raw("-0").kind())
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "01").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "-01").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NUMBER,
+            actual = raw(json = "0").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NUMBER,
+            actual = raw(json = "-0").kind()
+        )
     }
 
     @Test
     fun kindRejectsIncompleteFractionOrExponent() {
-        assertEquals(RawJsonKind.INVALID, raw("1.").kind())
-        assertEquals(RawJsonKind.INVALID, raw(".5").kind())
-        assertEquals(RawJsonKind.INVALID, raw("1e").kind())
-        assertEquals(RawJsonKind.INVALID, raw("1e+").kind())
-        assertEquals(RawJsonKind.INVALID, raw("-").kind())
-        assertEquals(RawJsonKind.NUMBER, raw("1e3").kind())
-        assertEquals(RawJsonKind.NUMBER, raw("1.5e-3").kind())
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "1.").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = ".5").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "1e").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "1e+").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "-").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NUMBER,
+            actual = raw(json = "1e3").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NUMBER,
+            actual = raw(json = "1.5e-3").kind()
+        )
     }
 
     @Test
     fun kindRejectsTrailingGarbageAfterNumber() {
-        assertEquals(RawJsonKind.INVALID, raw("1x").kind())
-        assertEquals(RawJsonKind.INVALID, raw("1.0.0").kind())
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "1x").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw(json = "1.0.0").kind()
+        )
     }
 
     @Test
     fun asLongOrNull_roundTripsLongMaxAndMinExactly() {
-        assertEquals(Long.MAX_VALUE, raw(Long.MAX_VALUE.toString()).asLongOrNull())
-        assertEquals(Long.MIN_VALUE, raw(Long.MIN_VALUE.toString()).asLongOrNull())
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = raw(json = Long.MAX_VALUE.toString()).asLongOrNull()
+        )
+        assertEquals(
+            expected = Long.MIN_VALUE,
+            actual = raw(json = Long.MIN_VALUE.toString()).asLongOrNull()
+        )
     }
 
     @Test
     fun asLongOrNull_rejectsOverflowPastLongBounds() {
-        assertNull(raw("9223372036854775808").asLongOrNull()) // Long.MAX_VALUE + 1
-        assertNull(raw("-9223372036854775809").asLongOrNull()) // Long.MIN_VALUE - 1
-        assertNull(raw("99999999999999999999999").asLongOrNull())
+        assertNull(actual = raw(json = "9223372036854775808").asLongOrNull()) // Long.MAX_VALUE + 1
+        assertNull(actual = raw(json = "-9223372036854775809").asLongOrNull()) // Long.MIN_VALUE - 1
+        assertNull(actual = raw(json = "99999999999999999999999").asLongOrNull())
     }
 
     @Test
     fun asIntOrNull_rejectsValuesOutsideIntRangeButWithinLongRange() {
-        assertEquals(Int.MAX_VALUE, raw(Int.MAX_VALUE.toString()).asIntOrNull())
-        assertEquals(Int.MIN_VALUE, raw(Int.MIN_VALUE.toString()).asIntOrNull())
-        assertNull(raw((Int.MAX_VALUE.toLong() + 1).toString()).asIntOrNull())
-        assertNull(raw((Int.MIN_VALUE.toLong() - 1).toString()).asIntOrNull())
+        assertEquals(
+            expected = Int.MAX_VALUE,
+            actual = raw(json = Int.MAX_VALUE.toString()).asIntOrNull()
+        )
+        assertEquals(
+            expected = Int.MIN_VALUE,
+            actual = raw(json = Int.MIN_VALUE.toString()).asIntOrNull()
+        )
+        assertNull(actual = raw(json = (Int.MAX_VALUE.toLong() + 1).toString()).asIntOrNull())
+        assertNull(actual = raw(json = (Int.MIN_VALUE.toLong() - 1).toString()).asIntOrNull())
     }
 
     @Test
     fun asDoubleOrNull_fallsBackToDecodeForFractionAndExponent() {
-        assertEquals(3.14, raw("3.14").asDoubleOrNull())
-        assertEquals(0.0, raw("0").asDoubleOrNull())
-        assertEquals(1.5e300, raw("1.5e300").asDoubleOrNull())
-        assertNull(raw("NaN").asDoubleOrNull())
-        assertNull(raw("Infinity").asDoubleOrNull())
+        assertEquals(
+            expected = 3.14,
+            actual = raw(json = "3.14").asDoubleOrNull()
+        )
+        assertEquals(
+            expected = 0.0,
+            actual = raw(json = "0").asDoubleOrNull()
+        )
+        assertEquals(
+            expected = 1.5e300,
+            actual = raw(json = "1.5e300").asDoubleOrNull()
+        )
+        assertNull(actual = raw(json = "NaN").asDoubleOrNull())
+        assertNull(actual = raw(json = "Infinity").asDoubleOrNull())
     }
 
     @Test
     fun asIntAndLongOrNull_nullForNonIntegerTokens() {
-        assertNull(raw("true").asIntOrNull())
-        assertNull(raw("\"42\"").asIntOrNull())
-        assertNull(raw("").asLongOrNull())
+        assertNull(actual = raw(json = "true").asIntOrNull())
+        assertNull(actual = raw(json = "\"42\"").asIntOrNull())
+        assertNull(actual = raw(json = "").asLongOrNull())
     }
 }

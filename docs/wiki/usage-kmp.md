@@ -14,8 +14,8 @@ For the minimal setup, see the [Ghost Serializer Quick Start](quick-start.md).
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.google.devtools.ksp") version "2.3.12"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 
 kotlin {
@@ -114,7 +114,7 @@ sealed class SmartEvent {
 
 `ghost-ktor` ships two integration modes: the standard **`ContentNegotiation` plugin** for transparent request/response handling, and **direct serialization extensions** (`respondGhost` / `bodyGhost`) that bypass the plugin pipeline entirely for maximum throughput.
 
-Tested against **Ktor 3.5.x** (`io.ktor:ktor-client-*:3.5.1`), including the `wasmJs` client target.
+Tested against **Ktor 3.3.x** (`io.ktor:ktor-client-*:3.3.3`), including the `wasmJs` client target.
 
 ### Dependency
 
@@ -223,7 +223,7 @@ routing {
 Internally:
 ```
 Ghost.getSerializer(T::class)              // O(1) cached lookup
-  → Ghost.encodeToBytes(serializer, value) // GhostJsonFlatWriter — pre-encoded field headers
+  → Ghost.encodeToBytes(serializer, value) // GhostJsonWriter over a pooled flat buffer — pre-encoded field headers
   → respond(ByteArrayContent(bytes, ContentType.Application.Json, status))
 ```
 

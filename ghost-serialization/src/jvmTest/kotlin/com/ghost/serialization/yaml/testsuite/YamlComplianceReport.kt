@@ -20,7 +20,7 @@ fun main() {
     val outcomeUnexpected = mutableListOf<String>()
     for (case in cases) {
         val expectedToThrow = case.expectError xor (case.id in outcomeDeviationIds)
-        val threw = parseThrew(case)
+        val threw = parseThrew(case = case)
         when {
             threw == expectedToThrow && case.id !in outcomeDeviationIds -> outcomePass++
             threw == expectedToThrow && case.id in outcomeDeviationIds -> outcomeKnown++
@@ -34,7 +34,7 @@ fun main() {
     val valueUnexpected = mutableListOf<String>()
     for (case in valueCases) {
         val expectedToMatch = case.id !in valueDeviationIds
-        val matches = valueMatches(case)
+        val matches = valueMatches(case = case)
         when {
             matches == expectedToMatch && case.id !in valueDeviationIds -> valuePass++
             matches == expectedToMatch && case.id in valueDeviationIds -> valueKnown++

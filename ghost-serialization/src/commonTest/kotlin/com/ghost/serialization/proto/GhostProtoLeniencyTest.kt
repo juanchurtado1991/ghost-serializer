@@ -43,11 +43,14 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun protoFlatReaderAcceptsQuotedInt32() {
-        val reader = protoReaderOf("""{"retries":"42"}""")
+        val reader = protoReaderOf(json = """{"retries":"42"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -58,7 +61,10 @@ class GhostProtoLeniencyTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 
@@ -77,21 +83,30 @@ class GhostProtoLeniencyTest {
     fun ghostProtoDeserializeAcceptsQuotedInt64() {
         val parsed =
             GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":"42","label":"x"}""")
-        assertEquals(42L, parsed.deviceId)
+        assertEquals(
+            expected = 42L,
+            actual = parsed.deviceId
+        )
     }
 
     @Test
     fun ghostProtoDeserializeAcceptsBareInt64() {
         val parsed =
             GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"}""")
-        assertEquals(42L, parsed.deviceId)
+        assertEquals(
+            expected = 42L,
+            actual = parsed.deviceId
+        )
     }
 
     @Test
     fun ghostEntryPointAcceptsBareInt64ForHandWrittenSerializer() {
         val parsed =
             Ghost.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"}""".encodeToByteArray())
-        assertEquals(42L, parsed.deviceId)
+        assertEquals(
+            expected = 42L,
+            actual = parsed.deviceId
+        )
     }
 
     @Test
@@ -114,31 +129,37 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun protoFlatReaderAcceptsQuotedNaN() {
-        val reader = protoReaderOf("""{"v":"NaN"}""")
+        val reader = protoReaderOf(json = """{"v":"NaN"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.nextFloat().isNaN())
+        assertTrue(actual = reader.nextFloat().isNaN())
         reader.endObject()
     }
 
     @Test
     fun protoFlatReaderAcceptsQuotedPositiveInfinity() {
-        val reader = protoReaderOf("""{"v":"Infinity"}""")
+        val reader = protoReaderOf(json = """{"v":"Infinity"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Float.POSITIVE_INFINITY, reader.nextFloat())
+        assertEquals(
+            expected = Float.POSITIVE_INFINITY,
+            actual = reader.nextFloat()
+        )
         reader.endObject()
     }
 
     @Test
     fun protoFlatReaderAcceptsQuotedNegativeInfinityAsDouble() {
-        val reader = protoReaderOf("""{"v":"-Infinity"}""")
+        val reader = protoReaderOf(json = """{"v":"-Infinity"}""")
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertEquals(Double.NEGATIVE_INFINITY, reader.nextDouble())
+        assertEquals(
+            expected = Double.NEGATIVE_INFINITY,
+            actual = reader.nextDouble()
+        )
         reader.endObject()
     }
 
@@ -146,7 +167,7 @@ class GhostProtoLeniencyTest {
 
     @Test
     fun protoFlatReaderRejectsFractionalInt32() {
-        val protoReader = protoReaderOf("""{"retries":1.5}""")
+        val protoReader = protoReaderOf(json = """{"retries":1.5}""")
         protoReader.beginObject()
         protoReader.nextKey()
         protoReader.consumeKeySeparator()
@@ -157,6 +178,9 @@ class GhostProtoLeniencyTest {
     fun plainFlatReaderTruncatesBareFractionalToInt() {
         // Plain JSON reader truncates 1.5 → 1; proto reader rejects fractional int32 outright.
         val plainReader = GhostJsonReader("1.5".encodeToByteArray())
-        assertEquals(1, plainReader.nextInt())
+        assertEquals(
+            expected = 1,
+            actual = plainReader.nextInt()
+        )
     }
 }

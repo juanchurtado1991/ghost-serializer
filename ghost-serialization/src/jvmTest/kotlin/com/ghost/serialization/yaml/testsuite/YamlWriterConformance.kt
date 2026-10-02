@@ -3,6 +3,7 @@ package com.ghost.serialization.yaml.testsuite
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlException
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readAllDocuments
 
 /**
  * Decodes [case]'s `in.yaml` with the reader. Null if the reader can't decode it — not a
@@ -11,16 +12,16 @@ import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
  */
 internal fun decodeOriginal(case: YamlTestSuiteCase): List<Any?>? =
     try {
-        GhostYamlFlatReader(case.inYamlBytes).readAllDocuments()
+        GhostYamlFlatReader(rawData = case.inYamlBytes).readAllDocuments()
     } catch (e: Exception) {
         null
     }
 
 /** Re-encodes [original] with [GhostYamlTreeWriter] and re-decodes the result with the reader. */
 internal fun reEncodeAndReDecode(original: List<Any?>): Pair<String, List<Any?>>? {
-    val text = GhostYamlTreeWriter.encodeAll(original)
+    val text = GhostYamlTreeWriter.encodeAll(values = original)
     return try {
-        text to GhostYamlFlatReader(text.encodeToByteArray()).readAllDocuments()
+        text to GhostYamlFlatReader(rawData = text.encodeToByteArray()).readAllDocuments()
     } catch (e: Exception) {
         null
     }
@@ -28,10 +29,10 @@ internal fun reEncodeAndReDecode(original: List<Any?>): Pair<String, List<Any?>>
 
 /** True if decode(in.yaml) -> encode -> decode round-trips to a tree identical to the original. */
 internal fun writerRoundTripMatches(case: YamlTestSuiteCase): Boolean {
-    val original = decodeOriginal(case) ?: return false
-    val (_, reDecoded) = reEncodeAndReDecode(original) ?: return false
+    val original = decodeOriginal(case = case) ?: return false
+    val (_, reDecoded) = reEncodeAndReDecode(original = original) ?: return false
     return original.size == reDecoded.size &&
-        original.indices.all { i -> ghostValuesEqual(original[i], reDecoded[i]) }
+        original.indices.all { i -> ghostValuesEqual(original = original[i], reDecoded = reDecoded[i]) }
 }
 
 /**
@@ -44,11 +45,11 @@ internal fun writerRoundTripMatches(case: YamlTestSuiteCase): Boolean {
 private fun ghostValuesEqual(original: Any?, reDecoded: Any?): Boolean = when {
     original is Map<*, *> && reDecoded is Map<*, *> ->
         original.keys == reDecoded.keys &&
-            original.keys.all { key -> ghostValuesEqual(original[key], reDecoded[key]) }
+            original.keys.all { key -> ghostValuesEqual(original = original[key], reDecoded = reDecoded[key]) }
 
     original is List<*> && reDecoded is List<*> ->
         original.size == reDecoded.size &&
-            original.indices.all { i -> ghostValuesEqual(original[i], reDecoded[i]) }
+            original.indices.all { i -> ghostValuesEqual(original = original[i], reDecoded = reDecoded[i]) }
 
     original is Number && reDecoded is Number -> original.toDouble() == reDecoded.toDouble()
 
@@ -60,7 +61,7 @@ private fun ghostValuesEqual(original: Any?, reDecoded: Any?): Boolean = when {
  * byte-match target, just "does an independent implementation consider this valid YAML."
  */
 internal fun writerOutputIsKamlAcceptable(case: YamlTestSuiteCase): Boolean {
-    val original = decodeOriginal(case) ?: return true
+    val original = decodeOriginal(case = case) ?: return true
     if (original.size != 1) return true // kaml's Yaml.default targets one document
     val text = GhostYamlTreeWriter.encode(original[0])
     return try {

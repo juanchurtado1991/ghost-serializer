@@ -1,6 +1,9 @@
 package com.ghost.serialization.yaml
 
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readAllDocuments
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import kotlin.test.Test
@@ -13,8 +16,8 @@ class GhostYamlMultiDocumentTest {
     private object WidgetSerializer : GhostYamlSerializer<Widget> {
         override fun serialize(writer: GhostYamlWriter, value: Widget) {
             writer.beginObject()
-            writer.name("id").value(value.id)
-            writer.name("label").value(value.label)
+            writer.name(key = "id").value(value.id)
+            writer.name(key = "label").value(value.label)
             writer.endObject()
         }
 
@@ -24,7 +27,7 @@ class GhostYamlMultiDocumentTest {
             var label = ""
             while (true) {
                 when (reader.selectNameAndConsume(
-                    com.ghost.serialization.parser.common.JsonReaderOptions.of(
+                    JsonReaderOptions.of(
                         "id",
                         "label"
                     )
@@ -36,7 +39,7 @@ class GhostYamlMultiDocumentTest {
                 }
             }
             reader.endObject()
-            return Widget(id, label)
+            return Widget(id = id, label = label)
         }
     }
 
@@ -50,11 +53,14 @@ class GhostYamlMultiDocumentTest {
             label: second
         """.trimIndent()
 
-        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val reader = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
         val parsed =
             reader.readAllDocuments { docReader -> WidgetSerializer.deserialize(docReader) }
 
-        assertEquals(listOf(Widget(1, "first"), Widget(2, "second")), parsed)
+        assertEquals(
+            expected = listOf(Widget(id = 1, label = "first"), Widget(id = 2, label = "second")),
+            actual = parsed
+        )
     }
 
     @Test
@@ -62,8 +68,11 @@ class GhostYamlMultiDocumentTest {
         val yaml = """
             shard_id: "18446744073709551615"
         """.trimIndent()
-        val map = GhostYamlFlatReader(yaml.encodeToByteArray()).readDocument() as Map<*, *>
-        assertEquals("18446744073709551615", map["shard_id"])
+        val map = GhostYamlFlatReader(rawData = yaml.encodeToByteArray()).readDocument() as Map<*, *>
+        assertEquals(
+            expected = "18446744073709551615",
+            actual = map["shard_id"]
+        )
     }
 
     @Test
@@ -71,10 +80,13 @@ class GhostYamlMultiDocumentTest {
         val yaml = """
             shard_id: "18446744073709551615"
         """.trimIndent()
-        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val reader = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
         reader.beginObject()
-        reader.selectNameAndConsume(com.ghost.serialization.parser.common.JsonReaderOptions.of("shard_id"))
-        assertEquals(ULong.MAX_VALUE, reader.nextULong())
+        reader.selectNameAndConsume(options = JsonReaderOptions.of("shard_id"))
+        assertEquals(
+            expected = ULong.MAX_VALUE,
+            actual = reader.nextULong()
+        )
     }
 
     @Test
@@ -82,8 +94,11 @@ class GhostYamlMultiDocumentTest {
         val yaml = """value: "18446744073709551615""""
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         reader.beginObject()
-        reader.selectNameAndConsume(com.ghost.serialization.parser.common.JsonReaderOptions.of("value"))
-        assertEquals(ULong.MAX_VALUE, reader.nextULong())
+        reader.selectNameAndConsume(JsonReaderOptions.of("value"))
+        assertEquals(
+            expected = ULong.MAX_VALUE,
+            actual = reader.nextULong()
+        )
     }
 
     @Test
@@ -91,8 +106,11 @@ class GhostYamlMultiDocumentTest {
         val yaml = """value: 42"""
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         reader.beginObject()
-        reader.selectNameAndConsume(com.ghost.serialization.parser.common.JsonReaderOptions.of("value"))
-        assertEquals(42uL, reader.nextULong())
+        reader.selectNameAndConsume(JsonReaderOptions.of("value"))
+        assertEquals(
+            expected = 42uL,
+            actual = reader.nextULong()
+        )
     }
 
     @Test
@@ -100,7 +118,10 @@ class GhostYamlMultiDocumentTest {
         val yaml = """value: null"""
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         reader.beginObject()
-        reader.selectNameAndConsume(com.ghost.serialization.parser.common.JsonReaderOptions.of("value"))
-        assertEquals(null, reader.nextULongOrNull())
+        reader.selectNameAndConsume(JsonReaderOptions.of("value"))
+        assertEquals(
+            expected = null,
+            actual = reader.nextULongOrNull()
+        )
     }
 }

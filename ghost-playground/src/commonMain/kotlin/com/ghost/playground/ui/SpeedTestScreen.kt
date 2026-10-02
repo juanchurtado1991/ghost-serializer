@@ -31,6 +31,7 @@ import com.ghost.playground.bench.SpeedTestPhase
 import com.ghost.playground.bench.formatBytes
 import com.ghost.playground.bench.formatSeconds
 import com.ghost.playground.bench.roundTo
+import com.ghost.playground.i18n.SpeedTestPlaceholders
 import com.ghost.playground.i18n.Strings
 import com.ghost.playground.ui.icons.PlaygroundIcon
 import com.ghost.playground.ui.icons.PlaygroundIconKind
@@ -96,7 +97,7 @@ fun SpeedTestScreen(strings: Strings) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PlaygroundIcon(PlaygroundIconKind.Warning, tint = Rose, size = 16.dp)
+                    PlaygroundIcon(kind = PlaygroundIconKind.Warning, tint = Rose, size = 16.dp)
                     Text(err, color = Rose)
                 }
             }
@@ -136,7 +137,7 @@ fun SpeedTestScreen(strings: Strings) {
                             )
                         )
                     } / " +
-                            formatSeconds(localSample.totalDuration.toDouble(DurationUnit.SECONDS)),
+                            formatSeconds(totalSeconds = localSample.totalDuration.toDouble(DurationUnit.SECONDS)),
                     fontSize = 12.sp,
                     color = InkMuted,
                 )
@@ -151,25 +152,25 @@ fun SpeedTestScreen(strings: Strings) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SpeedGauge(
-                    strings.speedTestKserLabel,
-                    s?.kserOpsPerSec ?: 0.0,
-                    gaugeMax,
-                    strings.speedTestOpsPerSec,
-                    Coral,
+                    title = strings.speedTestKserLabel,
+                    value = s?.kserOpsPerSec ?: 0.0,
+                    maxValue = gaugeMax,
+                    unit = strings.speedTestOpsPerSec,
+                    accent = Coral,
                 )
                 SpeedGauge(
-                    strings.speedTestMoshiLabel,
-                    s?.moshiOpsPerSec ?: 0.0,
-                    gaugeMax,
-                    strings.speedTestOpsPerSec,
-                    Rose,
+                    title = strings.speedTestMoshiLabel,
+                    value = s?.moshiOpsPerSec ?: 0.0,
+                    maxValue = gaugeMax,
+                    unit = strings.speedTestOpsPerSec,
+                    accent = Rose,
                 )
                 SpeedGauge(
-                    strings.speedTestGhostLabel,
-                    s?.ghostOpsPerSec ?: 0.0,
-                    gaugeMax,
-                    strings.speedTestOpsPerSec,
-                    Teal,
+                    title = strings.speedTestGhostLabel,
+                    value = s?.ghostOpsPerSec ?: 0.0,
+                    maxValue = gaugeMax,
+                    unit = strings.speedTestOpsPerSec,
+                    accent = Teal,
                 )
             }
 
@@ -179,16 +180,16 @@ fun SpeedTestScreen(strings: Strings) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatColumn(
-                    strings.speedTestRoundTrips,
-                    "${s?.kserOps ?: 0}",
-                    "${s?.moshiOps ?: 0}",
-                    "${s?.ghostOps ?: 0}",
+                    label = strings.speedTestRoundTrips,
+                    kserValue = "${s?.kserOps ?: 0}",
+                    moshiValue = "${s?.moshiOps ?: 0}",
+                    ghostValue = "${s?.ghostOps ?: 0}",
                 )
                 StatColumn(
-                    strings.speedTestDataProcessed,
-                    formatBytes((s?.kserOps ?: 0) * payloadBytes),
-                    formatBytes((s?.moshiOps ?: 0) * payloadBytes),
-                    formatBytes((s?.ghostOps ?: 0) * payloadBytes),
+                    label = strings.speedTestDataProcessed,
+                    kserValue = formatBytes(bytes = (s?.kserOps ?: 0) * payloadBytes),
+                    moshiValue = formatBytes(bytes = (s?.moshiOps ?: 0) * payloadBytes),
+                    ghostValue = formatBytes(bytes = (s?.ghostOps ?: 0) * payloadBytes),
                 )
                 Column {
                     Text(
@@ -198,7 +199,7 @@ fun SpeedTestScreen(strings: Strings) {
                         color = InkMuted
                     )
                     Text(
-                        s?.memBytes?.let { formatBytes(it) } ?: strings.speedTestMemoryNA,
+                        s?.memBytes?.let { formatBytes(bytes = it) } ?: strings.speedTestMemoryNA,
                         fontWeight = FontWeight.SemiBold,
                         color = Ink,
                         fontSize = 13.sp,
@@ -218,7 +219,7 @@ fun SpeedTestScreen(strings: Strings) {
                 val winner = rankings.first()
                 val slowest = rankings.last()
                 val pct =
-                    if (slowest.second > 0.0) roundTo(winner.second / slowest.second, 1) else "—"
+                    if (slowest.second > 0.0) roundTo(value = winner.second / slowest.second, decimals = 1) else "—"
 
                 Card(
                     title = strings.speedTestResultTitle,
@@ -227,9 +228,9 @@ fun SpeedTestScreen(strings: Strings) {
                 ) {
                     Text(
                         strings.speedTestWinnerFmt
-                            .replace("{winner}", winner.first)
-                            .replace("{loser}", slowest.first)
-                            .replace("{pct}", pct),
+                            .replace(SpeedTestPlaceholders.WINNER, winner.first)
+                            .replace(SpeedTestPlaceholders.LOSER, slowest.first)
+                            .replace(SpeedTestPlaceholders.PCT, pct),
                         style = MaterialTheme.typography.headlineMedium,
                         color = Ink,
                     )

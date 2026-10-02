@@ -25,56 +25,77 @@ class GhostDiscriminatorPeekerRegressionTest {
     fun flatReaderPeekDiscriminatorAfterNestedObject() {
         val json = """{"meta":{"version":1},"type":"complex"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        assertEquals("complex", reader.peekDiscriminator())
+        assertEquals(
+            expected = "complex",
+            actual = reader.peekDiscriminator()
+        )
     }
 
     @Test
     fun flatReaderPeekDiscriminatorAfterNestedArray() {
         val json = """{"devices":[{"id":"hub-1"}],"pageType":"loggedIn"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        assertEquals("loggedIn", reader.peekDiscriminator("pageType"))
+        assertEquals(
+            expected = "loggedIn",
+            actual = reader.peekDiscriminator(key = "pageType")
+        )
     }
 
     @Test
     fun streamingReaderPeekDiscriminatorAfterNestedObject() {
         val json = """{"meta":{"version":1},"type":"complex"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        assertEquals("complex", reader.peekDiscriminator())
+        assertEquals(
+            expected = "complex",
+            actual = reader.peekDiscriminator()
+        )
     }
 
     @Test
     fun streamingReaderPeekDiscriminatorAfterNestedArray() {
         val json = """{"devices":[{"id":"hub-1"}],"pageType":"loggedIn"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        assertEquals("loggedIn", reader.peekDiscriminator("pageType"))
+        assertEquals(
+            expected = "loggedIn",
+            actual = reader.peekDiscriminator(key = "pageType")
+        )
     }
 
     @Test
     fun stringReaderPeekStringFieldAfterNestedObject() {
         val json = """{"meta":{"version":1},"type":"complex"}"""
-        val reader = GhostJsonStringReader(json)
-        assertEquals("complex", reader.peekStringField("type"))
+        val reader = GhostJsonStringReader(rawData = json)
+        assertEquals(
+            expected = "complex",
+            actual = reader.peekStringField(name = "type")
+        )
     }
 
     @Test
     fun stringReaderPeekStringFieldAfterNestedArray() {
         val json = """{"devices":[{"id":"hub-1"}],"pageType":"loggedIn"}"""
-        val reader = GhostJsonStringReader(json)
-        assertEquals("loggedIn", reader.peekStringField("pageType"))
+        val reader = GhostJsonStringReader(rawData = json)
+        assertEquals(
+            expected = "loggedIn",
+            actual = reader.peekStringField(name = "pageType")
+        )
     }
 
     @Test
     fun peekDiscriminatorStillReturnsNullWhenKeyMissing() {
         val json = """{"devices":[{"id":"hub-1"}],"name":"Living"}"""
         val reader = GhostJsonReader(json.encodeToByteArray())
-        assertNull(reader.peekDiscriminator("pageType"))
+        assertNull(actual = reader.peekDiscriminator(key = "pageType"))
     }
 
     @Test
     fun stringReaderPeekStringFieldAfterBeginObject() {
         val json = """{"type":"USER","id":1}"""
-        val reader = GhostJsonStringReader(json)
+        val reader = GhostJsonStringReader(rawData = json)
         reader.beginObject()
-        assertEquals("USER", reader.peekStringField("type"))
+        assertEquals(
+            expected = "USER",
+            actual = reader.peekStringField(name = "type")
+        )
     }
 }

@@ -81,22 +81,22 @@ Results on [twitter_macro.json](../../ghost-benchmark/src/main/resources/twitter
 
 | Operation | Engine | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
 |:---|:---:|---:|---:|---:|
-| **Decode (String)** | **👻 Ghost** | **1.229** 🏆 *(+71.2% vs KSER)* | **514.0** ⏱️ | **361.1** 💾 *(-73.0%)* |
+| **Decode (String)** | **👻 Ghost** | **1.199** 🏆 *(+67.0% vs KSER)* | **526.8** ⏱️ | **307.9** 💾 *(-77.0%)* |
 | | KSER | 0.718 | 879.2 | 1337.6 |
 | | Moshi | 0.374 | 1688.2 | 1708.9 |
-| **Decode (Bytes)** | **👻 Ghost** | **1.052** 🏆 *(+148.1% vs KSER)* | **600.2** ⏱️ | **621.2** 💾 *(-85.5%)* |
+| **Decode (Bytes)** | **👻 Ghost** | **1.075** 🏆 *(+153.5% vs KSER)* | **587.6** ⏱️ | **621.2** 💾 *(-85.5%)* |
 | | KSER | 0.424 | 1488.6 | 4297.0 |
 | | Moshi | 0.275 | 2297.4 | 4668.4 |
-| **Decode (Streaming)** | **👻 Ghost** | **0.529** 🏆 *(+174.1% vs KSER)* | **1193.7** ⏱️ | **1268.6** 💾 *(-33.4%)* |
+| **Decode (Streaming)** | **👻 Ghost** | **0.530** 🏆 *(+174.6% vs KSER)* | **1191.2** ⏱️ | **1268.6** 💾 *(-33.4%)* |
 | | KSER | 0.193 | 3269.5 | 1904.9 |
 | | Moshi | 0.426 | 1481.9 | 1708.8 |
-| **Encode (String)** | **👻 Ghost** | **2.807** 🏆 *(+41.9% vs KSER)* | **225.0** ⏱️ | 1074.3 |
+| **Encode (String)** | **👻 Ghost** | **2.778** 🏆 *(+40.4% vs KSER)* | **227.3** ⏱️ | 1074.3 |
 | | KSER | 1.978 | 319.3 | **981.6** 💾 |
 | | Moshi | 0.515 | 1226.8 | 2893.0 |
-| **Encode (Bytes)** | **👻 Ghost** | **1.514** 🏆 *(+97.1% vs KSER)* | **417.0** ⏱️ | **420.2** 💾 *(-81.0%)* |
+| **Encode (Bytes)** | **👻 Ghost** | **1.600** 🏆 *(+108.3% vs KSER)* | **394.6** ⏱️ | **420.2** 💾 *(-81.0%)* |
 | | KSER | 0.768 | 822.7 | 2216.3 |
 | | Moshi | 0.346 | 1822.7 | 4387.4 |
-| **Encode (Streaming)** | **👻 Ghost** | **1.502** 🏆 *(+46.8% vs KSER)* | **420.5** ⏱️ | **426.9** 💾 *(-8.1%)* |
+| **Encode (Streaming)** | **👻 Ghost** | **1.567** 🏆 *(+53.2% vs KSER)* | **402.9** ⏱️ | **426.9** 💾 *(-8.1%)* |
 | | KSER | 1.023 | 617.3 | 464.5 |
 | | Moshi | 0.798 | 791.1 | 560.5 |
 
@@ -189,7 +189,7 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 
 Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-generated `GhostYamlSerializer` on the integration [`YamlBenchUser`](../../ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/YamlBenchUser.kt) fixture via `Ghost.decodeFromYaml` / `encodeToYaml` / `encodeToYamlBytes`.
 
-**Fixture:** block-style YAML document (**90 B** full profile, **49 B** minimal round-trip). Parser: `GhostYamlFlatReader` · Writer: `GhostYamlFlatWriter`.
+**Fixture:** block-style YAML document (**90 B** full profile, **49 B** minimal round-trip). Parser: `GhostYamlFlatReader` · Writer: `GhostYamlWriter`.
 
 | Task | Profile | Regression gate |
 |:---|:---|:---:|
@@ -273,7 +273,7 @@ build if a tracked case ever regresses or a stale entry survives a snapshot refr
 
 ## 👻 YAML Writer Conformance (Ghost-only)
 
-The reader-side report above says nothing about the **writer** (`GhostYamlFlatWriter`). This report runs every
+The reader-side report above says nothing about the **writer** (`GhostYamlWriter`). This report runs every
 vendored yaml-test-suite case the reader can decode through `decode -> encode -> decode` and checks two things:
 does it reproduce the original tree (**round-trip**), and does a second, independent parser
 ([kaml](https://github.com/charleskorn/kaml)) accept Ghost's own re-encoded output (**kaml oracle**)? Same offline,

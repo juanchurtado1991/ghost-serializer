@@ -4,38 +4,33 @@
 package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.consumeNumericCoercionFooterCore
-import com.ghost.serialization.parser.common.finalizeParsedDouble
-import com.ghost.serialization.parser.common.finalizeParsedFloat
-import com.ghost.serialization.parser.common.handleLeadingZeroCore
-import com.ghost.serialization.parser.common.parseExponentValueCore
-import com.ghost.serialization.parser.common.parseIntDigitsCore
-import com.ghost.serialization.parser.common.parseJsonFloatingBodyCore
-import com.ghost.serialization.parser.common.parseLongDigitsCore
-import com.ghost.serialization.parser.common.prepareNumericHeaderCore
-import com.ghost.serialization.parser.common.skipNumberBodyCore
-import com.ghost.serialization.parser.common.validateLeadingZeroCore
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.json.consumeNumericCoercionFooterCore
+import com.ghost.serialization.parser.common.json.finalizeParsedDouble
+import com.ghost.serialization.parser.common.json.finalizeParsedFloat
+import com.ghost.serialization.parser.common.json.handleLeadingZeroCore
+import com.ghost.serialization.parser.common.json.parseExponentValueCore
+import com.ghost.serialization.parser.common.json.parseIntDigitsCore
+import com.ghost.serialization.parser.common.json.parseJsonFloatingBodyCore
+import com.ghost.serialization.parser.common.json.parseLongDigitsCore
+import com.ghost.serialization.parser.common.json.prepareNumericHeaderCore
+import com.ghost.serialization.parser.common.json.skipNumberBodyCore
+import com.ghost.serialization.parser.common.json.validateLeadingZeroCore
+import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 
-
-/**
- * Reads a JSON number and returns it as a Float.
- * Uses a zero-allocation, register-based loop for maximum speed.
- * Used by KSP-generated serializers.
- *
- * @throws com.ghost.serialization.exception.GhostJsonException
- * if float format is invalid or overflows.
- */
+/** Reads the next number as a [Float] via a zero-allocation, register-based loop. */
 fun GhostJsonReader.nextFloat(): Float {
     val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
+    val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
+    val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
 
     validateLeadingZero()
 
-    nextTokenByte = C.RESET_TOKEN_BYTE
+    nextTokenByte = SCN.RESET_TOKEN_BYTE
     val result = parseJsonFloatingBodyCore(
-        precisionLimit = C.FLOAT_PRECISION_LIMIT,
+        precisionLimit = NUM.FLOAT_PRECISION_LIMIT,
+        allowBulkDigitRead = false,
         getPosition = { position },
         setPosition = { position = it },
         limit = limit,
@@ -43,7 +38,7 @@ fun GhostJsonReader.nextFloat(): Float {
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
-        finalizeParsedFloat(mantissa, exponent, isNegativeValue) { throwError(it) }
+        finalizeParsedFloat(mantissa = mantissa, exponent = exponent, isNegative = isNegativeValue) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -54,24 +49,18 @@ fun GhostJsonReader.nextFloat(): Float {
     return result
 }
 
-/**
- * Reads a JSON number and returns it as a Double.
- * Uses a zero-allocation, register-based loop for maximum speed.
- * Used by KSP-generated serializers.
- *
- * @throws com.ghost.serialization.exception.GhostJsonException
- * if double format is invalid or overflows.
- */
+/** Reads the next number as a [Double] via a zero-allocation, register-based loop. */
 fun GhostJsonReader.nextDouble(): Double {
     val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
+    val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
+    val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
 
     validateLeadingZero()
 
-    nextTokenByte = C.RESET_TOKEN_BYTE
+    nextTokenByte = SCN.RESET_TOKEN_BYTE
     val result = parseJsonFloatingBodyCore(
-        precisionLimit = C.DOUBLE_PRECISION_LIMIT,
+        precisionLimit = NUM.DOUBLE_PRECISION_LIMIT,
+        allowBulkDigitRead = false,
         getPosition = { position },
         setPosition = { position = it },
         limit = limit,
@@ -79,7 +68,7 @@ fun GhostJsonReader.nextDouble(): Double {
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
     ) { mantissa, exponent ->
-        finalizeParsedDouble(mantissa, exponent, isNegativeValue) { throwError(it) }
+        finalizeParsedDouble(mantissa = mantissa, exponent = exponent, isNegative = isNegativeValue) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -90,9 +79,7 @@ fun GhostJsonReader.nextDouble(): Double {
     return result
 }
 
-/**
- * Parses the exponent value suffix (e.g. e-5) from the stream.
- */
+/** Parses the exponent suffix value (e.g. `e-5`, `e+12`). */
 private inline fun GhostJsonReader.parseExponentValue(): Int =
     parseExponentValueCore(
         startPosition = position,
@@ -102,29 +89,21 @@ private inline fun GhostJsonReader.parseExponentValue(): Int =
         throwError = { throwError(it) },
     )
 
-/**
- * Reads a JSON integer and returns it as an Int.
- * Optimized for common small integers.
- * Used by KSP-generated serializers.
- *
- * @throws com.ghost.serialization.exception.GhostJsonException
- * if the integer is invalid or overflows.
- */
+/** Reads the next number as an [Int], optimized for common small integers. */
 fun GhostJsonReader.nextInt(): Int {
     val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
+    val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
+    val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
 
     val startOfNumber = position
+    val startsWithZero = startOfNumber < limit
+            && getByte(startOfNumber) == TOK.ZERO_INT
 
-    val absoluteValue = if (
-        startOfNumber < limit &&
-        getByte(startOfNumber) == C.ZERO_INT
-    ) {
+    val absoluteValue = if (startsWithZero) {
         handleLeadingZero()
         0
     } else {
-        parseIntDigits(isNegativeValue, startOfNumber)
+        parseIntDigits(isNegative = isNegativeValue, startOfNumber = startOfNumber)
     }
 
     val finalIntResult = if (isNegativeValue) {
@@ -140,29 +119,21 @@ fun GhostJsonReader.nextInt(): Int {
     return finalIntResult
 }
 
-/**
- * Reads a JSON long and returns it as a Long.
- * Optimized for common small longs.
- * Used by KSP-generated serializers.
- *
- * @throws com.ghost.serialization.exception.GhostJsonException
- * if the long is invalid or overflows.
- */
+/** Reads the next number as a [Long], optimized for common small longs. */
 fun GhostJsonReader.nextLong(): Long {
     val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
-    val isNegativeValue = (header and C.NUMERIC_HEADER_NEGATIVE) != 0
+    val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
+    val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
 
     val startOfNumber = position
+    val startsWithZero = startOfNumber < limit
+            && getByte(startOfNumber) == TOK.ZERO_INT
 
-    val absoluteValue = if (
-        startOfNumber < limit &&
-        getByte(startOfNumber) == C.ZERO_INT
-    ) {
+    val absoluteValue = if (startsWithZero) {
         handleLeadingZero()
         0L
     } else {
-        parseLongDigits(isNegativeValue, startOfNumber)
+        parseLongDigits(isNegative = isNegativeValue, startOfNumber = startOfNumber)
     }
 
     val finalLongResult = if (absoluteValue == Long.MIN_VALUE) {
@@ -180,18 +151,16 @@ fun GhostJsonReader.nextLong(): Long {
 
 /** Reads a JSON/YAML unsigned long scalar (quoted decimal string for full `uint64` range). */
 fun GhostJsonReader.nextULong(): ULong {
-    if (nextTokenByte == C.RESET_TOKEN_BYTE) {
+    if (nextTokenByte == SCN.RESET_TOKEN_BYTE) {
         skipWhitespace()
     }
-    if (position < limit && getByte(position) == C.QUOTE_INT) {
+    if (position < limit && getByte(position) == TOK.QUOTE_INT) {
         return nextString().toULong()
     }
     return nextLong().toULong()
 }
 
-/**
- * Prepares the numeric header by checking the negative sign and checking string coercion quote.
- */
+/** Checks for a negative sign and string-coercion quote before the number body. */
 private fun GhostJsonReader.prepareNumericHeader(): Int =
     prepareNumericHeaderCore(
         getNextTokenByte = { nextTokenByte },
@@ -204,9 +173,6 @@ private fun GhostJsonReader.prepareNumericHeader(): Int =
         throwError = { throwError(it) },
     )
 
-/**
- * Validates and consumes a leading zero.
- */
 private fun GhostJsonReader.handleLeadingZero() {
     handleLeadingZeroCore(
         position = position,
@@ -217,16 +183,13 @@ private fun GhostJsonReader.handleLeadingZero() {
     )
 }
 
-/**
- * Bitwise parsing loop for integer digits with overflow verification.
- */
 private fun GhostJsonReader.parseIntDigits(
     isNegative: Boolean,
     startOfNumber: Int
 ): Int {
     return parseIntDigitsCore(
         isNegative = isNegative,
-        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
+        resetNextTokenByte = { nextTokenByte = SCN.RESET_TOKEN_BYTE },
         getPosition = { position },
         setPosition = { position = it },
         limit = limit,
@@ -239,16 +202,13 @@ private fun GhostJsonReader.parseIntDigits(
     )
 }
 
-/**
- * Bitwise parsing loop for long digits with overflow verification.
- */
 private fun GhostJsonReader.parseLongDigits(
     isNegative: Boolean,
     startOfNumber: Int
 ): Long {
     return parseLongDigitsCore(
         isNegative = isNegative,
-        resetNextTokenByte = { nextTokenByte = C.RESET_TOKEN_BYTE },
+        resetNextTokenByte = { nextTokenByte = SCN.RESET_TOKEN_BYTE },
         getPosition = { position },
         setPosition = { position = it },
         limit = limit,
@@ -261,9 +221,7 @@ private fun GhostJsonReader.parseLongDigits(
     )
 }
 
-/**
- * Consumes the closing quotation mark for coerced numeric string values.
- */
+/** Consumes the trailing quote when parsing a coerced numeric string value. */
 private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
     consumeNumericCoercionFooterCore(
         position = position,
@@ -277,9 +235,6 @@ private inline fun GhostJsonReader.consumeNumericCoercionFooter() {
     )
 }
 
-/**
- * Asserts that leading zero doesn't precede another digit.
- */
 private fun GhostJsonReader.validateLeadingZero() {
     validateLeadingZeroCore(
         position = position,
@@ -289,13 +244,10 @@ private fun GhostJsonReader.validateLeadingZero() {
     )
 }
 
-/**
- * Skips a JSON numeric token value from the source.
- */
 @InternalGhostApi
 fun GhostJsonReader.skipNumber() {
     val header = prepareNumericHeader()
-    val isQuoted = (header and C.NUMERIC_HEADER_QUOTED) != 0
+    val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
 
     skipNumberBodyCore(
         getPosition = { position },
@@ -308,5 +260,5 @@ fun GhostJsonReader.skipNumber() {
     if (isQuoted) {
         consumeNumericCoercionFooter()
     }
-    nextTokenByte = C.RESET_TOKEN_BYTE
+    nextTokenByte = SCN.RESET_TOKEN_BYTE
 }

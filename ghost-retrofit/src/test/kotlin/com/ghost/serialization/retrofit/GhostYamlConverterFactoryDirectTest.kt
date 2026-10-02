@@ -26,7 +26,7 @@ class GhostYamlConverterFactoryDirectTest {
 
     @BeforeEach
     fun setup() {
-        Ghost.addRegistry(YamlRetrofitTestRegistry)
+        Ghost.addRegistry(registry = YamlRetrofitTestRegistry)
     }
 
     @Test
@@ -34,8 +34,12 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val converter =
-            factory.responseBodyConverter(ProtoDeviceEvent::class.java, emptyArray(), retrofit)
-        assertNull(converter)
+            factory.responseBodyConverter(
+                type = ProtoDeviceEvent::class.java,
+                annotations = emptyArray(),
+                retrofit = retrofit
+            )
+        assertNull(actual = converter)
     }
 
     @Test
@@ -43,7 +47,11 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val converter =
-            factory.responseBodyConverter(YamlDeviceProfile::class.java, emptyArray(), retrofit)
+            factory.responseBodyConverter(
+                type = YamlDeviceProfile::class.java,
+                annotations = emptyArray(),
+                retrofit = retrofit
+            )
                 ?: error("converter should not be null")
 
         val yaml = """
@@ -51,7 +59,7 @@ class GhostYamlConverterFactoryDirectTest {
             label: sensor-1
         """.trimIndent()
         val result = converter.convert(yaml.toResponseBody())
-        assertEquals(YamlDeviceProfile(42, "sensor-1"), result)
+        assertEquals(expected = YamlDeviceProfile(deviceId = 42, label = "sensor-1"), actual = result)
     }
 
     @Test
@@ -59,7 +67,9 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val genericType = JsonOnlyListHolder::class.java.getMethod("list").genericReturnType
-        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
+        assertNull(
+            actual = factory.responseBodyConverter(type = genericType, annotations = emptyArray(), retrofit = retrofit)
+        )
     }
 
     @Test
@@ -67,7 +77,11 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val genericType = ParameterizedYamlHolder::class.java.getMethod("list").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )!!
 
         val yaml = """
             - deviceId: 1
@@ -78,8 +92,8 @@ class GhostYamlConverterFactoryDirectTest {
 
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(yaml.toResponseBody()) as List<YamlDeviceProfile>
-        assertEquals(2, result.size)
-        assertEquals("one", result[0].label)
+        assertEquals(expected = 2, actual = result.size)
+        assertEquals(expected = "one", actual = result[0].label)
     }
 
     @Test
@@ -87,7 +101,11 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val genericType = ParameterizedYamlHolder::class.java.getMethod("map").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )!!
 
         val yaml = """
             east:
@@ -97,7 +115,7 @@ class GhostYamlConverterFactoryDirectTest {
 
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(yaml.toResponseBody()) as Map<String, YamlDeviceProfile>
-        assertEquals(YamlDeviceProfile(7, "east-pod"), result["east"])
+        assertEquals(expected = YamlDeviceProfile(deviceId = 7, label = "east-pod"), actual = result["east"])
     }
 
     @Test
@@ -105,7 +123,11 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val genericType = ParameterizedYamlHolder::class.java.getMethod("set").genericReturnType
-        val converter = factory.responseBodyConverter(genericType, emptyArray(), retrofit)!!
+        val converter = factory.responseBodyConverter(
+            type = genericType,
+            annotations = emptyArray(),
+            retrofit = retrofit
+        )!!
 
         val yaml = """
             - deviceId: 1
@@ -114,7 +136,7 @@ class GhostYamlConverterFactoryDirectTest {
 
         @Suppress("UNCHECKED_CAST")
         val result = converter.convert(yaml.toResponseBody()) as Set<YamlDeviceProfile>
-        assertEquals(setOf(YamlDeviceProfile(1, "one")), result)
+        assertEquals(expected = setOf(YamlDeviceProfile(deviceId = 1, label = "one")), actual = result)
     }
 
     @Test
@@ -122,6 +144,8 @@ class GhostYamlConverterFactoryDirectTest {
         val factory = GhostYamlConverterFactory.create()
         val retrofit = Retrofit.Builder().baseUrl("http://localhost/").build()
         val genericType = ParameterizedYamlHolder::class.java.getMethod("intKeyMap").genericReturnType
-        assertNull(factory.responseBodyConverter(genericType, emptyArray(), retrofit))
+        assertNull(
+            actual = factory.responseBodyConverter(type = genericType, annotations = emptyArray(), retrofit = retrofit)
+        )
     }
 }

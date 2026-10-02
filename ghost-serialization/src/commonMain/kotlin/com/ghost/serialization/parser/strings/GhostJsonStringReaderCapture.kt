@@ -1,16 +1,15 @@
 package com.ghost.serialization.parser.strings
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.parser.common.json.captureJsonValueScan
 import com.ghost.serialization.types.RawJson
-import com.ghost.serialization.parser.common.captureJsonValueScan
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
-
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
 
 /**
  * Captures the next complete JSON value as owned [RawJson] (UTF-16 source requires encoding).
  */
 fun GhostJsonStringReader.captureRawJson(): RawJson =
-    RawJson.fromUtf8Bytes(captureRawJsonBytes())
+    RawJson.fromUtf8Bytes(bytes = captureRawJsonBytes())
 
 /**
  * Captures the next complete JSON value as a raw [ByteArray] without decoding the value tree.
@@ -25,11 +24,14 @@ fun GhostJsonStringReader.captureRawJsonBytes(): ByteArray {
     skipWhitespace()
     val start = position
     captureStringReaderValueBytes()
-    nextTokenByte = C.RESET_TOKEN_BYTE
-    return sliceUtf8Bytes(start, position)
+    nextTokenByte = SCN.RESET_TOKEN_BYTE
+    return sliceUtf8Bytes(charStart = start, charEnd = position)
 }
 
 private fun GhostJsonStringReader.captureStringReaderValueBytes() {
     val chars = rawChars
-    position = captureJsonValueScan(position, limit) { index -> chars[index].code }
+    position = captureJsonValueScan(
+        startPosition = position,
+        limit = limit,
+    ) { index -> chars[index].code }
 }

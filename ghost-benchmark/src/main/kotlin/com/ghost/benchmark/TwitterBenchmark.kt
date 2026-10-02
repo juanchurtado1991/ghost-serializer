@@ -28,8 +28,6 @@ import okio.Buffer
  */
 object TwitterBenchmark {
 
-    private const val NANOSECONDS_IN_SECOND = 1_000_000_000.0
-
     private data class WarmupContext(
         val jsonString: String,
         val rawBytes: ByteArray,
@@ -53,7 +51,7 @@ object TwitterBenchmark {
             kJson.encodeToString(decodedObj).toByteArray()
             moshiAdapter.toJson(decodedObj).encodeToByteArray()
 
-            Ghost.decodeFromSource(Buffer().write(rawBytes), TwitterResponse::class)
+            Ghost.decodeFromSource(source = Buffer().write(rawBytes), clazz = TwitterResponse::class)
             kJson.decodeFromBufferedSource<TwitterResponse>(Buffer().write(rawBytes))
             moshiAdapter.fromJson(JsonReader.of(Buffer().write(rawBytes)))
             Buffer().also { Ghost.serialize(it, decodedObj) }
@@ -63,21 +61,6 @@ object TwitterBenchmark {
                     moshiAdapter.toJson(writer, decodedObj)
                 }
             }
-        }
-    }
-
-    /**
-     * Global JIT warmup for Twitter decode/encode paths across all I/O modes.
-     *
-     * Invoked from [BenchmarkSuite.FULL] phase 2 alongside the synthetic warmup.
-     *
-     * @param iterations number of warmup iterations (typically [BenchmarkStandard.WARMUP_ITERATIONS]).
-     */
-    fun warmupGlobal(iterations: Int) {
-        val ctx = loadWarmupContext() ?: return
-        BenchmarkProgress.logStep("Twitter macro (string / bytes / streaming × Ghost + Moshi + KSER)")
-        BenchmarkProgress.repeatWithProgress("Global Twitter", iterations) {
-            ctx.runWarmupIteration()
         }
     }
 
@@ -96,16 +79,16 @@ object TwitterBenchmark {
         val ctx = loadWarmupContext() ?: return emptyList()
 
         BenchmarkProgress.logStep(
-            "Local warmup (${BenchmarkStandard.LOCAL_WARMUP_ITERATIONS} iterations before measure)"
+            label = "Local warmup (${BenchmarkStandard.LOCAL_WARMUP_ITERATIONS} iterations before measure)"
         )
         BenchmarkProgress.repeatWithProgress(
-            "Twitter local",
-            BenchmarkStandard.LOCAL_WARMUP_ITERATIONS
+            label = "Twitter local",
+            total = BenchmarkStandard.LOCAL_WARMUP_ITERATIONS
         ) {
             ctx.runWarmupIteration()
         }
 
-        cleanHeap()
+        performPhaseGc()
 
         val ghostSerializer = Ghost.getSerializer(TwitterResponse::class)!!
         val kserSerializer = ctx.kJson.serializersModule.serializer<TwitterResponse>()
@@ -114,93 +97,93 @@ object TwitterBenchmark {
         val rawBytes = ctx.rawBytes
         val decodedObj = ctx.decodedObj
 
-        BenchmarkProgress.logStep("Measuring 6 categories × ${BenchmarkStandard.MEASUREMENT_RUNS} runs")
+        BenchmarkProgress.logStep(label = "Measuring 6 categories × ${BenchmarkStandard.MEASUREMENT_RUNS} runs")
 
-        cleanHeap()
-        BenchmarkProgress.logStep("Decode (String)")
-        val ghostDecodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        BenchmarkProgress.logStep(label = "Decode (String)")
+        val ghostDecodeStr = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             Ghost.deserialize(ghostSerializer, jsonString)
         }
-        cleanHeap()
-        val kserDecodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        val kserDecodeStr = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.decodeFromString(kserSerializer, jsonString)
         }
-        cleanHeap()
+        performPhaseGc()
         val moshiDecodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             moshiAdapter.fromJson(jsonString)
         }
 
-        cleanHeap()
-        BenchmarkProgress.logStep("Decode (Bytes)")
-        val ghostDecodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        BenchmarkProgress.logStep(label = "Decode (Bytes)")
+        val ghostDecodeBytes = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             Ghost.deserialize(ghostSerializer, rawBytes)
         }
-        cleanHeap()
-        val kserDecodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        val kserDecodeBytes = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.decodeFromString(kserSerializer, String(rawBytes, Charsets.UTF_8))
         }
-        cleanHeap()
+        performPhaseGc()
         val moshiDecodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             moshiAdapter.fromJson(String(rawBytes, Charsets.UTF_8))
         }
 
-        cleanHeap()
-        BenchmarkProgress.logStep("Decode (Streaming)")
-        val ghostDecodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
-            Ghost.deserializeStreaming(ghostSerializer, Buffer().write(rawBytes))
+        performPhaseGc()
+        BenchmarkProgress.logStep(label = "Decode (Streaming)")
+        val ghostDecodeStream = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
+            Ghost.deserializeStreaming(serializer = ghostSerializer, source = Buffer().write(rawBytes))
         }
-        cleanHeap()
-        val kserDecodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        val kserDecodeStream = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             ctx.kJson.decodeFromBufferedSource(kserSerializer, Buffer().write(rawBytes))
         }
-        cleanHeap()
+        performPhaseGc()
         val moshiDecodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             moshiAdapter.fromJson(JsonReader.of(Buffer().write(rawBytes)))
         }
 
-        cleanHeap()
-        BenchmarkProgress.logStep("Encode (String)")
-        val ghostEncodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
-            Ghost.encodeToString(ghostSerializer, decodedObj)
+        performPhaseGc()
+        BenchmarkProgress.logStep(label = "Encode (String)")
+        val ghostEncodeStr = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
+            Ghost.encodeToString(serializer = ghostSerializer, value = decodedObj)
         }
-        cleanHeap()
-        val kserEncodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
-            ctx.kJson.encodeToString(kserSerializer, decodedObj)
+        performPhaseGc()
+        val kserEncodeStr = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
+            ctx.kJson.encodeToString(serializer = kserSerializer, value = decodedObj)
         }
-        cleanHeap()
+        performPhaseGc()
         val moshiEncodeStr = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
             moshiAdapter.toJson(decodedObj)
         }
 
-        cleanHeap()
-        BenchmarkProgress.logStep("Encode (Bytes)")
-        val ghostEncodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
-            Ghost.encodeToBytes(ghostSerializer, decodedObj)
+        performPhaseGc()
+        BenchmarkProgress.logStep(label = "Encode (Bytes)")
+        val ghostEncodeBytes = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
+            Ghost.encodeToBytes(serializer = ghostSerializer, value = decodedObj)
         }
-        cleanHeap()
-        val kserEncodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
-            ctx.kJson.encodeToString(kserSerializer, decodedObj).toByteArray()
+        performPhaseGc()
+        val kserEncodeBytes = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
+            ctx.kJson.encodeToString(serializer = kserSerializer, value = decodedObj).toByteArray()
         }
-        cleanHeap()
-        val moshiEncodeBytes = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        val moshiEncodeBytes = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             moshiAdapter.toJson(decodedObj).encodeToByteArray()
         }
 
-        cleanHeap()
-        BenchmarkProgress.logStep("Encode (Streaming)")
-        val ghostEncodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        BenchmarkProgress.logStep(label = "Encode (Streaming)")
+        val ghostEncodeStream = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             val buf = Buffer()
             Ghost.serialize(ghostSerializer, buf, decodedObj)
             buf
         }
-        cleanHeap()
-        val kserEncodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        val kserEncodeStream = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             val buf = Buffer()
             ctx.kJson.encodeToBufferedSink(kserSerializer, decodedObj, buf)
             buf
         }
-        cleanHeap()
-        val moshiEncodeStream = measurePerf(threadBean, BenchmarkStandard.MEASUREMENT_RUNS) {
+        performPhaseGc()
+        val moshiEncodeStream = measurePerf(threadBean = threadBean, runs = BenchmarkStandard.MEASUREMENT_RUNS) {
             val buf = Buffer()
             JsonWriter.of(buf).use { writer ->
                 moshiAdapter.toJson(writer, decodedObj)
@@ -209,7 +192,7 @@ object TwitterBenchmark {
         }
 
         printResults(
-            listOf(
+            categories = listOf(
                 "Decode (String)" to listOf(
                     "GHOST" to ghostDecodeStr,
                     "KSER" to kserDecodeStr,
@@ -244,13 +227,36 @@ object TwitterBenchmark {
         )
 
         return listOf(
-            observed(RegressionCalculator.DECODE_STRING, ghostDecodeStr, kserDecodeStr),
-            observed(RegressionCalculator.DECODE_BYTES, ghostDecodeBytes, kserDecodeBytes),
-            observed(RegressionCalculator.DECODE_STREAMING, ghostDecodeStream, kserDecodeStream),
-            observed(RegressionCalculator.ENCODE_STRING, ghostEncodeStr, kserEncodeStr),
-            observed(RegressionCalculator.ENCODE_BYTES, ghostEncodeBytes, kserEncodeBytes),
-            observed(RegressionCalculator.ENCODE_STREAMING, ghostEncodeStream, kserEncodeStream),
+            observed(category = RegressionCalculator.DECODE_STRING, ghost = ghostDecodeStr, kser = kserDecodeStr),
+            observed(category = RegressionCalculator.DECODE_BYTES, ghost = ghostDecodeBytes, kser = kserDecodeBytes),
+            observed(
+                category = RegressionCalculator.DECODE_STREAMING,
+                ghost = ghostDecodeStream,
+                kser = kserDecodeStream
+            ),
+            observed(category = RegressionCalculator.ENCODE_STRING, ghost = ghostEncodeStr, kser = kserEncodeStr),
+            observed(category = RegressionCalculator.ENCODE_BYTES, ghost = ghostEncodeBytes, kser = kserEncodeBytes),
+            observed(
+                category = RegressionCalculator.ENCODE_STREAMING,
+                ghost = ghostEncodeStream,
+                kser = kserEncodeStream
+            ),
         )
+    }
+
+    /**
+     * Global JIT warmup for Twitter decode/encode paths across all I/O modes.
+     *
+     * Invoked from [BenchmarkSuite.FULL] phase 2 alongside the synthetic warmup.
+     *
+     * @param iterations number of warmup iterations (typically [BenchmarkStandard.WARMUP_ITERATIONS]).
+     */
+    fun warmupGlobal(iterations: Int) {
+        val ctx = loadWarmupContext() ?: return
+        BenchmarkProgress.logStep(label = "Twitter macro (string / bytes / streaming × Ghost + Moshi + KSER)")
+        BenchmarkProgress.repeatWithProgress(label = "Global Twitter", total = iterations) {
+            ctx.runWarmupIteration()
+        }
     }
 
     private fun loadWarmupContext(): WarmupContext? {
@@ -311,13 +317,13 @@ object TwitterBenchmark {
             for (res in sorted) {
                 val ops = res.second.first
                 val opsStdev = res.second.second
-                val micros = BenchmarkThroughput.opsPerSecToMicros(ops)
+                val micros = BenchmarkThroughput.opsPerSecToMicros(opsPerSec = ops)
                 val microsStdev = if (ops <= 0.0) {
                     0.0
                 } else {
                     micros * (opsStdev / ops)
                 }
-                val gb = BenchmarkThroughput.opsPerSecToGbPerSec(ops, payloadBytes)
+                val gb = BenchmarkThroughput.opsPerSecToGbPerSec(opsPerSec = ops, payloadBytes = payloadBytes)
                 println(
                     "| %-18s | %-6s | %17.3f | %7.1f ±%-5.1f | %11.1f |".format(
                         label, res.first, gb, micros, microsStdev, res.second.third
@@ -348,58 +354,4 @@ object TwitterBenchmark {
         }
     }
 
-    @Volatile
-    private var blackHoleSink: Any? = null
-    private fun consume(obj: Any?) {
-        blackHoleSink = obj
-    }
-
-    private inline fun <T> measurePerf(
-        threadBean: ThreadMXBean?,
-        runs: Int,
-        crossinline block: () -> T
-    ): Triple<Double, Double, Double> {
-        val numBatches = if (runs >= 10) 10 else 1
-        val runsPerBatch = runs / numBatches
-
-        val currentThreadId = Thread.currentThread().id
-        val startAllocatedBytes = threadBean?.getThreadAllocatedBytes(currentThreadId) ?: 0L
-        val startTime = System.nanoTime()
-
-        val batchThroughputs = DoubleArray(numBatches)
-        repeat(numBatches) { b ->
-            val start = System.nanoTime()
-            repeat(runsPerBatch) {
-                val res = block()
-                consume(res)
-            }
-            val elapsed = System.nanoTime() - start
-            val batchThroughput = runsPerBatch / (elapsed.toDouble() / NANOSECONDS_IN_SECOND)
-            batchThroughputs[b] = batchThroughput
-        }
-
-        val elapsedNanos = System.nanoTime() - startTime
-        val endAllocatedBytes = threadBean?.getThreadAllocatedBytes(currentThreadId) ?: 0L
-
-        val avgThroughput = runs / (elapsedNanos.toDouble() / NANOSECONDS_IN_SECOND)
-
-        val stdDev = if (numBatches > 1) {
-            val mean = batchThroughputs.average()
-            val variance =
-                batchThroughputs.map { (it - mean) * (it - mean) }.sum() / (numBatches - 1)
-            kotlin.math.sqrt(variance)
-        } else {
-            0.0
-        }
-
-        val allocatedBytes = endAllocatedBytes - startAllocatedBytes
-        val kbPerOp = if (allocatedBytes > 0) (allocatedBytes.toDouble() / runs) / 1024.0 else 0.0
-
-        return Triple(avgThroughput, stdDev, kbPerOp)
-    }
-
-    private fun cleanHeap() {
-        System.gc()
-        System.runFinalization()
-    }
 }

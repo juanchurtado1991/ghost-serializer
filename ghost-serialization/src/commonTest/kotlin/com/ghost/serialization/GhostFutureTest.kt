@@ -6,6 +6,9 @@ import kotlin.test.assertTrue
 class GhostFutureTest {
     @Test
     fun futureDiscoveryVerificationTest() {
-        assertTrue(true, "Dynamic discovery working")
+        assertTrue(
+            actual = true,
+            message = "Dynamic discovery working"
+        )
     }
 }

@@ -2,7 +2,8 @@
 
 package com.ghost.serialization
 
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
@@ -22,7 +23,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-
 class GhostConcurrencyTest {
 
     @AfterTest
@@ -30,7 +30,7 @@ class GhostConcurrencyTest {
         Ghost.resetForTest()
     }
 
-    private class ThreadSafeMockSerializer(val id: Int) : GhostSerializer<Int> {
+    private class ThreadSafeMockSerializer(val id: Int) : AbstractGhostSerializer<Int>() {
         override val typeName: String = "Int_$id"
         override fun deserialize(reader: GhostJsonReader): Int = id
         override fun serialize(writer: GhostJsonWriter, value: Int) {
@@ -38,18 +38,19 @@ class GhostConcurrencyTest {
         }
     }
 
-    private class ThreadSafeMockRegistry(val batchId: Int) : GhostRegistry {
+    private class ThreadSafeMockRegistry(val batchId: Int) : AbstractGhostRegistry() {
         override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
             if (clazz == Int::class) {
                 @Suppress("UNCHECKED_CAST")
-                return ThreadSafeMockSerializer(batchId) as GhostSerializer<T>
+                return ThreadSafeMockSerializer(id = batchId) as GhostSerializer<T>
             }
             return null
         }
 
         override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
-            return mapOf(Int::class to ThreadSafeMockSerializer(batchId))
+            return mapOf(Int::class to ThreadSafeMockSerializer(id = batchId))
         }
+
     }
 
     @Test
@@ -65,9 +66,9 @@ class GhostConcurrencyTest {
             val jobs = (0 until numCoroutines).map { i ->
                 launch {
                     try {
-                        // Mix of reads and writes to stress the internal lock
+                        // Mix reads and writes to stress the internal lock
                         if (i % 5 == 0) {
-                            Ghost.addRegistry(ThreadSafeMockRegistry(i))
+                            Ghost.addRegistry(registry = ThreadSafeMockRegistry(batchId = i))
                         } else {
                             val serializer = Ghost.getSerializer(Int::class)
                             if (serializer != null) {
@@ -75,7 +76,6 @@ class GhostConcurrencyTest {
                             }
                         }
 
-                        // Concurrent serialization/deserialization calls
                         val json = "123"
                         val result = Ghost.deserialize<Int>(json)
                         if (result == 123) {
@@ -91,15 +91,20 @@ class GhostConcurrencyTest {
         }
 
         (dispatcher.executor as java.util.concurrent.ExecutorService).shutdown()
-        assertTrue(
-            (dispatcher.executor as java.util.concurrent.ExecutorService).awaitTermination(
+        assertTrue(actual = (dispatcher.executor as java.util.concurrent.ExecutorService).awaitTermination(
                 5,
                 TimeUnit.SECONDS
-            )
-        )
+            ))
 
-        assertEquals(0, errorCount.get(), "Concurrency test failed with ${errorCount.get()} errors")
-        assertTrue(successCount.get() > 0, "No successful operations recorded")
+        assertEquals(
+            expected = 0,
+            actual = errorCount.get(),
+            message = "Concurrency test failed with ${errorCount.get()} errors"
+        )
+        assertTrue(
+            actual = successCount.get() > 0,
+            message = "No successful operations recorded"
+        )
     }
 
     @Test

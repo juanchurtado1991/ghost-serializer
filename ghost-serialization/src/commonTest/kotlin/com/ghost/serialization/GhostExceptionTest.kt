@@ -10,17 +10,26 @@ class GhostExceptionTest {
     @Test
     fun exceptionContainsLineAndColumn() {
         val ex = GhostJsonException("test error", 5, 10)
-        assertEquals(5, ex.line)
-        assertEquals(10, ex.column)
-        assertTrue(ex.message.contains("line 5"))
-        assertTrue(ex.message.contains("col 10"))
+        assertEquals(
+            expected = 5,
+            actual = ex.line
+        )
+        assertEquals(
+            expected = 10,
+            actual = ex.column
+        )
+        assertTrue(actual = ex.message.contains("line 5"))
+        assertTrue(actual = ex.message.contains("col 10"))
     }
 
     @Test
     fun exceptionContainsPath() {
         val ex = GhostJsonException("test error", 1, 1, "$.user.name")
-        assertEquals("$.user.name", ex.path)
-        assertTrue(ex.message.contains("$.user.name"))
+        assertEquals(
+            expected = "$.user.name",
+            actual = ex.path
+        )
+        assertTrue(actual = ex.message.contains("$.user.name"))
     }
 
     @Test
@@ -32,40 +41,55 @@ class GhostExceptionTest {
             path = "$.age",
             hint = "Enable coerceStringsToNumbers",
         )
-        assertEquals("Enable coerceStringsToNumbers", ex.hint)
-        assertTrue(ex.message.contains("Hint: Enable coerceStringsToNumbers"))
+        assertEquals(
+            expected = "Enable coerceStringsToNumbers",
+            actual = ex.hint
+        )
+        assertTrue(actual = ex.message.contains("Hint: Enable coerceStringsToNumbers"))
     }
 
     @Test
     fun exceptionOmitsHintLineWhenAbsent() {
         val ex = GhostJsonException("Invalid token", 1, 1)
-        assertEquals(null, ex.hint)
-        assertTrue(!ex.message.contains("Hint:"))
+        assertEquals(
+            expected = null,
+            actual = ex.hint
+        )
+        assertTrue(actual = !ex.message.contains("Hint:"))
     }
 
     @Test
     fun exceptionContainsMessage() {
         val ex = GhostJsonException("Invalid token")
-        assertTrue(ex.message.contains("Invalid token"))
+        assertTrue(actual = ex.message.contains("Invalid token"))
     }
 
     @Test
     fun defaultLineAndColumnAreMinusOne() {
         val ex = GhostJsonException("defaults")
-        assertEquals(-1, ex.line)
-        assertEquals(-1, ex.column)
+        assertEquals(
+            expected = -1,
+            actual = ex.line
+        )
+        assertEquals(
+            expected = -1,
+            actual = ex.column
+        )
     }
 
     @Test
     fun defaultPathIsDollar() {
         val ex = GhostJsonException("defaults")
-        assertEquals("$", ex.path)
+        assertEquals(
+            expected = "$",
+            actual = ex.path
+        )
     }
 
     @Test
     fun exceptionIsRuntimeException() {
         val ex: RuntimeException = GhostJsonException("type check")
-        assertTrue(ex is GhostJsonException)
+        assertTrue(actual = ex is GhostJsonException)
     }
 
     @Test

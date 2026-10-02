@@ -22,14 +22,14 @@ class GhostDiscriminatorAfterNestedIntegrationTest {
         val result = Ghost.deserialize<PageWithNestedDevices>(json)
 
         assertEquals(
-            PageWithNestedDevices.LoggedIn(
+            expected = PageWithNestedDevices.LoggedIn(
                 devices = listOf(
                     NestedDeviceStub(id = "hub-1"),
                     NestedDeviceStub(id = "sensor-2"),
                 ),
                 name = "Living room",
             ),
-            result,
+            actual = result,
         )
     }
 }

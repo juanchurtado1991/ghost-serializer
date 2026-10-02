@@ -4,10 +4,15 @@ package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.integration.model.DecimalStress
 import com.ghost.serialization.integration.model.EmojiKeyModel
 import com.ghost.serialization.integration.model.GhostAdvancedProfile
+import com.ghost.serialization.integration.model.GhostKindEvent
 import com.ghost.serialization.integration.model.GhostShape
 import com.ghost.serialization.integration.model.GhostUserToken
+import com.ghost.serialization.integration.model.GodObject
+import com.ghost.serialization.integration.model.NestedGenericModel
 import com.ghost.serialization.integration.model.OverlappingKeyModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,19 +22,19 @@ class GhostAdvancedTypesTest {
 
     @Test
     fun testValueClassRoundtrip() {
-        val original = GhostUserToken("secret_123")
+        val original = GhostUserToken(value = "secret_123")
         val json = Ghost.serialize(original)
         // Value class should be unboxed to a simple string in JSON
-        assertEquals("\"secret_123\"", json)
+        assertEquals(expected = "\"secret_123\"", actual = json)
 
         val deserialized = Ghost.deserialize<GhostUserToken>(json)
-        assertEquals(original, deserialized)
+        assertEquals(expected = original, actual = deserialized)
     }
 
     @Test
     fun testSealedClassPolymorphism() {
         val circle: GhostShape = GhostShape.Circle(5.0)
-        val square: GhostShape = GhostShape.Square(10.0)
+        val square: GhostShape = GhostShape.Square(side = 10.0)
 
         val jsonCircle = Ghost.serialize(circle)
         val jsonSquare = Ghost.serialize(square)
@@ -37,26 +42,26 @@ class GhostAdvancedTypesTest {
         val decodedCircle = Ghost.deserialize<GhostShape>(jsonCircle)
         val decodedSquare = Ghost.deserialize<GhostShape>(jsonSquare)
 
-        assertEquals(circle, decodedCircle)
-        assertEquals(square, decodedSquare)
+        assertEquals(expected = circle, actual = decodedCircle)
+        assertEquals(expected = square, actual = decodedSquare)
     }
 
     @Test
     fun testNestedAdvancedTypes() {
         val profile = GhostAdvancedProfile(
-            token = GhostUserToken("abc"),
-            shapes = listOf(GhostShape.Circle(1.0), GhostShape.Square(2.0))
+            token = GhostUserToken(value = "abc"),
+            shapes = listOf(GhostShape.Circle(1.0), GhostShape.Square(side = 2.0))
         )
 
         val json = Ghost.serialize(profile)
         val decoded = Ghost.deserialize<GhostAdvancedProfile>(json)
 
-        assertEquals(profile, decoded)
+        assertEquals(expected = profile, actual = decoded)
     }
 
     @Test
     fun testDeeplyNestedGenerics() {
-        val original = com.ghost.serialization.integration.model.NestedGenericModel(
+        val original = NestedGenericModel(
             data = mapOf(
                 "level1" to listOf(
                     mapOf("item1" to 1, "item2" to 2),
@@ -66,8 +71,8 @@ class GhostAdvancedTypesTest {
         )
         val json = Ghost.serialize(original)
         val decoded =
-            Ghost.deserialize<com.ghost.serialization.integration.model.NestedGenericModel>(json)
-        assertEquals(original, decoded)
+            Ghost.deserialize<NestedGenericModel>(json)
+        assertEquals(expected = original, actual = decoded)
     }
 
     @Test
@@ -78,11 +83,11 @@ class GhostAdvancedTypesTest {
             emojiMap = mapOf("👨‍👩‍👧‍👦" to "family", "🚀" to "rocket")
         )
         val json = Ghost.serialize(original)
-        assertTrue(json.contains("👨‍👩‍👧‍👦"))
-        assertTrue(json.contains("🚀"))
+        assertTrue(actual = json.contains("👨‍👩‍👧‍👦"))
+        assertTrue(actual = json.contains("🚀"))
 
         val decoded = Ghost.deserialize<EmojiKeyModel>(json)
-        assertEquals(original, decoded)
+        assertEquals(expected = original, actual = decoded)
     }
 
     @Test
@@ -94,34 +99,38 @@ class GhostAdvancedTypesTest {
         )
         val json = Ghost.serialize(original)
         val decoded = Ghost.deserialize<OverlappingKeyModel>(json)
-        assertEquals(original, decoded)
+        assertEquals(expected = original, actual = decoded)
     }
 
     @Test
     fun testCustomDiscriminator() {
-        val created = com.ghost.serialization.integration.model.GhostKindEvent.Created("1", "juan")
+        val created = GhostKindEvent.Created(id = "1", name = "juan")
         val json = Ghost.serialize(created)
 
-        assertTrue(json.contains("\"kind\":\"Created\""), "Should use 'kind' as discriminator")
+        assertTrue(actual = json.contains("\"kind\":\"Created\""), message = "Should use 'kind' as discriminator")
 
         val decoded =
-            Ghost.deserialize<com.ghost.serialization.integration.model.GhostKindEvent>(json)
-        assertEquals(created, decoded)
+            Ghost.deserialize<GhostKindEvent>(json)
+        assertEquals(expected = created, actual = decoded)
     }
 
     @Test
     fun testDecimalPrecision() {
-        val original = com.ghost.serialization.integration.model.DecimalStress(
+        val original = DecimalStress(
             big = 1.23456789E12,
             small = 0.00000123f,
             precise = 3.141592653589793
         )
         val json = Ghost.serialize(original)
         val decoded =
-            Ghost.deserialize<com.ghost.serialization.integration.model.DecimalStress>(json)
+            Ghost.deserialize<DecimalStress>(json)
 
-        assertEquals(original.big, decoded.big, 0.001)
-        assertEquals(original.small, decoded.small, 0.0000001f)
+        assertEquals(
+            expected = original.big,
+            actual = decoded.big,
+            absoluteTolerance = GhostIntegrationTestConstants.FLOAT_ASSERT_DELTA
+        )
+        assertEquals(expected = original.small, actual = decoded.small, absoluteTolerance = 0.0000001f)
         // Library fast-path supports 9 decimals
         assertEquals(original.precise, decoded.precise, 1.0E-9)
     }
@@ -133,8 +142,8 @@ class GhostAdvancedTypesTest {
         val depth = 300
         val nestedJson = "{\"next\":".repeat(depth) + "null" + "}".repeat(depth)
 
-        kotlin.test.assertFailsWith<com.ghost.serialization.exception.GhostJsonException> {
-            Ghost.deserialize<com.ghost.serialization.integration.model.GodObject>(nestedJson)
+        kotlin.test.assertFailsWith<GhostJsonException> {
+            Ghost.deserialize<GodObject>(nestedJson)
         }
     }
 }

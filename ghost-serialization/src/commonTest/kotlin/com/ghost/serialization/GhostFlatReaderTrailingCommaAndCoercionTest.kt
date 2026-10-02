@@ -64,7 +64,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
     @Test
     fun lenientModeRejectsTrailingCommaInObjectToo() {
         // Trailing-comma rejection isn't strict-mode-only -- nextKey()'s non-strict branch
-        // (line ~377-382) throws ERR_TRAILING_COMMA unconditionally too.
+        // throws ERR_TRAILING_COMMA unconditionally too.
         val reader = readerOf("""{"a":1,}""")
         reader.beginObject()
         assertFailsWith<GhostJsonException> {
@@ -89,18 +89,16 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
     fun hasNextRejectsTrailingCommaInArray() {
         val reader = readerOf("""[1,]""")
         reader.beginArray()
-        assertTrue(reader.hasNext())
+        assertTrue(actual = reader.hasNext())
         reader.nextInt()
         assertFailsWith<GhostJsonException> { reader.hasNext() }
     }
 
     @Test
     fun strictModeHasNextInteractsWithConsumeArraySeparator() {
-        // hasNext() and consumeArraySeparator() share the same per-depth "comma already
-        // consumed" bit. Real usage (CollectionSerializers.kt): hasNext() drives the loop and
-        // consumes the separator itself when required=true from the prior iteration;
-        // consumeArraySeparator() then just has to honor that without re-consuming or
-        // re-requiring it.
+        // hasNext() and consumeArraySeparator() share a per-depth "comma already consumed" bit:
+        // hasNext() consumes it when required from the prior iteration, so
+        // consumeArraySeparator() must honor that without re-consuming or re-requiring it.
         val reader = readerOf("""[1,2,3]""")
         reader.strictMode = true
         reader.beginArray()
@@ -110,7 +108,10 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
             values.add(reader.nextInt())
         }
         reader.endArray()
-        assertEquals(listOf(1, 2, 3), values)
+        assertEquals(
+            expected = listOf(1, 2, 3),
+            actual = values
+        )
     }
 
     // ── coerceBooleans ───────────────────────────────────────────────
@@ -122,7 +123,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.nextBoolean())
+        assertTrue(actual = reader.nextBoolean())
     }
 
     @Test
@@ -132,7 +133,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.nextBoolean())
+        assertFalse(actual = reader.nextBoolean())
     }
 
     @Test
@@ -142,7 +143,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertTrue(reader.nextBoolean())
+        assertTrue(actual = reader.nextBoolean())
     }
 
     @Test
@@ -152,7 +153,7 @@ class GhostFlatReaderTrailingCommaAndCoercionTest {
         reader.beginObject()
         reader.nextKey()
         reader.consumeKeySeparator()
-        assertFalse(reader.nextBoolean())
+        assertFalse(actual = reader.nextBoolean())
     }
 
     @Test

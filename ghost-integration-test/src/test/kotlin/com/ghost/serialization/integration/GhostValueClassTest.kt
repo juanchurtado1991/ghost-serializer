@@ -16,14 +16,14 @@ class GhostValueClassTest {
         val json = """{"id": 123, "name": "Ghost User"}"""
         val result = Ghost.deserialize<UserWithValueClass>(json.encodeToByteArray())
 
-        assertEquals(UserId(123), result.id)
-        assertEquals("Ghost User", result.name)
+        assertEquals(expected = UserId(value = 123), actual = result.id)
+        assertEquals(expected = "Ghost User", actual = result.name)
     }
 
     @Test
     fun testDirectValueClassDeserialization() {
         val json = "456"
         val result = Ghost.deserialize<UserId>(json.encodeToByteArray())
-        assertEquals(UserId(456), result)
+        assertEquals(expected = UserId(value = 456), actual = result)
     }
 }

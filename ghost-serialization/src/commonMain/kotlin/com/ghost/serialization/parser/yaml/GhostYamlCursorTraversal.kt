@@ -1,26 +1,26 @@
 package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.JsonReaderOptions
+import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.yaml.exception.GhostYamlException
 import com.ghost.serialization.yaml.exception.hintForYamlError
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
 /**
- * Implementation behind [GhostYamlFlatReader]'s `JsonReader`-compatible cursor traversal API
+ * Implementation behind [GhostYamlFlatReader]'s `JsonReader`-compatible cursor API
  * (`beginObject`/`endObject`/`nextString`/etc.) — a second-phase facade walking the already-fully
  * parsed in-memory `Map`/`List` AST from [GhostYamlFlatReader.readDocument] via plain iterators.
- * No byte-level scanning or calls back into the byte-level parser happen here.
+ * No byte-level scanning happens here.
  *
  * Every [GhostYamlFlatReader] method is a thin delegate to the identically-named `xxxImpl`
- * function here, not a plain extension function like other subsystems use: `beginObject` etc.
- * are public members called by KSP-generated `deserialize()` bodies that may live in a
- * *different Gradle module's package*, and Kotlin resolves class members via receiver type with
- * zero imports — extension functions would require every downstream consumer's generated code
- * to gain an import the compiler doesn't emit today. The state fields (`traversalStack`,
- * `currentMap`, `nextValue`, etc.) stay declared on `GhostYamlFlatReader` itself since Kotlin
- * classes can't span files, and `readList`/`readSet`/`readMap`'s `@PublishedApi internal` field
- * access must resolve against wherever the class body lives.
+ * function here rather than a plain extension function like other subsystems use: `beginObject`
+ * etc. are public members called by KSP-generated `deserialize()` bodies that may live in a
+ * *different Gradle module's package*, and class members resolve via receiver type with zero
+ * imports, while extension functions would require an import the generated code never gains.
+ * The state fields (`traversalStack`, `currentMap`, etc.) stay on `GhostYamlFlatReader` itself
+ * since Kotlin classes can't span files.
  */
 
 @OptIn(InternalGhostApi::class)
@@ -35,15 +35,8 @@ internal fun GhostYamlFlatReader.ensureRootParsed() {
 /** Called once per document by [GhostYamlFlatReader.readAllDocuments] (typed overload). */
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.prepareRootForCurrentDocument() {
-    traversalStack.clear()
-    pathTracker.reset()
-    currentMap = null
-    mapIterator = null
-    currentEntry = null
-    currentList = null
-    listIterator = null
-    nextValue = null
-    rootObject = readValue(indent = C.INDENT_UNSET, inFlow = false)
+    clearTraversalState()
+    rootObject = readValue(indent = SC.INDENT_UNSET, inFlow = false)
     nextValue = rootObject
     rootParsed = true
 }
@@ -51,6 +44,13 @@ internal fun GhostYamlFlatReader.prepareRootForCurrentDocument() {
 /** Called once per document by [GhostYamlFlatReader.readAllDocuments] (typed overload). */
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.clearAfterDocument() {
+    clearTraversalState()
+    rootParsed = false
+    rootObject = null
+}
+
+/** Resets every cursor-traversal field to "nothing parsed yet", shared by both functions above. */
+private fun GhostYamlFlatReader.clearTraversalState() {
     traversalStack.clear()
     pathTracker.reset()
     currentMap = null
@@ -59,26 +59,16 @@ internal fun GhostYamlFlatReader.clearAfterDocument() {
     currentList = null
     listIterator = null
     nextValue = null
-    rootParsed = false
-    rootObject = null
 }
 
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.beginObjectImpl() {
     ensureRootParsed()
     val map = nextValue as? Map<*, *>
-        ?: throwError("${C.ERR_EXPECTED_MAP_PREFIX}$nextValue")
+        ?: throwError("${EM.ERR_EXPECTED_MAP_PREFIX}$nextValue")
 
     pathTracker.pushObject()
-    traversalStack.add(
-        GhostYamlFlatReader.StateFrame(
-            currentMap,
-            mapIterator,
-            currentEntry,
-            currentList,
-            listIterator
-        )
-    )
+    pushTraversalFrame()
 
     @Suppress("UNCHECKED_CAST")
     val typedMap = map as Map<String, Any?>
@@ -92,21 +82,7 @@ internal fun GhostYamlFlatReader.beginObjectImpl() {
 
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.endObjectImpl() {
-    if (traversalStack.isNotEmpty()) {
-        val frame = traversalStack.removeAt(traversalStack.size - 1)
-        currentMap = frame.map
-        mapIterator = frame.mapIterator
-        currentEntry = frame.entry
-        currentList = frame.list
-        listIterator = frame.listIterator
-    } else {
-        currentMap = null
-        mapIterator = null
-        currentEntry = null
-        currentList = null
-        listIterator = null
-    }
-    nextValue = null
+    popTraversalFrameOrClear()
     pathTracker.finishObjectValue()
 }
 
@@ -120,9 +96,9 @@ internal fun GhostYamlFlatReader.selectNameAndConsumeImpl(options: JsonReaderOpt
     currentEntry = entry
     nextValue = entry.value
 
-    val index = options.findOptionIndex(entry.key)
+    val index = options.findOptionIndex(name = entry.key)
     if (index >= 0) {
-        pathTracker.pushKey(entry.key)
+        pathTracker.pushKey(name = entry.key)
         return index
     }
     return tokenUnknownName
@@ -130,7 +106,7 @@ internal fun GhostYamlFlatReader.selectNameAndConsumeImpl(options: JsonReaderOpt
 
 internal fun GhostYamlFlatReader.selectStringImpl(options: JsonReaderOptions): Int {
     val strValue = nextString()
-    val index = options.findOptionIndex(strValue)
+    val index = options.findOptionIndex(name = strValue)
     if (index >= 0) {
         return index
     }
@@ -156,40 +132,18 @@ internal fun GhostYamlFlatReader.consumeNullImpl() {
     pathTracker.finishScalarValue()
 }
 
-/** Reads a YAML string, or `null` when the next value is YAML null. */
-internal fun GhostYamlFlatReader.nextStringOrNullImpl(): String? {
-    if (isNextNullValue()) {
-        consumeNull()
-        return null
-    }
-    return nextString()
-}
+internal fun GhostYamlFlatReader.nextStringOrNullImpl(): String? = nextOrNullImpl { nextString() }
+internal fun GhostYamlFlatReader.nextIntOrNullImpl(): Int? = nextOrNullImpl { nextInt() }
+internal fun GhostYamlFlatReader.nextLongOrNullImpl(): Long? = nextOrNullImpl { nextLong() }
+internal fun GhostYamlFlatReader.nextBooleanOrNullImpl(): Boolean? = nextOrNullImpl { nextBoolean() }
 
-/** Reads a YAML int, or `null` when the next value is YAML null. */
-internal fun GhostYamlFlatReader.nextIntOrNullImpl(): Int? {
+/** Shared null-or-value preamble for the `next*OrNullImpl` family above and below. */
+private inline fun <T> GhostYamlFlatReader.nextOrNullImpl(readValue: () -> T): T? {
     if (isNextNullValue()) {
         consumeNull()
         return null
     }
-    return nextInt()
-}
-
-/** Reads a YAML long, or `null` when the next value is YAML null. */
-internal fun GhostYamlFlatReader.nextLongOrNullImpl(): Long? {
-    if (isNextNullValue()) {
-        consumeNull()
-        return null
-    }
-    return nextLong()
-}
-
-/** Reads a YAML boolean, or `null` when the next value is YAML null. */
-internal fun GhostYamlFlatReader.nextBooleanOrNullImpl(): Boolean? {
-    if (isNextNullValue()) {
-        consumeNull()
-        return null
-    }
-    return nextBoolean()
+    return readValue()
 }
 
 @OptIn(InternalGhostApi::class)
@@ -206,11 +160,11 @@ internal fun GhostYamlFlatReader.nextIntImpl(): Int {
             return value.toIntOrNull() ?: 0
         }
         val parsed = value.toIntOrNull()
-            ?: throwError("${C.ERR_EXPECTED_INT_PREFIX}$value")
+            ?: throwError("${EM.ERR_EXPECTED_INT_PREFIX}$value")
         pathTracker.finishScalarValue()
         return parsed
     }
-    throwError("${C.ERR_EXPECTED_INT_PREFIX}$value")
+    throwError("${EM.ERR_EXPECTED_INT_PREFIX}$value")
 }
 
 @OptIn(InternalGhostApi::class)
@@ -227,11 +181,11 @@ internal fun GhostYamlFlatReader.nextLongImpl(): Long {
             return value.toLongOrNull() ?: 0L
         }
         val parsed = value.toLongOrNull()
-            ?: throwError("${C.ERR_EXPECTED_LONG_PREFIX}$value")
+            ?: throwError("${EM.ERR_EXPECTED_LONG_PREFIX}$value")
         pathTracker.finishScalarValue()
         return parsed
     }
-    throwError("${C.ERR_EXPECTED_LONG_PREFIX}$value")
+    throwError("${EM.ERR_EXPECTED_LONG_PREFIX}$value")
 }
 
 internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
@@ -244,7 +198,6 @@ internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
     }
 }
 
-/** Plain YAML scalar `ULong` — accepts numeric or string scalars (full range via decimal string). */
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.nextULongImpl(): ULong {
     val value = nextValue
@@ -260,21 +213,15 @@ internal fun GhostYamlFlatReader.nextULongImpl(): ULong {
                 return value.toULongOrNull() ?: 0uL
             }
             val parsed = value.toULongOrNull()
-                ?: throwError("${C.ERR_EXPECTED_ULONG_PREFIX}$value")
+                ?: throwError("${EM.ERR_EXPECTED_ULONG_PREFIX}$value")
             pathTracker.finishScalarValue()
             return parsed
         }
     }
-    throwError("${C.ERR_EXPECTED_ULONG_PREFIX}$value")
+    throwError("${EM.ERR_EXPECTED_ULONG_PREFIX}$value")
 }
 
-internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? {
-    if (isNextNullValue()) {
-        consumeNull()
-        return null
-    }
-    return nextULong()
-}
+internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? = nextOrNullImpl { nextULong() }
 
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.nextDoubleImpl(): Double {
@@ -290,11 +237,11 @@ internal fun GhostYamlFlatReader.nextDoubleImpl(): Double {
             return value.toDoubleOrNull() ?: 0.0
         }
         val parsed = value.toDoubleOrNull()
-            ?: throwError("${C.ERR_EXPECTED_DOUBLE_PREFIX}$value")
+            ?: throwError("${EM.ERR_EXPECTED_DOUBLE_PREFIX}$value")
         pathTracker.finishScalarValue()
         return parsed
     }
-    throwError("${C.ERR_EXPECTED_DOUBLE_PREFIX}$value")
+    throwError("${EM.ERR_EXPECTED_DOUBLE_PREFIX}$value")
 }
 
 @OptIn(InternalGhostApi::class)
@@ -311,11 +258,11 @@ internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
             return value.toFloatOrNull() ?: 0.0f
         }
         val parsed = value.toFloatOrNull()
-            ?: throwError("${C.ERR_EXPECTED_FLOAT_PREFIX}$value")
+            ?: throwError("${EM.ERR_EXPECTED_FLOAT_PREFIX}$value")
         pathTracker.finishScalarValue()
         return parsed
     }
-    throwError("${C.ERR_EXPECTED_FLOAT_PREFIX}$value")
+    throwError("${EM.ERR_EXPECTED_FLOAT_PREFIX}$value")
 }
 
 @OptIn(InternalGhostApi::class)
@@ -329,22 +276,21 @@ internal fun GhostYamlFlatReader.nextBooleanImpl(): Boolean {
     if (value is String) {
         if (coerceBooleans) {
             pathTracker.finishScalarValue()
-            return value.lowercase() == C.STR_TRUE
+            return value.lowercase() == TOK.STR_TRUE
         }
         pathTracker.finishScalarValue()
         return value.toBoolean()
     }
-    throwError("${C.ERR_EXPECTED_BOOLEAN_PREFIX}$value")
+    throwError("${EM.ERR_EXPECTED_BOOLEAN_PREFIX}$value")
 }
 
-/** Reads a YAML scalar that must decode to exactly one UTF-16 [Char]. */
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.nextCharImpl(): Char {
     val value = nextValue
     nextValue = null
     val text = if (value == null) "" else value.toString()
     if (text.length != 1) {
-        throwError("${C.ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX}${text.length}")
+        throwError("${EM.ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX}${text.length}")
     }
     pathTracker.finishScalarValue()
     return text[0]
@@ -363,18 +309,10 @@ internal fun GhostYamlFlatReader.nextStringImpl(): String {
 internal fun GhostYamlFlatReader.beginArrayImpl() {
     ensureRootParsed()
     val list = nextValue as? List<*>
-        ?: throwError("${C.ERR_EXPECTED_LIST_PREFIX}$nextValue")
+        ?: throwError("${EM.ERR_EXPECTED_LIST_PREFIX}$nextValue")
 
     pathTracker.pushArray()
-    traversalStack.add(
-        GhostYamlFlatReader.StateFrame(
-            currentMap,
-            mapIterator,
-            currentEntry,
-            currentList,
-            listIterator
-        )
-    )
+    pushTraversalFrame()
 
     currentList = list
     listIterator = list.iterator()
@@ -386,6 +324,28 @@ internal fun GhostYamlFlatReader.beginArrayImpl() {
 
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.endArrayImpl() {
+    popTraversalFrameOrClear()
+    pathTracker.finishArrayValue()
+}
+
+/** Pushes the current map/list traversal state, shared by [beginObjectImpl] and [beginArrayImpl]. */
+private fun GhostYamlFlatReader.pushTraversalFrame() {
+    traversalStack.add(
+        GhostYamlFlatReader.StateFrame(
+            currentMap,
+            mapIterator,
+            currentEntry,
+            currentList,
+            listIterator
+        )
+    )
+}
+
+/**
+ * Restores the enclosing map/list traversal state (or clears it at the root), shared by
+ * [endObjectImpl] and [endArrayImpl].
+ */
+private fun GhostYamlFlatReader.popTraversalFrameOrClear() {
     if (traversalStack.isNotEmpty()) {
         val frame = traversalStack.removeAt(traversalStack.size - 1)
         currentMap = frame.map
@@ -401,7 +361,6 @@ internal fun GhostYamlFlatReader.endArrayImpl() {
         listIterator = null
     }
     nextValue = null
-    pathTracker.finishArrayValue()
 }
 
 internal fun GhostYamlFlatReader.hasNextImpl(): Boolean {
@@ -431,7 +390,7 @@ internal fun GhostYamlFlatReader.nextKeyImpl(): String? {
         val entry = iterator.next()
         currentEntry = entry
         nextValue = entry.value
-        pathTracker.pushKey(entry.key)
+        pathTracker.pushKey(name = entry.key)
         return entry.key
     }
     return null
@@ -446,7 +405,7 @@ internal fun GhostYamlFlatReader.throwErrorImpl(message: String): Nothing {
     throw GhostYamlException(
         baseMessage = message,
         path = pathTracker.formatPath(),
-        hint = hintForYamlError(message),
+        hint = message.hintForYamlError(),
     )
 }
 

@@ -18,7 +18,9 @@ java {
 val generateGhostVersions by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/ghost")
     val publishVersion = libs.versions.publish.version.get()
+    val testedKotlinVersions = libs.versions.kotlin.plugin.tested.get()
     inputs.property("publishVersion", publishVersion)
+    inputs.property("testedKotlinVersions", testedKotlinVersions)
     outputs.dir(outputDir)
     doLast {
         val dir = outputDir.get().asFile
@@ -28,6 +30,8 @@ val generateGhostVersions by tasks.registering {
             |package com.ghost.gradle
             |
             |internal const val DEFAULT_VERSION = "$publishVersion"
+            |
+            |internal const val TESTED_KOTLIN_VERSIONS = "$testedKotlinVersions"
             |
             """.trimMargin()
         )
@@ -91,5 +95,6 @@ tasks.withType<Test> {
         ":ghost-api:publishToMavenLocal",
         ":ghost-serialization:publishToMavenLocal",
         ":ghost-compiler:publishToMavenLocal",
+        ":ghost-compiler-plugin:publishToMavenLocal",
     )
 }

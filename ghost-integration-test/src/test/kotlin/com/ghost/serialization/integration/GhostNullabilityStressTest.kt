@@ -22,27 +22,27 @@ class GhostNullabilityStressTest {
         val json = Ghost.serialize(model)
         val decoded = Ghost.deserialize<NullabilityStressModel>(json)
 
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testAllNulls() {
-        val model = NullabilityStressModel(null, null, null)
+        val model = NullabilityStressModel(nullableList = null, nullableMap = null, nestedNullable = null)
         val json = Ghost.serialize(model)
-        assertEquals("{\"nullableList\":null,\"nullableMap\":null,\"nestedNullable\":null}", json)
+        assertEquals(expected = "{\"nullableList\":null,\"nullableMap\":null,\"nestedNullable\":null}", actual = json)
 
         val decoded = Ghost.deserialize<NullabilityStressModel>(json)
-        assertNull(decoded.nullableList)
-        assertNull(decoded.nullableMap)
-        assertNull(decoded.nestedNullable)
+        assertNull(actual = decoded.nullableList)
+        assertNull(actual = decoded.nullableMap)
+        assertNull(actual = decoded.nestedNullable)
     }
 
     @Test
     fun testExplicitNullVsMissingKey() {
         val jsonMissing = "{}"
         val decoded1 = Ghost.deserialize<DefaultValueNullModel>(jsonMissing)
-        assertEquals("Default", decoded1.name)
-        assertEquals(42, decoded1.age)
+        assertEquals(expected = "Default", actual = decoded1.name)
+        assertEquals(expected = 42, actual = decoded1.age)
 
         // Explicit null on a non-nullable field must fail, not fall back to the default
         assertFailsWith<GhostJsonException> {
@@ -52,7 +52,7 @@ class GhostNullabilityStressTest {
         // Explicit null on a nullable field overrides its default instead of failing
         val jsonExplicitNull = "{\"age\":null}"
         val decoded3 = Ghost.deserialize<DefaultValueNullModel>(jsonExplicitNull)
-        assertEquals("Default", decoded3.name)
-        assertNull(decoded3.age)
+        assertEquals(expected = "Default", actual = decoded3.name)
+        assertNull(actual = decoded3.age)
     }
 }

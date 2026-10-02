@@ -1,6 +1,7 @@
 package com.ghost.serialization.yaml
 
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -18,8 +19,11 @@ class GhostYamlGroupBTest {
               Line two
               Line three
         """.trimIndent()
-        val result = parseMap(yaml)
-        assertEquals("Line one\nLine two\nLine three\n", result["literal_block"])
+        val result = parseMap(yaml = yaml)
+        assertEquals(
+            expected = "Line one\nLine two\nLine three\n",
+            actual = result["literal_block"]
+        )
     }
 
     @Test
@@ -30,8 +34,11 @@ class GhostYamlGroupBTest {
               Line two
               Line three
         """.trimIndent()
-        val result = parseMap(yaml)
-        assertEquals("Line one\nLine two\nLine three", result["literal_strip"])
+        val result = parseMap(yaml = yaml)
+        assertEquals(
+            expected = "Line one\nLine two\nLine three",
+            actual = result["literal_strip"]
+        )
     }
 
     @Test
@@ -44,8 +51,11 @@ class GhostYamlGroupBTest {
 
 
         """.trimIndent()
-        val result = parseMap(yaml)
-        assertEquals("Line one\nLine two\nLine three\n\n", result["literal_keep"])
+        val result = parseMap(yaml = yaml)
+        assertEquals(
+            expected = "Line one\nLine two\nLine three\n\n",
+            actual = result["literal_keep"]
+        )
     }
 
     @Test
@@ -60,10 +70,10 @@ class GhostYamlGroupBTest {
               paragraph after
               a blank line.
         """.trimIndent()
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
         assertEquals(
-            "This is the first paragraph which gets folded into one line.\nThis is a second paragraph after a blank line.\n",
-            result["folded_block"]
+            expected = "This is the first paragraph which gets folded into one line.\nThis is a second paragraph after a blank line.\n",
+            actual = result["folded_block"]
         )
     }
 
@@ -75,8 +85,11 @@ class GhostYamlGroupBTest {
               is folded
               and trailing newlines stripped
         """.trimIndent()
-        val result = parseMap(yaml)
-        assertEquals("This line is folded and trailing newlines stripped", result["folded_strip"])
+        val result = parseMap(yaml = yaml)
+        assertEquals(
+            expected = "This line is folded and trailing newlines stripped",
+            actual = result["folded_strip"]
+        )
     }
 
     @Test
@@ -89,8 +102,11 @@ class GhostYamlGroupBTest {
 
 
         """.trimIndent()
-        val result = parseMap(yaml)
-        assertEquals("This line is folded with trailing newlines kept\n\n", result["folded_keep"])
+        val result = parseMap(yaml = yaml)
+        assertEquals(
+            expected = "This line is folded with trailing newlines kept\n\n",
+            actual = result["folded_keep"]
+        )
     }
 
     @Test
@@ -101,15 +117,15 @@ class GhostYamlGroupBTest {
               and preserves relative indentation
                 inner indent here
         """.trimIndent()
-        val result = parseMap(yaml)
+        val result = parseMap(yaml = yaml)
         assertEquals(
-            "This block starts at column 2\nand preserves relative indentation\n  inner indent here\n",
-            result["indented_2"]
+            expected = "This block starts at column 2\nand preserves relative indentation\n  inner indent here\n",
+            actual = result["indented_2"]
         )
     }
 
     private fun parseMap(yaml: String): Map<String, Any?> {
-        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        val reader = GhostYamlFlatReader(rawData = yaml.encodeToByteArray())
         @Suppress("UNCHECKED_CAST")
         return reader.readDocument() as Map<String, Any?>
     }

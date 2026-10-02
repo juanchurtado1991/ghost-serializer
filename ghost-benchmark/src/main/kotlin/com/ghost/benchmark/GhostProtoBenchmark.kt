@@ -41,17 +41,17 @@ object GhostProtoBenchmark {
         println("════════════════════════════════════════════════════════════════")
 
         measureBytes(
-            threadBean,
+            threadBean = threadBean,
             label = "Decode ProtoBenchUser (JSON bytes)",
-            json = JSON_USER,
+            payload = JSON_USER,
         ) { bytes ->
             GhostProto.deserialize<ProtoBenchUser>(bytes)
         }
 
         measureString(
-            threadBean,
+            threadBean = threadBean,
             label = "Decode ProtoBenchUser (JSON string)",
-            json = JSON_USER,
+            payload = JSON_USER,
         ) { text ->
             GhostProto.deserialize<ProtoBenchUser>(text)
         }
@@ -59,25 +59,25 @@ object GhostProtoBenchmark {
         val user = GhostProto.deserialize<ProtoBenchUser>(JSON_USER)
 
         measureBytes(
-            threadBean,
+            threadBean = threadBean,
             label = "Encode ProtoBenchUser (encodeToBytes)",
-            json = JSON_USER,
+            payload = JSON_USER,
         ) {
             GhostProto.encodeToBytes(user)
         }
 
         measureString(
-            threadBean,
+            threadBean = threadBean,
             label = "Encode ProtoBenchUser (encodeToString)",
-            json = JSON_USER,
+            payload = JSON_USER,
         ) {
             GhostProto.encodeToString(user)
         }
 
         measureString(
-            threadBean,
+            threadBean = threadBean,
             label = "Round-trip (decode → encodeToString, minimal profile)",
-            json = JSON_USER_MINIMAL,
+            payload = JSON_USER_MINIMAL,
         ) {
             val decoded = GhostProto.deserialize<ProtoBenchUser>(JSON_USER_MINIMAL)
             GhostProto.encodeToString(decoded)
@@ -85,64 +85,5 @@ object GhostProtoBenchmark {
 
         println("════════════════════════════════════════════════════════════════\n")
         return true
-    }
-
-    private inline fun measureBytes(
-        threadBean: ThreadMXBean,
-        label: String,
-        json: String,
-        crossinline block: (ByteArray) -> Any?,
-    ) {
-        val payload = json.encodeToByteArray()
-        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(payload) }
-        BenchmarkProgress.logStep("Measure: $label")
-        report(threadBean, label, payloadBytes = payload.size.toLong(), block = { block(payload) })
-    }
-
-    private inline fun measureString(
-        threadBean: ThreadMXBean,
-        label: String,
-        json: String,
-        crossinline block: (String) -> Any?,
-    ) {
-        repeat(BenchmarkStandard.LOCAL_WARMUP_ITERATIONS) { block(json) }
-        BenchmarkProgress.logStep("Measure: $label")
-        report(
-            threadBean,
-            label,
-            payloadBytes = json.encodeToByteArray().size.toLong(),
-            block = { block(json) },
-        )
-    }
-
-    private inline fun report(
-        threadBean: ThreadMXBean,
-        label: String,
-        payloadBytes: Long,
-        crossinline block: () -> Any?,
-    ) {
-        val threadId = Thread.currentThread().id
-        var totalNanos = 0L
-        var totalAlloc = 0L
-
-        repeat(BenchmarkStandard.MEASUREMENT_RUNS) {
-            val allocBefore = threadBean.getThreadAllocatedBytes(threadId)
-            val timeBefore = System.nanoTime()
-            block()
-            totalNanos += System.nanoTime() - timeBefore
-            totalAlloc += threadBean.getThreadAllocatedBytes(threadId) - allocBefore
-        }
-
-        val avgMicros = totalNanos / BenchmarkStandard.MEASUREMENT_RUNS / 1_000.0
-        val avgKb = (totalAlloc.toDouble() / BenchmarkStandard.MEASUREMENT_RUNS) / 1024.0
-        val gbPerSec = BenchmarkThroughput.microsToGbPerSec(avgMicros, payloadBytes)
-        println(
-            "  %-58s │ %6.3f GB/s │ %8.2f µs/op │ %8.3f KB/op".format(
-                label,
-                gbPerSec,
-                avgMicros,
-                avgKb,
-            )
-        )
     }
 }

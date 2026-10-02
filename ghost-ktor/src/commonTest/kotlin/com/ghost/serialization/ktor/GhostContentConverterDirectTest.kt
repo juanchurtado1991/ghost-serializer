@@ -1,7 +1,7 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.http.ContentType
 import io.ktor.util.reflect.typeInfo
@@ -22,8 +22,7 @@ class GhostContentConverterDirectTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(KtorUser::class to KtorUserSerializer)
 
@@ -37,24 +36,24 @@ class GhostContentConverterDirectTest {
     fun serialize_returnsNullForNullValue() = runTest {
         val converter = GhostContentConverter()
         val result = converter.serialize(
-            ContentType.Application.Json,
-            Charsets.UTF_8,
-            typeInfo<KtorUser>(),
-            null
+            contentType = ContentType.Application.Json,
+            charset = Charsets.UTF_8,
+            typeInfo = typeInfo<KtorUser>(),
+            value = null
         )
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
     fun serialize_returnsNullForUnregisteredType() = runTest {
         val converter = GhostContentConverter()
         val result = converter.serialize(
-            ContentType.Application.Json,
-            Charsets.UTF_8,
-            typeInfo<UnregisteredUser>(),
-            UnregisteredUser(1, "x")
+            contentType = ContentType.Application.Json,
+            charset = Charsets.UTF_8,
+            typeInfo = typeInfo<UnregisteredUser>(),
+            value = UnregisteredUser(id = 1, name = "x")
         )
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
@@ -62,7 +61,7 @@ class GhostContentConverterDirectTest {
         val converter = GhostContentConverter()
         val channel = ByteReadChannel("""{"id":1,"name":"x"}""".encodeToByteArray())
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<UnregisteredUser>(), channel)
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
@@ -75,7 +74,7 @@ class GhostContentConverterDirectTest {
 
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<KtorUser>(), channel)
 
-        assertEquals(KtorUser(1, longName, false), result)
+        assertEquals(expected = KtorUser(id = 1, name = longName, isActive = false), actual = result)
     }
 
     @Test
@@ -85,6 +84,6 @@ class GhostContentConverterDirectTest {
         @Suppress("UNCHECKED_CAST")
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<Set<KtorUser>>(), channel)
             as Set<KtorUser>
-        assertEquals(setOf(KtorUser(1, "a", false)), result)
+        assertEquals(expected = setOf(KtorUser(id = 1, name = "a", isActive = false)), actual = result)
     }
 }

@@ -15,3 +15,21 @@ internal expect fun String.copyRangeToCharArray(
     startIndex: Int,
     endIndex: Int
 )
+
+/**
+ * Zero-allocation manual loop behind the native and Wasm actuals of [copyRangeToCharArray].
+ * `inline` so each actual keeps the loop in its own body, as when it was copied per platform.
+ */
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun String.copyRangeToCharArrayByLoop(
+    dest: CharArray,
+    destOffset: Int,
+    startIndex: Int,
+    endIndex: Int
+) {
+    var index = startIndex
+    var destIndex = destOffset
+    while (index < endIndex) {
+        dest[destIndex++] = this[index++]
+    }
+}

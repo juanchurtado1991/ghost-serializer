@@ -13,7 +13,14 @@ actual fun <T> ghostProtoInternalUseFlatReader(
     block: (GhostProtoJsonFlatReader) -> T
 ): T {
     val reader = flatProtoReaderPool.get()
-        ?: GhostProtoJsonFlatReader(bytes).also { flatProtoReaderPool.set(it) }
-    reader.resetSlice(bytes, offset, length)
+        ?: GhostProtoJsonFlatReader(rawData = bytes)
+            .also { flatProtoReaderPool.set(it) }
+
+    reader.resetSlice(
+        buffer = bytes,
+        offset = offset,
+        length = length
+    )
+
     return block(reader)
 }

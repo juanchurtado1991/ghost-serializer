@@ -31,10 +31,10 @@ class GhostJsonPathHintIntegrationTest {
         val ex = assertFailsWith<GhostJsonException> {
             Ghost.deserialize<PathHintRequiredModel>("""{"id":1}""")
         }
-        assertEquals("$.name", ex.path)
-        assertTrue(ex.message.contains("Required field 'name'"))
-        assertNotNull(ex.hint)
-        assertTrue(ex.message.contains("Hint:"))
+        assertEquals(expected = "$.name", actual = ex.path)
+        assertTrue(actual = ex.message.contains("Required field 'name'"))
+        assertNotNull(actual = ex.hint)
+        assertTrue(actual = ex.message.contains("Hint:"))
     }
 
     @Test
@@ -42,9 +42,9 @@ class GhostJsonPathHintIntegrationTest {
         val ex = assertFailsWith<GhostJsonException> {
             Ghost.deserialize<NamingModel>("""{"user_id":1,"is_active":true}""")
         }
-        assertEquals("$.full_name", ex.path)
-        assertTrue(ex.message.contains("full_name"))
-        assertNotNull(ex.hint)
+        assertEquals(expected = "$.full_name", actual = ex.path)
+        assertTrue(actual = ex.message.contains("full_name"))
+        assertNotNull(actual = ex.hint)
     }
 
     @Test
@@ -54,9 +54,9 @@ class GhostJsonPathHintIntegrationTest {
                 """{"shape":{"type":"Triangle","r":1.0}}"""
             )
         }
-        assertTrue(ex.message.contains("Unknown type discriminator"))
-        assertNotNull(ex.hint)
-        assertTrue(ex.hint!!.contains("GhostFallback") || ex.hint!!.contains("subclass"))
+        assertTrue(actual = ex.message.contains("Unknown type discriminator"))
+        assertNotNull(actual = ex.hint)
+        assertTrue(actual = ex.hint!!.contains("GhostFallback") || ex.hint!!.contains("subclass"))
     }
 
     @Test
@@ -64,8 +64,8 @@ class GhostJsonPathHintIntegrationTest {
         val ex = assertFailsWith<GhostJsonException> {
             Ghost.deserialize<PathHintShapeHolder>("""{"shape":{"r":1.0}}""")
         }
-        assertTrue(ex.message.contains("Missing discriminator"))
-        assertNotNull(ex.hint)
+        assertTrue(actual = ex.message.contains("Missing discriminator"))
+        assertNotNull(actual = ex.hint)
     }
 
     @Test
@@ -73,7 +73,7 @@ class GhostJsonPathHintIntegrationTest {
         val decoded = Ghost.deserialize<PathHintShapeHolder>(
             """{"shape":{"type":"Circle","r":2.5}}"""
         )
-        assertEquals(PathHintShape.Circle(2.5), decoded.shape)
+        assertEquals(expected = PathHintShape.Circle(2.5), actual = decoded.shape)
     }
 
     @Test
@@ -82,10 +82,10 @@ class GhostJsonPathHintIntegrationTest {
             Ghost.deserialize<PathHintEnumHolder>("""{"status":"Gamma"}""")
         }
         assertTrue(
-            ex.message.contains("Invalid enum") ||
+            actual = ex.message.contains("Invalid enum") ||
                 ex.message.contains("Unexpected enum index")
         )
-        assertNotNull(ex.hint)
+        assertNotNull(actual = ex.hint)
     }
 
     @Test
@@ -95,7 +95,7 @@ class GhostJsonPathHintIntegrationTest {
                 """{"user":{"addresses":[{"zip":1},{"zip":true}]}}"""
             )
         }
-        assertEquals("$.user.addresses[1].zip", ex.path)
+        assertEquals(expected = "$.user.addresses[1].zip", actual = ex.path)
     }
 
     @Test
@@ -105,8 +105,8 @@ class GhostJsonPathHintIntegrationTest {
                 """{"id":1,"attributes":{"value":{"level":true},"status":"ok"}}"""
             )
         }
-        assertEquals("$.attributes.value.level", ex.path)
-        assertNotNull(ex.hint)
+        assertEquals(expected = "$.attributes.value.level", actual = ex.path)
+        assertNotNull(actual = ex.hint)
     }
 
     @Test
@@ -114,15 +114,15 @@ class GhostJsonPathHintIntegrationTest {
         val ok = Ghost.deserialize<PathHintResilientHolder>(
             """{"soft":"not-int","hard":7}"""
         )
-        assertNull(ok.soft)
-        assertEquals(7, ok.hard)
+        assertNull(actual = ok.soft)
+        assertEquals(expected = 7, actual = ok.hard)
 
         val ex = assertFailsWith<GhostJsonException> {
             Ghost.deserialize<PathHintResilientHolder>(
                 """{"soft":"not-int","hard":true}"""
             )
         }
-        assertEquals("$.hard", ex.path)
+        assertEquals(expected = "$.hard", actual = ex.path)
     }
 
     @Test
@@ -130,8 +130,8 @@ class GhostJsonPathHintIntegrationTest {
         val ex = assertFailsWith<GhostJsonException> {
             Ghost.deserialize<PathHintInferredPayload>("""{"code":null}""")
         }
-        assertEquals("$.code", ex.path)
-        assertNotNull(ex.hint)
+        assertEquals(expected = "$.code", actual = ex.path)
+        assertNotNull(actual = ex.hint)
     }
 
     @Test
@@ -141,6 +141,6 @@ class GhostJsonPathHintIntegrationTest {
                 """{"payload":{"code":null}}"""
             )
         }
-        assertEquals("$.payload.code", ex.path)
+        assertEquals(expected = "$.payload.code", actual = ex.path)
     }
 }

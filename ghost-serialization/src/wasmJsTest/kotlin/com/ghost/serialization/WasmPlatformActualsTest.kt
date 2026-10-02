@@ -4,7 +4,6 @@ package com.ghost.serialization
 
 import com.ghost.serialization.parser.bytes.ghostReadLong8
 import com.ghost.serialization.parser.common.GhostHeuristics
-import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.common.scanStringSwarNoHash
 import com.ghost.serialization.util.isJvm
@@ -14,51 +13,78 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 
 class WasmPlatformActualsTest {
 
     @Test
     fun wasmRuntimeActualsAreUsable() {
-        assertFalse(isJvm)
-        assertEquals("value", runSynchronized(Any()) { "value" })
+        assertFalse(actual = isJvm)
+        assertEquals(
+            expected = "value",
+            actual = runSynchronized(lock = Any()) { "value" }
+        )
 
         val map = createAtomicMap<String, Int>()
         map["answer"] = 42
-        assertEquals(42, map["answer"])
+        assertEquals(
+            expected = 42,
+            actual = map["answer"]
+        )
 
-        assertSame(getLocalPool(), getLocalPool())
-        assertTrue(GhostHeuristics.initialCollectionCapacity > 0)
+        assertSame(
+            expected = getLocalPool(),
+            actual = getLocalPool()
+        )
+        assertTrue(actual = GhostHeuristics.initialCollectionCapacity > 0)
     }
 
     @Test
     fun wasmParserAndWriterActualsPreserveData() {
-        val spaces = ByteArray(GhostJsonConstants.LONG_BYTES) {
-            GhostJsonConstants.SPACE_INT.toByte()
+        val spaces = ByteArray(size = SCN.LONG_BYTES) {
+            TOK.SPACE_INT.toByte()
         }
-        assertEquals(GhostJsonConstants.SPACE_RUN_LONG, ghostReadLong8(spaces, 0))
         assertEquals(
-            GhostJsonConstants.SPACE_INT,
-            createByteArraySource(spaces)[0]
+            expected = SCN.SPACE_RUN_LONG,
+            actual = ghostReadLong8(
+                data = spaces,
+                index = 0
+            )
+        )
+        assertEquals(
+            expected = TOK.SPACE_INT,
+            actual = createByteArraySource(data = spaces)[0]
         )
 
-        val destination = CharArray(3)
+        val destination = CharArray(size = 3)
         "ghost".copyRangeToCharArray(
             dest = destination,
             destOffset = 0,
             startIndex = 1,
             endIndex = 4
         )
-        assertEquals("hos", destination.concatToString())
+        assertEquals(
+            expected = "hos",
+            actual = destination.concatToString()
+        )
     }
 
     @Test
     fun wasmSwarStringScanWorks() {
         val stringContent = "hello world".encodeToByteArray()
         val quotedJsonString = ("\"" + "hello world" + "\"").encodeToByteArray()
-        val scanResult = scanStringSwarNoHash(quotedJsonString, 1, quotedJsonString.size)
-        assertTrue(scanResult != GhostJsonConstants.MATCH_END.toLong())
-        val scannedLength = ((scanResult and GhostJsonConstants.SCAN_LENGTH_MASK) ushr
-            GhostJsonConstants.SCAN_LENGTH_SHIFT).toInt()
-        assertEquals(stringContent.size, scannedLength)
+        val scanResult = scanStringSwarNoHash(
+            data = quotedJsonString,
+            start = 1,
+            limit = quotedJsonString.size
+        )
+        assertTrue(actual = scanResult != SCN.MATCH_END.toLong())
+        val scannedLength = ((scanResult and SCN.SCAN_LENGTH_MASK) ushr
+            SCN.SCAN_LENGTH_SHIFT).toInt()
+        assertEquals(
+            expected = stringContent.size,
+            actual = scannedLength
+        )
     }
 }

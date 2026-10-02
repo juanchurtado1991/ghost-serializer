@@ -42,7 +42,13 @@ internal object YamlTestSuiteLoader {
         val inJsonPath = dir.resolve(IN_JSON_FILE)
         val inJsonText = if (Files.exists(inJsonPath)) Files.readString(inJsonPath) else null
         val expectError = Files.exists(dir.resolve(ERROR_FILE))
-        return YamlTestSuiteCase(id, label, inYamlBytes, inJsonText, expectError)
+        return YamlTestSuiteCase(
+            id = id,
+            label = label,
+            inYamlBytes = inYamlBytes,
+            inJsonText = inJsonText,
+            expectError = expectError
+        )
     }
 
     /** Walks up from the current working directory until it finds [REPO_MARKER_FILE]. */

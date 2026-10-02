@@ -1,6 +1,7 @@
 package com.ghost.serialization.compiler
 
 import com.ghost.serialization.compiler.codegen.GeneratedSourceTrimmer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -22,18 +23,18 @@ class GeneratedSourceTrimmerTest {
             public object DemoSerializer
         """.trimIndent()
 
-        val trimmed = GeneratedSourceTrimmer.trim(input)
+        val trimmed = GeneratedSourceTrimmer.trim(source = input)
 
-        assertFalse("import kotlin.String" in trimmed)
-        assertFalse("import kotlin.Int" in trimmed)
-        assertFalse("import kotlin.OptIn" in trimmed)
-        assertTrue("import com.ghost.serialization.InternalGhostApi" in trimmed)
+        assertFalse(actual = "import kotlin.String" in trimmed)
+        assertFalse(actual = "import kotlin.Int" in trimmed)
+        assertFalse(actual = "import kotlin.OptIn" in trimmed)
+        assertTrue(actual = "import com.ghost.serialization.InternalGhostApi" in trimmed)
     }
 
     @Test
     fun removesRedundantPublicModifiers() {
         val input = """
-            public object DemoSerializer : GhostSerializer<Demo> {
+            public object DemoSerializer : AbstractGhostSerializer<Demo>() {
               public override val typeName: String = "Demo"
               public override fun deserialize(reader: GhostJsonReader): Demo {
                 return Demo()
@@ -42,13 +43,13 @@ class GeneratedSourceTrimmerTest {
             }
         """.trimIndent()
 
-        val trimmed = GeneratedSourceTrimmer.trim(input)
+        val trimmed = GeneratedSourceTrimmer.trim(source = input)
 
-        assertFalse("public object" in trimmed)
-        assertFalse("public override" in trimmed)
-        assertTrue("object DemoSerializer" in trimmed)
-        assertTrue("override val typeName" in trimmed)
-        assertTrue("override fun deserialize" in trimmed)
-        assertTrue("private const val MASK_ID" in trimmed)
+        assertFalse(actual = "public object" in trimmed)
+        assertFalse(actual = "public override" in trimmed)
+        assertTrue(actual = "object DemoSerializer" in trimmed)
+        assertTrue(actual = "override val typeName" in trimmed)
+        assertTrue(actual = "override fun deserialize" in trimmed)
+        assertTrue(actual = "private const val MASK_ID" in trimmed)
     }
 }

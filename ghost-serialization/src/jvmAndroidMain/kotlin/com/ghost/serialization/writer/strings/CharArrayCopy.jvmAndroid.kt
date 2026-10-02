@@ -1,15 +1,18 @@
 package com.ghost.serialization.writer.strings
 
 
-/**
- * JVM/Android actual: delegates to [String.toCharArray] with a destination array —
- * zero-allocation, backed by a single native array copy (System.arraycopy internally).
- */
+/** Delegates to [String.toCharArray], a single
+ *  System. Arraycopy with no extra allocation. */
 internal actual fun String.copyRangeToCharArray(
     dest: CharArray,
     destOffset: Int,
     startIndex: Int,
     endIndex: Int
 ) {
-    toCharArray(dest, destOffset, startIndex, endIndex)
+    toCharArray(
+        destination = dest,
+        destinationOffset = destOffset,
+        startIndex = startIndex,
+        endIndex = endIndex
+    )
 }

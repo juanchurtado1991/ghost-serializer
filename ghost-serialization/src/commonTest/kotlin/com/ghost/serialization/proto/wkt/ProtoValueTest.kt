@@ -1,76 +1,88 @@
 package com.ghost.serialization.proto.wkt
 
+import com.ghost.serialization.Ghost
+import com.ghost.serialization.contract.AbstractGhostRegistry
+import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.proto.GhostProto
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-
 class ProtoValueTest {
 
     init {
-        val registry = object : com.ghost.serialization.contract.GhostRegistry {
+        val registry = object : AbstractGhostRegistry() {
             private val map =
-                mapOf<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>>(
+                mapOf<kotlin.reflect.KClass<*>, GhostSerializer<*>>(
                     ProtoValue::class to ProtoValueSerializer
                 )
 
             @Suppress("UNCHECKED_CAST")
-            override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): com.ghost.serialization.contract.GhostSerializer<T>? {
-                return map[clazz] as? com.ghost.serialization.contract.GhostSerializer<T>
+            override fun <T : Any> getSerializer(clazz: kotlin.reflect.KClass<T>): GhostSerializer<T>? {
+                return map[clazz] as? GhostSerializer<T>
             }
 
-            override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, com.ghost.serialization.contract.GhostSerializer<*>> {
+            override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> {
                 return map
             }
+
         }
-        com.ghost.serialization.Ghost.addRegistry(registry)
+        Ghost.addRegistry(registry = registry)
     }
 
     @Test
     fun testNullValue() {
         val parsed = GhostProto.deserialize<ProtoValue>("null")
-        assertTrue(parsed is ProtoValue.Null)
+        assertTrue(actual = parsed is ProtoValue.Null)
     }
 
     @Test
     fun testBoolValue() {
         val parsed = GhostProto.deserialize<ProtoValue>("true")
-        assertTrue(parsed is ProtoValue.Bool)
-        assertTrue(parsed.value)
+        assertTrue(actual = parsed is ProtoValue.Bool)
+        assertTrue(actual = parsed.value)
     }
 
     @Test
     fun testNumberValue() {
         val parsed = GhostProto.deserialize<ProtoValue>("123.45")
-        assertTrue(parsed is ProtoValue.Number)
-        assertEquals(123.45, parsed.value)
+        assertTrue(actual = parsed is ProtoValue.Number)
+        assertEquals(
+            expected = 123.45,
+            actual = parsed.value
+        )
     }
 
     @Test
     fun testStringValue() {
         val parsed = GhostProto.deserialize<ProtoValue>("\"test-str\"")
-        assertTrue(parsed is ProtoValue.Str)
-        assertEquals("test-str", parsed.value)
+        assertTrue(actual = parsed is ProtoValue.Str)
+        assertEquals(
+            expected = "test-str",
+            actual = parsed.value
+        )
     }
 
     @Test
     fun testListValue() {
         val parsed = GhostProto.deserialize<ProtoValue>("[null, true, 42.0, \"abc\"]")
-        assertTrue(parsed is ProtoValue.List)
-        assertEquals(4, parsed.value.size)
-        assertTrue(parsed.value[0] is ProtoValue.Null)
-        assertTrue(parsed.value[1] is ProtoValue.Bool)
-        assertTrue(parsed.value[2] is ProtoValue.Number)
-        assertTrue(parsed.value[3] is ProtoValue.Str)
+        assertTrue(actual = parsed is ProtoValue.List)
+        assertEquals(
+            expected = 4,
+            actual = parsed.value.size
+        )
+        assertTrue(actual = parsed.value[0] is ProtoValue.Null)
+        assertTrue(actual = parsed.value[1] is ProtoValue.Bool)
+        assertTrue(actual = parsed.value[2] is ProtoValue.Number)
+        assertTrue(actual = parsed.value[3] is ProtoValue.Str)
     }
 
     @Test
     fun testStructValue() {
         val parsed = GhostProto.deserialize<ProtoValue>("{\"key1\":true,\"key2\":[1.0]}")
-        assertTrue(parsed is ProtoValue.Struct)
+        assertTrue(actual = parsed is ProtoValue.Struct)
         val map = parsed.value
-        assertTrue(map["key1"] is ProtoValue.Bool)
-        assertTrue(map["key2"] is ProtoValue.List)
+        assertTrue(actual = map["key1"] is ProtoValue.Bool)
+        assertTrue(actual = map["key2"] is ProtoValue.List)
     }
 }

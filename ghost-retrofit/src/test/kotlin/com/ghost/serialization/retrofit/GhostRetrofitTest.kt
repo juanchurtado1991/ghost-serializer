@@ -25,7 +25,7 @@ class GhostRetrofitTest {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        Ghost.addRegistry(RetrofitTestRegistry)
+        Ghost.addRegistry(registry = RetrofitTestRegistry)
 
         val retrofit = Retrofit.Builder()
             .baseUrl(mockWebServer.url("/"))
@@ -46,16 +46,16 @@ class GhostRetrofitTest {
             MockResponse()
                 .setResponseCode(200)
                 .setBody("""{"id": 42, "name": "John Doe", "isActive": true}""")
-                .addHeader("Content-Type", "application/json")
+                .addHeader(GhostRetrofitMediaTypes.CONTENT_TYPE_HEADER, GhostRetrofitMediaTypes.APPLICATION_JSON)
         )
 
         val user = apiService.getUser()
-        assertEquals(42, user.id)
-        assertEquals("John Doe", user.name)
-        assertTrue(user.isActive)
+        assertEquals(expected = 42, actual = user.id)
+        assertEquals(expected = "John Doe", actual = user.name)
+        assertTrue(actual = user.isActive)
 
         val request = mockWebServer.takeRequest()
-        assertEquals("/user", request.path)
+        assertEquals(expected = "/user", actual = request.path)
     }
 
     @Test
@@ -67,9 +67,9 @@ class GhostRetrofitTest {
         )
 
         val users = apiService.getUsers()
-        assertEquals(2, users.size)
-        assertEquals("Alice", users[0].name)
-        assertEquals("Bob", users[1].name)
+        assertEquals(expected = 2, actual = users.size)
+        assertEquals(expected = "Alice", actual = users[0].name)
+        assertEquals(expected = "Bob", actual = users[1].name)
     }
 
     @Test
@@ -81,8 +81,8 @@ class GhostRetrofitTest {
         )
 
         val metadata = apiService.getMetadata()
-        assertEquals(100, metadata["total"])
-        assertEquals(1, metadata["page"])
+        assertEquals(expected = 100, actual = metadata["total"])
+        assertEquals(expected = 1, actual = metadata["page"])
     }
 
     @Test
@@ -94,7 +94,7 @@ class GhostRetrofitTest {
         )
 
         val value = apiService.getPrimitive()
-        assertEquals(999, value)
+        assertEquals(expected = 999, actual = value)
     }
 
     @Test
@@ -105,14 +105,14 @@ class GhostRetrofitTest {
                 .setBody("""{"id": 7, "name": "Eve", "isActive": true}""")
         )
 
-        val newUser = RetrofitUser(7, "Eve", true)
-        val response = apiService.createUser(newUser)
+        val newUser = RetrofitUser(id = 7, name = "Eve", isActive = true)
+        val response = apiService.createUser(user = newUser)
 
-        assertEquals("Eve", response.name)
+        assertEquals(expected = "Eve", actual = response.name)
 
         val request = mockWebServer.takeRequest()
         val requestBody = request.body.readUtf8()
-        assertEquals("""{"id":7,"name":"Eve","isActive":true}""", requestBody)
+        assertEquals(expected = """{"id":7,"name":"Eve","isActive":true}""", actual = requestBody)
     }
 
     @Test

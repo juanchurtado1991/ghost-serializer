@@ -1,8 +1,8 @@
-# Ghost Serialization 1.3.1 {#titulo}
+# Ghost Serialization 1.3.2 {#titulo}
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
-> Monorepo ghost-serializer · version 1.3.1 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
+> Monorepo ghost-serializer · version 1.3.2 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
 
 ### How to read this manual
 
@@ -130,7 +130,7 @@ val user = Ghost.deserialize<User>(json)
 val again = Ghost.encodeToString(user)  // {"id":1,"name":"Ana"}
 ```
 
-If `Ghost.deserialize` throws `NOT_FOUND`, it almost always means: missing annotation, KSP did not run, or on iOS missing `addRegistry`.
+If `Ghost.deserialize` throws `NOT_FOUND`, it almost always means: missing annotation, KSP did not run, or on iOS/Wasm the Ghost Gradle plugin is not applied (or `autoRegistration = false`) and no `addRegistry` call was made.
 
 ---
 
@@ -141,6 +141,7 @@ If `Ghost.deserialize` throws `NOT_FOUND`, it almost always means: missing annot
 | Module | Published | Role |
 | ghost-api | Yes | Public annotations, zero deps |
 | ghost-compiler | Yes | KSP plugin (KotlinPoet) |
+| ghost-compiler-plugin | Yes | Kotlin compiler plugin: links models to serializers on Kotlin/Native and Kotlin/Wasm |
 | ghost-serialization | Yes KMP | Runtime engine |
 | ghost-gradle-plugin | Yes | Wiring in consumer apps |
 | ghost-retrofit | Yes JVM | ConverterFactory |
@@ -163,7 +164,7 @@ You do not ship the compiler in your final app as “business logic”; it only 
 
 ### Modules NOT published to Maven Central
 
-- **ghost-integration-test:** internal regression suite (155 tests in `ciTestJvm` modules; full Linux `ciTest` is 642 — see section 23).
+- **ghost-integration-test:** internal regression suite (2,463 tests; part of `ciTestJvm` — see section 23).
 - **ghost-benchmark:** Gson/Moshi/Kotlinx vs Ghost comparisons.
 - **ghost-playground:** public interactive lab published to GitHub Pages (see [Playground](https://juanchurtado1991.github.io/ghost-serializer/)).
 
@@ -367,7 +368,7 @@ KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost reg
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 
 // Optional but recommended with several modules containing models:
@@ -439,9 +440,9 @@ If the analyzer detects a problem, KSP reports an error and **the build fails**.
 
 ```kotlin
 // Generated — simplified idea
-object UserSerializer : GhostSerializer<User> {
+object UserSerializer : AbstractGhostSerializer<User>() {
     override val typeName = "User"
-    override fun serialize(writer: GhostJsonFlatWriter, value: User) {
+    override fun serialize(writer: GhostJsonWriter, value: User) {
         writer.beginObject()
         writer.writeNameHeader(HEADERS[0]) // "id":
         writer.writeInt(value.id)
@@ -523,19 +524,37 @@ fun discoverRegistries(): Iterable<GhostRegistry> {
 
 Generated file: `META-INF/services/com.ghost.serialization.contract.GhostRegistry`
 
-**iOS / Kotlin Native:** `discoverRegistries()` returns an empty list (no ServiceLoader). **You** must register the module at startup:
+**Android/JVM:** with ServiceLoader + generated META-INF, you usually **do not** need `addRegistry` except for tests or extra manual registries.
+
+### Kotlin/Native and Kotlin/Wasm: automatic registration (1.3.2+)
+
+Native and Wasm have no ServiceLoader and no reflection to find a class by name, so `discoverRegistries()` returns an empty list there. Since 1.3.2 the Gradle plugin closes that gap with **associated objects**, the same mechanism kotlinx.serialization uses on these targets:
+
+1. `com.ghostserializer.ghost` applies `ghost-compiler-plugin` to every Kotlin/Native and Kotlin/Wasm compilation (never to JVM/Android, whose bytecode is unchanged).
+2. The compiler plugin adds `@GhostSerializerLink(UserSerializer::class)` to every `@GhostSerialization` / `@GhostProtoSerialization` class (and to unannotated direct subclasses of an annotated sealed type, which map to the parent serializer, as in the generated registry). On these targets `GhostSerializerLink` is an `@AssociatedObjectKey`.
+3. On a cache miss, after the registries, `Ghost.getSerializer` calls `findAssociatedObject<GhostSerializerLink>()` and caches the result in `serializerCache`. It runs once per class and never on the hot path.
+
+The link lives on the class itself, so it also works when the models are in another Gradle module or klib. No startup code is needed: `Ghost.deserialize<User>(json)` works on iOS and Wasm right away.
+
+**Still needs `addRegistry` on Native/Wasm:** name-based and bulk APIs (`getSerializerByName`, `getSerializerNames`, `getAllSerializers`, and `prewarm()` warming serializers ahead of time), because associated objects can only be looked up by `KClass`. A registry added with `addRegistry` takes precedence over the link.
+
+**Opt out / manual fallback:**
 
 ```kotlin
-// In the KMP framework init exported to iOS
+ghost {
+    autoRegistration.set(false)
+}
+
+// then, at framework startup:
 fun initGhostRuntime() {
     Ghost.addRegistry(GhostModuleRegistry_my_app.INSTANCE)
     Ghost.prewarm()
 }
 ```
 
-Without this, `Ghost.deserialize` finds no serializer even though KSP generated the code.
+**Kotlin versions:** compiler-plugin APIs are not stable across Kotlin releases. `ghost-compiler-plugin` is compiled against Kotlin 2.2.21 and verified in CI on 2.2.21, 2.3.21 and 2.4.0 (`compat-tests/kotlin-consumer`, `-PkotlinVersion`); `GhostCompilerCompat` bridges the APIs whose JVM signatures changed in 2.4. On any other Kotlin version the Gradle plugin still applies it but logs a warning. If a Native/Wasm compilation fails because of it, set `autoRegistration` to `false` and use `addRegistry`.
 
-**Android/JVM:** with ServiceLoader + generated META-INF, you usually **do not** need `addRegistry` except for tests or extra manual registries.
+**Rejected alternative:** a generated top-level property with `@EagerInitialization` calling `addRegistry`. That annotation is deprecated, behaves differently per backend and gives no ordering guarantee across modules.
 
 ### addRegistry flow
 
@@ -563,7 +582,7 @@ Central file: `ghost-serialization/src/commonMain/kotlin/com/ghost/serialization
 | `decodeFromSource(source, KClass)` | Streaming + KClass |
 | `encodeToSink(sink, value, KClass)` | Encode with dynamic class |
 | `getSerializer(KClass)` / `getSerializer(KType)` | Resolution + cache |
-| `addRegistry(registry)` | **Required on iOS** |
+| `addRegistry(registry)` | Manual registration; optional on iOS/Wasm with the Gradle plugin (see §7) |
 | `prewarm()` | Loads registries + warmUp serializers |
 | `getSerializerByName` / `getSerializerNames` | Compiler bridge |
 | `throwError(msg)` | Uniform IllegalArgumentException |
@@ -572,8 +591,9 @@ Central file: `ghost-serialization/src/commonMain/kotlin/com/ghost/serialization
 Resolution order in `getSerializerFromRegistries`:
 
 1. `mutableRegistries` (manual addRegistry)
-2. `discoverRegistries()` — ServiceLoader JVM / empty on iOS
+2. `discoverRegistries()` — ServiceLoader JVM / empty on iOS and Wasm
 3. `registry.getSerializer(clazz)` — generated sharded `when`
+4. `findLinkedSerializer(clazz)` — `@GhostSerializerLink` associated object (Native/Wasm only; `null` on JVM)
 
 ### Resolving serializer
 
@@ -583,6 +603,7 @@ Order:
 2. `mutableRegistries` (manual addRegistry)
 3. `discoverRegistries()` (ServiceLoader JVM)
 4. `registry.getSerializer(clazz)` → generated `when`
+5. Compiler-plugin link via `findAssociatedObject` (Native/Wasm)
 
 ### Deserialize — when to use each overload
 
@@ -630,7 +651,7 @@ For `List<Order>` / `Set<Order>` / `Map<String, Order>` in Retrofit (and Spring 
 
 ```kotlin
 // Application.onCreate (Android) or @PostConstruct (Spring)
-Ghost.addRegistry(GhostModuleRegistry_my_app.INSTANCE)  // only iOS/KMP without ServiceLoader
+Ghost.addRegistry(GhostModuleRegistry_my_app.INSTANCE)  // iOS/Wasm: only so prewarm() can walk the module
 Ghost.prewarm()
 ```
 
@@ -640,23 +661,23 @@ Ghost.prewarm()
 
 ## 9. GhostSerializer — Dual contract {#cap-9--ghostserializer-contrato-dual}
 
-Every generated serializer implements `GhostSerializer<T>` in `contract/GhostSerializer.kt`.
+`GhostSerializer<T>` (`contract/GhostSerializer.kt`) is a fully abstract contract. Generated serializers extend `AbstractGhostSerializer<T>`, which supplies the defaults (Okio sink/source bridges, string-channel fallbacks, no-op `warmUp`). Hand-written serializers should extend it too, and override only what they need.
 
 ### Why “dual” (two writers and two readers)
 
 Ghost optimizes two distinct scenarios:
 
-1. **In-memory / HTTP body as bytes** → `GhostJsonFlatWriter` + `GhostJsonFlatReader` on contiguous `ByteArray`. Maximum throughput.
-2. **Okio streaming** (files, chunks) → `GhostJsonWriter` + `GhostJsonReader` on `BufferedSource`.
+1. **In-memory / HTTP body as bytes** → `GhostJsonWriter` over a contiguous `FlatByteArrayWriter`, plus `GhostJsonFlatReader` on a `ByteArray`. Maximum throughput.
+2. **Okio streaming** (files, chunks) → the same `GhostJsonWriter` over an Okio sink, plus `GhostJsonReader` on `BufferedSource`.
 
-Generated code implements **all four** functions. Defaults on the interface may delegate flat ↔ streaming so you do not duplicate logic manually for simple types.
+One writer class serves both output channels through `GhostByteSink`; it calls the flat buffer directly when that is the backend, so the in-memory path stays monomorphic. The two readers stay separate on purpose: unifying them measurably cost throughput on array-heavy payloads.
 
 ### Methods each `FooSerializer` implements
 
 | Method | Main use |
 |:---|:---|
-| `serialize(GhostJsonFlatWriter, T)` | `encodeToBytes`, Retrofit request |
-| `serialize(GhostJsonWriter, T)` | `serialize(sink)` |
+| `serialize(GhostJsonWriter, T)` | `encodeToBytes`, `serialize(sink)`, Retrofit request |
+| `serialize(GhostJsonStringWriter, T)` | `encodeToString` (text channel) |
 | `deserialize(GhostJsonFlatReader)` | `Ghost.deserialize(bytes)` |
 | `deserialize(GhostJsonReader)` | streaming + options |
 | `warmUp()` | called from `prewarm()` |
@@ -715,9 +736,8 @@ value T
 | Type | When | Cost |
 | GhostJsonFlatReader | `Ghost.deserialize`, Retrofit, Spring body | Minimum: contiguous array |
 | GhostJsonReader | Okio stream, `coerceBooleans` options | More flexible |
-| GhostJsonFlatWriter | encodeToBytes / sink | Monomorphic hot path |
+| GhostJsonWriter | encodeToBytes / serialize(sink) | Flat buffer (monomorphic hot path) or Okio sink |
 | GhostJsonStringWriter | encodeToString | Contiguous CharArray path |
-| GhostJsonWriter | serialize(sink) | Single Okio drain at end |
 
 ## 10. GhostJsonFlatReader — Fast parser {#cap-10--ghostjsonflatreader-parser-rpido}
 
@@ -784,7 +804,7 @@ Pools: `ThreadLocal` JVM/Android, `@ThreadLocal` iOS in `Ghost.*.kt`.
 
 ## 12. Writers — FlatByteArrayWriter {#cap-12--writers-flatbytearraywriter}
 
-`writer/FlatByteArrayWriter.kt` + `GhostJsonFlatWriter.kt`
+`writer/bytes/FlatByteArrayWriter.kt` + `writer/bytes/GhostJsonWriter.kt`
 
 - Growing flat buffer
 - `reset()` after each encode — releases capacity above `maxWarmWriteBufferCapacity`
@@ -897,16 +917,18 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 2. If KMP → ghost-serialization + ghost-api on commonMain
 3. If Android/JVM → runtime implementation + api
 4. afterEvaluate: if Retrofit/Ktor on classpath → ghost-retrofit / ghost-ktor
+5. If KMP → applies `ghost-compiler-plugin` to Kotlin/Native and Kotlin/Wasm compilations (automatic registration, see [§7](#cap-7--registry-y-descubrimiento))
 
 ```kotlin
 ghost {
-    version.set("1.3.1")
+    version.set("1.3.2")
     autoInjectKtor.set(true)
     autoInjectRetrofit.set(true)
+    autoRegistration.set(true)
 }
 ```
 
-Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.1.
+Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.2.
 
 ---
 
@@ -916,7 +938,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.1.
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-retrofit:1.3.1")
+    implementation("com.ghostserializer:ghost-retrofit:1.3.2")
 }
 
 interface ApiService {
@@ -957,7 +979,7 @@ If you add `GhostConverterFactory` **before** `GsonConverterFactory`, Retrofit t
 ```kotlin
 val client = HttpClient {
     install(ContentNegotiation) {
-        ghost() // Ktor 3.5.x
+        ghost() // Ktor 3.3.x+
     }
 }
 ```
@@ -972,10 +994,10 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.1")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.2")
 }
 ```
 
@@ -1060,7 +1082,7 @@ Publishable (publish.gradle.kts): ghost-* except benchmark, integration-test, pl
 
 Uploads a deployment bundle to Central Portal in `USER_MANAGED` mode (staged, not released). Review and publish it manually at [central.sonatype.com](https://central.sonatype.com/publishing/deployments). To publish and release automatically instead, run `./gradlew publishAndReleaseToMavenCentral`.
 
-Coordinates: `com.ghostserializer:*:1.3.1`
+Coordinates: `com.ghostserializer:*:1.3.2`
 
 From Linux: iOS variants may be missing on Central.
 
@@ -1075,24 +1097,24 @@ Single workflow: `.github/workflows/ci.yml`
 | Job | Runner | Command | What it validates |
 |:---|:---|:---|:---|
 | test-jvm | ubuntu-latest | `./gradlew ciTestJvm` | Compiler, integration-test, retrofit, ktor, spring, plugin |
-| test-android | ubuntu-latest | `:ghost-serialization:testDebugUnitTest` | Android runtime |
-| test-ios | macos-14 | `kspCommonMainKotlinMetadata` + `iosSimulatorArm64Test` | K/N iOS; fails if SKIPPED |
+| test-android | ubuntu-latest | `:ghost-serialization:testAndroidHostTest` | Android runtime |
+| test-ios | macos-26 | `kspCommonMainKotlinMetadata` + `iosSimulatorArm64Test` | K/N iOS; fails if SKIPPED |
+| consumer-compat | macos-26 | `compat-tests/kotlin-consumer` against mavenLocal | Kotlin 2.2.21 consumer, Gradle plugin, zero-registration round trips on JVM/Android/iOS/Wasm |
+| test-wasm | ubuntu-latest | `wasmJsBrowserTest` (api/serialization/ktor) | Wasm runtime |
 | publish-check | ubuntu-latest | `publishToMavenLocal -PskipTests` | Maven packaging |
 
 **iOS CI:** Kotlin/Native does not print "N tests completed". The workflow trusts Gradle exit code and detects `SKIPPED`/`FAILED` in the log.
 
 `ciTestJvm` in root build.gradle.kts:
 
-- ghost-serialization jvmTest
-- ghost-compiler test
+- ghost-api, ghost-serialization jvmTest
+- ghost-compiler, ghost-compiler-plugin test
 - ghost-integration-test
 - ghost-retrofit, ghost-ktor jvmTest
 - ghost-spring-boot-starter test
-- ghost-gradle-plugin test
+- ghost-gradle-plugin, ghost-playground test
 
-GitHub jobs: JVM, Android testDebugUnitTest, iOS macos-14.
-
-**Verified on this repo (./gradlew ciTestJvm, May 2026):** 416 JVM-module tests. Full `./gradlew ciTest` on Linux: **642** (416 `ciTestJvm` + 226 `testDebugUnitTest` Android). On macOS with Xcode: **~874** (642 + ~232 `iosSimulatorArm64Test` per README).
+**Verified on this repo (Gradle test XML, October 2026):** `ciTestJvm` runs **11,310** tests (8,537 of them in `ghost-serialization:jvmTest`, mostly fuzz-corpus replays and the YAML conformance suite); `testAndroidHostTest` adds **977**; the Wasm suite runs **992**. iOS runs the same common suite on the simulator in CI.
 
 `ghost-benchmark:run` depends on ciTest (except -PskipTests).
 
@@ -1123,7 +1145,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 | ghost-spring-boot-test-app | Jackson vs Ghost WebFlux, benchmark.py |
 | ghost-ios-test-app | XCFramework + GhostBridge + Codable |
 
-All use **1.3.1 Maven Central** (no mavenLocal in final config).
+All use **1.3.2 Maven Central** (no mavenLocal in final config).
 
 ---
 
@@ -1132,7 +1154,7 @@ All use **1.3.1 Maven Central** (no mavenLocal in final config).
 ### Step by step (from scratch)
 
 1. **settings.gradle.kts** — `pluginManagement { gradlePluginPortal() }`
-2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.1"`
+2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.2"`
 3. Create `data class` with `@GhostSerialization` in the network package
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
@@ -1158,7 +1180,7 @@ No reflection on that path.
 1. KMP shared module with ghost plugin + export serialization/api
 2. assembleXCFramework on Mac
 3. Swift imports framework
-4. **Ghost.addRegistry(INSTANCE)** in Kotlin bridge
+4. No registration code: the Gradle plugin links serializers at compile time (call `Ghost.addRegistry(INSTANCE)` only with `autoRegistration = false` or to use `prewarm()`)
 5. deserialize via bridge — prefer UTF-8 String vs raw bytes
 
 ---
@@ -1200,7 +1222,7 @@ A 100 MB HTTP body is **not** rejected automatically by Ghost; configure OkHttp,
 1. Class lacks `@GhostSerialization` → add annotation and recompile.
 2. KSP did not run (broken clean, module without ghost plugin) → `./gradlew :app:kspDebugKotlin` or rebuild.
 3. Model in another module without KSP in that module → each module with models needs plugin + ksp.
-4. **iOS/KMP:** forgot `Ghost.addRegistry(GhostModuleRegistry_xxx.INSTANCE)` at framework startup.
+4. **iOS/Wasm:** the module was built without the Ghost Gradle plugin (or with `autoRegistration = false`) and `Ghost.addRegistry(GhostModuleRegistry_xxx.INSTANCE)` was not called. On these targets the error message itself says so.
 5. R8 removed serializers → rebuild; consumer rules from `ghost-api` / `ghost-serialization` AARs and KSP `META-INF/proguard/` should keep `@GhostSerialization` / `@GhostProtoSerialization` / `@GhostYamlSerialization` models and `com.ghost.serialization.generated.**`. See [§21](#cap-21--proguard-r8).
 
 ### GhostJsonException — missing required field
@@ -1229,11 +1251,23 @@ List or map in JSON exceeded platform limit (50k on Android). May be legitimate 
 
 ### Plugin com.ghostserializer.ghost not found
 
-Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.1 on Maven Central, and sync again.
+Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.2 on Maven Central, and sync again.
+
+### Compiler plugin warning: generated serializer not found
+
+**Message:** `Ghost: generated serializer fixtures.UserSerializer not found for fixtures.User; automatic Kotlin/Native and Kotlin/Wasm registration is skipped for this class.`
+
+**Means:** the compiler plugin ran, but KSP output for that class is not part of the same compilation (for example KSP only runs on another source set). The class still works through `Ghost.addRegistry`.
+
+**Fix:** let the Ghost Gradle plugin wire KSP for every target, or register the module manually.
+
+### Native/Wasm build fails inside the Ghost compiler plugin
+
+Usually a Kotlin version the plugin was not built for (the build logs a `Ghost: the compiler plugin is tested with Kotlin …` warning). Set `ghost { autoRegistration.set(false) }` and call `Ghost.addRegistry` until a Ghost release supports that Kotlin version.
 
 ### iOS: works in debug, fails in release
 
-Almost always R8/ProGuard or missing `addRegistry`. Check generated rules in `META-INF/proguard/` of the module with KSP.
+Almost always R8/ProGuard, or automatic registration disabled without an `addRegistry` call. Check generated rules in `META-INF/proguard/` of the module with KSP.
 
 ---
 
@@ -1245,7 +1279,7 @@ Ghost.deserialize<T>(bytes: ByteArray)
 Ghost.encodeToString(value)
 Ghost.encodeToBytes(value)
 Ghost.serialize(sink, value) // Okio bulk write
-Ghost.addRegistry(registry)  // required on iOS
+Ghost.addRegistry(registry)  // optional; iOS/Wasm link automatically via the Gradle plugin
 Ghost.prewarm()
 Ghost.getSerializer(MyClass::class)
 ```
@@ -1271,9 +1305,20 @@ Ghost.getSerializer(MyClass::class)
 
 ---
 
-## 31. Version 1.3.1 — relevant changes {#cap-31--version-1.3.1-cambios-relevantes}
+## 31. Version 1.3.2 — relevant changes {#cap-31--version-1.3.1-cambios-relevantes}
 
-Highlights in 1.3.1 (see `CHANGELOG.md` for the full list):
+Highlights in 1.3.2 (see `CHANGELOG.md` for the full list):
+
+- **Kotlin 2.2.21 minimum** (down from 2.4.0): KSP **2.3.x** (2.3.12), Ktor **3.3.x+** (3.3.3). Verified in CI by `compat-tests/kotlin-consumer`, a standalone Kotlin 2.2.21 project consuming the published artifacts.
+- **Automatic registration on iOS and Wasm**: `ghost-compiler-plugin`, applied by the Gradle plugin to Native/Wasm compilations, links each model to its serializer through associated objects — no `Ghost.addRegistry` needed (see [§7](#cap-7--registry-y-descubrimiento)).
+- **Errors**: JSON/YAML decode errors carry a JSONPath and a fix hint; not-found errors on Native/Wasm explain registration.
+- **Performance** (no allocation increase): lazy JSONPath reconstruction on error, monomorphic flat-sink writes, inlined buffer capacity checks, single-space token peek, whole-value string-pool hashing, 8-digit SWAR number parsing, primitive-array decode fast path.
+- **Correctness**: `Double`/`Float` parsing and formatting are round-trip safe.
+- **Structure**: one `GhostJsonWriter`/`GhostYamlWriter` per format over `GhostByteSink`; fully abstract `GhostSerializer`/`GhostRegistry` contracts with `AbstractGhostSerializer`/`AbstractGhostRegistry` providing the defaults.
+
+### 1.3.1 highlights
+
+
 
 - **YAML**: yaml-test-suite harness + fuzzing; reader compliance **96.06%**; writer round-trip **100%**.
 - **HTTP adapters**: Spring/Retrofit top-level `List`/`Set`/`Map` unwrap (element scalars like `List<String>` included; Map keys must be `String`).
@@ -1307,7 +1352,7 @@ Earlier 1.2.x notes retained below for historical context:
 - Spring split open AutoConfiguration (Boot 3.4)
 - Centralized ciTestJvm
 - SpringBootTest in starter
-- CI: 416 (`ciTestJvm`) / 642 (`ciTest` on Linux) — verified by Gradle test XML
+- CI: `ciTestJvm` + Android host tests on Linux, iOS on macOS, Wasm in the browser — verified by Gradle test XML
 
 ---
 
@@ -1403,7 +1448,7 @@ private val flatReaderPool = ThreadLocal<GhostJsonFlatReader>()
 private val writerPool = ThreadLocal<WriterSinkPair>()
 
 actual fun ghostInternalEncodeWithWriter(
-    block: (GhostJsonFlatWriter) -> Unit
+    block: (GhostJsonWriter) -> Unit
 ): ByteArray {
     val pair = acquireFlatWriterPair()
     block(pair.writer)
@@ -1428,7 +1473,7 @@ That is why on Android/JVM you **do not need** `addRegistry` if KSP generated th
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 ```
 
-iOS/Native **does not** use ServiceLoader. You must register manually at KMP framework startup:
+iOS/Native **does not** use ServiceLoader. Serializers resolve through the compiler-plugin link (`findAssociatedObject`, see [§7](#cap-7--registry-y-descubrimiento)). Register manually only with `autoRegistration = false` or to `prewarm()`:
 
 ```kotlin
 // shared/src/iosMain or bridge
@@ -1620,7 +1665,7 @@ inline fun <T> ghostInternalUseFlatReader(
 | encodeToBytes | ByteArray | network, binary cache |
 | serialize(sink) | Okio BufferedSink | streaming to socket/file without full intermediate copy |
 
-All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
+`encodeToBytes` and `serialize(sink)` use `GhostJsonWriter` over a pooled `FlatByteArrayWriter` (the sink variant drains it in one bulk write); `encodeToString` uses `GhostJsonStringWriter`.
 
 ---
 
@@ -1635,6 +1680,10 @@ All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
 
 - `com.ghostserializer:ghost-compiler` on `ksp` / `kspCommonMainMetadata` / targets
 
+**Kotlin compiler plugin (KMP, Native/Wasm compilations only):**
+
+- `com.ghostserializer:ghost-compiler-plugin`, unless `ghost { autoRegistration.set(false) }`
+
 **Conditional afterEvaluate:**
 
 - Retrofit on classpath → `ghost-retrofit`
@@ -1642,7 +1691,7 @@ All use `GhostJsonFlatWriter` + `FlatByteArrayWriter` internally on hot path.
 
 ```kotlin
 ghost {
-    version.set("1.3.1") // or omit if plugin brings DEFAULT_VERSION
+    version.set("1.3.2") // or omit if plugin brings DEFAULT_VERSION
 }
 ```
 
@@ -1687,7 +1736,7 @@ Without this (or with KSP disabled on a module): `NOT_FOUND` in release even if 
 .venv-pdf/bin/python scripts/build_ghost_manual_pdf.py
 ```
 
-PDF output: `docs/Ghost-Serialization-Manual-1.3.1.pdf` (A5 format).
+PDF output: `docs/Ghost-Serialization-Manual-1.3.2.pdf` (A5 format).
 
 ---
 
@@ -2042,10 +2091,10 @@ return BenchUser(id=_id, name=_name!!, email=_email!!, score=_score)  // require
 
 Duplicate logic for `GhostJsonFlatReader` — same structure, different reader (contiguous byte array). `Ghost.deserialize(bytes)` uses this path via pool.
 
-### Block 9 — Streaming and flat serialize (L342–370)
+### Block 9 — Serialize (L342–370)
 
 ```kotlin
-override fun serialize(writer: GhostJsonFlatWriter, value: BenchUser) {
+override fun serialize(writer: GhostJsonWriter, value: BenchUser) {
   writer.beginObject()
   writer.writeField(H_ID, value.id)
   writer.writeField(H_NAME, value.name)
@@ -2124,12 +2173,13 @@ ls ghost-integration-test/build/generated/ksp/main/kotlin/com/ghost/serializatio
 
 ---
 
-## 51. Maven artifacts table 1.3.1 {#cap-51--tabla-de-artefactos-maven-1-1-17}
+## 51. Maven artifacts table 1.3.2 {#cap-51--tabla-de-artefactos-maven-1-1-17}
 
 ```
 com.ghostserializer:ghost-api
 com.ghostserializer:ghost-serialization
 com.ghostserializer:ghost-compiler          (KSP)
+com.ghostserializer:ghost-compiler-plugin   (Kotlin compiler plugin, Native/Wasm)
 com.ghostserializer:ghost-gradle-plugin
 com.ghostserializer:ghost-retrofit
 com.ghostserializer:ghost-ktor
@@ -2140,7 +2190,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.3.1) {#verificacion-factual}
+## Factual verification (aligned with code 1.3.2) {#verificacion-factual}
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2151,14 +2201,14 @@ This manual was cross-checked against the `ghost-serializer` repository on the l
 | Multi-branch up to 4 defaults | `MAX_DEFAULT_BRANCH_COUNT = 4` in `StandardEmitter.kt` |
 | maxCollectionSize Android 50k / JVM 1M / Native 500k | `GhostHeuristics.android.kt`, `.jvm.kt`, `.native.kt` |
 | maxWarmWriteBuffer 4 MB mobile / 8 MB JVM | same `GhostHeuristics.*.kt` files |
-| maxDepth 255 | `GhostJsonConstants.MAX_DEPTH` |
-| 416 tests in `ciTestJvm` (verified) | Gradle `build/test-results` XML, May 2026 |
-| 642 tests `./gradlew ciTest` on Linux | 416 + 226 Android `testDebugUnitTest` |
-| ~874 with iOS on macOS | README: 642 + `iosSimulatorArm64Test` (~232) |
+| maxDepth 255 | `GhostJsonNumericLimits.MAX_DEPTH` |
+| 11,310 tests in `ciTestJvm`, 977 Android host, 992 Wasm | Gradle `build/test-results` XML, October 2026 |
+| Kotlin 2.2.21 minimum | `gradle/libs.versions.toml` `kotlin-sdk = "2.2.21"`; `compat-tests/kotlin-consumer` in CI |
 | Spring Boot 3.4.5 in tests | `gradle/libs.versions.toml` `spring-boot = "3.4.5"` |
-| Ktor 3.5.1 | `gradle/libs.versions.toml` `ktor = "3.5.1"` |
-| iOS without ServiceLoader | `Ghost.ios.kt` → `discoverRegistries() = emptyList()` |
+| Ktor 3.3.3 | `gradle/libs.versions.toml` `ktor = "3.3.3"` |
+| iOS/Wasm without ServiceLoader | `Ghost.nonJvm.kt` → `discoverRegistries() = emptyList()`; serializers resolve via `findLinkedSerializer` (`GhostSerializerLinkLookup.native.kt` / `.wasmJs.kt`) |
 | JVM registry fast-path | `Ghost.jvm.kt` → `Class.forName` + `ServiceLoader` |
+| Native/Wasm serializer link | `ghost-compiler-plugin` → `GhostSerializerLinkExtension.kt` |
 | List/Map/Set at runtime | `Ghost.kt` → `ListSerializer`, `MapSerializer`, `SetSerializer` |
 
 If you upgrade the Ghost version, cross-check these files again before trusting exact numbers.
@@ -2170,7 +2220,7 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 # Appendix: API Reference {#appendix-api}
 
 This section documents the public API of Ghost Serialization, derived from the
-KDoc comments in the source code (version 1.3.1).
+KDoc comments in the source code (version 1.3.2).
 
 ---
 
@@ -2185,7 +2235,7 @@ and serialization/deserialization across all platforms.
 
 | Method | Description |
 |:---|:---|
-| `serialize(sink, value)` | Encodes `value` and writes the resulting JSON payload into the given Okio `BufferedSink`. Uses `GhostJsonFlatWriter` internally for a single bulk-write with no Okio segment overhead. |
+| `serialize(sink, value)` | Encodes `value` and writes the resulting JSON payload into the given Okio `BufferedSink`. Encodes through `GhostJsonWriter` over a pooled flat buffer, then drains it in a single bulk write with no Okio segment overhead. |
 | `serialize(value)` | Convenience alias for `encodeToString`. |
 | `encodeToString(value)` | Serializes `value` to an in-memory JSON `String`. Writes through the pooled `GhostJsonStringWriter` (contiguous `CharArray`), avoiding Okio segments and an intermediate UTF-8 byte buffer. |
 | `encodeToBytes(value)` | Serializes `value` to a UTF-8 JSON `ByteArray`. Skips intermediate string encoding/decoding. |
@@ -2210,8 +2260,8 @@ and serialization/deserialization across all platforms.
 
 | Method | Description |
 |:---|:---|
-| `addRegistry(registry)` | Registers a `GhostRegistry` manually. Critical on iOS, Wasm, and JS targets where ServiceLoader is unavailable. |
-| `getSerializer(clazz)` | Resolves the `GhostSerializer` for a given class. Checks primitives first, then the fast-path cache, then registered modules. |
+| `addRegistry(registry)` | Registers a `GhostRegistry` manually. Optional on iOS and Wasm when the Ghost Gradle plugin links serializers (default); required there with `autoRegistration = false`, and for name-based lookups or `prewarm()`. |
+| `getSerializer(clazz)` | Resolves the `GhostSerializer` for a given class. Checks primitives first, then the fast-path cache, then registered modules, then (Native/Wasm) the compiler-plugin link. |
 | `getSerializer(type)` | Resolves the `GhostSerializer` for a `KType`, supporting generic types (`List<T>`, `Map<K,V>`). |
 | `prewarm()` | Triggers eager loading and JIT/ART warm-up cycles for all registered serializers. Call at app startup for zero-latency first-run deserialization. |
 | `throwError(message)` | Throws `IllegalArgumentException`. Utility for generated serializers. |

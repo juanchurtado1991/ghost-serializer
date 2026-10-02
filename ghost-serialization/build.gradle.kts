@@ -55,6 +55,22 @@ kotlin {
         jvmMain.get().dependsOn(jvmAndroidMain)
         androidMain.get().dependsOn(jvmAndroidMain)
 
+        // Kotlin/Native and Kotlin/Wasm share the same single-threaded-or-@ThreadLocal `actual`s
+        // (pools, caches, scalar fallbacks); only genuinely platform-specific ones stay in
+        // nativeMain/iosMain/wasmJsMain.
+        val nonJvmMain by creating {
+            dependsOn(commonMain)
+        }
+        nativeMain.get().dependsOn(nonJvmMain)
+        wasmJsMain.get().dependsOn(nonJvmMain)
+
+        // Fixtures for compiler-plugin serializer linking, which only exists on Native/Wasm.
+        val nonJvmTest by creating {
+            dependsOn(commonTest.get())
+        }
+        nativeTest.get().dependsOn(nonJvmTest)
+        wasmJsTest.get().dependsOn(nonJvmTest)
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.core)
@@ -112,7 +128,14 @@ tasks.register<JavaExec>("yamlWriterComplianceMatrix") {
 
 ksp { arg("ghost.moduleName", "ghost_serialization") }
 
+// Native/Wasm test compilations get ghost-compiler-plugin, linking the nonJvmTest fixtures to
+// their serializers exactly as the Gradle plugin does for consumers.
+val linkedTestCompilations = listOf("IosArm64Test", "IosSimulatorArm64Test", "WasmJsTest")
+
 dependencies {
+    linkedTestCompilations.forEach { compilation ->
+        add("kotlinCompilerPluginClasspath$compilation", project(":ghost-compiler-plugin"))
+    }
     // KSP runs once on common metadata; all platform targets inherit the generated code
     add("kspCommonMainMetadata", project(":ghost-compiler"))
 }

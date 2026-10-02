@@ -3,11 +3,11 @@
 package com.ghost.serialization.proto
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants
 import com.ghost.serialization.proto.wkt.ProtoDuration
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
  * Stress and repeated round-trip coverage for proto3 JSON entry points,
@@ -22,43 +22,58 @@ class GhostProtoStressTest {
 
     @Test
     fun repeatedDurationRoundTripsStayStable() {
-        val original = ProtoDuration(999_999L, 123_456_789)
+        val original = ProtoDuration(seconds = 999_999L, nanos = 123_456_789)
         var current = original
         repeat(500) {
             val json = GhostProto.encodeToString(current)
             current = GhostProto.deserialize(json)
         }
-        assertEquals(original, current)
+        assertEquals(
+            expected = original,
+            actual = current
+        )
     }
 
     @Test
     fun repeatedDeviceRoundTripsStayStable() {
-        val original = ProtoEntryPointDevice(Long.MAX_VALUE, "edge-case")
+        val original = ProtoEntryPointDevice(deviceId = Long.MAX_VALUE, label = "edge-case")
         var current = original
         repeat(500) {
             val bytes = GhostProto.encodeToBytes(current)
             current = GhostProto.deserialize(bytes)
         }
-        assertEquals(original, current)
+        assertEquals(
+            expected = original,
+            actual = current
+        )
     }
 
     @Test
     fun largeLabelPayloadRoundTrips() {
         val label = "x".repeat(100_000)
-        val original = ProtoEntryPointDevice(1L, label)
+        val original = ProtoEntryPointDevice(deviceId = 1L, label = label)
         val parsed =
             GhostProto.deserialize<ProtoEntryPointDevice>(GhostProto.encodeToBytes(original))
-        assertEquals(original, parsed)
+        assertEquals(
+            expected = original,
+            actual = parsed
+        )
     }
 
     @Test
     fun segmentBoundaryQuotedInt64String() {
-        val segmentSize = GhostJsonConstants.STREAMING_BUFFER_SIZE
+        val segmentSize = WR.STREAMING_BUFFER_SIZE
         val pad = " ".repeat(segmentSize - 20)
         val json = """{$pad"deviceId":"9223372036854775807","label":"boundary"}"""
         val parsed = GhostProto.deserialize<ProtoEntryPointDevice>(json)
-        assertEquals(Long.MAX_VALUE, parsed.deviceId)
-        assertEquals("boundary", parsed.label)
+        assertEquals(
+            expected = Long.MAX_VALUE,
+            actual = parsed.deviceId
+        )
+        assertEquals(
+            expected = "boundary",
+            actual = parsed.label
+        )
     }
 
     @Test
@@ -66,7 +81,10 @@ class GhostProtoStressTest {
         val noise = (1..50).joinToString(",") { i -> """"noise$i":{"nested":[$i,$i]}""" }
         val json = """{"deviceId":"7","label":"ok",$noise}"""
         val parsed = GhostProto.deserialize<ProtoEntryPointDevice>(json)
-        assertEquals(ProtoEntryPointDevice(7L, "ok"), parsed)
+        assertEquals(
+            expected = ProtoEntryPointDevice(deviceId = 7L, label = "ok"),
+            actual = parsed
+        )
     }
 
     @Test
@@ -74,11 +92,23 @@ class GhostProtoStressTest {
         val bare = """{"deviceId":1,"label":"a"}"""
         val quoted = """{"deviceId":"2","label":"b"}"""
         var device = GhostProto.deserialize<ProtoEntryPointDevice>(bare)
-        assertEquals(1L, device.deviceId)
+        assertEquals(
+            expected = 1L,
+            actual = device.deviceId
+        )
         device = GhostProto.deserialize<ProtoEntryPointDevice>(quoted)
-        assertEquals(2L, device.deviceId)
+        assertEquals(
+            expected = 2L,
+            actual = device.deviceId
+        )
         device = GhostProto.deserialize<ProtoEntryPointDevice>(GhostProto.encodeToBytes(device))
-        assertEquals(2L, device.deviceId)
-        assertEquals("b", device.label)
+        assertEquals(
+            expected = 2L,
+            actual = device.deviceId
+        )
+        assertEquals(
+            expected = "b",
+            actual = device.label
+        )
     }
 }

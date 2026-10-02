@@ -1,7 +1,7 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.http.ContentType
 import io.ktor.util.reflect.typeInfo
@@ -18,8 +18,7 @@ class GhostYamlContentConverterDirectTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(YamlKtorUser::class to YamlKtorUserSerializer)
 
@@ -33,24 +32,24 @@ class GhostYamlContentConverterDirectTest {
     fun serialize_returnsNullForNullValue() = runTest {
         val converter = GhostYamlContentConverter()
         val result = converter.serialize(
-            ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML),
-            Charsets.UTF_8,
-            typeInfo<YamlKtorUser>(),
-            null
+            contentType = GhostKtorMediaTypes.APPLICATION_YAML,
+            charset = Charsets.UTF_8,
+            typeInfo = typeInfo<YamlKtorUser>(),
+            value = null
         )
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
     fun serialize_returnsNullForJsonOnlySerializer() = runTest {
         val converter = GhostYamlContentConverter()
         val result = converter.serialize(
-            ContentType(CONTENT_TYPE_APPLICATION, CONTENT_TYPE_YAML),
-            Charsets.UTF_8,
-            typeInfo<KtorUser>(),
-            KtorUser(1, "x", true)
+            contentType = GhostKtorMediaTypes.APPLICATION_YAML,
+            charset = Charsets.UTF_8,
+            typeInfo = typeInfo<KtorUser>(),
+            value = KtorUser(id = 1, name = "x", isActive = true)
         )
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
@@ -58,7 +57,7 @@ class GhostYamlContentConverterDirectTest {
         val converter = GhostYamlContentConverter()
         val channel = ByteReadChannel("id: 1\nname: x\nisActive: true\n".encodeToByteArray())
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<KtorUser>(), channel)
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
@@ -71,6 +70,6 @@ class GhostYamlContentConverterDirectTest {
         val converter = GhostYamlContentConverter()
         val channel = ByteReadChannel(yaml.encodeToByteArray())
         val decoded = converter.deserialize(Charsets.UTF_8, typeInfo<YamlKtorUser>(), channel)
-        assertEquals(YamlKtorUser(7, "Zoe", true), decoded)
+        assertEquals(expected = YamlKtorUser(id = 7, name = "Zoe", isActive = true), actual = decoded)
     }
 }

@@ -34,9 +34,12 @@ class NextOrNullReaderTest {
     fun flat_nextStringOrNull_readsPresentAndNull() {
         val reader = GhostJsonReader("""["hi",null]""".encodeToByteArray())
         reader.beginArray()
-        assertEquals("hi", reader.nextStringOrNull())
+        assertEquals(
+            expected = "hi",
+            actual = reader.nextStringOrNull()
+        )
         reader.consumeArraySeparator()
-        assertNull(reader.nextStringOrNull())
+        assertNull(actual = reader.nextStringOrNull())
         reader.endArray()
     }
 
@@ -44,13 +47,19 @@ class NextOrNullReaderTest {
     fun flat_nextLongOrNull_and_nextIntOrNull() {
         val reader = GhostJsonReader("""[42,null,-7,null]""".encodeToByteArray())
         reader.beginArray()
-        assertEquals(42L, reader.nextLongOrNull())
+        assertEquals(
+            expected = 42L,
+            actual = reader.nextLongOrNull()
+        )
         reader.consumeArraySeparator()
-        assertNull(reader.nextLongOrNull())
+        assertNull(actual = reader.nextLongOrNull())
         reader.consumeArraySeparator()
-        assertEquals(-7, reader.nextIntOrNull())
+        assertEquals(
+            expected = -7,
+            actual = reader.nextIntOrNull()
+        )
         reader.consumeArraySeparator()
-        assertNull(reader.nextIntOrNull())
+        assertNull(actual = reader.nextIntOrNull())
         reader.endArray()
     }
 
@@ -58,28 +67,40 @@ class NextOrNullReaderTest {
     fun flat_nextBooleanOrNull() {
         val reader = GhostJsonReader("""[true,null,false]""".encodeToByteArray())
         reader.beginArray()
-        assertEquals(true, reader.nextBooleanOrNull())
+        assertEquals(
+            expected = true,
+            actual = reader.nextBooleanOrNull()
+        )
         reader.consumeArraySeparator()
-        assertNull(reader.nextBooleanOrNull())
+        assertNull(actual = reader.nextBooleanOrNull())
         reader.consumeArraySeparator()
-        assertEquals(false, reader.nextBooleanOrNull())
+        assertEquals(
+            expected = false,
+            actual = reader.nextBooleanOrNull()
+        )
         reader.endArray()
     }
 
     @Test
     fun flat_consumeNull_rejectsMalformedLiteral() {
         val reader = GhostJsonReader("""nu11""".encodeToByteArray())
-        assertEquals(true, reader.isNextNullValue())
+        assertEquals(
+            expected = true,
+            actual = reader.isNextNullValue()
+        )
         assertFailsWith<GhostJsonException> { reader.consumeNull() }
     }
 
     @Test
     fun string_nextStringOrNull_parity() {
-        val reader = GhostJsonStringReader("""[null,"ok"]""")
+        val reader = GhostJsonStringReader(rawData = """[null,"ok"]""")
         reader.beginArray()
-        assertNull(reader.nextStringOrNull())
+        assertNull(actual = reader.nextStringOrNull())
         reader.consumeArraySeparator()
-        assertEquals("ok", reader.nextStringOrNull())
+        assertEquals(
+            expected = "ok",
+            actual = reader.nextStringOrNull()
+        )
         reader.endArray()
     }
 
@@ -87,9 +108,12 @@ class NextOrNullReaderTest {
     fun streaming_nextLongOrNull_parity() {
         val reader = GhostJsonReader("""[null,99]""".encodeToByteArray())
         reader.beginArray()
-        assertNull(reader.nextLongOrNull())
+        assertNull(actual = reader.nextLongOrNull())
         reader.consumeArraySeparator()
-        assertEquals(99L, reader.nextLongOrNull())
+        assertEquals(
+            expected = 99L,
+            actual = reader.nextLongOrNull()
+        )
         reader.endArray()
     }
 }

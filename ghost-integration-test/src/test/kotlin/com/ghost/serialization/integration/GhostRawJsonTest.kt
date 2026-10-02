@@ -17,16 +17,16 @@ class GhostRawJsonTest {
     fun directRawJsonDeserializationFromBytes() {
         val json = """{"enabled":true}"""
         val result = Ghost.deserialize<RawJson>(json.encodeToByteArray())
-        assertEquals(json, result.decodeToString())
+        assertEquals(expected = json, actual = result.decodeToString())
     }
 
     @Test
     fun contentEqualsComparesBytesNotReferences() {
-        val first = RawJson.fromUtf8Bytes("""{"a":1}""".encodeToByteArray())
-        val second = RawJson.fromUtf8Bytes("""{"a":1}""".encodeToByteArray())
+        val first = RawJson.fromUtf8Bytes(bytes = """{"a":1}""".encodeToByteArray())
+        val second = RawJson.fromUtf8Bytes(bytes = """{"a":1}""".encodeToByteArray())
 
-        assertTrue(first.contentEquals(second))
-        assertEquals(first, second)
+        assertTrue(actual = first.contentEquals(second))
+        assertEquals(expected = first, actual = second)
     }
 
     @Test
@@ -35,15 +35,15 @@ class GhostRawJsonTest {
         val model =
             Ghost.deserialize<com.ghost.serialization.integration.model.OpaqueMetadataEnvelope>(json)
 
-        assertSame(json, model.metadata.storage)
-        assertTrue(model.metadata.storageOffset > 0)
-        assertEquals("""{"nested":[1,2,3]}""", model.metadata.decodeToString())
+        assertSame(expected = json, actual = model.metadata.storage)
+        assertTrue(actual = model.metadata.storageOffset > 0)
+        assertEquals(expected = """{"nested":[1,2,3]}""", actual = model.metadata.decodeToString())
     }
 
     @Test
     fun fromStringHelperEncodesPayload() {
         val json = """{"flag":false}"""
-        val raw = RawJson.fromString(json)
-        assertEquals(json, raw.decodeToString())
+        val raw = RawJson.fromString(json = json)
+        assertEquals(expected = json, actual = raw.decodeToString())
     }
 }

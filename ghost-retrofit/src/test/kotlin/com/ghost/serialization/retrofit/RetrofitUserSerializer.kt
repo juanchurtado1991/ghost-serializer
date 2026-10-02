@@ -3,7 +3,7 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -16,16 +16,16 @@ import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 @InternalGhostApi
-object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
+object RetrofitUserSerializer : AbstractGhostSerializer<RetrofitUser>() {
     override val typeName: String = "com.ghost.serialization.retrofit.RetrofitUser"
 
     override fun serialize(writer: GhostJsonWriter, value: RetrofitUser) {
         writer.beginObject()
-        writer.name("id")
+        writer.name(key = "id")
         writer.value(value.id.toLong())
-        writer.name("name")
+        writer.name(key = "name")
         writer.value(value.name)
-        writer.name("isActive")
+        writer.name(key = "isActive")
         writer.value(value.isActive)
         writer.endObject()
     }
@@ -46,6 +46,6 @@ object RetrofitUserSerializer : GhostSerializer<RetrofitUser> {
             }
         }
         reader.endObject()
-        return RetrofitUser(id, name, isActive)
+        return RetrofitUser(id = id, name = name, isActive = isActive)
     }
 }

@@ -26,10 +26,10 @@ class GhostYamlTestSuiteConformanceTest {
         return YamlTestSuiteLoader.cases.stream().map { case ->
             dynamicTest("[${case.id}] ${case.label}") {
                 val expectedToThrow = case.expectError xor (case.id in outcomeDeviationIds)
-                val threw = parseThrew(case)
+                val threw = parseThrew(case = case)
                 assertTrue(
                     threw == expectedToThrow,
-                    "case ${case.id}: expected threw=$expectedToThrow but was $threw",
+                    "case ${case.id}: expected threw=$expectedToThrow but was $threw"
                 )
             }
         }
@@ -43,10 +43,10 @@ class GhostYamlTestSuiteConformanceTest {
         return cases.stream().map { case ->
             dynamicTest("[${case.id}] ${case.label}") {
                 val expectedToMatch = case.id !in valueDeviationIds
-                val matches = valueMatches(case)
+                val matches = valueMatches(case = case)
                 assertTrue(
                     matches == expectedToMatch,
-                    "case ${case.id}: expected matches=$expectedToMatch but was $matches",
+                    "case ${case.id}: expected matches=$expectedToMatch but was $matches"
                 )
             }
         }
@@ -68,7 +68,7 @@ class GhostYamlTestSuiteConformanceTest {
         assertTrue(
             staleOutcomeIds.isEmpty() && staleValueIds.isEmpty(),
             "Stale deviation ids no longer present in the loaded yaml-test-suite snapshot: " +
-                "outcome=$staleOutcomeIds value=$staleValueIds",
+                "outcome=$staleOutcomeIds value=$staleValueIds"
         )
 
         var outcomePass = 0
@@ -76,7 +76,7 @@ class GhostYamlTestSuiteConformanceTest {
         var outcomeUnexpected = 0
         for (case in cases) {
             val expectedToThrow = case.expectError xor (case.id in outcomeDeviationIds)
-            val matchesExpectation = parseThrew(case) == expectedToThrow
+            val matchesExpectation = parseThrew(case = case) == expectedToThrow
             when {
                 matchesExpectation && case.id !in outcomeDeviationIds -> outcomePass++
                 matchesExpectation && case.id in outcomeDeviationIds -> outcomeKnown++
@@ -92,7 +92,7 @@ class GhostYamlTestSuiteConformanceTest {
         var valueUnexpected = 0
         for (case in valueCases) {
             val expectedToMatch = case.id !in valueDeviationIds
-            val matchesExpectation = valueMatches(case) == expectedToMatch
+            val matchesExpectation = valueMatches(case = case) == expectedToMatch
             when {
                 matchesExpectation && case.id !in valueDeviationIds -> valuePass++
                 matchesExpectation && case.id in valueDeviationIds -> valueKnown++

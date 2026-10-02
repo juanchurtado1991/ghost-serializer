@@ -1,9 +1,12 @@
 package com.ghost.playground.i18n
 
 object I18n {
+    /** App/window title, identical in every language. */
+    const val BRAND = "Ghost Serializer Playground"
+
     fun of(lang: Lang): Strings = when (lang) {
         Lang.EN -> Strings(
-            brand = "Ghost Serializer Playground",
+            brand = BRAND,
             tagline = "Watch Ghost parse your JSON — step by step, for real.",
             studio = "Playground",
             underHood = "Why it's fast",
@@ -65,15 +68,15 @@ object I18n {
             speedTestKserLabel = "kotlinx.serialization",
             speedTestMoshiLabel = "Moshi",
             speedTestEnginesTitle = "kotlinx.serialization · Moshi · Ghost",
-            speedTestWinnerFmt = "{winner} is {pct}× faster than {loser}.",
-            speedTestMemWinnerFmt = "{winner} also uses {pct}% less memory.",
+            speedTestWinnerFmt = "${SpeedTestPlaceholders.WINNER} is ${SpeedTestPlaceholders.PCT}× faster than ${SpeedTestPlaceholders.LOSER}.",
+            speedTestMemWinnerFmt = "${SpeedTestPlaceholders.WINNER} also uses ${SpeedTestPlaceholders.PCT}% less memory.",
             speedTestCta = "Swap Ghost into your hottest endpoint today — it coexists with kotlinx.serialization and Moshi everywhere else.",
             speedTestPayloadNote = "Payload: a few tweets from the same twitter_macro.json dataset used in Ghost's own regression benchmarks — trimmed so each round stays fast in your browser.",
             speedTestResultTitle = "Result",
         )
 
         Lang.ES -> Strings(
-            brand = "Ghost Serializer Playground",
+            brand = BRAND,
             tagline = "Mira cómo Ghost parsea tu JSON — paso a paso, de verdad.",
             studio = "Playground",
             underHood = "Por qué es rápido",
@@ -135,8 +138,8 @@ object I18n {
             speedTestKserLabel = "kotlinx.serialization",
             speedTestMoshiLabel = "Moshi",
             speedTestEnginesTitle = "kotlinx.serialization · Moshi · Ghost",
-            speedTestWinnerFmt = "{winner} es {pct}× más rápido que {loser}.",
-            speedTestMemWinnerFmt = "{winner} también usa {pct}% menos memoria.",
+            speedTestWinnerFmt = "${SpeedTestPlaceholders.WINNER} es ${SpeedTestPlaceholders.PCT}× más rápido que ${SpeedTestPlaceholders.LOSER}.",
+            speedTestMemWinnerFmt = "${SpeedTestPlaceholders.WINNER} también usa ${SpeedTestPlaceholders.PCT}% menos memoria.",
             speedTestCta = "Meté Ghost en tu endpoint más caliente hoy — convive con kotlinx.serialization y Moshi en el resto.",
             speedTestPayloadNote = "Payload: algunos tweets del mismo dataset twitter_macro.json que usamos en los benchmarks de regresión de Ghost — recortado para que cada ronda sea rápida en el navegador.",
             speedTestResultTitle = "Resultado",

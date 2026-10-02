@@ -1,39 +1,38 @@
 package com.ghost.serialization.compiler.ksp
 
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
 
 /**
- * Heuristics for whether annotated sources belong to a test compilation, so the default
- * module registry can take a `_Test` suffix.
+ * Heuristics for whether sources belong to a test compilation, so the default module registry
+ * can take a `_Test` suffix. KSP exposes no stable `isTest`/source-set API on
+ * [com.google.devtools.ksp.symbol.KSFile] — without this, main and test compilations with
+ * [PC.OPTION_MODULE_NAME] unset would both emit `GhostModuleRegistry_Default`.
  *
- * KSP exposes no stable `isTest` / source-set API on [com.google.devtools.ksp.symbol.KSFile], so
- * without this, main and test compilations with [C.OPTION_MODULE_NAME] unset would both emit
- * `GhostModuleRegistry_Default` with no distinguishing suffix.
- *
- * Preference order: explicit [C.OPTION_IS_TEST] first, then path sniffing for common Gradle
- * layouts (`src/test`, `src/androidTest`, `src/testKsp`). Sniffing is narrow — custom source-set
- * names won't match; pass [C.OPTION_IS_TEST] (or a non-Default [C.OPTION_MODULE_NAME]) instead.
+ * Prefers explicit [PC.OPTION_IS_TEST], then falls back to path sniffing for common Gradle
+ * layouts (`src/test`, `src/androidTest`, `src/testKsp`) — narrow, so custom source-set names
+ * won't match; pass [PC.OPTION_IS_TEST] instead in that case.
  */
 internal object TestSourceSetDetection {
 
     private val testPathMarkers = listOf(
-        C.STR_SRC_TEST,
-        C.STR_SRC_ANDROID_TEST,
-        C.STR_SRC_TEST_KSP,
+        PC.STR_SRC_TEST,
+        PC.STR_SRC_ANDROID_TEST,
+        PC.STR_SRC_TEST_KSP,
     )
 
     /**
-     * @param options KSP processor options (may include [C.OPTION_IS_TEST]).
+     * @param options KSP processor options (may include [PC.OPTION_IS_TEST]).
      * @param filePaths Absolute or project-relative paths of originating [com.google.devtools.ksp.symbol.KSFile]s.
      */
     fun isTestCompilation(
         options: Map<String, String>,
         filePaths: Iterable<String>,
     ): Boolean {
-        options[C.OPTION_IS_TEST]?.let { raw ->
-            return raw.equals(C.STR_TRUE, ignoreCase = true)
+        options[PC.OPTION_IS_TEST]?.let { raw ->
+            return raw.equals(CC.STR_TRUE, ignoreCase = true)
         }
-        return filePaths.any { pathLooksLikeTestSource(it) }
+        return filePaths.any { pathLooksLikeTestSource(filePath = it) }
     }
 
     /**

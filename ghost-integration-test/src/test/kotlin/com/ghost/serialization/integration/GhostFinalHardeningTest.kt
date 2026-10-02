@@ -25,8 +25,8 @@ class GhostFinalHardeningTest {
         val json = """{"id": 1, "id": 2, "id_internal": 100, "identity": "ghost"}"""
         val model = Ghost.deserialize<OverlappingKeyModel>(json.encodeToByteArray())
 
-        assertEquals(2, model.id, "Last key 'id' should win")
-        assertEquals(100, model.id_internal)
+        assertEquals(expected = 2, actual = model.id, message = "Last key 'id' should win")
+        assertEquals(expected = 100, actual = model.id_internal)
     }
 
     @Test
@@ -37,11 +37,11 @@ class GhostFinalHardeningTest {
 
         val json = Ghost.serialize(model)
 
-        assertTrue(json.contains("\"key with \\\"quotes\\\"\":\"val1\""))
-        assertTrue(json.contains("\"key\\nnewline\":\"val2\""))
+        assertTrue(actual = json.contains("\"key with \\\"quotes\\\"\":\"val1\""))
+        assertTrue(actual = json.contains("\"key\\nnewline\":\"val2\""))
 
         val decoded = Ghost.deserialize<MapEdgeCaseModel>(json.encodeToByteArray())
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
@@ -55,11 +55,11 @@ class GhostFinalHardeningTest {
             append("-end")
         }
 
-        val model = LargeStringModel(largeString)
+        val model = LargeStringModel(large = largeString)
         val json = Ghost.serialize(model)
 
         val decoded = Ghost.deserialize<LargeStringModel>(json.encodeToByteArray())
-        assertEquals(largeString, decoded.large)
+        assertEquals(expected = largeString, actual = decoded.large)
     }
 
     @Test
@@ -71,7 +71,7 @@ class GhostFinalHardeningTest {
             it.coerceStringsToNumbers = true
         }
 
-        assertEquals(UserId(Int.MAX_VALUE), model.id)
+        assertEquals(expected = UserId(value = Int.MAX_VALUE), actual = model.id)
     }
 
     @Test
@@ -79,10 +79,10 @@ class GhostFinalHardeningTest {
         val model = CollectionOfNulls(items = listOf(null, "A", null, "B"))
         val json = Ghost.serialize(model)
 
-        assertEquals("{\"items\":[null,\"A\",null,\"B\"]}", json)
+        assertEquals(expected = "{\"items\":[null,\"A\",null,\"B\"]}", actual = json)
 
         val decoded = Ghost.deserialize<CollectionOfNulls>(json.encodeToByteArray())
-        assertEquals(model, decoded)
+        assertEquals(expected = model, actual = decoded)
     }
 
     @Test
@@ -95,16 +95,16 @@ class GhostFinalHardeningTest {
 
     @Test
     fun testDeepRecursiveChain() {
-        var current = RecursiveGraphNode("bottom")
+        var current = RecursiveGraphNode(name = "bottom")
         repeat(50) {
-            current = RecursiveGraphNode("node-$it", current)
+            current = RecursiveGraphNode(name = "node-$it", next = current)
         }
 
         val json = Ghost.serialize(current)
-        assertTrue(json.contains("node-49"))
-        assertTrue(json.contains("bottom"))
+        assertTrue(actual = json.contains("node-49"))
+        assertTrue(actual = json.contains("bottom"))
 
         val decoded = Ghost.deserialize<RecursiveGraphNode>(json.encodeToByteArray())
-        assertEquals("node-49", decoded.name)
+        assertEquals(expected = "node-49", actual = decoded.name)
     }
 }

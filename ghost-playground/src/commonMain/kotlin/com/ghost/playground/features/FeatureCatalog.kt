@@ -28,34 +28,34 @@ object FeatureCatalog {
             fieldNames = listOf("id", "name", "email"),
             variants = listOf(
                 LabVariant(
-                    "full",
-                    "Full profile",
-                    "Perfil completo",
-                    """{"id":7,"name":"Neo","email":"neo@matrix.io"}"""
+                    id = "full",
+                    labelEn = "Full profile",
+                    labelEs = "Perfil completo",
+                    json = """{"id":7,"name":"Neo","email":"neo@matrix.io"}"""
                 ),
                 LabVariant(
-                    "nullEmail",
-                    "Null email",
-                    "Email nulo",
-                    """{"id":8,"name":"Trinity","email":null}"""
+                    id = "nullEmail",
+                    labelEn = "Null email",
+                    labelEs = "Email nulo",
+                    json = """{"id":8,"name":"Trinity","email":null}"""
                 ),
                 LabVariant(
-                    "missingOptional",
-                    "Missing optional field",
-                    "Campo opcional ausente",
-                    """{"id":9,"name":"Morpheus"}"""
+                    id = "missingOptional",
+                    labelEn = "Missing optional field",
+                    labelEs = "Campo opcional ausente",
+                    json = """{"id":9,"name":"Morpheus"}"""
                 ),
                 LabVariant(
-                    "unicode",
-                    "Unicode name",
-                    "Nombre con unicode",
-                    """{"id":10,"name":"Niobe 🚀","email":"niobe@zion.io"}"""
+                    id = "unicode",
+                    labelEn = "Unicode name",
+                    labelEs = "Nombre con unicode",
+                    json = """{"id":10,"name":"Niobe 🚀","email":"niobe@zion.io"}"""
                 ),
                 LabVariant(
-                    "largeId",
-                    "Max-size id",
-                    "Id al máximo",
-                    """{"id":9223372036854775807,"name":"Architect","email":"architect@matrix.io"}"""
+                    id = "largeId",
+                    labelEn = "Max-size id",
+                    labelEs = "Id al máximo",
+                    json = """{"id":9223372036854775807,"name":"Architect","email":"architect@matrix.io"}"""
                 ),
             ),
             run = { json ->
@@ -91,34 +91,34 @@ object FeatureCatalog {
             fieldNames = listOf("theme", "retryCount"),
             variants = listOf(
                 LabVariant(
-                    "bothWrong",
-                    "Both fields wrong type",
-                    "Ambos campos con tipo incorrecto",
-                    """{"theme":123,"retryCount":"nope"}"""
+                    id = "bothWrong",
+                    labelEn = "Both fields wrong type",
+                    labelEs = "Ambos campos con tipo incorrecto",
+                    json = """{"theme":123,"retryCount":"nope"}"""
                 ),
                 LabVariant(
-                    "themeWrong",
-                    "Wrong theme type",
-                    "Tipo incorrecto en theme",
-                    """{"theme":true,"retryCount":5}"""
+                    id = "themeWrong",
+                    labelEn = "Wrong theme type",
+                    labelEs = "Tipo incorrecto en theme",
+                    json = """{"theme":true,"retryCount":5}"""
                 ),
                 LabVariant(
-                    "retryWrong",
-                    "Wrong retryCount type",
-                    "Tipo incorrecto en retryCount",
-                    """{"theme":"dark","retryCount":"lots"}"""
+                    id = "retryWrong",
+                    labelEn = "Wrong retryCount type",
+                    labelEs = "Tipo incorrecto en retryCount",
+                    json = """{"theme":"dark","retryCount":"lots"}"""
                 ),
                 LabVariant(
-                    "retryNull",
-                    "Explicit null for a non-nullable field",
-                    "Null explícito en un campo no-nullable",
-                    """{"theme":"ok","retryCount":null}"""
+                    id = "retryNull",
+                    labelEn = "Explicit null for a non-nullable field",
+                    labelEs = "Null explícito en un campo no-nullable",
+                    json = """{"theme":"ok","retryCount":null}"""
                 ),
                 LabVariant(
-                    "bothValid",
-                    "Both fields valid",
-                    "Ambos campos válidos",
-                    """{"theme":"dark","retryCount":10}"""
+                    id = "bothValid",
+                    labelEn = "Both fields valid",
+                    labelEs = "Ambos campos válidos",
+                    json = """{"theme":"dark","retryCount":10}"""
                 ),
             ),
             run = { json ->
@@ -155,34 +155,34 @@ object FeatureCatalog {
             fieldNames = listOf("name", "city", "zip"),
             variants = listOf(
                 LabVariant(
-                    "london",
-                    "London office",
-                    "Oficina en Londres",
-                    """{"name":"Ada","address":{"city":"London","zip":"EC2"}}"""
+                    id = "london",
+                    labelEn = "London office",
+                    labelEs = "Oficina en Londres",
+                    json = """{"name":"Ada","address":{"city":"London","zip":"EC2"}}"""
                 ),
                 LabVariant(
-                    "us",
-                    "US address",
-                    "Dirección en EE.UU.",
-                    """{"name":"Grace","address":{"city":"Arlington","zip":"22203"}}"""
+                    id = "us",
+                    labelEn = "US address",
+                    labelEs = "Dirección en EE.UU.",
+                    json = """{"name":"Grace","address":{"city":"Arlington","zip":"22203"}}"""
                 ),
                 LabVariant(
-                    "cambridge",
-                    "Cambridge",
-                    "Cambridge",
-                    """{"name":"Alan","address":{"city":"Cambridge","zip":"CB2"}}"""
+                    id = "cambridge",
+                    labelEn = "Cambridge",
+                    labelEs = "Cambridge",
+                    json = """{"name":"Alan","address":{"city":"Cambridge","zip":"CB2"}}"""
                 ),
                 LabVariant(
-                    "unicode",
-                    "Unicode city name",
-                    "Ciudad con unicode",
-                    """{"name":"José","address":{"city":"São Paulo","zip":"01310-100"}}"""
+                    id = "unicode",
+                    labelEn = "Unicode city name",
+                    labelEs = "Ciudad con unicode",
+                    json = """{"name":"José","address":{"city":"São Paulo","zip":"01310-100"}}"""
                 ),
                 LabVariant(
-                    "numericZip",
-                    "Numeric-looking zip",
-                    "Zip con apariencia numérica",
-                    """{"name":"Katherine","address":{"city":"Hampton","zip":"23666"}}"""
+                    id = "numericZip",
+                    labelEn = "Numeric-looking zip",
+                    labelEs = "Zip con apariencia numérica",
+                    json = """{"name":"Katherine","address":{"city":"Hampton","zip":"23666"}}"""
                 ),
             ),
             run = { json ->
@@ -220,40 +220,45 @@ object FeatureCatalog {
             fieldNames = emptyList(),
             variants = listOf(
                 LabVariant(
-                    "future",
-                    "Unknown type",
-                    "Tipo desconocido",
-                    """{"type":"FutureEvent","payload":true}"""
+                    id = "future",
+                    labelEn = "Unknown type",
+                    labelEs = "Tipo desconocido",
+                    json = """{"type":"FutureEvent","payload":true}"""
                 ),
                 LabVariant(
-                    "legacy",
-                    "Legacy ping",
-                    "Ping legado",
-                    """{"type":"LegacyPing","payload":"hello"}"""
-                ),
-                LabVariant("empty", "Empty type", "Tipo vacío", """{"type":"","payload":null}"""),
-                LabVariant(
-                    "nested",
-                    "Nested payload",
-                    "Payload anidado",
-                    """{"type":"SensorAlert","payload":{"level":"critical","code":42}}"""
+                    id = "legacy",
+                    labelEn = "Legacy ping",
+                    labelEs = "Ping legado",
+                    json = """{"type":"LegacyPing","payload":"hello"}"""
                 ),
                 LabVariant(
-                    "versioned",
-                    "Versioned type",
-                    "Tipo versionado",
-                    """{"type":"v2.event","payload":123}"""
+                    id = "empty",
+                    labelEn = "Empty type",
+                    labelEs = "Tipo vacío",
+                    json = """{"type":"","payload":null}"""
+                ),
+                LabVariant(
+                    id = "nested",
+                    labelEn = "Nested payload",
+                    labelEs = "Payload anidado",
+                    json = """{"type":"SensorAlert","payload":{"level":"critical","code":42}}"""
+                ),
+                LabVariant(
+                    id = "versioned",
+                    labelEn = "Versioned type",
+                    labelEs = "Tipo versionado",
+                    json = """{"type":"v2.event","payload":123}"""
                 ),
             ),
             run = { json ->
                 Ghost.deserialize<DeviceEvent>(json).toString()
             },
             explainEn = { input, out ->
-                val type = extractJsonStringField(input, "type") ?: "?"
+                val type = extractJsonStringField(json = input, key = "type") ?: "?"
                 "type=$type is unknown — @GhostFallback returned Unknown instead of failing. $out"
             },
             explainEs = { input, out ->
-                val type = extractJsonStringField(input, "type") ?: "?"
+                val type = extractJsonStringField(json = input, key = "type") ?: "?"
                 "type=$type es desconocido — @GhostFallback devolvió Unknown. $out"
             },
         ),
@@ -277,10 +282,10 @@ object FeatureCatalog {
             fieldNames = listOf("event", "meta"),
             variants = listOf(
                 LabVariant(
-                    "ping",
-                    "Ping event",
-                    "Evento ping",
-                    """{"event":"ping","meta":{"trace":"abc","n":1}}"""
+                    id = "ping",
+                    labelEn = "Ping event",
+                    labelEs = "Evento ping",
+                    json = """{"event":"ping","meta":{"trace":"abc","n":1}}"""
                 ),
             ),
             run = { json ->
@@ -315,16 +320,16 @@ object FeatureCatalog {
             fieldNames = listOf("orderId", "label", "retries"),
             variants = listOf(
                 LabVariant(
-                    "restock",
-                    "Restock order",
-                    "Orden de reposición",
-                    """{"orderId":"5001","label":"restock"}"""
+                    id = "restock",
+                    labelEn = "Restock order",
+                    labelEs = "Orden de reposición",
+                    json = """{"orderId":"5001","label":"restock"}"""
                 ),
                 LabVariant(
-                    "withRetries",
-                    "Non-default retries",
-                    "Retries distinto del default",
-                    """{"orderId":"5002","label":"priority","retries":3}"""
+                    id = "withRetries",
+                    labelEn = "Non-default retries",
+                    labelEs = "Retries distinto del default",
+                    json = """{"orderId":"5002","label":"priority","retries":3}"""
                 ),
             ),
             run = { json ->
@@ -361,29 +366,29 @@ object FeatureCatalog {
             fieldNames = listOf("id", "name", "email"),
             variants = listOf(
                 LabVariant(
-                    "full",
-                    "Full profile",
-                    "Perfil completo",
-                    """
+                    id = "full",
+                    labelEn = "Full profile",
+                    labelEs = "Perfil completo",
+                    json = """
                     id: 7
                     name: Neo
                     email: neo@matrix.io
                     """.trimIndent(),
                 ),
                 LabVariant(
-                    "missingOptional",
-                    "Missing optional field",
-                    "Campo opcional ausente",
-                    """
+                    id = "missingOptional",
+                    labelEn = "Missing optional field",
+                    labelEs = "Campo opcional ausente",
+                    json = """
                     id: 9
                     name: Morpheus
                     """.trimIndent(),
                 ),
                 LabVariant(
-                    "nullEmail",
-                    "Null email",
-                    "Email nulo",
-                    """
+                    id = "nullEmail",
+                    labelEn = "Null email",
+                    labelEs = "Email nulo",
+                    json = """
                     id: 8
                     name: Trinity
                     email: null
@@ -392,7 +397,7 @@ object FeatureCatalog {
             ),
             run = { yaml ->
                 val user = Ghost.decodeFromYaml<PlaygroundUser>(yaml)
-                Ghost.encodeToYaml(user)
+                Ghost.encodeToYaml(value = user)
             },
             explainEn = { _, out ->
                 "Ghost parsed YAML with the generated GhostYamlFlatReader and wrote YAML again with GhostYamlWriter. Output: $out"

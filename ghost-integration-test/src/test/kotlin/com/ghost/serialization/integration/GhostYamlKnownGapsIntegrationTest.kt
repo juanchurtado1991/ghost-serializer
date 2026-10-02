@@ -20,16 +20,16 @@ class GhostYamlKnownGapsIntegrationTest {
             shard_id: "18446744073709551615"
         """.trimIndent()
 
-        assertEquals(value, Ghost.decodeFromYaml<YamlShardCounter>(yaml))
-        val encoded = Ghost.encodeToYaml(value)
+        assertEquals(expected = value, actual = Ghost.decodeFromYaml<YamlShardCounter>(yaml))
+        val encoded = Ghost.encodeToYaml(value = value)
         assertTrue(encoded.contains("\"18446744073709551615\""), encoded)
-        assertEquals(value, Ghost.decodeFromYaml<YamlShardCounter>(encoded))
+        assertEquals(expected = value, actual = Ghost.decodeFromYaml<YamlShardCounter>(encoded))
     }
 
     @Test
     fun plainULongBareNumberWithinLongRange() {
         val yaml = """shard_id: 9223372036854775807"""
-        assertEquals(YamlShardCounter(9223372036854775807uL), Ghost.decodeFromYaml(yaml))
+        assertEquals(expected = YamlShardCounter(shard_id = 9223372036854775807uL), actual = Ghost.decodeFromYaml(yaml))
     }
 
     @Test
@@ -47,9 +47,9 @@ class GhostYamlKnownGapsIntegrationTest {
         """.trimIndent()
 
         val parsed = Ghost.decodeAllFromYaml<YamlBenchUser>(multiDoc)
-        assertEquals(2, parsed.size)
-        assertEquals("alpha", parsed[0].name)
-        assertEquals("beta", parsed[1].name)
+        assertEquals(expected = 2, actual = parsed.size)
+        assertEquals(expected = "alpha", actual = parsed[0].name)
+        assertEquals(expected = "beta", actual = parsed[1].name)
     }
 
     @Test
@@ -58,13 +58,13 @@ class GhostYamlKnownGapsIntegrationTest {
             YamlBenchUser(id = 1, name = "one", email = "1@test", score = 1.0),
             YamlBenchUser(id = 2, name = "two", email = "2@test", score = 2.0),
         )
-        val encoded = Ghost.encodeAllToYaml(users)
+        val encoded = Ghost.encodeAllToYaml(values = users)
         val restored = Ghost.decodeAllFromYaml<YamlBenchUser>(encoded)
-        assertEquals(users, restored)
+        assertEquals(expected = users, actual = restored)
     }
 
     @Test
     fun decodeAllFromYamlReturnsEmptyListForEmptyInput() {
-        assertEquals(emptyList(), Ghost.decodeAllFromYaml<YamlBenchUser>(""))
+        assertEquals(expected = emptyList(), actual = Ghost.decodeAllFromYaml<YamlBenchUser>(""))
     }
 }

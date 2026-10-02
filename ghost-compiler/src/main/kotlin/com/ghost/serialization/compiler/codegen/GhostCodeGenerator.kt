@@ -14,7 +14,9 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostProcessorConstants as PC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
 /**
@@ -37,28 +39,28 @@ internal class GhostCodeGenerator(
         envelopeModel = envelopeModel,
         hasYaml = hasYaml,
     )
-    private val importResolver = SerializerImportResolver(context)
-    private val setupEmitter = SerializerSetupEmitter(context)
+    private val importResolver = SerializerImportResolver(ctx = context)
+    private val setupEmitter = SerializerSetupEmitter(ctx = context)
 
     fun createSpec(): FileSpec {
         val fileBuilder = FileSpec.builder(context.packageName, context.serializerName)
             .addAnnotation(
-                AnnotationSpec.builder(ClassName(C.PKG_KOTLIN, C.STR_OPT_IN))
+                AnnotationSpec.builder(ClassName(CC.PKG_KOTLIN, CG.STR_OPT_IN))
                     .addMember(
-                        C.MARKER_CLASS,
-                        ClassName(C.PKG_GHOST, C.STR_INTERNAL_GHOST_API)
+                        CG.MARKER_CLASS,
+                        ClassName(CC.PKG_GHOST, CG.STR_INTERNAL_GHOST_API)
                     )
                     .build()
             )
 
-        importResolver.applyTo(fileBuilder)
+        importResolver.applyTo(fileBuilder = fileBuilder)
 
         return fileBuilder
             .apply {
                 if (context.envelopeModel?.payloadMappings?.any { it.targetType != null } == true) {
-                    addImport(C.PKG_TYPES, C.STR_RAW_JSON_DECODE)
-                    addImport(C.PKG_GHOST, C.STR_GHOST)
-                    addImport(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
+                    addImport(CC.PKG_TYPES, CG.STR_RAW_JSON_DECODE)
+                    addImport(CC.PKG_GHOST, CG.STR_GHOST)
+                    addImport(CC.PKG_CONTRACT, CC.STR_GHOST_SERIALIZER)
                 }
             }
             .addType(buildSerializerObject())
@@ -67,28 +69,28 @@ internal class GhostCodeGenerator(
 
     private fun buildSerializerObject(): TypeSpec {
         val serializeEmitter = SerializeCodeEmitter(
-            context.properties,
-            context.originalClassName,
-            context.isSealed,
-            context.isValue,
-            context.isEnum,
-            context.sealedSubclasses,
-            context.discriminator,
-            context.sealedDiscriminatorKey
+            properties = context.properties,
+            originalClassName = context.originalClassName,
+            isSealed = context.isSealed,
+            isValue = context.isValue,
+            isEnum = context.isEnum,
+            sealedSubclasses = context.sealedSubclasses,
+            discriminator = context.discriminator,
+            sealedDiscriminatorKey = context.sealedDiscriminatorKey
         )
 
-        val deserializeEmitterStreaming = deserializeEmitterFor(context.streamingReaderClass)
-        val deserializeEmitterFlat = deserializeEmitterFor(context.flatReaderClass)
+        val deserializeEmitterStreaming = deserializeEmitterFor(readerClass = context.streamingReaderClass)
+        val deserializeEmitterFlat = deserializeEmitterFor(readerClass = context.flatReaderClass)
         val deserializeEmitterString = if (context.textChannel) {
-            deserializeEmitterFor(context.stringReaderClass)
+            deserializeEmitterFor(readerClass = context.stringReaderClass)
         } else {
             null
         }
 
         val typeSpecBuilder = TypeSpec.objectBuilder(context.serializerName)
-            .addKdoc(C.STR_KDOC_HIGH_PERF, context.originalClassName)
-            .addKdoc(C.STR_KDOC_GENERATED)
-            .addSuperinterface(context.serializerInterface.parameterizedBy(context.originalClassName))
+            .addKdoc(CG.STR_KDOC_HIGH_PERF, context.originalClassName)
+            .addKdoc(CG.STR_KDOC_GENERATED)
+            .superclass(context.serializerBaseClass.parameterizedBy(context.originalClassName))
 
         if (context.hasYaml) {
             typeSpecBuilder.addSuperinterface(
@@ -96,38 +98,36 @@ internal class GhostCodeGenerator(
             )
         }
 
+        typeSpecBuilder.addProperty(
+            PropertySpec.builder(CG.STR_IS_PROTO, com.squareup.kotlinpoet.BOOLEAN)
+                .addModifiers(KModifier.OVERRIDE)
+                .initializer(if (context.isProto) CC.STR_TRUE else CC.STR_FALSE)
+                .build()
+        )
+
         typeSpecBuilder
             .addProperty(
-                PropertySpec.builder(C.STR_TYPE_NAME_PROP, String::class)
+                PropertySpec.builder(CG.STR_TYPE_NAME_PROP, String::class)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer(C.STR_FORMAT_S, context.finalTypeName)
+                    .initializer(PC.STR_FORMAT_S, context.finalTypeName)
                     .build()
             )
-
-        if (context.isProto) {
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(C.STR_IS_PROTO, com.squareup.kotlinpoet.BOOLEAN)
-                    .addModifiers(KModifier.OVERRIDE)
-                    .initializer(C.STR_TRUE)
-                    .build()
-            )
-        }
 
         if (context.needsObjectParsingImports()) {
-            setupEmitter.addPerfectHashOptions(typeSpecBuilder)
+            setupEmitter.addPerfectHashOptions(typeSpecBuilder = typeSpecBuilder)
         }
         if (context.needsCachedByteStringHeaders()) {
-            setupEmitter.addCachedHeaderProperties(typeSpecBuilder)
+            setupEmitter.addCachedHeaderProperties(typeSpecBuilder = typeSpecBuilder)
         }
         if (context.isEnum && context.enumValues != null) {
-            setupEmitter.addEnumOptions(typeSpecBuilder)
+            setupEmitter.addEnumOptions(typeSpecBuilder = typeSpecBuilder)
         }
 
         FlattenOptionsGenerator.generateNestedOptions(
-            typeSpecBuilder,
-            context.properties,
-            context.fullPaths,
-            context.textChannel
+            typeSpecBuilder = typeSpecBuilder,
+            properties = context.properties,
+            fullPaths = context.fullPaths,
+            textChannel = context.textChannel
         )
 
         deserializeEmitterStreaming.build(typeSpecBuilder, isFlatPath = false)
@@ -138,14 +138,14 @@ internal class GhostCodeGenerator(
 
         if (context.hasYaml) {
             val yamlDeserializeEmitterFlat = deserializeEmitterFor(
-                context.yamlFlatReaderClass,
+                readerClass = context.yamlFlatReaderClass,
                 isResilientClass = false,
                 supportsResilience = false,
             )
             yamlDeserializeEmitterFlat.build(typeSpecBuilder, isFlatPath = true)
         }
 
-        serializeEmitter.injectContextualSerializers(typeSpecBuilder)
+        serializeEmitter.injectContextualSerializers(typeSpecBuilder = typeSpecBuilder)
 
         context.envelopeModel?.let { envelope ->
             EnvelopeRouterEmitter(
@@ -174,17 +174,17 @@ internal class GhostCodeGenerator(
         isResilientClass: Boolean = context.isResilient,
         supportsResilience: Boolean = true,
     ): DeserializeCodeEmitter = DeserializeCodeEmitter(
-        context.properties,
-        context.originalClassName,
-        readerClass,
-        context.isSealed,
-        context.isValue,
-        context.isEnum,
-        context.sealedSubclasses,
-        context.sealedDiscriminatorKey,
-        isResilientClass,
-        context.isInferred,
-        context.isObject,
+        properties = context.properties,
+        originalClassName = context.originalClassName,
+        readerClass = readerClass,
+        isSealed = context.isSealed,
+        isValue = context.isValue,
+        isEnum = context.isEnum,
+        sealedSubclasses = context.sealedSubclasses,
+        sealedDiscriminatorKey = context.sealedDiscriminatorKey,
+        isResilientClass = isResilientClass,
+        isInferred = context.isInferred,
+        isObject = context.isObject,
         hasFallback = context.hasFallbackEnum,
         supportsResilience = supportsResilience,
     )

@@ -7,6 +7,7 @@ import com.ghost.serialization.encodeAllToYaml
 import com.ghost.serialization.encodeToYaml
 import com.ghost.serialization.integration.model.YamlBenchUser
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readAllDocuments
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -28,10 +29,10 @@ class GhostYamlStressTest {
                 bio = "Bio line for user $id with emoji 🚀 and \"quotes\"",
             )
         }
-        val encoded = Ghost.encodeAllToYaml(users)
+        val encoded = Ghost.encodeAllToYaml(values = users)
         val restored = Ghost.decodeAllFromYaml<YamlBenchUser>(encoded)
-        assertEquals(users, restored)
-        assertTrue(encoded.length > 5_000, "Expected a large multi-doc payload")
+        assertEquals(expected = users, actual = restored)
+        assertTrue(actual = encoded.length > 5_000, message = "Expected a large multi-doc payload")
     }
 
     @Test
@@ -49,13 +50,13 @@ class GhostYamlStressTest {
         """.trimIndent()
 
         val parsed = Ghost.decodeFromYaml<YamlBenchUser>(yaml)
-        assertEquals(99, parsed.id)
-        assertTrue(parsed.name.contains("Captain"))
-        assertTrue(parsed.bio!!.contains("line two"))
+        assertEquals(expected = 99, actual = parsed.id)
+        assertTrue(actual = parsed.name.contains("Captain"))
+        assertTrue(actual = parsed.bio!!.contains("line two"))
 
-        val encoded = Ghost.encodeToYaml(parsed)
+        val encoded = Ghost.encodeToYaml(value = parsed)
         val roundTrip = Ghost.decodeFromYaml<YamlBenchUser>(encoded)
-        assertEquals(parsed.copy(bio = roundTrip.bio), roundTrip)
+        assertEquals(expected = parsed.copy(bio = roundTrip.bio), actual = roundTrip)
     }
 
     @Test
@@ -68,10 +69,10 @@ class GhostYamlStressTest {
         """.trimIndent()
         var current = Ghost.decodeFromYaml<YamlBenchUser>(yaml)
         repeat(25) {
-            current = Ghost.decodeFromYaml(Ghost.encodeToYaml(current))
+            current = Ghost.decodeFromYaml(Ghost.encodeToYaml(value = current))
         }
-        assertEquals("stable", current.name)
-        assertEquals(1, current.id)
+        assertEquals(expected = "stable", actual = current.name)
+        assertEquals(expected = 1, actual = current.id)
     }
 
     @Test
@@ -91,9 +92,9 @@ class GhostYamlStressTest {
             score: 2.0
         """.trimIndent()
         val parsed = Ghost.decodeAllFromYaml<YamlBenchUser>(yaml)
-        assertEquals(2, parsed.size)
-        assertEquals("first", parsed[0].name)
-        assertEquals("second", parsed[1].name)
+        assertEquals(expected = 2, actual = parsed.size)
+        assertEquals(expected = "first", actual = parsed[0].name)
+        assertEquals(expected = "second", actual = parsed[1].name)
     }
 
     @Test
@@ -108,8 +109,8 @@ class GhostYamlStressTest {
             score: 1.0
             ---
         """.trimIndent()
-        val documents = GhostYamlFlatReader(yaml.encodeToByteArray()).readAllDocuments()
-        assertEquals(2, documents.size)
-        assertNull(documents[1])
+        val documents = GhostYamlFlatReader(rawData = yaml.encodeToByteArray()).readAllDocuments()
+        assertEquals(expected = 2, actual = documents.size)
+        assertNull(actual = documents[1])
     }
 }

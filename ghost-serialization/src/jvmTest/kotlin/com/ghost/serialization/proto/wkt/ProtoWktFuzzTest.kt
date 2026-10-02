@@ -26,7 +26,7 @@ class ProtoWktFuzzTest {
     fun fuzzParseDuration(data: FuzzedDataProvider) {
         val input = data.consumeRemainingAsString()
         try {
-            parseDuration(input)
+            parseDuration(durationString = input)
         } catch (_: IllegalArgumentException) {
             // Expected for malformed input — parseDuration's documented contract.
         }
@@ -36,7 +36,7 @@ class ProtoWktFuzzTest {
     fun fuzzParseTimestamp(data: FuzzedDataProvider) {
         val input = data.consumeRemainingAsString()
         try {
-            parseTimestamp(input)
+            parseTimestamp(timestampString = input)
         } catch (_: IllegalArgumentException) {
             // Expected for malformed input — parseTimestamp's documented contract.
         }
@@ -46,7 +46,7 @@ class ProtoWktFuzzTest {
     fun fuzzDecodeBase64String(data: FuzzedDataProvider) {
         val input = data.consumeRemainingAsString()
         try {
-            decodeBase64String(input)
+            decodeBase64String(value = input)
         } catch (_: IllegalArgumentException) {
             // Expected for malformed input — decodeBase64String's documented contract.
         }
@@ -59,9 +59,9 @@ class ProtoWktFuzzTest {
         val seconds = data.consumeLong()
         val nanos = data.consumeInt(-999_999_999, 999_999_999)
         if ((seconds > 0 && nanos < 0) || (seconds < 0 && nanos > 0)) return
-        val duration = ProtoDuration(seconds, nanos)
-        val formatted = formatDuration(duration)
-        val reparsed = parseDuration(formatted)
+        val duration = ProtoDuration(seconds = seconds, nanos = nanos)
+        val formatted = formatDuration(duration = duration)
+        val reparsed = parseDuration(durationString = formatted)
         check(reparsed == duration) { "Round-trip mismatch: $duration -> \"$formatted\" -> $reparsed" }
     }
 }

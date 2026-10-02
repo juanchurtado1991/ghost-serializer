@@ -27,6 +27,15 @@ For each annotated model the compiler emits:
 
 `PerfectHashFinder` (compiler-side) picks shift / multiplier / table size so every field name maps to a unique slot in `JsonReaderOptions.dispatch`. That table is the **fallback** path when optimistic prediction misses — not the only lookup strategy.
 
+### Finding the registry at runtime
+
+| Platform | How `Ghost.getSerializer(User::class)` finds `UserSerializer` |
+|:---|:---|
+| JVM / Android | `ServiceLoader` (`META-INF/services`) discovers each `GhostModuleRegistry_[module]` |
+| Kotlin/Native / Kotlin/Wasm | `ghost-compiler-plugin` (a small IR plugin applied by the Gradle plugin to Native/Wasm compilations only) adds `@GhostSerializerLink(UserSerializer::class)` to `User`; on a cache miss the runtime calls `findAssociatedObject` |
+
+The associated-object link lives on the model class itself, so it crosses module and klib boundaries with no startup code; `Ghost.addRegistry` still works and takes precedence. The plugin finds serializers by the KSP naming convention (`<package>.<Outer_Inner>Serializer`) — a kctfork test runs the real KSP processor and the plugin together to catch any drift. JVM bytecode is untouched, so the decode hot path is identical on every platform once the serializer is cached.
+
 ---
 
 ## 2. Multi-engine reader pipeline
@@ -141,7 +150,7 @@ Absolute “N× faster / leaner” numbers depend on the fixture. On the Twitter
 
 Short notes for maintainers; details live in KDoc on the linked APIs.
 
-- **`GhostHeuristics` / discovery** — `maxCollectionSize` (and related caps) differ by platform actual; iOS/Wasm `discoverRegistries()` is empty (manual `Ghost.addRegistry`).
+- **`GhostHeuristics` / discovery** — `maxCollectionSize` (and related caps) differ by platform actual; iOS/Wasm `discoverRegistries()` is empty; serializers resolve through the compiler-plugin link instead (name-based lookups and `prewarm()` still need `Ghost.addRegistry` there).
 - **Triple JSON stacks** — structure/comma/number/escape/skip kernels are shared; `internalSelect` / `verifyKeyMatch` / quote scanners stay ByteArray- vs CharArray-specific.
 - **Hot-path HOF rule** — never pass nested `(onX: (T) -> Unit) -> Unit` into non-inline (or poorly inlined) helpers; walk with `getByte`/`position` or return sentinels (`GhostDoubleFormatter.FALLBACK_REQUIRED`).
 - **API notes** — `deserialize(bytes)` and `deserialize(bytes) { options }` both use the flat reader; streaming is explicit via source/`deserializeStreaming`. `ProtoStruct` remains a `Map` typealias (no `getWktSerializer` entry). Default `GhostSerializer.deserialize(Flat|String)` bridges are compatibility-only — override on hot paths.

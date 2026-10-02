@@ -15,10 +15,10 @@ class GhostEnumStandardsTest {
         val json = """{"status":"advanced_match"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
 
-        assertEquals(GhostStandardsEnum.Match, decoded.status)
+        assertEquals(expected = GhostStandardsEnum.Match, actual = decoded.status)
 
         val reSerialized = Ghost.serialize(decoded)
-        assertEquals(json, reSerialized)
+        assertEquals(expected = json, actual = reSerialized)
     }
 
     @Test
@@ -26,10 +26,10 @@ class GhostEnumStandardsTest {
         val json = """{"status":"ghost_match"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
 
-        assertEquals(GhostStandardsEnum.GhostMatch, decoded.status)
+        assertEquals(expected = GhostStandardsEnum.GhostMatch, actual = decoded.status)
 
         val reSerialized = Ghost.serialize(decoded)
-        assertEquals(json, reSerialized)
+        assertEquals(expected = json, actual = reSerialized)
     }
 
     @Test
@@ -37,10 +37,10 @@ class GhostEnumStandardsTest {
         val json = """{"status":"Standard"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
 
-        assertEquals(GhostStandardsEnum.Standard, decoded.status)
+        assertEquals(expected = GhostStandardsEnum.Standard, actual = decoded.status)
 
         val reSerialized = Ghost.serialize(decoded)
-        assertEquals(json, reSerialized)
+        assertEquals(expected = json, actual = reSerialized)
     }
 
     @Test
@@ -48,7 +48,7 @@ class GhostEnumStandardsTest {
         val json = """{"status":"Standard","optionalStatus":"advanced_match"}"""
         val decoded = Ghost.deserialize<GhostEnumWrapper>(json)
 
-        assertEquals(GhostStandardsEnum.Standard, decoded.status)
-        assertEquals(GhostStandardsEnum.Match, decoded.optionalStatus)
+        assertEquals(expected = GhostStandardsEnum.Standard, actual = decoded.status)
+        assertEquals(expected = GhostStandardsEnum.Match, actual = decoded.optionalStatus)
     }
 }

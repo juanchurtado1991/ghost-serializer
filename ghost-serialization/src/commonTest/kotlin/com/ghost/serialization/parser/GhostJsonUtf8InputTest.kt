@@ -5,6 +5,8 @@ package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.common.json.prepareUtf8JsonSource
+import com.ghost.serialization.parser.common.json.withPreparedUtf8Json
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,20 +26,39 @@ class GhostJsonUtf8InputTest {
     @Test
     fun utf8WithoutBomIsPassedThroughWithoutCopy() {
         val bytes = sample.encodeToByteArray()
-        withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
-            assertSame(bytes, data, "UTF-8 payload must not be copied")
-            assertEquals(0, offset)
-            assertEquals(bytes.size, length)
+        withPreparedUtf8Json(bytes = bytes, limit = bytes.size) { data, offset, length ->
+            assertSame(
+                expected = bytes,
+                actual = data,
+                message = "UTF-8 payload must not be copied"
+            )
+            assertEquals(
+                expected = 0,
+                actual = offset
+            )
+            assertEquals(
+                expected = bytes.size,
+                actual = length
+            )
         }
     }
 
     @Test
     fun emptyInputIsHandled() {
         val empty = ByteArray(0)
-        withPreparedUtf8Json(empty, 0) { data, offset, length ->
-            assertEquals(0, offset)
-            assertEquals(0, length)
-            assertSame(empty, data)
+        withPreparedUtf8Json(bytes = empty, limit = 0) { data, offset, length ->
+            assertEquals(
+                expected = 0,
+                actual = offset
+            )
+            assertEquals(
+                expected = 0,
+                actual = length
+            )
+            assertSame(
+                expected = empty,
+                actual = data
+            )
         }
     }
 
@@ -47,66 +68,103 @@ class GhostJsonUtf8InputTest {
     fun utf8BomIsStrippedWithoutTranscoding() {
         val payload = sample.encodeToByteArray()
         val withBom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + payload
-        withPreparedUtf8Json(withBom, withBom.size) { data, offset, length ->
-            assertSame(withBom, data, "UTF-8 BOM should only shift the offset, not copy")
-            assertEquals(3, offset)
-            assertEquals(payload.size, length)
-            assertEquals(sample, data.decodeToString(offset, offset + length))
+        withPreparedUtf8Json(bytes = withBom, limit = withBom.size) { data, offset, length ->
+            assertSame(
+                expected = withBom,
+                actual = data,
+                message = "UTF-8 BOM should only shift the offset, not copy"
+            )
+            assertEquals(
+                expected = 3,
+                actual = offset
+            )
+            assertEquals(
+                expected = payload.size,
+                actual = length
+            )
+            assertEquals(
+                expected = sample,
+                actual = data.decodeToString(offset, offset + length)
+            )
         }
     }
 
     @Test
     fun utf16LeBomIsDetectedAndTranscoded() {
         val bytes =
-            byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + encodeUtf16(sample, littleEndian = true)
-        assertEquals(sample, decodeNormalized(bytes))
+            byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + encodeUtf16(text = sample, littleEndian = true)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     @Test
     fun utf16BeBomIsDetectedAndTranscoded() {
         val bytes =
-            byteArrayOf(0xFE.toByte(), 0xFF.toByte()) + encodeUtf16(sample, littleEndian = false)
-        assertEquals(sample, decodeNormalized(bytes))
+            byteArrayOf(0xFE.toByte(), 0xFF.toByte()) + encodeUtf16(text = sample, littleEndian = false)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     @Test
     fun utf32LeBomIsDetectedAndTranscoded() {
         val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte(), 0x00, 0x00) +
-                encodeUtf32(sample, littleEndian = true)
-        assertEquals(sample, decodeNormalized(bytes))
+                encodeUtf32(text = sample, littleEndian = true)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     @Test
     fun utf32BeBomIsDetectedAndTranscoded() {
         val bytes = byteArrayOf(0x00, 0x00, 0xFE.toByte(), 0xFF.toByte()) +
-                encodeUtf32(sample, littleEndian = false)
-        assertEquals(sample, decodeNormalized(bytes))
+                encodeUtf32(text = sample, littleEndian = false)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     // --- BOM-less multi-byte detection (RFC 4627 NUL patterns) ---
 
     @Test
     fun utf16LeWithoutBomIsDetected() {
-        val bytes = encodeUtf16(sample, littleEndian = true)
-        assertEquals(sample, decodeNormalized(bytes))
+        val bytes = encodeUtf16(text = sample, littleEndian = true)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     @Test
     fun utf16BeWithoutBomIsDetected() {
-        val bytes = encodeUtf16(sample, littleEndian = false)
-        assertEquals(sample, decodeNormalized(bytes))
+        val bytes = encodeUtf16(text = sample, littleEndian = false)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     @Test
     fun utf32LeWithoutBomIsDetected() {
-        val bytes = encodeUtf32(sample, littleEndian = true)
-        assertEquals(sample, decodeNormalized(bytes))
+        val bytes = encodeUtf32(text = sample, littleEndian = true)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     @Test
     fun utf32BeWithoutBomIsDetected() {
-        val bytes = encodeUtf32(sample, littleEndian = false)
-        assertEquals(sample, decodeNormalized(bytes))
+        val bytes = encodeUtf32(text = sample, littleEndian = false)
+        assertEquals(
+            expected = sample,
+            actual = decodeNormalized(bytes = bytes)
+        )
     }
 
     // --- Streaming source normalization ---
@@ -116,15 +174,21 @@ class GhostJsonUtf8InputTest {
         val payload = sample.encodeToByteArray()
         val source =
             Buffer().write(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + payload)
-        val prepared = prepareUtf8JsonSource(source)
-        assertEquals(sample, prepared.readByteArray().decodeToString())
+        val prepared = prepareUtf8JsonSource(source = source)
+        assertEquals(
+            expected = sample,
+            actual = prepared.readByteArray().decodeToString()
+        )
     }
 
     @Test
     fun streamingUtf16LeIsTranscoded() {
-        val source = Buffer().write(encodeUtf16(sample, littleEndian = true))
-        val prepared = prepareUtf8JsonSource(source)
-        assertEquals(sample, prepared.readByteArray().decodeToString())
+        val source = Buffer().write(encodeUtf16(text = sample, littleEndian = true))
+        val prepared = prepareUtf8JsonSource(source = source)
+        assertEquals(
+            expected = sample,
+            actual = prepared.readByteArray().decodeToString()
+        )
     }
 
     // --- Malformed encodings ---
@@ -132,7 +196,7 @@ class GhostJsonUtf8InputTest {
     @Test
     fun oddLengthUtf16Fails() {
         val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte(), '{'.code.toByte())
-        assertFailsWith<GhostJsonException> { decodeNormalized(bytes) }
+        assertFailsWith<GhostJsonException> { decodeNormalized(bytes = bytes) }
     }
 
     @Test
@@ -142,7 +206,7 @@ class GhostJsonUtf8InputTest {
             0xFF.toByte(), 0xFE.toByte(),
             0x00, 0xD8.toByte()
         )
-        assertFailsWith<GhostJsonException> { decodeNormalized(bytes) }
+        assertFailsWith<GhostJsonException> { decodeNormalized(bytes = bytes) }
     }
 
     @Test
@@ -151,14 +215,14 @@ class GhostJsonUtf8InputTest {
             0xFF.toByte(), 0xFE.toByte(), 0x00, 0x00, // UTF-32LE BOM
             0xFF.toByte(), 0xFF.toByte(), 0x11, 0x00 // 0x0011FFFF > U+10FFFF
         )
-        assertFailsWith<GhostJsonException> { decodeNormalized(bytes) }
+        assertFailsWith<GhostJsonException> { decodeNormalized(bytes = bytes) }
     }
 
     // --- Helpers ---
 
     private fun decodeNormalized(bytes: ByteArray): String {
         var out = ""
-        withPreparedUtf8Json(bytes, bytes.size) { data, offset, length ->
+        withPreparedUtf8Json(bytes = bytes, limit = bytes.size) { data, offset, length ->
             out = data.decodeToString(offset, offset + length)
         }
         return out

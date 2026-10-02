@@ -26,13 +26,23 @@ class JsonSyntaxTest {
         val json = buffer.readUtf8()
         // Missing commas would collapse this to "[012...]"
         val expectedStart = "[0,1,2,3,4,5,6,7,8,9,10"
-        assertEquals(true, json.startsWith(expectedStart), "JSON was: ${json.take(50)}...")
+        assertEquals(
+            expected = true,
+            actual = json.startsWith(expectedStart),
+            message = "JSON was: ${json.take(50)}..."
+        )
 
         val reader = GhostJsonReader(json.encodeToByteArray())
         val decoded = IntArraySerializer.deserialize(reader)
-        assertEquals(data.size, decoded.size)
+        assertEquals(
+            expected = data.size,
+            actual = decoded.size
+        )
         for (i in data.indices) {
-            assertEquals(data[i], decoded[i])
+            assertEquals(
+                expected = data[i],
+                actual = decoded[i]
+            )
         }
     }
 
@@ -51,8 +61,8 @@ class JsonSyntaxTest {
         writer.beginArray()
         for (obj in data) {
             writer.beginObject()
-            writer.name("id").value(obj["id"] as Int)
-            writer.name("tags")
+            writer.name(key = "id").value(obj["id"] as Int)
+            writer.name(key = "tags")
             val tags = obj["tags"] as List<String>
             writer.beginArray()
             for (tag in tags) {
@@ -68,6 +78,9 @@ class JsonSyntaxTest {
         val json = buffer.readUtf8()
         val expected =
             "[{\"id\":1,\"tags\":[\"a\",\"b\"]},{\"id\":2,\"tags\":[]},{\"id\":3,\"tags\":[\"c\"]}]"
-        assertEquals(expected, json)
+        assertEquals(
+            expected = expected,
+            actual = json
+        )
     }
 }

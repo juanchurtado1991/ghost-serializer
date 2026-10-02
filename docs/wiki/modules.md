@@ -11,7 +11,7 @@ Start with the [Quick Start](quick-start.md), then add only the framework module
 ```toml
 # gradle/libs.versions.toml
 [versions]
-ghost = "1.3.1"
+ghost = "1.3.2"
 ```
 
 ---
@@ -35,7 +35,7 @@ implementation(libs.ghost.api)
 ---
 
 ### `ghost-serialization` — Runtime Engine (JSON + YAML + Proto3 JSON)
-The low-allocation reader/writer engine and the `Ghost` facade. Includes JSON readers/writers (`GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader`), YAML (`GhostYamlFlatReader` / `GhostYamlFlatWriter`, `decodeFromYaml` / `encodeToYaml`), Proto3 JSON (`GhostProto`, `GhostProtoJsonFlatReader`, WKT serializers under `com.ghost.serialization.proto.wkt`), platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
+The low-allocation reader/writer engine and the `Ghost` facade. Includes JSON readers/writers (`GhostJsonFlatReader`, `GhostJsonStringReader`, `GhostJsonReader`), YAML (`GhostYamlFlatReader` / `GhostYamlWriter`, `decodeFromYaml` / `encodeToYaml`), Proto3 JSON (`GhostProto`, `GhostProtoJsonFlatReader`, WKT serializers under `com.ghost.serialization.proto.wkt`), platform pools (ThreadLocal / `@ThreadLocal` / single-thread on Wasm), and the serializer registry.
 
 **Targets:** Android · iOS arm64 · iOS Simulator · JVM · wasmJs · KMP metadata
 
@@ -69,6 +69,13 @@ ksp(libs.ghost.compiler)
 
 ---
 
+### `ghost-compiler-plugin` — Native/Wasm Serializer Linking
+A small Kotlin compiler plugin that attaches each `@GhostSerialization` class to its generated serializer as an associated object, so Kotlin/Native (iOS) and Kotlin/Wasm resolve serializers with no `Ghost.addRegistry` call. The Gradle plugin applies it to Native/Wasm compilations only; JVM/Android keep ServiceLoader discovery. Opt out with `ghost { autoRegistration.set(false) }`. Verified in CI on Kotlin 2.2.21, 2.3.21 and 2.4.0.
+
+**Targets:** JVM only (runs inside the Kotlin compiler)
+
+---
+
 ## Gradle Plugin
 
 ### `com.ghostserializer.ghost` — Auto-Configuration Plugin
@@ -82,7 +89,7 @@ ghost = { id = "com.ghostserializer.ghost", version.ref = "ghost" }
 ```kotlin
 // build.gradle.kts
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 ```
 
@@ -91,7 +98,7 @@ plugins {
 ## Framework Integrations
 
 ### `ghost-ktor` — Ktor Client & Server
-Two integration modes for Ktor 3.5.x, with JSON, YAML, and Proto3 JSON variants:
+Two integration modes for Ktor 3.3.x+, with JSON, YAML, and Proto3 JSON variants:
 
 - **Mode A — `ContentNegotiation` plugin**: `ghost()`, `ghostYaml()`, `ghostProto()` beside KotlinX Serialization; types without a Ghost serializer fall through.
 - **Mode B — Direct extensions**: `bodyGhost<T>()` / `respondGhost()` (and YAML/Proto counterparts) bypass the plugin pipeline entirely for maximum throughput on high-RPS endpoints.
@@ -190,8 +197,9 @@ val fromProto: UserProto = GhostProto.deserialize(jsonBytes)
 | Core API | `ghost-api` | KMP | Annotations & contracts |
 | Runtime | `ghost-serialization` | KMP | JSON + YAML + Proto3 JSON engine |
 | Compiler | `ghost-compiler` | JVM | KSP code generator |
-| Gradle plugin | `com.ghostserializer.ghost` | — | Auto-wires KSP across targets |
-| Ktor | `ghost-ktor` | KMP (+ wasmJs) | Ktor 3.5.x client + JVM server integration |
+| Compiler plugin | `ghost-compiler-plugin` | JVM | Links serializers on Kotlin/Native and Kotlin/Wasm |
+| Gradle plugin | `com.ghostserializer.ghost` | — | Auto-wires KSP across targets and the compiler plugin on Native/Wasm |
+| Ktor | `ghost-ktor` | KMP (+ wasmJs) | Ktor 3.3.x+ client + JVM server integration |
 | Retrofit | `ghost-retrofit` | Android/JVM | Retrofit 2.11+ converter factory |
 | Spring Boot | `ghost-spring-boot-starter` | JVM | Spring Boot 3.4+ auto-configuration |
 | Playground | _(not published)_ | wasmJs | [Ghost Playground](https://juanchurtado1991.github.io/ghost-serializer/) — browser DTO studio + feature demos |

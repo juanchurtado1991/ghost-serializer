@@ -112,7 +112,7 @@ internal fun Card(
                         .background(accent.copy(CardAccentIconBgAlpha)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    PlaygroundIcon(it, tint = accent, size = 18.dp)
+                    PlaygroundIcon(kind = it, tint = accent, size = 18.dp)
                 }
             }
             Text(title, style = MaterialTheme.typography.titleLarge)

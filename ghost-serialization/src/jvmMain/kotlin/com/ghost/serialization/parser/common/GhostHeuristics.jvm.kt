@@ -9,19 +9,42 @@ private const val PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE = "ghost.maxDiscriminator
 private const val PROP_MAX_WARM_WRITE_BUFFER_CAPACITY = "ghost.maxWarmWriteBufferCapacity"
 private const val PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = "ghost.maxWarmCharWriteBufferCapacity"
 
+/** JVM has headroom the other platforms don't, so it defaults higher than [GhostHeuristicDefaults]. */
+private const val JVM_MAX_COLLECTION_SIZE = 1_000_000
+private const val JVM_MAX_DISCRIMINATOR_PEEK_DISTANCE = 2 * GhostHeuristicDefaults.BYTES_PER_KIB
+private const val JVM_MAX_WARM_WRITE_BUFFER_CAPACITY = 8 * GhostHeuristicDefaults.BYTES_PER_MIB
+private const val JVM_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = 2 * GhostHeuristicDefaults.BYTES_PER_MIB
+
 actual object GhostHeuristics {
-    actual val initialCollectionCapacity: Int =
-        System.getProperty(PROP_INITIAL_COLLECTION_CAPACITY)?.toIntOrNull() ?: 10
-    actual val maxStringPoolLength: Int =
-        System.getProperty(PROP_MAX_STRING_POOL_LENGTH)?.toIntOrNull() ?: 64
-    actual val maxCollectionSize: Int =
-        System.getProperty(PROP_MAX_COLLECTION_SIZE)?.toIntOrNull() ?: 1_000_000
-    actual val maxDiscriminatorPeekDistance: Int =
-        System.getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)?.toIntOrNull() ?: 2048
-    actual val maxWarmWriteBufferCapacity: Int =
-        System.getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)?.toIntOrNull() ?: (8 * 1024 * 1024)
-    actual val maxWarmCharWriteBufferCapacity: Int =
-        System.getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)?.toIntOrNull()
-            ?: (2 * 1024 * 1024)
+    actual val initialCollectionCapacity: Int = System
+        .getProperty(PROP_INITIAL_COLLECTION_CAPACITY)
+        ?.toIntOrNull()
+        ?: GhostHeuristicDefaults.INITIAL_COLLECTION_CAPACITY
+
+    actual val maxStringPoolLength: Int = System
+        .getProperty(PROP_MAX_STRING_POOL_LENGTH)
+        ?.toIntOrNull()
+        ?: GhostHeuristicDefaults.MAX_STRING_POOL_LENGTH
+
+    actual val maxCollectionSize: Int = System
+        .getProperty(PROP_MAX_COLLECTION_SIZE)
+        ?.toIntOrNull()
+        ?: JVM_MAX_COLLECTION_SIZE
+
+    actual val maxDiscriminatorPeekDistance: Int = System
+        .getProperty(PROP_MAX_DISCRIMINATOR_PEEK_DISTANCE)
+        ?.toIntOrNull()
+        ?: JVM_MAX_DISCRIMINATOR_PEEK_DISTANCE
+
+    actual val maxWarmWriteBufferCapacity: Int = System
+        .getProperty(PROP_MAX_WARM_WRITE_BUFFER_CAPACITY)
+        ?.toIntOrNull()
+        ?: JVM_MAX_WARM_WRITE_BUFFER_CAPACITY
+
+    actual val maxWarmCharWriteBufferCapacity: Int = System
+        .getProperty(PROP_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY)
+        ?.toIntOrNull()
+        ?: JVM_MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY
+
     actual val encodeToStringViaUtf8Bytes: Boolean = false
 }

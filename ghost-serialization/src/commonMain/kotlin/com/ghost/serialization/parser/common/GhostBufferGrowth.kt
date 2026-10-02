@@ -5,15 +5,23 @@ package com.ghost.serialization.parser.common
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
- * Grows a temporary scratch [ByteArray] by [GhostJsonConstants.BUFFER_SCALE_FACTOR],
+ * Grows a temporary scratch [ByteArray] by [WR.BUFFER_SCALE_FACTOR],
  * copying the first [outPos] bytes from [outBuffer] and releasing the old buffer to the pool.
  */
-internal fun growBuffer(outBuffer: ByteArray, outPos: Int): ByteArray {
-    val newBuffer = acquireScratchBuffer(outBuffer.size * C.BUFFER_SCALE_FACTOR)
-    outBuffer.copyInto(newBuffer, 0, 0, outPos)
-    releaseScratchBuffer(outBuffer)
-    return newBuffer
+internal fun growBuffer(
+    outBuffer: ByteArray,
+    outPos: Int
+): ByteArray = acquireScratchBuffer(
+    minSize = outBuffer.size * WR.BUFFER_SCALE_FACTOR
+).apply {
+    outBuffer.copyInto(
+        destination = this,
+        destinationOffset = 0,
+        startIndex = 0,
+        endIndex = outPos
+    )
+    releaseScratchBuffer(buffer = outBuffer)
 }

@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,7 +21,7 @@ class GhostJsonEnvelopeKspTest {
     @Test
     fun fatEnvelopeGeneratesRouteAndParsePayload() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostEnvelopePayload
@@ -56,7 +57,7 @@ class GhostJsonEnvelopeKspTest {
     @Test
     fun genericEnvelopeGeneratesSingleDataRoute() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostJsonEnvelope
@@ -78,15 +79,15 @@ class GhostJsonEnvelopeKspTest {
             generated
         )
         assertFalse(
-            "fun routeTyped" in generated,
-            "Generic envelope without targets must not emit routeTyped"
+            actual = "fun routeTyped" in generated,
+            message = "Generic envelope without targets must not emit routeTyped"
         )
     }
 
     @Test
     fun typedPayloadGeneratesRouteTyped() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostEnvelopePayload
@@ -119,7 +120,7 @@ class GhostJsonEnvelopeKspTest {
     @Test
     fun fallbackPropertyRoutesUnknownDiscriminator() {
         val generated = compileEnvelope(
-            """
+            source = """
             package fixtures
 
             import com.ghost.serialization.annotations.GhostEnvelopeFallback
@@ -155,14 +156,11 @@ class GhostJsonEnvelopeKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc (2.1.0) can't read metadata from our project's own
-            // jars once they're compiled with a newer Kotlin (2.4.0 as of this bump) via
-            // inheritClassPath — this flag skips that strict metadata-version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
         }
         return compilation to compilation.compile()
     }

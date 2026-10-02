@@ -12,17 +12,17 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
- * Main coordinator for deserialization code generation. Selects a strategy from DTO metadata
- * (sealed hierarchy, enum, size, structural complexity) and delegates to specialized emitters:
- * direct dispatch for sealed/enum types, [FragmentedEmitter] for DTOs above `PROPERTY_MAX_SIZE`
- * (to stay under the JVM 64KB method limit), and [StandardEmitter] otherwise.
+ * Coordinates deserialization codegen: picks a strategy from DTO metadata and delegates to
+ * [FragmentedEmitter] for DTOs above `PROPERTY_MAX_SIZE` (to stay under the JVM 64KB method
+ * limit), [StandardEmitter] otherwise, or direct dispatch for sealed/enum types.
  *
- * @param isInferred Handles polymorphic types where the discriminator is absent, relying on
- * property presence to identify the subclass.
+ * @param isInferred Polymorphic types with no discriminator, identified by property presence instead.
  */
 internal class DeserializeCodeEmitter(
     properties: List<GhostPropertyModel>,
@@ -32,18 +32,15 @@ internal class DeserializeCodeEmitter(
     private val isValue: Boolean,
     private val isEnum: Boolean,
     private val sealedSubclasses: List<KSClassDeclaration>,
-    private val sealedDiscriminatorKey: String = C.STR_DEFAULT_DISCRIMINATOR,
+    private val sealedDiscriminatorKey: String = AC.STR_DEFAULT_DISCRIMINATOR,
     private val isResilientClass: Boolean = false,
     private val isInferred: Boolean = false,
     private val isObject: Boolean = false,
     private val hasFallback: Boolean = false,
     private val supportsResilience: Boolean = true,
-) : BaseDeserializeEmitter(properties, originalClassName, readerClass) {
+) : BaseDeserializeEmitter(properties = properties, originalClassName = originalClassName, readerClass = readerClass) {
 
-    /**
-     * Entry point for the code generation pipeline: picks the generation strategy, injects
-     * contextual serializers, and propagates resilience metadata when the class is resilient.
-     */
+    /** Picks the generation strategy, injects contextual serializers, and propagates resilience metadata. */
     fun build(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean = false
@@ -52,15 +49,15 @@ internal class DeserializeCodeEmitter(
 
         when {
             isObject -> {
-                emitObjectReturn(body)
+                emitObjectReturn(body = body)
             }
 
             isSealed && isInferred -> {
-                emitInferredSealed(body)
+                emitInferredSealed(body = body)
             }
 
             isSealed -> {
-                emitSealed(body)
+                emitSealed(body = body)
             }
 
             isValue -> {
@@ -68,116 +65,22 @@ internal class DeserializeCodeEmitter(
             }
 
             isEnum -> {
-                emitEnum(body)
+                emitEnum(body = body)
             }
 
             properties.size > C.PROPERTY_MAX_SIZE -> {
-                emitFragmented(body, typeSpecBuilder, isFlatPath)
+                emitFragmented(body = body, typeSpecBuilder = typeSpecBuilder, isFlatPath = isFlatPath)
             }
 
             else -> {
-                emitStandard(body, typeSpecBuilder, isFlatPath)
+                emitStandard(body = body, typeSpecBuilder = typeSpecBuilder, isFlatPath = isFlatPath)
             }
         }
 
-        addDeserializeFunction(typeSpecBuilder, body.build())
-        injectResilienceProperty(typeSpecBuilder, isFlatPath)
+        addDeserializeFunction(typeSpecBuilder = typeSpecBuilder, body = body.build())
+        injectResilienceProperty(typeSpecBuilder = typeSpecBuilder, isFlatPath = isFlatPath)
     }
 
-    /**
-     * Instantiates and delegates code generation to [FragmentedEmitter].
-     */
-    private fun emitFragmented(
-        body: CodeBlock.Builder,
-        typeSpecBuilder: TypeSpec.Builder,
-        isFlatPath: Boolean
-    ) {
-        val emitter = FragmentedEmitter(
-            properties,
-            originalClassName,
-            readerClass,
-            supportsResilience = supportsResilience,
-        )
-        emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)
-        if (!isFlatPath) {
-            emitter.injectContextualSerializers(typeSpecBuilder)
-        }
-    }
-
-    /**
-     * Instantiates and delegates code generation to [StandardEmitter].
-     */
-    private fun emitStandard(
-        body: CodeBlock.Builder,
-        typeSpecBuilder: TypeSpec.Builder,
-        isFlatPath: Boolean
-    ) {
-        val emitter = StandardEmitter(
-            properties,
-            originalClassName,
-            readerClass,
-            supportsResilience = supportsResilience,
-        )
-        emitter.emit(body, typeSpecBuilder)
-        if (!isFlatPath) {
-            emitter.injectContextualSerializers(typeSpecBuilder)
-        }
-    }
-
-    /**
-     * Emits deserialization logic for object types (singletons). Consumes the JSON object
-     * body and returns the singleton instance.
-     */
-    private fun emitObjectReturn(body: CodeBlock.Builder) {
-        body.addStatement(C.STR_BEGIN_OBJECT)
-        body.beginControlFlow(C.STR_WHILE_TRUE)
-        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
-        body.beginControlFlow(C.STR_WHEN_INDEX)
-        body.addStatement(C.STR_MINUS_ONE_BREAK)
-        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
-        body.addStatement(C.STR_SKIP_VALUE)
-        body.endControlFlow()
-        body.endControlFlow()
-        body.endControlFlow()
-        body.addStatement(C.STR_END_OBJECT)
-        body.addStatement("return %T", originalClassName)
-    }
-
-    /**
-     * Reads @GhostSerialization(name) from a class declaration, falling back to simple class name.
-     */
-    private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
-        val customName = subclass.annotations
-            .find { it.shortName.asString() == C.ANNOTATION_GHOST_SERIALIZATION }
-            ?.arguments?.find { it.name?.asString() == C.NAME }?.value as? String
-        return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()
-    }
-
-    /**
-     * Conditionally injects the `isResilient` property
-     * if the class is resilient and not flat.
-     */
-    private fun injectResilienceProperty(
-        typeSpecBuilder: TypeSpec.Builder,
-        isFlatPath: Boolean
-    ) {
-        if (isResilientClass && !isFlatPath && supportsResilience) {
-            typeSpecBuilder.addProperty(
-                PropertySpec.builder(
-                    C.STR_IS_RESILIENT,
-                    BOOLEAN
-                )
-                    .addModifiers(KModifier.OVERRIDE)
-                    .initializer(C.STR_TRUE)
-                    .build()
-            )
-        }
-    }
-
-    /**
-     * Adds the final deserialize function to the generated serializer.
-     * This method fulfills the contract of GhostSerializer.
-     */
     private fun addDeserializeFunction(
         typeSpecBuilder: TypeSpec.Builder,
         body: CodeBlock
@@ -193,97 +96,7 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    /**
-     * Emits deserialization logic for sealed hierarchies via discriminator key checks.
-     * It generates a `when` expression that inspects the JSON discriminator field to
-     * decide which specialized serializer to invoke. Includes support for fallback
-     * subclasses when a discriminator value doesn't match known types.
-     */
-    private fun emitSealed(body: CodeBlock.Builder) {
-        val fallbackSubclass = sealedSubclasses.find { subclass ->
-            subclass.annotations.any {
-                it.shortName.asString() == C.STR_FALLBACK_ANNOTATION
-            }
-        }
-
-        val regularSubclasses = sealedSubclasses.filter {
-            it != fallbackSubclass
-        }
-
-        if (fallbackSubclass != null) {
-            body.addStatement(
-                C.TEMPLATE_PEEK_STRING_FIELD,
-                sealedDiscriminatorKey
-            )
-        } else {
-            body.addStatement(
-                C.TEMPLATE_PEEK_TYPE,
-                sealedDiscriminatorKey,
-                C.STR_MISSING_TYPE
-            )
-        }
-
-        body.beginControlFlow(C.STR_WHEN_TYPENAME)
-
-        regularSubclasses.forEach { subclass ->
-            val subClassName = subclass.toClassName()
-            val serializerName = subClassName.serializerClassName()
-            val discriminatorValue = getSubclassDiscriminator(subclass)
-            body.addStatement(
-                C.TEMPLATE_DESERIALIZE_BRANCH,
-                discriminatorValue,
-                serializerName
-            )
-        }
-        if (fallbackSubclass != null) {
-            val fallbackClassName = fallbackSubclass.toClassName()
-            val fallbackSerializerName = fallbackClassName.serializerClassName()
-            body.beginControlFlow(C.STR_ELSE_BRANCH)
-            body.addStatement(C.TEMPLATE_DESERIALIZE_T, fallbackSerializerName)
-            body.endControlFlow()
-        } else {
-            body.addStatement(C.STR_UNKNOWN_TYPE)
-        }
-        body.endControlFlow()
-        body.addStatement(C.STR_RETURN_RESULT)
-    }
-
-    /**
-     * Emits deserialization logic for Inferred Polymorphism.
-     *
-     * This is an advanced strategy where the subclass is determined by the presence
-     * of specific fields in the JSON. It uses a **Property-to-Class bitmask** to identify
-     * candidate subclasses and resolves them using a voting-like logic on the eligibility bitmask.
-     */
-    private fun emitInferredSealed(body: CodeBlock.Builder) {
-        val context = createInferredSealedContext(properties)
-        if (context == null) {
-            body.addStatement(C.TEMPLATE_THROW_S, C.STR_ERR_NO_SUBCLASSES)
-            return
-        }
-
-        emitInferredSealedLocalVariables(body, context)
-        emitInferredSealedMainLoop(body, context)
-        emitInferredSealedRequiredMasks(body, context)
-        emitInferredSealedDecisionBlock(body, context)
-    }
-
-    /**
-     * Context data holder containing all analyzed property and subclass metadata
-     * needed for inferred sealed class deserialization code generation.
-     */
-    private class InferredSealedContext(
-        val inferredInfo: List<InferredSubclassModel>,
-        val names: List<String>,
-        val allProps: List<GhostPropertyModel>,
-        val nameToIndex: Map<String, Int>,
-        val propertyToClassMask: Map<String, Long>
-    )
-
-    /**
-     * Resolves and builds the inferred-sealed dispatch context from the property models.
-     * Returns null if no inferred subclasses are declared.
-     */
+    /** Builds the inferred-sealed dispatch context, or null if no inferred subclasses are declared. */
     private fun createInferredSealedContext(properties: List<GhostPropertyModel>): InferredSealedContext? {
         val inferredInfo = properties.firstOrNull()?.inferredSubclasses ?: emptyList()
         if (inferredInfo.isEmpty()) {
@@ -316,132 +129,81 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    /**
-     * Emits the local variable declarations for tracking property values and
-     * managing the seen and eligibility bitmasks.
-     */
-    private fun emitInferredSealedLocalVariables(
-        body: CodeBlock.Builder,
-        context: InferredSealedContext
-    ) {
-        body.addStatement(C.STR_BEGIN_OBJECT)
-        context.allProps.forEachIndexed { index, prop ->
-            body.addStatement(
-                C.TEMPLATE_VAR_NULL_DECL,
-                C.STR_V_VAR_PREFIX,
-                index,
-                prop.typeName.copy(nullable = true),
-                C.STR_NULL
-            )
-        }
+    private fun emitEnum(body: CodeBlock.Builder) {
+        body.addStatement(C.STR_ENUM_SELECT_OPTIONS)
+        body.beginControlFlow(C.STR_ENUM_WHEN)
 
-        body.addStatement(
-            C.TEMPLATE_VAR_LONG_INIT,
-            C.STR_ELIGIBILITY_MASK,
-            (C.VAL_ONE_L shl context.inferredInfo.size) - C.VAL_ONE,
-            C.STR_L_SUFFIX
-        )
-
-        body.addStatement(
-            C.TEMPLATE_VAR_INIT,
-            C.STR_SEEN_MASK,
-            C.STR_ZERO_L
-        )
-    }
-
-    /**
-     * Emits the main loops for parsing and consuming JSON field names.
-     * When a field matches a known subclass signature, its value is parsed,
-     * the eligibility mask is updated, and the seen mask is updated.
-     */
-    private fun emitInferredSealedMainLoop(
-        body: CodeBlock.Builder,
-        context: InferredSealedContext
-    ) {
-        body.beginControlFlow(C.STR_WHILE_TRUE)
-        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
-        body.beginControlFlow(C.STR_WHEN_INDEX)
-
-        context.names.forEachIndexed { index, name ->
-            val prop = context.allProps[index]
-            val classMask = context.propertyToClassMask[name] ?: C.VAL_ZERO_L
-
-            body.beginControlFlow(
-                C.TEMPLATE_WHEN_BRANCH,
-                index
-            )
-            body.addStatement(
-                C.TEMPLATE_VAR_ASSIGN,
-                C.STR_V_VAR_PREFIX,
-                index,
-                buildCall(prop)
-            )
-            body.addStatement(
-                C.TEMPLATE_MASK_AND_ASSIGN,
-                C.STR_ELIGIBILITY_MASK,
-                C.STR_ELIGIBILITY_MASK,
-                classMask,
-                C.STR_L_SUFFIX
-            )
-            body.addStatement(
-                C.TEMPLATE_MASK_OR_SHL_ASSIGN,
-                C.STR_SEEN_MASK,
-                C.STR_SEEN_MASK,
-                C.STR_ONE_L,
-                C.STR_SHL,
-                index
-            )
-            body.endControlFlow()
-        }
-
-        body.addStatement(C.STR_MINUS_ONE_BREAK)
-        body.addStatement(
-            C.STR_ELSE_BRANCH +
-                    C.STR_SPACE +
-                    C.STR_SKIP_VALUE
-        )
-        body.endControlFlow()
-        body.endControlFlow()
-        body.addStatement(C.STR_END_OBJECT)
-    }
-
-    /**
-     * Precomputes and emits the required property masks
-     * for each subclass candidate.
-     */
-    private fun emitInferredSealedRequiredMasks(
-        body: CodeBlock.Builder,
-        context: InferredSealedContext
-    ) {
-        context.inferredInfo.forEachIndexed { index, subclass ->
-            var reqMask = C.VAL_ZERO_L
-            subclass.properties.forEach { prop ->
-                if (!prop.isNullable && !prop.hasDefaultValue) {
-                    val pIdx = context.nameToIndex[prop.jsonName]!!
-                    reqMask = reqMask or (C.VAL_ONE_L shl pIdx)
-                }
+        properties
+            .firstOrNull()
+            ?.enumValues
+            ?.entries
+            ?.forEachIndexed { index, entry ->
+                body.addStatement(
+                    C.TEMPLATE_ENUM_BRANCH,
+                    index,
+                    originalClassName,
+                    entry.key
+                )
             }
-            body.addStatement(
-                C.TEMPLATE_VAL_LONG_INIT,
-                C.STR_REQ_MASK_PREFIX,
-                index,
-                reqMask,
-                C.STR_L_SUFFIX
-            )
+
+        body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)
+        val fallbackEntry = properties.firstOrNull()?.enumValues?.entries?.find {
+            it.key.equals(C.STR_ENUM_UNKNOWN, ignoreCase = true)
+        }
+            ?: if (hasFallback) properties.firstOrNull()?.enumValues?.entries?.lastOrNull() else null
+        if (fallbackEntry != null) {
+            body.addStatement(C.TEMPLATE_ENUM_ELSE_FALLBACK, originalClassName, fallbackEntry.key)
+        } else {
+            body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)
+        }
+        body.endControlFlow()
+    }
+
+    private fun emitFragmented(
+        body: CodeBlock.Builder,
+        typeSpecBuilder: TypeSpec.Builder,
+        isFlatPath: Boolean
+    ) {
+        val emitter = FragmentedEmitter(
+            properties = properties,
+            originalClassName = originalClassName,
+            readerClass = readerClass,
+            supportsResilience = supportsResilience,
+        )
+        emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)
+        if (!isFlatPath) {
+            emitter.injectContextualSerializers(typeSpecBuilder = typeSpecBuilder)
         }
     }
 
     /**
-     * Emits the decision block logic to determine the matched subclass and
-     * instantiate it using the parsed arguments. Throws a GhostJsonException if no
-     * unique matching subclass can be resolved.
+     * Inferred polymorphism: the subclass is determined by which fields are present in the JSON.
+     * Uses a property-to-class bitmask to narrow candidate subclasses as fields are seen, then
+     * resolves the match against each subclass's required-field mask.
+     */
+    private fun emitInferredSealed(body: CodeBlock.Builder) {
+        val context = createInferredSealedContext(properties = properties)
+        if (context == null) {
+            body.addStatement(C.TEMPLATE_THROW_S, C.STR_ERR_NO_SUBCLASSES)
+            return
+        }
+
+        emitInferredSealedLocalVariables(body = body, context = context)
+        emitInferredSealedMainLoop(body = body, context = context)
+        emitInferredSealedRequiredMasks(body = body, context = context)
+        emitInferredSealedDecisionBlock(body = body, context = context)
+    }
+
+    /**
+     * Resolves the matched subclass and instantiates it from the parsed arguments; throws
+     * `GhostJsonException` if no unique match is found.
      */
     private fun emitInferredSealedDecisionBlock(
         body: CodeBlock.Builder,
         context: InferredSealedContext
     ) {
         val jsonExClass = ClassName(
-            C.PKG_EXCEPTION,
+            CC.PKG_EXCEPTION,
             C.STR_GHOST_JSON_EXCEPTION
         )
 
@@ -456,7 +218,7 @@ internal class DeserializeCodeEmitter(
                 C.STR_ELIGIBILITY_MASK,
                 maskBit,
                 C.STR_L_SUFFIX,
-                C.STR_ZERO_L,
+                AC.STR_ZERO_L,
                 C.STR_SEEN_MASK,
                 reqMaskVar,
                 reqMaskVar
@@ -484,7 +246,7 @@ internal class DeserializeCodeEmitter(
                     )
                 }
 
-                if (i < requiredProps.size - C.VAL_ONE) {
+                if (i < requiredProps.size - CC.VAL_ONE) {
                     requiredArgs.add(C.STR_COMMA_SPACE)
                 }
             }
@@ -528,12 +290,199 @@ internal class DeserializeCodeEmitter(
         body.addStatement(C.STR_RETURN_RESULT)
     }
 
+    /** Declares tracking variables for property values plus the seen/eligibility bitmasks. */
+    private fun emitInferredSealedLocalVariables(
+        body: CodeBlock.Builder,
+        context: InferredSealedContext
+    ) {
+        body.addStatement(C.STR_BEGIN_OBJECT)
+        context.allProps.forEachIndexed { index, prop ->
+            body.addStatement(
+                C.TEMPLATE_VAR_NULL_DECL,
+                C.STR_V_VAR_PREFIX,
+                index,
+                prop.typeName.copy(nullable = true),
+                CC.STR_NULL
+            )
+        }
+
+        body.addStatement(
+            C.TEMPLATE_VAR_LONG_INIT,
+            C.STR_ELIGIBILITY_MASK,
+            (C.VAL_ONE_L shl context.inferredInfo.size) - CC.VAL_ONE,
+            C.STR_L_SUFFIX
+        )
+
+        body.addStatement(
+            C.TEMPLATE_VAR_INIT,
+            C.STR_SEEN_MASK,
+            AC.STR_ZERO_L
+        )
+    }
+
+    /** Parses each JSON field, updating the parsed value plus the eligibility and seen masks. */
+    private fun emitInferredSealedMainLoop(
+        body: CodeBlock.Builder,
+        context: InferredSealedContext
+    ) {
+        body.beginControlFlow(C.STR_WHILE_TRUE)
+        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
+        body.beginControlFlow(C.STR_WHEN_INDEX)
+
+        context.names.forEachIndexed { index, name ->
+            val prop = context.allProps[index]
+            val classMask = context.propertyToClassMask[name] ?: C.VAL_ZERO_L
+
+            body.beginControlFlow(
+                C.TEMPLATE_WHEN_BRANCH,
+                index
+            )
+            body.addStatement(
+                C.TEMPLATE_VAR_ASSIGN,
+                C.STR_V_VAR_PREFIX,
+                index,
+                buildCall(prop = prop)
+            )
+            body.addStatement(
+                C.TEMPLATE_MASK_AND_ASSIGN,
+                C.STR_ELIGIBILITY_MASK,
+                C.STR_ELIGIBILITY_MASK,
+                classMask,
+                C.STR_L_SUFFIX
+            )
+            body.addStatement(
+                C.TEMPLATE_MASK_OR_SHL_ASSIGN,
+                C.STR_SEEN_MASK,
+                C.STR_SEEN_MASK,
+                C.STR_ONE_L,
+                C.STR_SHL,
+                index
+            )
+            body.endControlFlow()
+        }
+
+        body.addStatement(C.STR_MINUS_ONE_BREAK)
+        body.addStatement(
+            C.STR_ELSE_BRANCH +
+                    C.STR_SPACE +
+                    C.STR_SKIP_VALUE
+        )
+        body.endControlFlow()
+        body.endControlFlow()
+        body.addStatement(C.STR_END_OBJECT)
+    }
+
+    /** Emits the required-property mask constant for each subclass candidate. */
+    private fun emitInferredSealedRequiredMasks(
+        body: CodeBlock.Builder,
+        context: InferredSealedContext
+    ) {
+        context.inferredInfo.forEachIndexed { index, subclass ->
+            var reqMask = C.VAL_ZERO_L
+            subclass.properties.forEach { prop ->
+                if (!prop.isNullable && !prop.hasDefaultValue) {
+                    val pIdx = context.nameToIndex[prop.jsonName]!!
+                    reqMask = reqMask or (C.VAL_ONE_L shl pIdx)
+                }
+            }
+            body.addStatement(
+                C.TEMPLATE_VAL_LONG_INIT,
+                C.STR_REQ_MASK_PREFIX,
+                index,
+                reqMask,
+                C.STR_L_SUFFIX
+            )
+        }
+    }
+
+    private fun emitObjectReturn(body: CodeBlock.Builder) {
+        body.addStatement(C.STR_BEGIN_OBJECT)
+        body.beginControlFlow(C.STR_WHILE_TRUE)
+        body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
+        body.beginControlFlow(C.STR_WHEN_INDEX)
+        body.addStatement(C.STR_MINUS_ONE_BREAK)
+        body.beginControlFlow(C.STR_MINUS_TWO_ARROW)
+        body.addStatement(C.STR_SKIP_VALUE)
+        body.endControlFlow()
+        body.endControlFlow()
+        body.endControlFlow()
+        body.addStatement(C.STR_END_OBJECT)
+        body.addStatement("return %T", originalClassName)
+    }
+
     /**
-     * Emits deserialization logic for value class types.
+     * Generates a `when` on the JSON discriminator field to dispatch to each subclass's
+     * serializer, with support for a fallback subclass when the value is unrecognized.
      */
+    private fun emitSealed(body: CodeBlock.Builder) {
+        val fallbackSubclass = sealedSubclasses.find { subclass ->
+            subclass.annotations.any {
+                it.shortName.asString() == C.STR_FALLBACK_ANNOTATION
+            }
+        }
+
+        val regularSubclasses = sealedSubclasses.filter {
+            it != fallbackSubclass
+        }
+
+        if (fallbackSubclass != null) {
+            body.addStatement(
+                C.TEMPLATE_PEEK_STRING_FIELD,
+                sealedDiscriminatorKey
+            )
+        } else {
+            body.addStatement(
+                C.TEMPLATE_PEEK_TYPE,
+                sealedDiscriminatorKey,
+                C.STR_MISSING_TYPE
+            )
+        }
+
+        body.beginControlFlow(C.STR_WHEN_TYPENAME)
+
+        regularSubclasses.forEach { subclass ->
+            val subClassName = subclass.toClassName()
+            val serializerName = subClassName.serializerClassName()
+            val discriminatorValue = getSubclassDiscriminator(subclass = subclass)
+            body.addStatement(
+                C.TEMPLATE_DESERIALIZE_BRANCH,
+                discriminatorValue,
+                serializerName
+            )
+        }
+        if (fallbackSubclass != null) {
+            val fallbackClassName = fallbackSubclass.toClassName()
+            val fallbackSerializerName = fallbackClassName.serializerClassName()
+            body.beginControlFlow(C.STR_ELSE_BRANCH)
+            body.addStatement(C.TEMPLATE_DESERIALIZE_T, fallbackSerializerName)
+            body.endControlFlow()
+        } else {
+            body.addStatement(C.STR_UNKNOWN_TYPE)
+        }
+        body.endControlFlow()
+        body.addStatement(C.STR_RETURN_RESULT)
+    }
+
+    private fun emitStandard(
+        body: CodeBlock.Builder,
+        typeSpecBuilder: TypeSpec.Builder,
+        isFlatPath: Boolean
+    ) {
+        val emitter = StandardEmitter(
+            properties = properties,
+            originalClassName = originalClassName,
+            readerClass = readerClass,
+            supportsResilience = supportsResilience,
+        )
+        emitter.emit(body, typeSpecBuilder)
+        if (!isFlatPath) {
+            emitter.injectContextualSerializers(typeSpecBuilder = typeSpecBuilder)
+        }
+    }
+
     private fun emitValue(body: CodeBlock.Builder) {
         val prop = properties.firstOrNull() ?: return
-        val call = buildCall(prop)
+        val call = buildCall(prop = prop)
         body.addStatement(
             C.TEMPLATE_RETURN_CONSTRUCTOR,
             originalClassName,
@@ -541,36 +490,36 @@ internal class DeserializeCodeEmitter(
         )
     }
 
-    /**
-     * Emits deserialization logic for enum types using integer lookups.
-     */
-    private fun emitEnum(body: CodeBlock.Builder) {
-        body.addStatement(C.STR_ENUM_SELECT_OPTIONS)
-        body.beginControlFlow(C.STR_ENUM_WHEN)
-
-        properties
-            .firstOrNull()
-            ?.enumValues
-            ?.entries
-            ?.forEachIndexed { index, entry ->
-                body.addStatement(
-                    C.TEMPLATE_ENUM_BRANCH,
-                    index,
-                    originalClassName,
-                    entry.key
-                )
-            }
-
-        body.addStatement(C.STR_ERR_INVALID_ENUM_INDEX)
-        val fallbackEntry = properties.firstOrNull()?.enumValues?.entries?.find {
-            it.key.equals(C.STR_ENUM_UNKNOWN, ignoreCase = true)
-        }
-            ?: if (hasFallback) properties.firstOrNull()?.enumValues?.entries?.lastOrNull() else null
-        if (fallbackEntry != null) {
-            body.addStatement(C.TEMPLATE_ENUM_ELSE_FALLBACK, originalClassName, fallbackEntry.key)
-        } else {
-            body.addStatement(C.STR_ERR_UNEXPECTED_INDEX)
-        }
-        body.endControlFlow()
+    /** Reads `@GhostSerialization(name)`, falling back to the simple class name. */
+    private fun getSubclassDiscriminator(subclass: KSClassDeclaration): String {
+        val customName = subclass.annotations
+            .find { it.shortName.asString() == CC.ANNOTATION_GHOST_SERIALIZATION }
+            ?.arguments?.find { it.name?.asString() == AC.NAME }?.value as? String
+        return if (!customName.isNullOrEmpty()) customName else subclass.simpleName.asString()
     }
+
+    private fun injectResilienceProperty(
+        typeSpecBuilder: TypeSpec.Builder,
+        isFlatPath: Boolean
+    ) {
+        if (!isFlatPath && supportsResilience) {
+            typeSpecBuilder.addProperty(
+                PropertySpec.builder(
+                    C.STR_IS_RESILIENT,
+                    BOOLEAN
+                )
+                    .addModifiers(KModifier.OVERRIDE)
+                    .initializer(if (isResilientClass) CC.STR_TRUE else CC.STR_FALSE)
+                    .build()
+            )
+        }
+    }
+
+    private class InferredSealedContext(
+        val inferredInfo: List<InferredSubclassModel>,
+        val names: List<String>,
+        val allProps: List<GhostPropertyModel>,
+        val nameToIndex: Map<String, Int>,
+        val propertyToClassMask: Map<String, Long>
+    )
 }

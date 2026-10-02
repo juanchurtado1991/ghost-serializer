@@ -3,22 +3,13 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import kotlin.reflect.KClass
 
-/**
- * Hand-written stand-in for what
- * `@GhostProtoSerialization` + KSP
- * would generate for `data class ProtoDeviceEvent(val deviceId: Long, val label: String)` —
- * `deviceId` is written as a quoted decimal string (proto3 int64 mapping) and must be readable
- * back as a bare-or-quoted number, exercising exactly what [GhostProtoConverterFactory] depends
- * on (`GhostProtoJsonFlatReader.nextLong` polymorphism via
- * `reader.nextLong()`).
- */
+/** Test registry exposing [ProtoDeviceEventSerializer]. */
 @InternalGhostApi
-object ProtoRetrofitTestRegistry : GhostRegistry {
-    override fun prewarm() {}
+object ProtoRetrofitTestRegistry : AbstractGhostRegistry() {
     override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
         mapOf(ProtoDeviceEvent::class to ProtoDeviceEventSerializer)
 

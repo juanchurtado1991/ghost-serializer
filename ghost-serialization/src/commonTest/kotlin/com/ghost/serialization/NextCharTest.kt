@@ -16,18 +16,27 @@ class NextCharTest {
     @Test
     fun nextCharFastPathSingleAsciiOnFlatReader() {
         val reader = GhostJsonReader(quotedZ.encodeToByteArray())
-        assertEquals('Z', reader.nextChar())
+        assertEquals(
+            expected = 'Z',
+            actual = reader.nextChar()
+        )
     }
 
     @Test
     fun nextCharFastPathSingleAsciiOnStreamingReader() {
         val reader = GhostJsonReader(Buffer().writeUtf8(quotedZ))
-        assertEquals('Z', reader.nextChar())
+        assertEquals(
+            expected = 'Z',
+            actual = reader.nextChar()
+        )
     }
 
     @Test
     fun nextCharFastPathSingleAsciiOnStringReader() {
-        val reader = GhostJsonStringReader(quotedZ)
-        assertEquals('Z', reader.nextChar())
+        val reader = GhostJsonStringReader(rawData = quotedZ)
+        assertEquals(
+            expected = 'Z',
+            actual = reader.nextChar()
+        )
     }
 }

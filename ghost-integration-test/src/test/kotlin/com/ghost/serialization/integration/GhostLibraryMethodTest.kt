@@ -2,7 +2,7 @@ package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.integration.model.IgnoreModel
 import com.ghost.serialization.integration.model.NamingModel
@@ -26,20 +26,19 @@ class GhostLibraryMethodTest {
 
         // IgnoreModel lives in a discovered registry; prewarm should have pulled it in
         val serializer = Ghost.getSerializer(IgnoreModel::class)
-        assertNotNull(serializer)
+        assertNotNull(actual = serializer)
     }
 
     @Test
     fun testAddRegistryManual() {
-        val myRegistry = object : GhostRegistry {
+        val myRegistry = object : AbstractGhostRegistry() {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = null
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = emptyMap()
-            override fun prewarm() {}
         }
 
-        Ghost.addRegistry(myRegistry)
+        Ghost.addRegistry(registry = myRegistry)
         // myRegistry returns null, so this only proves discovery still works alongside it
-        assertNotNull(Ghost.getSerializer(NamingModel::class))
+        assertNotNull(actual = Ghost.getSerializer(NamingModel::class))
     }
 
     @Test
@@ -47,17 +46,17 @@ class GhostLibraryMethodTest {
         Ghost.prewarm()
         val names = Ghost.getSerializerNames()
         println("Registered Serializers: $names")
-        val serializer = Ghost.getSerializerByName("NamingModel")
+        val serializer = Ghost.getSerializerByName(name = "NamingModel")
         assertNotNull(
-            serializer,
-            "Serializer for NamingModel should be found by name. Available: $names"
+            actual = serializer,
+            message = "Serializer for NamingModel should be found by name. Available: $names"
         )
-        assertEquals("NamingModel", serializer.typeName)
+        assertEquals(expected = "NamingModel", actual = serializer.typeName)
     }
 
     @Test
     fun testResetForTest() {
-        Ghost.addRegistry(object : GhostRegistry {
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? = null
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> = emptyMap()
         })

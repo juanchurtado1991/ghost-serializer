@@ -6,6 +6,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
@@ -35,12 +36,12 @@ class GhostYamlWriterFuzzTest {
 
     @FuzzTest
     fun fuzzYamlStringValueRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostYamlWriter(byteWriter).beginObject().name("v").value(expected).endObject()
+        GhostYamlWriter(byteWriter).beginObject().name(key = "v").value(expected).endObject()
 
-        val decoded = GhostYamlFlatReader(byteWriter.toByteArray()).readDocument()
+        val decoded = GhostYamlFlatReader(rawData = byteWriter.toByteArray()).readDocument()
         check(decoded is Map<*, *> && decoded["v"] == expected) {
             "YAML value round-trip mismatch: ${expected.length} chars -> " +
                 "\"${byteWriter.toStringUtf8()}\" -> $decoded"
@@ -49,12 +50,12 @@ class GhostYamlWriterFuzzTest {
 
     @FuzzTest
     fun fuzzYamlMappingKeyRoundTrip(data: FuzzedDataProvider) {
-        val expected = canonicalize(data.consumeRemainingAsString())
+        val expected = canonicalize(raw = data.consumeRemainingAsString())
 
         val byteWriter = FlatByteArrayWriter()
-        GhostYamlWriter(byteWriter).beginObject().name(expected).value(1).endObject()
+        GhostYamlWriter(byteWriter).beginObject().name(key = expected).value(1).endObject()
 
-        val decoded = GhostYamlFlatReader(byteWriter.toByteArray()).readDocument()
+        val decoded = GhostYamlFlatReader(rawData = byteWriter.toByteArray()).readDocument()
         check(decoded is Map<*, *> && decoded.keys.singleOrNull() == expected) {
             "YAML key round-trip mismatch: ${expected.length} chars -> " +
                 "\"${byteWriter.toStringUtf8()}\" -> $decoded"

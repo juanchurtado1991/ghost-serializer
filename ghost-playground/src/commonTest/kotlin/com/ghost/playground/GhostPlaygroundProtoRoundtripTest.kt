@@ -14,19 +14,19 @@ class GhostPlaygroundProtoRoundtripTest {
 
     @BeforeTest
     fun registerModule() {
-        Ghost.addRegistry(GhostModuleRegistry_playground.INSTANCE)
+        Ghost.addRegistry(registry = GhostModuleRegistry_playground.INSTANCE)
     }
 
     @Test
     fun protoOrderEventOmitsZeroDefaultAndQuotesInt64() {
         val json = """{"orderId":"5001","label":"restock","retries":0}"""
         val event = GhostProto.deserialize<ProtoOrderEvent>(json)
-        assertEquals(5001L, event.orderId)
-        assertEquals("restock", event.label)
-        assertEquals(0, event.retries)
+        assertEquals(expected = 5001L, actual = event.orderId)
+        assertEquals(expected = "restock", actual = event.label)
+        assertEquals(expected = 0, actual = event.retries)
 
         val encoded = GhostProto.encodeToString(event)
-        assertTrue("\"5001\"" in encoded || encoded.contains("orderId"))
-        assertFalse("\"retries\"" in encoded, "default zero field should be omitted: $encoded")
+        assertTrue(actual = "\"5001\"" in encoded || encoded.contains("orderId"))
+        assertFalse(actual = "\"retries\"" in encoded, message = "default zero field should be omitted: $encoded")
     }
 }

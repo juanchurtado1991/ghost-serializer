@@ -4,7 +4,8 @@ package com.ghost.serialization.yaml
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.decodeAllFromYaml
 import com.ghost.serialization.decodeFromYaml
@@ -15,19 +16,19 @@ import com.ghost.serialization.encodeToYamlBytes
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
+import com.ghost.serialization.parser.yaml.readDocument
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
-import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertTrue
+import okio.Buffer
 
 /**
- * Entry-point and tri-channel parity tests for YAML serializers.
- * Aligns with `FeatureTriChannelSerializerTest` and
+ * Tri-channel parity for YAML entry points; aligns with `FeatureTriChannelSerializerTest` and
  * `GhostProtoEntryPointsTest`.
  */
 class GhostYamlEntryPointTest {
@@ -35,7 +36,7 @@ class GhostYamlEntryPointTest {
     private data class YamlScalarBox(val label: String, val count: Int, val active: Boolean = true)
 
     private object YamlScalarBoxSerializer :
-        GhostSerializer<YamlScalarBox>,
+        AbstractGhostSerializer<YamlScalarBox>(),
         GhostYamlSerializer<YamlScalarBox> {
         override val typeName: String = "YamlScalarBox"
 
@@ -45,16 +46,16 @@ class GhostYamlEntryPointTest {
         ) = Unit
 
         override fun deserialize(reader: GhostJsonReader): YamlScalarBox =
-            YamlScalarBox("", 0)
+            YamlScalarBox(label = "", count = 0)
 
         override fun deserialize(reader: GhostJsonStringReader): YamlScalarBox =
-            YamlScalarBox("", 0)
+            YamlScalarBox(label = "", count = 0)
 
         override fun serialize(writer: GhostYamlWriter, value: YamlScalarBox) {
             writer.beginObject()
-            writer.name("label").value(value.label)
-            writer.name("count").value(value.count)
-            writer.name("active").value(value.active)
+            writer.name(key = "label").value(value.label)
+            writer.name(key = "count").value(value.count)
+            writer.name(key = "active").value(value.active)
             writer.endObject()
         }
 
@@ -72,13 +73,13 @@ class GhostYamlEntryPointTest {
                 }
             }
             reader.endObject()
-            return YamlScalarBox(label, count, active)
+            return YamlScalarBox(label = label, count = count, active = active)
         }
     }
 
     init {
         Ghost.addRegistry(
-            object : GhostRegistry {
+            registry = object : AbstractGhostRegistry() {
                 private val map = mapOf<kotlin.reflect.KClass<*>, GhostSerializer<*>>(
                     YamlScalarBox::class to YamlScalarBoxSerializer,
                 )
@@ -90,6 +91,7 @@ class GhostYamlEntryPointTest {
 
                 override fun getAllSerializers(): Map<kotlin.reflect.KClass<*>, GhostSerializer<*>> =
                     map
+
             },
         )
     }
@@ -103,23 +105,32 @@ class GhostYamlEntryPointTest {
         """.trimIndent()
         val fromString = Ghost.decodeFromYaml<YamlScalarBox>(yaml)
         val fromBytes = Ghost.decodeFromYaml<YamlScalarBox>(yaml.encodeToByteArray())
-        assertEquals(fromString, fromBytes)
+        assertEquals(
+            expected = fromString,
+            actual = fromBytes
+        )
     }
 
     @Test
     fun encodeToYamlAndBytesMatch() {
-        val value = YamlScalarBox("bytes", 99)
-        val asString = Ghost.encodeToYaml(value)
-        val asBytes = Ghost.encodeToYamlBytes(value)
-        assertContentEquals(asString.encodeToByteArray(), asBytes)
+        val value = YamlScalarBox(label = "bytes", count = 99)
+        val asString = Ghost.encodeToYaml(value = value)
+        val asBytes = Ghost.encodeToYamlBytes(value = value)
+        assertContentEquals(
+            expected = asString.encodeToByteArray(),
+            actual = asBytes
+        )
     }
 
     @Test
     fun roundTripThroughEntryPointsPreservesValue() {
-        val original = YamlScalarBox("entry", 11, active = false)
-        val yaml = Ghost.encodeToYaml(original)
+        val original = YamlScalarBox(label = "entry", count = 11, active = false)
+        val yaml = Ghost.encodeToYaml(value = original)
         val restored = Ghost.decodeFromYaml<YamlScalarBox>(yaml)
-        assertEquals(original, restored)
+        assertEquals(
+            expected = original,
+            actual = restored
+        )
     }
 
     @Test
@@ -130,45 +141,69 @@ class GhostYamlEntryPointTest {
 
     @Test
     fun emptyStringDecodeAllReturnsEmptyList() {
-        assertEquals(emptyList(), Ghost.decodeAllFromYaml<YamlScalarBox>(""))
+        assertEquals(
+            expected = emptyList(),
+            actual = Ghost.decodeAllFromYaml<YamlScalarBox>("")
+        )
     }
 
     @Test
     fun whitespaceOnlyDecodeAllReturnsEmptyList() {
-        assertEquals(emptyList(), Ghost.decodeAllFromYaml<YamlScalarBox>("  \n\t  "))
+        assertEquals(
+            expected = emptyList(),
+            actual = Ghost.decodeAllFromYaml<YamlScalarBox>("  \n\t  ")
+        )
     }
 
     @Test
     fun encodeAllToYamlEmptyListReturnsEmptyString() {
-        assertEquals("", Ghost.encodeAllToYaml<YamlScalarBox>(emptyList()))
+        assertEquals(
+            expected = "",
+            actual = Ghost.encodeAllToYaml<YamlScalarBox>(values = emptyList())
+        )
     }
 
     @Test
     fun encodeAllToYamlBytesMatchesStringEncoding() {
         val values = listOf(
-            YamlScalarBox("one", 1),
-            YamlScalarBox("two", 2),
+            YamlScalarBox(label = "one", count = 1),
+            YamlScalarBox(label = "two", count = 2),
         )
-        val asString = Ghost.encodeAllToYaml(values)
-        val asBytes = Ghost.encodeAllToYamlBytes(values)
-        assertContentEquals(asString.encodeToByteArray(), asBytes)
-        assertEquals(2, Ghost.decodeAllFromYaml<YamlScalarBox>(asBytes).size)
+        val asString = Ghost.encodeAllToYaml(values = values)
+        val asBytes = Ghost.encodeAllToYamlBytes(values = values)
+        assertContentEquals(
+            expected = asString.encodeToByteArray(),
+            actual = asBytes
+        )
+        assertEquals(
+            expected = 2,
+            actual = Ghost.decodeAllFromYaml<YamlScalarBox>(asBytes).size
+        )
     }
 
     @Test
     fun encodeDecodeIntArrayViaYamlEntryPoints() {
         val original = intArrayOf(1, 2, 3, -4)
-        val yaml = Ghost.encodeToYaml(original)
+        val yaml = Ghost.encodeToYaml(value = original)
         val restored = Ghost.decodeFromYaml<IntArray>(yaml)
-        assertContentEquals(original, restored)
-        assertContentEquals(original, Ghost.decodeFromYaml(Ghost.encodeToYamlBytes(original)))
+        assertContentEquals(
+            expected = original,
+            actual = restored
+        )
+        assertContentEquals(
+            expected = original,
+            actual = Ghost.decodeFromYaml(Ghost.encodeToYamlBytes(value = original))
+        )
     }
 
     @Test
     fun encodeDecodeBooleanArrayViaYamlEntryPoints() {
         val original = booleanArrayOf(true, false, true)
-        val yaml = Ghost.encodeToYaml(original)
-        assertContentEquals(original, Ghost.decodeFromYaml<BooleanArray>(yaml))
+        val yaml = Ghost.encodeToYaml(value = original)
+        assertContentEquals(
+            expected = original,
+            actual = Ghost.decodeFromYaml<BooleanArray>(yaml)
+        )
     }
 
     @Test
@@ -181,14 +216,14 @@ class GhostYamlEntryPointTest {
             count: 2
         """.trimIndent()
         assertEquals(
-            Ghost.decodeAllFromYaml<YamlScalarBox>(multi),
-            Ghost.decodeAllFromYaml<YamlScalarBox>(multi.encodeToByteArray()),
+            expected = Ghost.decodeAllFromYaml<YamlScalarBox>(multi),
+            actual = Ghost.decodeAllFromYaml<YamlScalarBox>(multi.encodeToByteArray())
         )
     }
 
     @Test
     fun flatAndStreamingWritersRoundTripIdentically() {
-        val value = YamlScalarBox("tri", 5)
+        val value = YamlScalarBox(label = "tri", count = 5)
 
         val flatBytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             YamlScalarBoxSerializer.serialize(writer, value)
@@ -199,24 +234,22 @@ class GhostYamlEntryPointTest {
         val streamBytes = streamSink.readByteArray()
 
         assertEquals(
-            YamlScalarBoxSerializer.deserialize(GhostYamlFlatReader(flatBytes)),
-            YamlScalarBoxSerializer.deserialize(GhostYamlFlatReader(streamBytes)),
+            expected = YamlScalarBoxSerializer.deserialize(GhostYamlFlatReader(rawData = flatBytes)),
+            actual = YamlScalarBoxSerializer.deserialize(GhostYamlFlatReader(rawData = streamBytes))
         )
     }
 
     @Test
     fun flatAndStreamingWritersAgreeOnEmptyNestedCollections() {
-        // Confirm the Buffer-backed and FlatByteArrayWriter-backed sinks stay byte-identical
-        // for the empty-collection case.
         val flatBytes = ghostYamlInternalUseFlatWriter { writer, buffer ->
             writer.beginObject()
-            writer.name("meta")
+            writer.name(key = "meta")
             writer.beginObject()
             writer.endObject()
-            writer.name("tags")
+            writer.name(key = "tags")
             writer.beginArray()
             writer.endArray()
-            writer.name("count")
+            writer.name(key = "count")
             writer.value(2)
             writer.endObject()
             buffer.toByteArray()
@@ -225,31 +258,46 @@ class GhostYamlEntryPointTest {
         val streamSink = Buffer()
         val streamWriter = GhostYamlWriter(streamSink)
         streamWriter.beginObject()
-        streamWriter.name("meta")
+        streamWriter.name(key = "meta")
         streamWriter.beginObject()
         streamWriter.endObject()
-        streamWriter.name("tags")
+        streamWriter.name(key = "tags")
         streamWriter.beginArray()
         streamWriter.endArray()
-        streamWriter.name("count")
+        streamWriter.name(key = "count")
         streamWriter.value(2)
         streamWriter.endObject()
         streamWriter.flush()
         val streamBytes = streamSink.readByteArray()
 
-        assertContentEquals(flatBytes, streamBytes)
-        val result = GhostYamlFlatReader(streamBytes).readDocument() as Map<*, *>
-        assertEquals(emptyMap<String, Any?>(), result["meta"])
-        assertEquals(emptyList<Any?>(), result["tags"])
-        assertEquals(2L, result["count"])
+        assertContentEquals(
+            expected = flatBytes,
+            actual = streamBytes
+        )
+        val result = GhostYamlFlatReader(rawData = streamBytes).readDocument() as Map<*, *>
+        assertEquals(
+            expected = emptyMap<String, Any?>(),
+            actual = result["meta"]
+        )
+        assertEquals(
+            expected = emptyList<Any?>(),
+            actual = result["tags"]
+        )
+        assertEquals(
+            expected = 2L,
+            actual = result["count"]
+        )
     }
 
     @Test
     fun encodeToYamlBytesProducesParseableDocument() {
-        val value = YamlScalarBox("parseable", 1)
-        val bytes = Ghost.encodeToYamlBytes(value)
+        val value = YamlScalarBox(label = "parseable", count = 1)
+        val bytes = Ghost.encodeToYamlBytes(value = value)
         val restored = Ghost.decodeFromYaml<YamlScalarBox>(bytes)
-        assertEquals(value, restored)
-        assertTrue(bytes.decodeToString().contains("parseable"))
+        assertEquals(
+            expected = value,
+            actual = restored
+        )
+        assertTrue(actual = bytes.decodeToString().contains("parseable"))
     }
 }

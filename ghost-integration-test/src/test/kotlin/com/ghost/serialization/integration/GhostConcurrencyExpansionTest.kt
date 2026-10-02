@@ -27,7 +27,7 @@ class GhostConcurrencyExpansionTest {
 
         // Large string triggers scratch buffer usage in writer and reader slow paths
         val largeString = "🧛".repeat(2000)
-        val model = LargeStringModel(largeString)
+        val model = LargeStringModel(large = largeString)
 
         withContext(dispatcher) {
             val jobs = (0 until numThreads).map {
@@ -52,21 +52,21 @@ class GhostConcurrencyExpansionTest {
 
         (dispatcher.executor as java.util.concurrent.ExecutorService).shutdown()
         assertTrue(
-            (dispatcher.executor as java.util.concurrent.ExecutorService).awaitTermination(
+            actual = (dispatcher.executor as java.util.concurrent.ExecutorService).awaitTermination(
                 10,
                 TimeUnit.SECONDS
             )
         )
 
         assertEquals(
-            0,
-            errorCount.get(),
-            "Concurrency stress test failed with ${errorCount.get()} errors"
+            expected = 0,
+            actual = errorCount.get(),
+            message = "Concurrency stress test failed with ${errorCount.get()} errors"
         )
         assertEquals(
-            numThreads * operationsPerThread,
-            successCount.get(),
-            "Some operations failed to complete"
+            expected = numThreads * operationsPerThread,
+            actual = successCount.get(),
+            message = "Some operations failed to complete"
         )
     }
 
@@ -85,7 +85,7 @@ class GhostConcurrencyExpansionTest {
         }
         (dispatcher.executor as java.util.concurrent.ExecutorService).shutdown()
         assertTrue(
-            (dispatcher.executor as java.util.concurrent.ExecutorService).awaitTermination(
+            actual = (dispatcher.executor as java.util.concurrent.ExecutorService).awaitTermination(
                 5,
                 TimeUnit.SECONDS
             )

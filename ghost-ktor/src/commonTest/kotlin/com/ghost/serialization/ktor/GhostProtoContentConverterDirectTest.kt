@@ -1,7 +1,7 @@
 package com.ghost.serialization.ktor
 
 import com.ghost.serialization.Ghost
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import io.ktor.http.ContentType
 import io.ktor.util.reflect.typeInfo
@@ -14,7 +14,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-
 /**
  * Direct unit tests for [GhostProtoContentConverter]: proto3 JSON read path, null-return
  * contract, scratch-buffer growth, and list deserialization via `GhostProtoJsonFlatReader`.
@@ -23,8 +22,7 @@ class GhostProtoContentConverterDirectTest {
 
     @BeforeTest
     fun setup() {
-        Ghost.addRegistry(object : GhostRegistry {
-            override fun prewarm() {}
+        Ghost.addRegistry(registry = object : AbstractGhostRegistry() {
             override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
                 mapOf(ProtoKtorEvent::class to ProtoKtorEventSerializer)
 
@@ -38,24 +36,24 @@ class GhostProtoContentConverterDirectTest {
     fun serialize_returnsNullForNullValue() = runTest {
         val converter = GhostProtoContentConverter()
         val result = converter.serialize(
-            ContentType.Application.Json,
-            Charsets.UTF_8,
-            typeInfo<ProtoKtorEvent>(),
-            null
+            contentType = ContentType.Application.Json,
+            charset = Charsets.UTF_8,
+            typeInfo = typeInfo<ProtoKtorEvent>(),
+            value = null
         )
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
     fun serialize_returnsNullForUnregisteredType() = runTest {
         val converter = GhostProtoContentConverter()
         val result = converter.serialize(
-            ContentType.Application.Json,
-            Charsets.UTF_8,
-            typeInfo<UnregisteredUser>(),
-            UnregisteredUser(1, "x")
+            contentType = ContentType.Application.Json,
+            charset = Charsets.UTF_8,
+            typeInfo = typeInfo<UnregisteredUser>(),
+            value = UnregisteredUser(id = 1, name = "x")
         )
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
@@ -63,7 +61,7 @@ class GhostProtoContentConverterDirectTest {
         val converter = GhostProtoContentConverter()
         val channel = ByteReadChannel("""{"deviceId":"1","label":"x"}""".encodeToByteArray())
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<UnregisteredUser>(), channel)
-        assertNull(result)
+        assertNull(actual = result)
     }
 
     @Test
@@ -75,7 +73,7 @@ class GhostProtoContentConverterDirectTest {
 
         val result = converter.deserialize(Charsets.UTF_8, typeInfo<ProtoKtorEvent>(), channel)
 
-        assertEquals(ProtoKtorEvent(42L, longLabel), result)
+        assertEquals(expected = ProtoKtorEvent(deviceId = 42L, label = longLabel), actual = result)
     }
 
     @Test
@@ -90,7 +88,7 @@ class GhostProtoContentConverterDirectTest {
             channel,
         ) as List<ProtoKtorEvent>
 
-        assertEquals(listOf(ProtoKtorEvent(5L, "batch")), result)
+        assertEquals(expected = listOf(ProtoKtorEvent(deviceId = 5L, label = "batch")), actual = result)
     }
 
     @Test
@@ -105,6 +103,6 @@ class GhostProtoContentConverterDirectTest {
             channel,
         ) as List<ProtoKtorEvent>
 
-        assertEquals(Long.MAX_VALUE, result.single().deviceId)
+        assertEquals(expected = Long.MAX_VALUE, actual = result.single().deviceId)
     }
 }

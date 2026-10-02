@@ -13,15 +13,27 @@ class GhostGenericTest {
     fun testListResolutionInKMP() {
         val type = typeOf<List<String>>()
         val serializer = Ghost.getSerializer(type)
-        assertNotNull(serializer, "Serializer should not be null for List<String>")
-        assertTrue(serializer is ListSerializer<*>, "Serializer should be ListSerializer")
+        assertNotNull(
+            actual = serializer,
+            message = "Serializer should not be null for List<String>"
+        )
+        assertTrue(
+            actual = serializer is ListSerializer<*>,
+            message = "Serializer should be ListSerializer"
+        )
     }
 
     @Test
     fun testMapResolutionInKMP() {
         val type = typeOf<Map<String, Int>>()
         val serializer = Ghost.getSerializer(type)
-        assertNotNull(serializer, "Serializer should not be null for Map<String, Int>")
-        assertTrue(serializer is MapSerializer<*>, "Serializer should be MapSerializer")
+        assertNotNull(
+            actual = serializer,
+            message = "Serializer should not be null for Map<String, Int>"
+        )
+        assertTrue(
+            actual = serializer is MapSerializer<*>,
+            message = "Serializer should be MapSerializer"
+        )
     }
 }

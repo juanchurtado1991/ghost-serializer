@@ -4,7 +4,7 @@ package com.ghost.serialization.yaml.testsuite
 data class DeviationCase(val id: String, val reason: String)
 
 /** Builds a [DeviationCase]: `"9C9N" because "Wrong indented flow sequence"`. */
-infix fun String.because(reason: String): DeviationCase = DeviationCase(this, reason)
+infix fun String.because(reason: String): DeviationCase = DeviationCase(id = this, reason = reason)
 
 // Grouped reasons, not per-case free text: each names a real, distinct category of
 // unimplemented/incomplete YAML 1.2 spec surface identified while triaging the yaml-test-suite

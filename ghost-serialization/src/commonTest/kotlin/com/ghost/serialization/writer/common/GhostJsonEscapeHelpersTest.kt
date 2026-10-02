@@ -20,9 +20,9 @@ class GhostJsonEscapeHelpersTest {
     fun isPlainAsciiSafe_matchesReferenceForAllCodeUnits() {
         for (code in 0..200) {
             assertEquals(
-                referenceIsSafe(code),
-                GhostJsonEscapeHelpers.isPlainAsciiSafe(code),
-                "mismatch for code $code",
+                expected = referenceIsSafe(code = code),
+                actual = GhostJsonEscapeHelpers.isPlainAsciiSafe(code = code),
+                message = "mismatch for code $code"
             )
         }
     }

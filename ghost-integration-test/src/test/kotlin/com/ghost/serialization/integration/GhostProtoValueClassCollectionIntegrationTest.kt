@@ -12,20 +12,20 @@ class GhostProtoValueClassCollectionIntegrationTest {
     @Test
     fun serializesAndDeserializesValueClassCollectionsWithProtoCoercion() {
         val model = ProtoValueClassCollectionFixture(
-            ids = listOf(ProtoAccountId(123L), ProtoAccountId(456L)),
-            accounts = mapOf("alice" to ProtoAccountId(789L))
+            ids = listOf(ProtoAccountId(value = 123L), ProtoAccountId(value = 456L)),
+            accounts = mapOf("alice" to ProtoAccountId(value = 789L))
         )
 
         val json = Ghost.encodeToString(model)
 
         // Proto3 JSON requires int64/uint64 quoted as strings
-        assertTrue(json.contains("\"123\""), "Expected quoted 123 in JSON: $json")
-        assertTrue(json.contains("\"456\""), "Expected quoted 456 in JSON: $json")
-        assertTrue(json.contains("\"789\""), "Expected quoted 789 in JSON: $json")
+        assertTrue(actual = json.contains("\"123\""), message = "Expected quoted 123 in JSON: $json")
+        assertTrue(actual = json.contains("\"456\""), message = "Expected quoted 456 in JSON: $json")
+        assertTrue(actual = json.contains("\"789\""), message = "Expected quoted 789 in JSON: $json")
 
         val deserialized =
             Ghost.deserialize<ProtoValueClassCollectionFixture>(json.encodeToByteArray())
-        assertEquals(model, deserialized)
+        assertEquals(expected = model, actual = deserialized)
     }
 
     @Test
@@ -36,9 +36,9 @@ class GhostProtoValueClassCollectionIntegrationTest {
             Ghost.deserialize<ProtoValueClassCollectionFixture>(json.encodeToByteArray())
 
         val expected = ProtoValueClassCollectionFixture(
-            ids = listOf(ProtoAccountId(123L), ProtoAccountId(456L)),
-            accounts = mapOf("alice" to ProtoAccountId(789L))
+            ids = listOf(ProtoAccountId(value = 123L), ProtoAccountId(value = 456L)),
+            accounts = mapOf("alice" to ProtoAccountId(value = 789L))
         )
-        assertEquals(expected, deserialized)
+        assertEquals(expected = expected, actual = deserialized)
     }
 }

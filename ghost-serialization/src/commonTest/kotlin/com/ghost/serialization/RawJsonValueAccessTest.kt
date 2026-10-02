@@ -10,65 +10,137 @@ import kotlin.test.assertTrue
 
 class RawJsonValueAccessTest {
 
-    private fun raw(json: String): RawJson = RawJson.fromString(json)
+    private fun raw(json: String): RawJson = RawJson.fromString(json = json)
 
     @Test
     fun kindClassifiesAllJsonValueForms() {
-        assertEquals(RawJsonKind.OBJECT, raw("""{"a":1}""").kind())
-        assertEquals(RawJsonKind.ARRAY, raw("""[1,2]""").kind())
-        assertEquals(RawJsonKind.STRING, raw(""""hello"""").kind())
-        assertEquals(RawJsonKind.NUMBER, raw("42").kind())
-        assertEquals(RawJsonKind.NUMBER, raw("-3.14").kind())
-        assertEquals(RawJsonKind.BOOLEAN, raw("true").kind())
-        assertEquals(RawJsonKind.BOOLEAN, raw("false").kind())
-        assertEquals(RawJsonKind.NULL, raw("null").kind())
-        assertEquals(RawJsonKind.INVALID, raw("").kind())
+        assertEquals(
+            expected = RawJsonKind.OBJECT,
+            actual = raw(json = """{"a":1}""").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.ARRAY,
+            actual = raw(json = """[1,2]""").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.STRING,
+            actual = raw(""""hello"""").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NUMBER,
+            actual = raw("42").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NUMBER,
+            actual = raw("-3.14").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.BOOLEAN,
+            actual = raw("true").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.BOOLEAN,
+            actual = raw("false").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.NULL,
+            actual = raw("null").kind()
+        )
+        assertEquals(
+            expected = RawJsonKind.INVALID,
+            actual = raw("").kind()
+        )
     }
 
     @Test
     fun isJsonNullOnlyForNullLiteral() {
-        assertTrue(raw("null").isJsonNull)
-        assertFalse(raw("""{"x":null}""").isJsonNull)
-        assertFalse(raw(""""null"""").isJsonNull)
+        assertTrue(actual = raw("null").isJsonNull)
+        assertFalse(actual = raw("""{"x":null}""").isJsonNull)
+        assertFalse(actual = raw(""""null"""").isJsonNull)
     }
 
     @Test
     fun asBooleanOrNull() {
-        assertEquals(true, raw("true").asBooleanOrNull())
-        assertEquals(false, raw("false").asBooleanOrNull())
-        assertNull(raw("null").asBooleanOrNull())
-        assertNull(raw("1").asBooleanOrNull())
+        assertEquals(
+            expected = true,
+            actual = raw("true").asBooleanOrNull()
+        )
+        assertEquals(
+            expected = false,
+            actual = raw("false").asBooleanOrNull()
+        )
+        assertNull(actual = raw("null").asBooleanOrNull())
+        assertNull(actual = raw("1").asBooleanOrNull())
     }
 
     @Test
     fun asIntAndLongOrNull_integerFormsOnly() {
-        assertEquals(42, raw("42").asIntOrNull())
-        assertEquals(-7, raw("-7").asIntOrNull())
-        assertEquals(42L, raw("42").asLongOrNull())
-        assertNull(raw("3.14").asIntOrNull())
-        assertNull(raw("1e3").asIntOrNull())
+        assertEquals(
+            expected = 42,
+            actual = raw("42").asIntOrNull()
+        )
+        assertEquals(
+            expected = -7,
+            actual = raw("-7").asIntOrNull()
+        )
+        assertEquals(
+            expected = 42L,
+            actual = raw("42").asLongOrNull()
+        )
+        assertNull(actual = raw("3.14").asIntOrNull())
+        assertNull(actual = raw("1e3").asIntOrNull())
     }
 
     @Test
     fun asDoubleOrNull() {
-        assertEquals(3.14, raw("3.14").asDoubleOrNull())
-        assertEquals(1000.0, raw("1e3").asDoubleOrNull())
-        assertEquals(-2.0, raw("-2").asDoubleOrNull())
+        assertEquals(
+            expected = 3.14,
+            actual = raw("3.14").asDoubleOrNull()
+        )
+        assertEquals(
+            expected = 1000.0,
+            actual = raw("1e3").asDoubleOrNull()
+        )
+        assertEquals(
+            expected = -2.0,
+            actual = raw("-2").asDoubleOrNull()
+        )
     }
 
     @Test
     fun asStringOrNull_decodesJsonStringContent() {
-        assertEquals("off", raw(""""off"""").asStringOrNull())
-        assertEquals("a\"b", raw(""""a\"b"""").asStringOrNull())
-        assertNull(raw("true").asStringOrNull())
+        assertEquals(
+            expected = "off",
+            actual = raw(""""off"""").asStringOrNull()
+        )
+        assertEquals(
+            expected = "a\"b",
+            actual = raw(""""a\"b"""").asStringOrNull()
+        )
+        assertNull(actual = raw("true").asStringOrNull())
     }
 
     @Test
     fun asDisplayString_scalarsAndStructured() {
-        assertEquals("on", raw(""""on"""").asDisplayString())
-        assertEquals("42", raw("42").asDisplayString())
-        assertEquals("true", raw("true").asDisplayString())
-        assertEquals("null", raw("null").asDisplayString())
-        assertEquals("""{"k":1}""", raw("""{"k":1}""").asDisplayString())
+        assertEquals(
+            expected = "on",
+            actual = raw(""""on"""").asDisplayString()
+        )
+        assertEquals(
+            expected = "42",
+            actual = raw("42").asDisplayString()
+        )
+        assertEquals(
+            expected = "true",
+            actual = raw("true").asDisplayString()
+        )
+        assertEquals(
+            expected = "null",
+            actual = raw("null").asDisplayString()
+        )
+        assertEquals(
+            expected = """{"k":1}""",
+            actual = raw("""{"k":1}""").asDisplayString()
+        )
     }
 }

@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,7 +20,7 @@ class GhostYamlCodegenKspTest {
     @Test
     fun generatesYamlSerializeAndDeserializeMethodsWhenYamlAnnotationPresent() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlUser.kt",
                 """
                 package fixtures
@@ -36,27 +37,27 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlSerializer<YamlUser>" in generated,
-            "Expected GhostYamlSerializer superinterface:\n$generated"
+            actual = "GhostYamlSerializer<YamlUser>" in generated,
+            message = "Expected GhostYamlSerializer superinterface:\n$generated"
         )
         assertTrue(
-            "override fun serialize(writer: GhostYamlWriter" in generated,
-            "Expected YAML serialize method:\n$generated"
+            actual = "override fun serialize(writer: GhostYamlWriter" in generated,
+            message = "Expected YAML serialize method:\n$generated"
         )
         assertTrue(
-            "override fun deserialize(reader: GhostYamlFlatReader" in generated,
-            "Expected YAML flat deserialize method:\n$generated"
+            actual = "override fun deserialize(reader: GhostYamlFlatReader" in generated,
+            message = "Expected YAML flat deserialize method:\n$generated"
         )
         assertFalse(
-            "decodeResilient" in generated,
-            "YAML deserialize path must not use decodeResilient:\n$generated"
+            actual = "decodeResilient" in generated,
+            message = "YAML deserialize path must not use decodeResilient:\n$generated"
         )
     }
 
     @Test
     fun skipsYamlWithoutGhostYamlSerializationAnnotation() {
         val generated = compileKspOnly(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "JsonOnlyUser.kt",
                 """
                 package fixtures
@@ -71,8 +72,8 @@ class GhostYamlCodegenKspTest {
         )
 
         assertFalse(
-            "GhostYamlSerializer" in generated,
-            "YAML codegen requires @GhostYamlSerialization:\n$generated"
+            actual = "GhostYamlSerializer" in generated,
+            message = "YAML codegen requires @GhostYamlSerialization:\n$generated"
         )
     }
 
@@ -105,7 +106,7 @@ class GhostYamlCodegenKspTest {
             )
         )
 
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
         assertTrue(
             result.messages.contains("@GhostDecoder/@GhostEncoder", ignoreCase = true),
             result.messages
@@ -132,7 +133,7 @@ class GhostYamlCodegenKspTest {
             )
         )
 
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
         assertTrue(
             result.messages.contains("@GhostResilient is JSON-only", ignoreCase = true),
             result.messages
@@ -155,7 +156,7 @@ class GhostYamlCodegenKspTest {
             )
         )
 
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
         assertTrue(
             result.messages.contains(
                 "requires @GhostSerialization or @GhostProtoSerialization",
@@ -168,7 +169,7 @@ class GhostYamlCodegenKspTest {
     @Test
     fun primitiveIntArrayUsesGhostYamlIntArraySerializer() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlScores.kt",
                 """
                 package fixtures
@@ -185,19 +186,19 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlIntArraySerializer.serialize(writer, value.values)" in generated,
-            "Expected YAML primitive array serializer on write path:\n$generated"
+            actual = "GhostYamlIntArraySerializer.serialize(writer, value.values)" in generated,
+            message = "Expected YAML primitive array serializer on write path:\n$generated"
         )
         assertTrue(
-            "GhostYamlIntArraySerializer.deserialize(reader)" in generated,
-            "Expected YAML primitive array serializer on read path:\n$generated"
+            actual = "GhostYamlIntArraySerializer.deserialize(reader)" in generated,
+            message = "Expected YAML primitive array serializer on read path:\n$generated"
         )
     }
 
     @Test
     fun primitiveLongArrayUsesGhostYamlLongArraySerializer() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlLongScores.kt",
                 """
                 package fixtures
@@ -214,19 +215,19 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlLongArraySerializer.serialize(writer, value.values)" in generated,
-            "Expected YAML LongArray serializer on write path:\n$generated"
+            actual = "GhostYamlLongArraySerializer.serialize(writer, value.values)" in generated,
+            message = "Expected YAML LongArray serializer on write path:\n$generated"
         )
         assertTrue(
-            "GhostYamlLongArraySerializer.deserialize(reader)" in generated,
-            "Expected YAML LongArray serializer on read path:\n$generated"
+            actual = "GhostYamlLongArraySerializer.deserialize(reader)" in generated,
+            message = "Expected YAML LongArray serializer on read path:\n$generated"
         )
     }
 
     @Test
     fun primitiveFloatArrayUsesGhostYamlFloatArraySerializer() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlFloatScores.kt",
                 """
                 package fixtures
@@ -243,19 +244,19 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlFloatArraySerializer.serialize(writer, value.values)" in generated,
-            "Expected YAML FloatArray serializer on write path:\n$generated"
+            actual = "GhostYamlFloatArraySerializer.serialize(writer, value.values)" in generated,
+            message = "Expected YAML FloatArray serializer on write path:\n$generated"
         )
         assertTrue(
-            "GhostYamlFloatArraySerializer.deserialize(reader)" in generated,
-            "Expected YAML FloatArray serializer on read path:\n$generated"
+            actual = "GhostYamlFloatArraySerializer.deserialize(reader)" in generated,
+            message = "Expected YAML FloatArray serializer on read path:\n$generated"
         )
     }
 
     @Test
     fun primitiveDoubleArrayUsesGhostYamlDoubleArraySerializer() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlDoubleScores.kt",
                 """
                 package fixtures
@@ -272,19 +273,19 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlDoubleArraySerializer.serialize(writer, value.values)" in generated,
-            "Expected YAML DoubleArray serializer on write path:\n$generated"
+            actual = "GhostYamlDoubleArraySerializer.serialize(writer, value.values)" in generated,
+            message = "Expected YAML DoubleArray serializer on write path:\n$generated"
         )
         assertTrue(
-            "GhostYamlDoubleArraySerializer.deserialize(reader)" in generated,
-            "Expected YAML DoubleArray serializer on read path:\n$generated"
+            actual = "GhostYamlDoubleArraySerializer.deserialize(reader)" in generated,
+            message = "Expected YAML DoubleArray serializer on read path:\n$generated"
         )
     }
 
     @Test
     fun primitiveBooleanArrayUsesGhostYamlBooleanArraySerializer() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlFlags.kt",
                 """
                 package fixtures
@@ -301,19 +302,19 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "GhostYamlBooleanArraySerializer.serialize(writer, value.values)" in generated,
-            "Expected YAML BooleanArray serializer on write path:\n$generated"
+            actual = "GhostYamlBooleanArraySerializer.serialize(writer, value.values)" in generated,
+            message = "Expected YAML BooleanArray serializer on write path:\n$generated"
         )
         assertTrue(
-            "GhostYamlBooleanArraySerializer.deserialize(reader)" in generated,
-            "Expected YAML BooleanArray serializer on read path:\n$generated"
+            actual = "GhostYamlBooleanArraySerializer.deserialize(reader)" in generated,
+            message = "Expected YAML BooleanArray serializer on read path:\n$generated"
         )
     }
 
     @Test
     fun plainULongFieldUsesNextULongOnYamlDeserialize() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "YamlShard.kt",
                 """
                 package fixtures
@@ -330,12 +331,12 @@ class GhostYamlCodegenKspTest {
         )
 
         assertTrue(
-            "reader.nextULong()" in generated,
-            "Expected plain ULong YAML scalar reader:\n$generated"
+            actual = "reader.nextULong()" in generated,
+            message = "Expected plain ULong YAML scalar reader:\n$generated"
         )
         assertFalse(
-            "ULongSerializer" in generated,
-            "Plain ULong must not require contextual serializer:\n$generated"
+            actual = "ULongSerializer" in generated,
+            message = "Plain ULong must not require contextual serializer:\n$generated"
         )
     }
 
@@ -352,11 +353,11 @@ class GhostYamlCodegenKspTest {
         val compilation = KotlinCompilation().apply {
             sources = listOf(source)
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = false
             languageVersion = "1.9"
             apiVersion = "1.9"
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         val result = compilation.compile()
@@ -371,11 +372,11 @@ class GhostYamlCodegenKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

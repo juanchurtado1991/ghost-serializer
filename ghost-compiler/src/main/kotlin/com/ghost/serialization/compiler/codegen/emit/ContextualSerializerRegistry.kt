@@ -7,6 +7,8 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
@@ -17,26 +19,15 @@ internal class ContextualSerializerRegistry {
 
     private val entries = mutableMapOf<KSType, String>()
 
-    fun nameFor(type: KSType): String {
-        return entries.getOrPut(type) {
-            val simpleName = type.declaration.simpleName.asString()
-            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else ""
-            C.STR_CONTEXTUAL_PREFIX +
-                    simpleName.replaceFirstChar { it.lowercase() } +
-                    nullableSuffix +
-                    C.STR_SERIALIZER_SUFFIX
-        }
-    }
-
     fun injectInto(typeSpecBuilder: TypeSpec.Builder) {
-        val ghostClass = ClassName(C.PKG_GHOST, C.STR_GHOST)
+        val ghostClass = ClassName(CC.PKG_GHOST, CG.STR_GHOST)
 
         entries.forEach { (type, name) ->
             val nonNullableType = type.makeNotNullable()
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     name,
-                    ClassName(C.PKG_CONTRACT, C.STR_GHOST_SERIALIZER)
+                    ClassName(CC.PKG_CONTRACT, CC.STR_GHOST_SERIALIZER)
                         .parameterizedBy(nonNullableType.toTypeName()),
                     KModifier.PRIVATE
                 )
@@ -47,6 +38,17 @@ internal class ContextualSerializerRegistry {
                     )
                     .build()
             )
+        }
+    }
+
+    fun nameFor(type: KSType): String {
+        return entries.getOrPut(type) {
+            val simpleName = type.declaration.simpleName.asString()
+            val nullableSuffix = if (type.isMarkedNullable) C.STR_NULLABLE_SUFFIX else ""
+            C.STR_CONTEXTUAL_PREFIX +
+                    simpleName.replaceFirstChar { it.lowercase() } +
+                    nullableSuffix +
+                    CC.STR_SERIALIZER_SUFFIX
         }
     }
 }

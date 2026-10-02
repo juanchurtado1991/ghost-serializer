@@ -15,9 +15,8 @@ import com.squareup.kotlinpoet.TypeName
  * @property isResilient True if this property or class is marked with @GhostResilient.
  * @property flattenPath Nested JSON path if this property is flattened via @GhostFlatten.
  * @property wrapPath Nested JSON path if this property is wrapped via @GhostWrap.
- * @property wrappedSourceKeys Wire keys collapsed into this property via @GhostWrappedKeys.
- * @property wrappedOmitIfEmpty When true, absent/null-only captures yield a null wrapper property.
- * @property wrappedOmitIfAbsent Keys that force a null wrapper when absent or JSON null.
+ * @property wrappedKeys `@GhostWrappedKeys` data (collapsed wire keys, omit rules, unwrap targets), or
+ *   `null` when the property isn't a wrapped-keys capture.
  * @property isProto True if the enclosing class is `@GhostProtoSerialization`: `Long` fields are
  *   read/written as quoted decimal strings instead of bare JSON numbers.
  */
@@ -53,10 +52,7 @@ internal data class GhostPropertyModel(
     val customEncoder: CustomCoderModel? = null,
     val flattenPath: List<String>? = null,
     val wrapPath: List<String>? = null,
-    val wrappedSourceKeys: List<String>? = null,
-    val wrappedOmitIfEmpty: Boolean = false,
-    val wrappedOmitIfAbsent: List<String> = emptyList(),
-    val wrappedUnwrapFields: List<WrappedUnwrapFieldModel> = emptyList(),
+    val wrappedKeys: WrappedKeysModel? = null,
     val isInferredSignature: Boolean = false,
     val inferredSubclasses: List<InferredSubclassModel> = emptyList(),
     val isProto: Boolean = false

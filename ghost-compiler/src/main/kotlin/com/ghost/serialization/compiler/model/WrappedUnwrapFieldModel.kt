@@ -7,10 +7,9 @@ import com.squareup.kotlinpoet.TypeName
 /**
  * One wire field emitted when unwrapping a `@GhostWrappedKeys` property during serialization.
  *
- * @property sealedSubclassName Non-null when this field was resolved from a sealed subclass of
- *   the wrapped type rather than its own properties (proto3 `oneof` mapping: each wire key
- *   corresponds to one subclass' field, e.g. `Text.text`/`Code.code` on a `sealed class Payload`).
- *   Emission must `is`-check/smart-cast to this subclass before accessing [kotlinPath] on it.
+ * @property sealedSubclassName Non-null when this field comes from a sealed subclass of the
+ *   wrapped type, not its own properties (proto3 `oneof`: each wire key maps to one subclass'
+ *   field, e.g. `Text.text`/`Code.code`). Emission must smart-cast to this subclass first.
  */
 internal data class WrappedUnwrapFieldModel(
     val jsonName: String,

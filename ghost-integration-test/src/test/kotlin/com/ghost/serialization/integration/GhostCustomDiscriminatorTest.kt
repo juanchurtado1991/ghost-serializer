@@ -35,19 +35,19 @@ class GhostCustomDiscriminatorTest {
         assertContains(json, "\"Login\"")
 
         val decoded = Ghost.deserialize<ApiEventDefault>(json)
-        assertEquals(event, decoded)
+        assertEquals(expected = event, actual = decoded)
     }
 
     @Test
     fun `default implicit discriminator roundtrip all subclasses`() {
         val events: List<ApiEventDefault> = listOf(
-            ApiEventDefault.Login("u_001"),
-            ApiEventDefault.Logout("session_abc"),
+            ApiEventDefault.Login(userId = "u_001"),
+            ApiEventDefault.Logout(sessionId = "session_abc"),
         )
         events.forEach { event ->
             val json = Ghost.serialize(event)
             val decoded = Ghost.deserialize<ApiEventDefault>(json)
-            assertEquals(event, decoded)
+            assertEquals(expected = event, actual = decoded)
         }
     }
 
@@ -56,15 +56,15 @@ class GhostCustomDiscriminatorTest {
     @Test
     fun `explicit type discriminator produces identical JSON to implicit`() {
         // Both sealed classes have Login/Logout with userId/sessionId — same shape
-        val implicit: ApiEventDefault = ApiEventDefault.Login("u_001")
-        val explicit: ApiEventExplicitType = ApiEventExplicitType.Login("u_001")
+        val implicit: ApiEventDefault = ApiEventDefault.Login(userId = "u_001")
+        val explicit: ApiEventExplicitType = ApiEventExplicitType.Login(userId = "u_001")
 
         val jsonImplicit = Ghost.serialize(implicit)
         val jsonExplicit = Ghost.serialize(explicit)
 
         assertContains(jsonImplicit, "\"type\"")
         assertContains(jsonExplicit, "\"type\"")
-        assertEquals(jsonImplicit, jsonExplicit)
+        assertEquals(expected = jsonImplicit, actual = jsonExplicit)
     }
 
     // ─── 3. Custom "kind" discriminator ──────────────────────────────────────
@@ -77,8 +77,8 @@ class GhostCustomDiscriminatorTest {
         assertContains(json, "\"kind\"")
         assertContains(json, "\"Created\"")
         assertTrue(
-            !json.contains("\"type\""),
-            "Should not contain 'type' when discriminator is 'kind'"
+            actual = !json.contains("\"type\""),
+            message = "Should not contain 'type' when discriminator is 'kind'"
         )
     }
 
@@ -87,7 +87,7 @@ class GhostCustomDiscriminatorTest {
         val event: GhostKindEvent = GhostKindEvent.Created(id = "e_1", name = "Ghost")
         val json = Ghost.serialize(event)
         val decoded = Ghost.deserialize<GhostKindEvent>(json)
-        assertEquals(event, decoded)
+        assertEquals(expected = event, actual = decoded)
     }
 
     @Test
@@ -95,7 +95,7 @@ class GhostCustomDiscriminatorTest {
         val event: GhostKindEvent = GhostKindEvent.Deleted(id = "e_2")
         val json = Ghost.serialize(event)
         val decoded = Ghost.deserialize<GhostKindEvent>(json)
-        assertEquals(event, decoded)
+        assertEquals(expected = event, actual = decoded)
     }
 
     @Test
@@ -103,14 +103,14 @@ class GhostCustomDiscriminatorTest {
         val event: GhostKindEvent = GhostKindEvent.Updated(id = "e_3", changes = "name->Ghost v2")
         val json = Ghost.serialize(event)
         val decoded = Ghost.deserialize<GhostKindEvent>(json)
-        assertEquals(event, decoded)
+        assertEquals(expected = event, actual = decoded)
     }
 
     @Test
     fun `kind discriminator can deserialize manually crafted JSON`() {
         val json = """{"kind":"Deleted","id":"e_99"}"""
         val decoded = Ghost.deserialize<GhostKindEvent>(json)
-        assertEquals(GhostKindEvent.Deleted("e_99"), decoded)
+        assertEquals(expected = GhostKindEvent.Deleted(id = "e_99"), actual = decoded)
     }
 
     // ─── 4. Custom "object" discriminator (Stripe-style) ─────────────────────
@@ -123,8 +123,8 @@ class GhostCustomDiscriminatorTest {
         assertContains(json, "\"object\"")
         assertContains(json, "\"Charge\"")
         assertTrue(
-            !json.contains("\"type\""),
-            "Should not contain 'type' when discriminator is 'object'"
+            actual = !json.contains("\"type\""),
+            message = "Should not contain 'type' when discriminator is 'object'"
         )
     }
 
@@ -133,7 +133,7 @@ class GhostCustomDiscriminatorTest {
         val charge: StripeObject = StripeObject.Charge(amount = 2000L, currency = "usd")
         val json = Ghost.serialize(charge)
         val decoded = Ghost.deserialize<StripeObject>(json)
-        assertEquals(charge, decoded)
+        assertEquals(expected = charge, actual = decoded)
     }
 
     @Test
@@ -141,14 +141,14 @@ class GhostCustomDiscriminatorTest {
         val refund: StripeObject = StripeObject.Refund(chargeId = "ch_001", amount = 1000L)
         val json = Ghost.serialize(refund)
         val decoded = Ghost.deserialize<StripeObject>(json)
-        assertEquals(refund, decoded)
+        assertEquals(expected = refund, actual = decoded)
     }
 
     @Test
     fun `object discriminator can deserialize manually crafted JSON`() {
         val json = """{"object":"Refund","chargeId":"ch_abc","amount":500}"""
         val decoded = Ghost.deserialize<StripeObject>(json)
-        assertEquals(StripeObject.Refund("ch_abc", 500L), decoded)
+        assertEquals(expected = StripeObject.Refund(chargeId = "ch_abc", amount = 500L), actual = decoded)
     }
 
     // ─── 5. Custom "@type" discriminator (JSON-LD style) ─────────────────────
@@ -167,7 +167,7 @@ class GhostCustomDiscriminatorTest {
         val node: JsonLdNode = JsonLdNode.Person(name = "Juan", email = "juan@ghost.dev")
         val json = Ghost.serialize(node)
         val decoded = Ghost.deserialize<JsonLdNode>(json)
-        assertEquals(node, decoded)
+        assertEquals(expected = node, actual = decoded)
     }
 
     @Test
@@ -176,14 +176,17 @@ class GhostCustomDiscriminatorTest {
             JsonLdNode.Organization(name = "Ghost Corp", url = "https://ghost.dev")
         val json = Ghost.serialize(node)
         val decoded = Ghost.deserialize<JsonLdNode>(json)
-        assertEquals(node, decoded)
+        assertEquals(expected = node, actual = decoded)
     }
 
     @Test
     fun `atType discriminator can deserialize manually crafted JSON`() {
         val json = """{"@type":"Organization","name":"JetBrains","url":"https://jetbrains.com"}"""
         val decoded = Ghost.deserialize<JsonLdNode>(json)
-        assertEquals(JsonLdNode.Organization("JetBrains", "https://jetbrains.com"), decoded)
+        assertEquals(
+            expected = JsonLdNode.Organization(name = "JetBrains", url = "https://jetbrains.com"),
+            actual = decoded
+        )
     }
 
     // ─── 6. Missing discriminator field → throws ──────────────────────────────
@@ -235,20 +238,20 @@ class GhostCustomDiscriminatorTest {
     @Test
     fun `kind discriminator key appears before other fields in JSON`() {
         // Ghost writes the discriminator as the first field — important for streaming parsers
-        val json = Ghost.serialize(GhostKindEvent.Created("e_1", "Ghost"))
+        val json = Ghost.serialize(GhostKindEvent.Created(id = "e_1", name = "Ghost"))
         val kindIndex = json.indexOf("\"kind\"")
         val idIndex = json.indexOf("\"id\"")
-        assertTrue(kindIndex < idIndex, "Discriminator 'kind' should appear before payload fields")
+        assertTrue(actual = kindIndex < idIndex, message = "Discriminator 'kind' should appear before payload fields")
     }
 
     @Test
     fun `object discriminator key appears before other fields in JSON`() {
-        val json = Ghost.serialize(StripeObject.Charge(2000L, "usd"))
+        val json = Ghost.serialize(StripeObject.Charge(amount = 2000L, currency = "usd"))
         val objIndex = json.indexOf("\"object\"")
         val amountIndex = json.indexOf("\"amount\"")
         assertTrue(
-            objIndex < amountIndex,
-            "Discriminator 'object' should appear before payload fields"
+            actual = objIndex < amountIndex,
+            message = "Discriminator 'object' should appear before payload fields"
         )
     }
 
@@ -257,21 +260,21 @@ class GhostCustomDiscriminatorTest {
     @Test
     fun `list of kind events roundtrips correctly`() {
         val events: List<GhostKindEvent> = listOf(
-            GhostKindEvent.Created("e_1", "Ghost"),
-            GhostKindEvent.Deleted("e_2"),
-            GhostKindEvent.Updated("e_3", "v2")
+            GhostKindEvent.Created(id = "e_1", name = "Ghost"),
+            GhostKindEvent.Deleted(id = "e_2"),
+            GhostKindEvent.Updated(id = "e_3", changes = "v2")
         )
         // Per-element, not list-level — Ghost only serializes single model roots; a list needs
         // a wrapping data class with @GhostSerialization.
         events.forEach { event ->
             val singleJson = Ghost.serialize(event)
             val decoded = Ghost.deserialize<GhostKindEvent>(singleJson)
-            assertEquals(event, decoded)
+            assertEquals(expected = event, actual = decoded)
         }
         events.forEach { event ->
             val json = Ghost.serialize(event)
             assertContains(json, "\"kind\"")
-            assertTrue(!json.contains("\"type\""))
+            assertTrue(actual = !json.contains("\"type\""))
         }
     }
 
@@ -280,9 +283,9 @@ class GhostCustomDiscriminatorTest {
     @Test
     fun `composed payload with multiple discriminators roundtrips correctly`() {
         val payload = GhostDiscriminatorTestPayload(
-            defaultEvent = ApiEventDefault.Login("u_001"),
-            kindEvent = GhostKindEvent.Created("e_1", "Ghost"),
-            stripeObject = StripeObject.Charge(2000L, "usd")
+            defaultEvent = ApiEventDefault.Login(userId = "u_001"),
+            kindEvent = GhostKindEvent.Created(id = "e_1", name = "Ghost"),
+            stripeObject = StripeObject.Charge(amount = 2000L, currency = "usd")
         )
         val json = Ghost.serialize(payload)
 
@@ -291,7 +294,7 @@ class GhostCustomDiscriminatorTest {
         assertContains(json, "\"object\"")  // from StripeObject
 
         val decoded = Ghost.deserialize<GhostDiscriminatorTestPayload>(json)
-        assertEquals(payload, decoded)
+        assertEquals(expected = payload, actual = decoded)
     }
 
     @Test
@@ -303,6 +306,6 @@ class GhostCustomDiscriminatorTest {
         assertContains(json, "\"CustomAction\"")
 
         val decoded = Ghost.deserialize<ApiEventDefault>(json)
-        assertEquals(event, decoded)
+        assertEquals(expected = event, actual = decoded)
     }
 }

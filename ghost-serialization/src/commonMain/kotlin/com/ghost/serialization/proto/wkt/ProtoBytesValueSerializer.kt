@@ -3,7 +3,7 @@
 package com.ghost.serialization.proto.wkt
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.decodeBase64String
 import com.ghost.serialization.parser.common.encodeBase64String
@@ -14,39 +14,30 @@ import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextString
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
-import com.ghost.serialization.parser.common.GhostJsonConstants as C
+import com.ghost.serialization.proto.GhostProtoConstants as PC
 
-
-/**
- * Wrapper message for `bytes`.
- *
- * The JSON representation for `BytesValue` is JSON string.
- */
-/**
- * Serializer for [ProtoBytesValue].
- */
-object ProtoBytesValueSerializer : GhostSerializer<ProtoBytesValue> {
-    override val typeName: String get() = C.WKT_BYTES_VALUE_TYPE
-    override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
-        writer.value(encodeBase64String(value.value))
-    }
-
-    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBytesValue) {
-        writer.value(encodeBase64String(value.value))
-    }
+object ProtoBytesValueSerializer : AbstractGhostSerializer<ProtoBytesValue>() {
+    override val typeName: String get() = PC.WKT_BYTES_VALUE_TYPE
 
     override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
-        ProtoBytesValue(decodeBase64String(reader.nextString()))
+        ProtoBytesValue(value = decodeBase64String(value = reader.nextString()))
 
-    // Uses the pooled-scratch-buffer fast path when [reader] is specifically a
-    // GhostProtoJsonFlatReader; falls back to the shared decoder for any other reader flavor.
+    // Fast path for GhostProtoJsonFlatReader (pooled scratch buffer); else shared decoder.
     override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
         if (reader is GhostProtoJsonFlatReader) {
-            return ProtoBytesValue(reader.nextProtoBytes())
+            return ProtoBytesValue(value = reader.nextProtoBytes())
         }
-        return ProtoBytesValue(decodeBase64String(reader.nextString()))
+        return ProtoBytesValue(value = decodeBase64String(value = reader.nextString()))
     }
 
     override fun deserialize(reader: GhostJsonStringReader): ProtoBytesValue =
-        ProtoBytesValue(decodeBase64String(reader.nextString()))
+        ProtoBytesValue(value = decodeBase64String(value = reader.nextString()))
+
+    override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
+        writer.value(text = encodeBase64String(source = value.value))
+    }
+
+    override fun serialize(writer: GhostJsonStringWriter, value: ProtoBytesValue) {
+        writer.value(text = encodeBase64String(source = value.value))
+    }
 }

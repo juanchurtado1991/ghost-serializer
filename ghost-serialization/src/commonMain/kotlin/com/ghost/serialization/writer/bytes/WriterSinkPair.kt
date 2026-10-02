@@ -1,8 +1,7 @@
 package com.ghost.serialization.writer.bytes
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.parser.common.GhostJsonConstants.INITIAL_WRITE_BUFFER_SIZE
-
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.INITIAL_WRITE_BUFFER_SIZE
 
 /**
  * Pooled, reusable encode-target for in-memory byte encodes
@@ -20,7 +19,7 @@ class WriterSinkPair {
      * Backing flat byte buffer. The encoded payload lives in
      * `byteWriter.array[0 until byteWriter.size]` after each encode.
      */
-    val byteWriter: FlatByteArrayWriter = FlatByteArrayWriter(INITIAL_WRITE_BUFFER_SIZE)
+    val byteWriter: FlatByteArrayWriter = FlatByteArrayWriter(initialCapacity = INITIAL_WRITE_BUFFER_SIZE)
 
     /** Writer wired against [byteWriter] via [GhostByteSink]. */
     val writer: GhostJsonWriter = GhostJsonWriter(byteWriter)

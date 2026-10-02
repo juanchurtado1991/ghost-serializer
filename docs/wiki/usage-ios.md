@@ -2,7 +2,7 @@
 
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](usage-ios.md)
 
-Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Because Kotlin/Native does not support `ServiceLoader`, manual registry registration is required once at startup.
+Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Kotlin/Native has no `ServiceLoader`, so since 1.3.2 the Ghost Gradle plugin links every `@GhostSerialization` model to its serializer at compile time (a Kotlin compiler plugin plus associated objects): `Ghost.deserialize` works on iOS with no registration code.
 
 Start with the shared-module setup in the [Quick Start](quick-start.md), then add the XCFramework export below.
 
@@ -14,8 +14,8 @@ Start with the shared-module setup in the [Quick Start](quick-start.md), then ad
 // shared/build.gradle.kts
 plugins {
     kotlin("multiplatform")
-    id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.google.devtools.ksp") version "2.3.12"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 
 kotlin {
@@ -24,21 +24,21 @@ kotlin {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.3.1")
+            export("com.ghostserializer:ghost-serialization:1.3.2")
         }
     }
     iosSimulatorArm64 {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.3.1")
+            export("com.ghostserializer:ghost-serialization:1.3.2")
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            api("com.ghostserializer:ghost-api:1.3.1")
-            api("com.ghostserializer:ghost-serialization:1.3.1")
+            api("com.ghostserializer:ghost-api:1.3.2")
+            api("com.ghostserializer:ghost-serialization:1.3.2")
         }
     }
 }
@@ -77,9 +77,9 @@ data class Product(
 
 ---
 
-## 3. Create a Swift-Accessible Bridge
+## 3. Optional: Prewarm Through a Swift-Accessible Bridge
 
-Kotlin/Native does not support `ServiceLoader`, so you must register the KSP-generated registry manually once:
+Serializers resolve lazily on first use, with no setup. To pay that cost at launch instead, or to use the name-based APIs (`getSerializerByName`, `getAllSerializers`), register the KSP-generated registry once. `prewarm()` can only warm the modules it knows about:
 
 ```kotlin
 // shared/src/iosMain/kotlin/GhostBridge.kt
@@ -94,8 +94,11 @@ object GhostBridge {
 }
 ```
 
+> [!NOTE]
+> The registry class name is derived from `ghost.moduleName`. If you set `arg("ghost.moduleName", "shared_utils")`, the generated class is `GhostModuleRegistry_shared_utils`. Call `prewarm()` once at app launch — typically in `AppDelegate` or the SwiftUI `@main` entry point.
+
 > [!IMPORTANT]
-> The registry class name is derived from `ghost.moduleName`. If you set `arg("ghost.moduleName", "shared_utils")`, the generated class is `GhostModuleRegistry_shared_utils`. **Call `prewarm()` once at app launch** — typically in `AppDelegate` or the SwiftUI `@main` entry point.
+> Automatic registration needs the `com.ghostserializer.ghost` Gradle plugin. Without it, or with `ghost { autoRegistration.set(false) }`, the `addRegistry` call above is **required**. The compiler plugin is verified on Kotlin 2.2.21, 2.3.21 and 2.4.0; on another Kotlin version the build logs a warning, and if Native compilation fails, disable `autoRegistration` and register manually.
 
 ---
 

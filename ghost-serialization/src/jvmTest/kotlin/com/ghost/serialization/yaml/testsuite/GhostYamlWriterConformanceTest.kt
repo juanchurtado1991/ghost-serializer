@@ -26,17 +26,17 @@ class GhostYamlWriterConformanceTest {
     private val kamlOracleDeviationIds = writerKamlOracleDeviations.map { it.id }.toSet()
 
     /** Cases the reader can decode at all — a writer round-trip check is moot otherwise. */
-    private val writableCases = YamlTestSuiteLoader.cases.filter { decodeOriginal(it) != null }
+    private val writableCases = YamlTestSuiteLoader.cases.filter { decodeOriginal(case = it) != null }
 
     @TestFactory
     fun roundTripConformance(): Stream<DynamicTest> {
         return writableCases.stream().map { case ->
             dynamicTest("[${case.id}] ${case.label}") {
                 val expectedToMatch = case.id !in roundTripDeviationIds
-                val matches = writerRoundTripMatches(case)
+                val matches = writerRoundTripMatches(case = case)
                 assertTrue(
                     matches == expectedToMatch,
-                    "case ${case.id}: expected matches=$expectedToMatch but was $matches",
+                    "case ${case.id}: expected matches=$expectedToMatch but was $matches"
                 )
             }
         }
@@ -47,10 +47,10 @@ class GhostYamlWriterConformanceTest {
         return writableCases.stream().map { case ->
             dynamicTest("[${case.id}] ${case.label}") {
                 val expectedToMatch = case.id !in kamlOracleDeviationIds
-                val matches = writerOutputIsKamlAcceptable(case)
+                val matches = writerOutputIsKamlAcceptable(case = case)
                 assertTrue(
                     matches == expectedToMatch,
-                    "case ${case.id}: expected matches=$expectedToMatch but was $matches",
+                    "case ${case.id}: expected matches=$expectedToMatch but was $matches"
                 )
             }
         }
@@ -70,7 +70,7 @@ class GhostYamlWriterConformanceTest {
         assertTrue(
             staleRoundTripIds.isEmpty() && staleKamlIds.isEmpty(),
             "Stale writer deviation ids no longer present among reader-decodable cases: " +
-                "roundTrip=$staleRoundTripIds kaml=$staleKamlIds",
+                "roundTrip=$staleRoundTripIds kaml=$staleKamlIds"
         )
 
         var roundTripPass = 0
@@ -78,7 +78,7 @@ class GhostYamlWriterConformanceTest {
         var roundTripUnexpected = 0
         for (case in writableCases) {
             val expectedToMatch = case.id !in roundTripDeviationIds
-            val matchesExpectation = writerRoundTripMatches(case) == expectedToMatch
+            val matchesExpectation = writerRoundTripMatches(case = case) == expectedToMatch
             when {
                 matchesExpectation && case.id !in roundTripDeviationIds -> roundTripPass++
                 matchesExpectation && case.id in roundTripDeviationIds -> roundTripKnown++
@@ -91,7 +91,7 @@ class GhostYamlWriterConformanceTest {
         var kamlUnexpected = 0
         for (case in writableCases) {
             val expectedToMatch = case.id !in kamlOracleDeviationIds
-            val matchesExpectation = writerOutputIsKamlAcceptable(case) == expectedToMatch
+            val matchesExpectation = writerOutputIsKamlAcceptable(case = case) == expectedToMatch
             when {
                 matchesExpectation && case.id !in kamlOracleDeviationIds -> kamlPass++
                 matchesExpectation && case.id in kamlOracleDeviationIds -> kamlKnown++

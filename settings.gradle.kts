@@ -23,6 +23,7 @@ rootProject.name = "GhostSerialization"
 include(":ghost-api")
 include(":ghost-serialization")
 include(":ghost-compiler")
+include(":ghost-compiler-plugin")
 include(":ghost-retrofit")
 include(":ghost-ktor")
 include(":ghost-benchmark")

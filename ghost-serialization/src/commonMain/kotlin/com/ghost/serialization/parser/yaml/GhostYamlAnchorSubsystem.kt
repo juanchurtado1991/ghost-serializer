@@ -1,6 +1,7 @@
 package com.ghost.serialization.parser.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 import com.ghost.serialization.yaml.exception.GhostYamlException
 
 /** Parses/manages YAML Anchors (&anchor), Aliases (*alias), and Merge Keys (<<). */
@@ -8,37 +9,32 @@ import com.ghost.serialization.yaml.exception.GhostYamlException
 /**
  * Entry point for [GhostYamlFlatReader.readValue]'s `&` dispatch. A block-context anchor is
  * ambiguous on sight: it may anchor a *value* (`key: &a value`) or the *key* of an implicit
- * mapping entry (`&a a: &b b` — the anchor belongs to bare key "a", not the whole mapping).
- * [readAnchoredValue] alone only handles the value shape: if the text after the anchor looks
- * like a key, it recurses into [GhostYamlFlatReader.readBlockMapping], which greedily consumes
- * every sibling entry at that indent, binding the anchor to the whole resulting map instead of
- * just the key.
+ * mapping entry (`&a a: &b b` — the anchor belongs to bare key "a", not the whole mapping), and
+ * [readAnchoredValue] alone only handles the value shape.
  *
- * This speculatively re-parses the anchor + following text with [GhostYamlFlatReader.readKey]
- * (reusing its anchor-on-key binding — commit 9812d08c / case SU74), checks for a following `:`,
- * then rewinds and re-dispatches for real: [GhostYamlFlatReader.readBlockMapping] if it looked
- * like a key line, else [readAnchoredValue]. Flow context has no such ambiguity (a flow mapping
- * key is delimited by `{`/`,`/`}`, not indentation), so it's untouched here.
+ * Resolved by speculatively reparsing with [GhostYamlFlatReader.readKey] (commit 9812d08c /
+ * case SU74) to check for a following `:`, then rewinding and re-dispatching for real:
+ * [GhostYamlFlatReader.readBlockMapping] if it looked like a key line, else [readAnchoredValue].
+ * Flow context has no such ambiguity (a flow key is delimited by `{`/`,`/`}`, not indentation).
  */
-internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(indent: Int, inFlow: Boolean, strictDedent: Boolean): Any? {
-    if (inFlow) return readAnchoredValue(indent, inFlow, strictDedent)
+internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(
+    indent: Int,
+    inFlow: Boolean,
+    strictDedent: Boolean
+): Any? {
+    if (inFlow) return readAnchoredValue(indent = indent, inFlow = inFlow, strictDedent = strictDedent)
 
     val startPosition = position
     val localLimit = limit
     val localRawData = rawData
 
-    // Non-mutating lookahead: skip "&anchorname" + inline whitespace to see what follows the
+    // Non-mutating lookahead: skip "&anchor name" + inline whitespace to see what follows the
     // anchor prefix, without touching `position` yet.
     var lookahead = startPosition + 1 // '&'
-    while (lookahead < localLimit) {
-        val tokenByte = localRawData[lookahead]
-        if (tokenByte == C.SPACE_BYTE || tokenByte == C.TAB_BYTE || tokenByte == C.NEWLINE_BYTE ||
-            tokenByte == C.CR_BYTE || tokenByte == C.COMMA_BYTE ||
-            tokenByte == C.RIGHT_BRACE_BYTE || tokenByte == C.RIGHT_BRACKET_BYTE
-        ) break
+    while (lookahead < localLimit && !isAnchorNameTerminator(byte = localRawData[lookahead])) {
         lookahead++
     }
-    while (lookahead < localLimit && (localRawData[lookahead] == C.SPACE_BYTE || localRawData[lookahead] == C.TAB_BYTE)) {
+    while (lookahead < localLimit && isInlineWhitespaceByte(byte = localRawData[lookahead])) {
         lookahead++
     }
     // A flow collection right after the anchor can't safely go through readKey's plain-text scan:
@@ -47,16 +43,11 @@ internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(indent: Int, inFl
     // flow collections need excluding — readAnchoredValue's own readValue() dispatch
     // (readFlowCollectionOrMappingKey) correctly resolves those as key or value.
     val followedByFlowCollection = lookahead < localLimit &&
-        (localRawData[lookahead] == C.LEFT_BRACE_BYTE || localRawData[lookahead] == C.LEFT_BRACKET_BYTE)
+        (localRawData[lookahead] == TOK.LEFT_BRACE_BYTE || localRawData[lookahead] == TOK.LEFT_BRACKET_BYTE)
 
     val looksLikeMappingKey = !followedByFlowCollection && try {
         val key = readKey(inFlow = false)
-        key != null && position < localLimit && localRawData[position] == C.COLON_BYTE &&
-            (position + 1 >= localLimit ||
-                localRawData[position + 1] == C.SPACE_BYTE ||
-                localRawData[position + 1] == C.NEWLINE_BYTE ||
-                localRawData[position + 1] == C.CR_BYTE ||
-                localRawData[position + 1] == C.TAB_BYTE)
+        key != null && looksLikeMappingKeyColon()
     } catch (e: GhostYamlException) {
         // A legitimate anchored value that doesn't parse as a sensible key (e.g.
         // "&anchor:\n  nested: mapping") must fall through to readAnchoredValue cleanly,
@@ -69,7 +60,28 @@ internal fun GhostYamlFlatReader.readAnchoredValueOrMappingKey(indent: Int, inFl
         position = startPosition
     }
 
-    return if (looksLikeMappingKey) readBlockMapping(indent.coerceAtLeast(0)) else readAnchoredValue(indent, inFlow, strictDedent)
+    return if (looksLikeMappingKey) {
+        readBlockMapping(blockIndent = indent.coerceAtLeast(0))
+    } else {
+        readAnchoredValue(indent = indent, inFlow = inFlow, strictDedent = strictDedent)
+    }
+}
+
+/** Whether [byte] terminates an anchor/alias name (whitespace, newline, or a flow delimiter). */
+private fun isAnchorNameTerminator(byte: Byte): Boolean =
+    byte == TOK.SPACE_BYTE || byte == TOK.TAB_BYTE || byte == TOK.NEWLINE_BYTE || byte == TOK.CR_BYTE ||
+        byte == TOK.COMMA_BYTE || byte == TOK.RIGHT_BRACE_BYTE || byte == TOK.RIGHT_BRACKET_BYTE
+
+/** Whether the byte at [GhostYamlFlatReader.position] is a `:` that ends a mapping key (not part of a scalar). */
+private fun GhostYamlFlatReader.looksLikeMappingKeyColon(): Boolean {
+    val localLimit = limit
+    val localRawData = rawData
+    return position < localLimit && localRawData[position] == TOK.COLON_BYTE &&
+        (position + 1 >= localLimit ||
+            localRawData[position + 1] == TOK.SPACE_BYTE ||
+            localRawData[position + 1] == TOK.NEWLINE_BYTE ||
+            localRawData[position + 1] == TOK.CR_BYTE ||
+            localRawData[position + 1] == TOK.TAB_BYTE)
 }
 
 internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean, strictDedent: Boolean): Any? {
@@ -78,11 +90,7 @@ internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean,
     val localLimit = limit
 
     val start = position
-    while (position < localLimit) {
-        val currByte = localRawData[position]
-        if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||
-            currByte == C.COMMA_BYTE || currByte == C.RIGHT_BRACE_BYTE || currByte == C.RIGHT_BRACKET_BYTE
-        ) break
+    while (position < localLimit && !isAnchorNameTerminator(byte = localRawData[position])) {
         position++
     }
 
@@ -91,34 +99,42 @@ internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean,
     // Skip inline whitespace, then a same-line trailing comment (e.g. "top: &node # comment") —
     // leaves no inline value, same as a bare newline would.
     skipInlineWhitespace()
-    if (position < localLimit && localRawData[position] == C.HASH_BYTE) {
+    if (position < localLimit && localRawData[position] == TOK.HASH_BYTE) {
         skipToEndOfLine()
     }
 
     // An anchor can't directly wrap an alias reference — it anchors actual node content, not
     // a reference to something else.
-    if (!inFlow && position < localLimit && localRawData[position] == C.ASTERISK_BYTE) {
-        yamlError("${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}")
+    val isAliasAtPosition = !inFlow && position < localLimit && localRawData[position] == TOK.ASTERISK_BYTE
+    if (isAliasAtPosition) {
+        yamlError(message = "${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_SUFFIX}")
     }
     // Nor can a block sequence entry start inline on the same line — "&anchor - item" is
     // invalid, the "-" needs its own line.
-    if (!inFlow && position < localLimit && localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry()) {
-        yamlError("${C.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${C.ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX}")
+    val isBlockSequenceDash = !inFlow &&
+        position < localLimit &&
+        localRawData[position] == TOK.DASH_BYTE &&
+        isBlockSequenceEntry()
+    if (isBlockSequenceDash) {
+        yamlError(message = "${EM.ERR_ANCHOR_FOLLOWED_BY_ALIAS_PREFIX}$anchorName${EM.ERR_ANCHOR_FOLLOWED_BY_SEQ_SUFFIX}")
     }
 
     val positionBeforeLineBreak = position
+    val isAtLineBreak = position < localLimit &&
+        (localRawData[position] == TOK.NEWLINE_BYTE || localRawData[position] == TOK.CR_BYTE)
     val value =
-        if (position < localLimit && (localRawData[position] == C.NEWLINE_BYTE || localRawData[position] == C.CR_BYTE)) {
+        if (isAtLineBreak) {
             advanceLine()
             skipWhitespaceAndComments()
             val nextLineIndent = currentIndent
             val continuesAsSequenceEntry =
-                position < localLimit && localRawData[position] == C.DASH_BYTE && isBlockSequenceEntry()
+                position < localLimit && localRawData[position] == TOK.DASH_BYTE && isBlockSequenceEntry()
             // Mirrors readBlockMapping/readBlockSequence's "is there nested content" check: a
             // mapping value must indent *more* than its key (strictDedent), a sequence item's
             // inline value may continue at exactly its element indent (not strictDedent).
             val isDedent = if (strictDedent) nextLineIndent <= indent else nextLineIndent < indent
-            if (!inFlow && (position >= localLimit || (isDedent && !continuesAsSequenceEntry))) {
+            val endsBlockContext = !inFlow && (position >= localLimit || (isDedent && !continuesAsSequenceEntry))
+            if (endsBlockContext) {
                 // Next line dedents back to a sibling (or nothing's left) — this anchor's value
                 // is empty/null. Rewind past the line break so the caller's loop sees that line
                 // fresh, same as a plain "key:" with no value.
@@ -135,28 +151,17 @@ internal fun GhostYamlFlatReader.readAnchoredValue(indent: Int, inFlow: Boolean,
 }
 
 /**
- * Reads an alias via [readAlias], then checks whether a `:` follows: an alias can itself be a
- * block-mapping key (e.g. `top3: &node3\n  *alias1 : scalar3`, where `*alias1`'s resolved value
- * becomes the key), not just a value. Without this, [GhostYamlFlatReader.readValue]'s `*`
- * dispatch would read only the alias as a complete value and mishandle the trailing
- * `: scalar3` instead of nesting it under this key.
+ * Reads an alias, then checks whether a `:` follows: an alias's resolved value can itself be a
+ * block-mapping key (e.g. `top3: &node3\n  *alias1 : scalar3`), not just a value.
  */
 internal fun GhostYamlFlatReader.readAliasOrMappingKey(indent: Int, inFlow: Boolean): Any? {
     val startPosition = position
     val value = readAlias()
     if (inFlow) return value
     skipInlineWhitespace()
-    val localLimit = limit
-    val localRawData = rawData
-    val isMappingKey = position < localLimit && localRawData[position] == C.COLON_BYTE &&
-        (position + 1 >= localLimit ||
-            localRawData[position + 1] == C.SPACE_BYTE ||
-            localRawData[position + 1] == C.NEWLINE_BYTE ||
-            localRawData[position + 1] == C.CR_BYTE ||
-            localRawData[position + 1] == C.TAB_BYTE)
-    if (!isMappingKey) return value
+    if (!looksLikeMappingKeyColon()) return value
     position = startPosition
-    return readBlockMapping(indent.coerceAtLeast(0))
+    return readBlockMapping(blockIndent = indent.coerceAtLeast(0))
 }
 
 internal fun GhostYamlFlatReader.readAlias(): Any? {
@@ -165,11 +170,7 @@ internal fun GhostYamlFlatReader.readAlias(): Any? {
     val localLimit = limit
 
     val start = position
-    while (position < localLimit) {
-        val currByte = localRawData[position]
-        if (currByte == C.SPACE_BYTE || currByte == C.TAB_BYTE || currByte == C.NEWLINE_BYTE || currByte == C.CR_BYTE ||
-            currByte == C.COMMA_BYTE || currByte == C.RIGHT_BRACE_BYTE || currByte == C.RIGHT_BRACKET_BYTE
-        ) break
+    while (position < localLimit && !isAnchorNameTerminator(byte = localRawData[position])) {
         position++
     }
 
@@ -177,8 +178,8 @@ internal fun GhostYamlFlatReader.readAlias(): Any? {
     // anchorTable[aliasName] ?: error(...) would be wrong: a Map lookup returns null both when
     // the key is absent and when present with a null value (e.g. "a: &anchor\nb: *anchor"),
     // so the two cases must be told apart explicitly.
-    if (!anchorTable.containsKey(aliasName)) {
-        yamlError("${C.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${C.ERR_ANCHOR_NOT_FOUND_SUFFIX}")
+    if (!anchorTable.containsKey(key = aliasName)) {
+        yamlError(message = "${EM.ERR_ANCHOR_NOT_FOUND_PREFIX}$aliasName${EM.ERR_ANCHOR_NOT_FOUND_SUFFIX}")
     }
     return anchorTable[aliasName]
 }
@@ -188,7 +189,7 @@ internal fun GhostYamlFlatReader.mergeInto(target: MutableMap<String, Any?>, val
         is Map<*, *> -> {
             for ((k, v) in value) {
                 val keyStr = k as? String ?: continue
-                if (!target.containsKey(keyStr)) {
+                if (!target.containsKey(key = keyStr)) {
                     target[keyStr] = v
                 }
             }
@@ -198,7 +199,7 @@ internal fun GhostYamlFlatReader.mergeInto(target: MutableMap<String, Any?>, val
             var index = 0
             val size = value.size
             while (index < size) {
-                mergeInto(target, value[index])
+                mergeInto(target = target, value = value[index])
                 index++
             }
         }

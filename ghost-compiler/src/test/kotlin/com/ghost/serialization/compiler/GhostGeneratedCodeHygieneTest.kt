@@ -10,11 +10,11 @@ import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import com.ghost.serialization.compiler.GhostEmitterTestConstants as T
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
 /**
@@ -25,7 +25,7 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun diverseBatchProducesHygieneCleanSerializers() {
-        val compilation = compileBatch(HYGIENE_BATCH_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = HYGIENE_BATCH_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -36,18 +36,18 @@ class GhostGeneratedCodeHygieneTest {
             .filter { it.isFile && it.name.endsWith("Serializer.kt") }
             .toList()
 
-        assertTrue(serializers.isNotEmpty(), "Expected generated serializers")
+        assertTrue(actual = serializers.isNotEmpty(), message = "Expected generated serializers")
 
         val violations = serializers.flatMap { file ->
             val source = file.readText()
             val label = file.name
             GeneratedCodeHygiene.analyze(source, label) +
                     GeneratedCodeHygiene.analyzeConditionalRules(
-                        source,
-                        label,
+                        source = source,
+                        fileLabel = label,
                         textChannel = true
                     ) +
-                    GeneratedCodeHygiene.analyzeSourceQuality(source, label)
+                    GeneratedCodeHygiene.analyzeSourceQuality(source = source, fileLabel = label)
         }
 
         assertTrue(
@@ -58,7 +58,7 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun textChannelFalseOmitsStringChannelSurface() {
-        val compilation = compileBatch(MINIMAL_SOURCE, textChannel = false)
+        val compilation = compileBatch(source = MINIMAL_SOURCE, textChannel = false)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -77,8 +77,8 @@ class GhostGeneratedCodeHygieneTest {
         )
 
         val violations = GeneratedCodeHygiene.analyzeConditionalRules(
-            generated,
-            "MinimalUserSerializer.kt",
+            source = generated,
+            fileLabel = "MinimalUserSerializer.kt",
             textChannel = false,
         )
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
@@ -86,16 +86,16 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun rawJsonOnlyModelDoesNotImportCaptureRawJsonBytes() {
-        assertRawCaptureHygiene("RawJsonOnly")
+        assertRawCaptureHygiene(modelName = "RawJsonOnly")
     }
 
     @Test
     fun byteArrayOnlyModelImportsCaptureRawJsonBytes() {
-        assertRawCaptureHygiene("ByteArrayOnly")
+        assertRawCaptureHygiene(modelName = "ByteArrayOnly")
     }
 
     private fun assertRawCaptureHygiene(modelName: String) {
-        val compilation = compileBatch(RAW_CAPTURE_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = RAW_CAPTURE_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -105,8 +105,8 @@ class GhostGeneratedCodeHygieneTest {
         val generated = readSerializer(compilation.first, modelName)
         val violations = GeneratedCodeHygiene.analyze(generated, "${modelName}Serializer.kt") +
                 GeneratedCodeHygiene.analyzeConditionalRules(
-                    generated,
-                    "${modelName}Serializer.kt",
+                    source = generated,
+                    fileLabel = "${modelName}Serializer.kt",
                     textChannel = true,
                 )
 
@@ -115,7 +115,7 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun nullableOnlyScalarsImportOrNullNotPlainNextX() {
-        val compilation = compileBatch(NULLABLE_SCALARS_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = NULLABLE_SCALARS_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -143,7 +143,7 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun listOnlyModelDoesNotImportReadSet() {
-        val compilation = compileBatch(LIST_ONLY_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = LIST_ONLY_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -157,7 +157,7 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun setOnlyModelImportsReadSetNotReadList() {
-        val compilation = compileBatch(SET_ONLY_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = SET_ONLY_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -171,7 +171,7 @@ class GhostGeneratedCodeHygieneTest {
 
     @Test
     fun singleRequiredFieldOmitsMaskRequiredConstant() {
-        val compilation = compileBatch(SINGLE_REQUIRED_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = SINGLE_REQUIRED_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -183,13 +183,13 @@ class GhostGeneratedCodeHygieneTest {
         assertTrue("MASK_REQUIRED" !in generated, generated)
 
         val violations = GeneratedCodeHygiene.analyze(generated, "SingleRequiredSerializer.kt") +
-                GeneratedCodeHygiene.analyzeSourceQuality(generated, "SingleRequiredSerializer.kt")
+                GeneratedCodeHygiene.analyzeSourceQuality(source = generated, fileLabel = "SingleRequiredSerializer.kt")
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
     @Test
     fun multipleRequiredFieldsEmitsAndUsesMaskRequiredConstant() {
-        val compilation = compileBatch(MINIMAL_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = MINIMAL_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -201,15 +201,15 @@ class GhostGeneratedCodeHygieneTest {
         assertTrue("(mask0 and MASK_REQUIRED_0) != MASK_REQUIRED_0" in generated, generated)
 
         val violations = GeneratedCodeHygiene.analyzeUnusedMaskConstants(
-            generated,
-            "MinimalUserSerializer.kt",
+            source = generated,
+            fileLabel = "MinimalUserSerializer.kt",
         )
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
     @Test
     fun nullableOnlyModelOmitsMaskRequiredConstant() {
-        val compilation = compileBatch(NULLABLE_SCALARS_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = NULLABLE_SCALARS_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -222,15 +222,15 @@ class GhostGeneratedCodeHygieneTest {
         val violations =
             GeneratedCodeHygiene.analyze(generated, "OnlyNullableScalarsSerializer.kt") +
                     GeneratedCodeHygiene.analyzeSourceQuality(
-                        generated,
-                        "OnlyNullableScalarsSerializer.kt"
+                        source = generated,
+                        fileLabel = "OnlyNullableScalarsSerializer.kt"
                     )
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
     @Test
     fun underscoredPropertyNamesUseCamelCaseLocals() {
-        val compilation = compileBatch(UNDERSCORED_PROP_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = UNDERSCORED_PROP_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -243,13 +243,13 @@ class GhostGeneratedCodeHygieneTest {
         assertTrue("id_internalValue" !in generated, generated)
 
         val violations =
-            GeneratedCodeHygiene.analyzeSourceQuality(generated, "SnakeCaseModelSerializer.kt")
+            GeneratedCodeHygiene.analyzeSourceQuality(source = generated, fileLabel = "SnakeCaseModelSerializer.kt")
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
     @Test
     fun wrappedKeysLocalsAreCamelCase() {
-        val compilation = compileBatch(WRAPPED_KEYS_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = WRAPPED_KEYS_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -263,13 +263,13 @@ class GhostGeneratedCodeHygieneTest {
         assertTrue("wrappedJson_" !in generated, generated)
 
         val violations =
-            GeneratedCodeHygiene.analyzeSourceQuality(generated, "WrappedExtrasSerializer.kt")
+            GeneratedCodeHygiene.analyzeSourceQuality(source = generated, fileLabel = "WrappedExtrasSerializer.kt")
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
     @Test
     fun generatedCallsAreMultilineFormatted() {
-        val compilation = compileBatch(WIDE_DEFAULTS_SOURCE, textChannel = true)
+        val compilation = compileBatch(source = WIDE_DEFAULTS_SOURCE, textChannel = true)
         assertEquals(
             KotlinCompilation.ExitCode.OK,
             compilation.second.exitCode,
@@ -290,7 +290,7 @@ class GhostGeneratedCodeHygieneTest {
         )
 
         val violations =
-            GeneratedCodeHygiene.analyzeLineLength(generated, "WideDefaultsSerializer.kt")
+            GeneratedCodeHygiene.analyzeLineLength(source = generated, fileLabel = "WideDefaultsSerializer.kt")
         assertTrue(violations.isEmpty(), violations.joinToString("\n") { it.message })
     }
 
@@ -315,6 +315,7 @@ class GhostGeneratedCodeHygieneTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             kspProcessorOptions = mutableMapOf(
@@ -322,9 +323,6 @@ class GhostGeneratedCodeHygieneTest {
             )
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's kotlinc (2.1.0) can't read metadata from newer-Kotlin (2.4.0) project
-            // jars via inheritClassPath — this flag skips the strict metadata-version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

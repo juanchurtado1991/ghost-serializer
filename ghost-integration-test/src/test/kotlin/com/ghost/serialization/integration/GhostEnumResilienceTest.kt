@@ -25,7 +25,7 @@ class GhostEnumResilienceTest {
         val json = "{\"status\":\"UNKNOWN_VALUE\"}"
         val decoded = Ghost.deserialize<ResilientEnumModel>(json)
 
-        assertEquals(GhostStandardsEnum.Standard, decoded.status)
+        assertEquals(expected = GhostStandardsEnum.Standard, actual = decoded.status)
     }
 
     @Test
@@ -33,6 +33,6 @@ class GhostEnumResilienceTest {
         val json = "{\"nullableStatus\":\"UNKNOWN_VALUE\"}"
         val decoded = Ghost.deserialize<ResilientEnumModel>(json)
 
-        assertNull(decoded.nullableStatus)
+        assertNull(actual = decoded.nullableStatus)
     }
 }

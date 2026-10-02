@@ -1,40 +1,30 @@
-@file:OptIn(KspExperimental::class)
-
 package com.ghost.serialization.compiler.analysis
 
-import com.ghost.serialization.annotations.GhostWrappedKeys
-import com.ghost.serialization.compiler.model.CustomCoderModel
-import com.ghost.serialization.compiler.model.CustomCoderReaderKind
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.ghost.serialization.compiler.model.InferredSubclassModel
-import com.ghost.serialization.compiler.model.WrappedUnwrapFieldModel
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getAnnotationsByType
+import com.ghost.serialization.compiler.model.WrappedKeysModel
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
-import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
+import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 
 
 /**
- * Analyzes a Kotlin class declaration during KSP processing, validating it against the
- * framework's serialization rules (supported class kind, no private properties, string map
- * keys, unique JSON names) and converting its properties into [GhostPropertyModel]s.
+ * Validates a class declaration against Ghost's serialization rules (class kind, property
+ * visibility, map key type, unique JSON names) and converts its properties into [GhostPropertyModel]s.
  */
 internal class GhostAnalyzer(private val logger: KSPLogger) {
 
-    /**
-     * Analyzes the given class declaration and resolves its properties to a list of models.
-     */
+    private val wrappedKeysAnalyzer = WrappedKeysAnalyzer(logger = logger)
+    private val customCoderAnalyzer = CustomCoderAnalyzer(logger = logger)
+
     fun analyze(classDeclaration: KSClassDeclaration): List<GhostPropertyModel> {
         val isSealed = classDeclaration.modifiers.contains(Modifier.SEALED)
         val isData = classDeclaration.modifiers.contains(Modifier.DATA)
@@ -46,7 +36,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         if (isObject) return emptyList()
 
-        validateClassKind(classDeclaration, isData, isSealed, isValue, isEnum)
+        validateClassKind(
+            classDeclaration = classDeclaration,
+            isData = isData,
+            isSealed = isSealed,
+            isValue = isValue,
+            isEnum = isEnum
+        )
 
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
 
@@ -54,71 +50,244 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         val overriddenProps = allProps.mapNotNull { it.findOverridee() }.toSet()
         val properties = allProps
             .filterNot { it in overriddenProps }
-            .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
+            .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }
             .toList()
 
-        validatePropertyVisibility(classDeclaration, properties)
+        validatePropertyVisibility(classDeclaration = classDeclaration, properties = properties)
 
-        val enumValues = getEnumValues(classDeclaration, isEnum)
+        val enumValues = getEnumValues(classDeclaration = classDeclaration, isEnum = isEnum)
         val propertyModels =
-            resolvePropertyModels(classDeclaration, properties, parameters, isEnum, enumValues)
+            resolvePropertyModels(
+                classDeclaration = classDeclaration,
+                properties = properties,
+                parameters = parameters,
+                isEnum = isEnum,
+                enumValues = enumValues
+            )
 
-        val finalModels = resolveSealedSubclasses(classDeclaration, propertyModels, isSealed)
+        val finalModels = resolveSealedSubclasses(
+            classDeclaration = classDeclaration,
+            propertyModels = propertyModels,
+            isSealed = isSealed
+        )
 
-        validateNames(finalModels, classDeclaration)
-        validateWrappedKeys(finalModels, classDeclaration)
+        validateNames(properties = finalModels, clazz = classDeclaration)
+        wrappedKeysAnalyzer.validateWrappedKeys(properties = finalModels, clazz = classDeclaration)
         return finalModels
     }
 
-    /**
-     * Validates that the class kind is supported by the Ghost framework.
-     */
-    private fun validateClassKind(
+    private fun buildPropertyModel(
+        prop: KSPropertyDeclaration,
+        parameters: List<KSValueParameter>
+    ): GhostPropertyModel {
+        val type = prop.type.resolve()
+        val qualifiedName = type.declaration.qualifiedName?.asString()
+
+        val isList = qualifiedName == AC.LIST_QUALIFIED
+        val isSet = qualifiedName == AC.SET_QUALIFIED
+        val isMap = qualifiedName == AC.MAP_QUALIFIED
+
+        val innerType = if (isList || isSet) {
+            resolveFirstTypeArg(type = type)
+        } else {
+            null
+        }
+        val mapKeyType = if (isMap) {
+            resolveFirstTypeArg(type = type)
+        } else {
+            null
+        }
+        val mapValueType = if (isMap) {
+            resolveSecondTypeArg(type = type)
+        } else {
+            null
+        }
+
+        validateMapKey(prop = prop, isMap = isMap, mapKeyType = mapKeyType)
+
+        val param = parameters.find {
+            it.name?.asString() == prop.simpleName.asString()
+        }
+
+        val isPrimitiveArray = qualifiedName in PRIMITIVE_ARRAYS
+        val primitiveArrayType =
+            if (isPrimitiveArray) {
+                qualifiedName?.removePrefix(AC.STR_KOTLIN_DOT)
+            } else {
+                null
+            }
+
+        val customDecoder = customCoderAnalyzer.resolveCustomCoder(prop = prop, annotationName = AC.GHOST_DECODER)
+        val customEncoder = customCoderAnalyzer.resolveCustomCoder(prop = prop, annotationName = AC.GHOST_ENCODER)
+
+        val flattenPath = resolvePathAnnotation(prop = prop, annotationName = AC.GHOST_FLATTEN)
+        val wrapPath = resolvePathAnnotation(prop = prop, annotationName = AC.GHOST_WRAP)
+        val wrappedKeysConfig = wrappedKeysAnalyzer.resolveWrappedKeysAnnotation(prop = prop)
+
+        customCoderAnalyzer.warnIfCustomCoder(
+            propName = prop.simpleName.asString(),
+            customDecoder = customDecoder,
+            customEncoder = customEncoder
+        )
+
+        val parentClass = prop.parentDeclaration as? KSClassDeclaration
+        val hasProto = parentClass?.annotations?.any {
+            it.shortName.asString() == CC.ANNOTATION_GHOST_PROTO_SERIALIZATION
+        } == true
+
+        val serialNameAnnotation = prop.annotations.any {
+            val name = it.shortName.asString()
+            name == AC.GHOST_NAME || name == AC.SERIAL_NAME || name.endsWith(AC.STR_SERIAL_NAME_SUFFIX)
+        }
+
+        var jsonName = flattenPath?.last() ?: getJsonName(prop = prop)
+        if (hasProto && !serialNameAnnotation) {
+            jsonName = toLowerCamelCase(str = jsonName)
+        }
+
+        val wrappedUnwrapFields = if (wrappedKeysConfig != null) {
+            wrappedKeysAnalyzer.resolveWrappedUnwrapFields(
+                type = type.makeNotNullable(),
+                wrapperPath = emptyList(),
+                sourceKeys = wrappedKeysConfig.keys,
+            )
+        } else {
+            emptyList()
+        }
+
+        return GhostPropertyModel(
+            kotlinName = prop.simpleName.asString(),
+            jsonName = jsonName,
+            type = type,
+            typeName = type.toTypeName(),
+            isNullable = type.isMarkedNullable,
+            isGhost = isGhostType(type = type),
+            isList = isList,
+            isSet = isSet,
+            listInnerType = innerType,
+            isEnum = isEnumType(type = type),
+            listInnerIsGhost = innerType?.let { isGhostType(type = it) } ?: false,
+            listInnerIsEnum = innerType?.let { isEnumType(type = it) } ?: false,
+            hasDefaultValue = param?.hasDefault ?: false,
+            defaultExpression = param
+                ?.takeIf { it.hasDefault }
+                ?.let { DefaultExpressionExtractor.extract(param = it) },
+            isInConstructor = param != null,
+            isMap = isMap,
+            mapValueType = mapValueType,
+            mapValueIsGhost = mapValueType?.let { isGhostType(type = it) } ?: false,
+            isPrimitiveArray = isPrimitiveArray,
+            primitiveArrayType = primitiveArrayType,
+            isValueClass = isValueClass(type = type) && !type.isKotlinUnsignedPrimitive(),
+            valueClassProperty = if (isValueClass(type = type) && !type.isKotlinUnsignedPrimitive()) {
+                resolveValueClassProperty(type = type, isProto = hasProto)
+            } else {
+                null
+            },
+            isSealedClass = isSealedClass(type = type),
+            sealedSubclasses = resolveSealedSubclassesForType(type = type),
+            isResilient = isResilientProperty(prop = prop),
+            isContextual = isContextualType(
+                type = type,
+                isList = isList,
+                isSet = isSet,
+                isMap = isMap,
+                isPrimitiveArray = isPrimitiveArray
+            ),
+            customDecoder = customDecoder,
+            customEncoder = customEncoder,
+            flattenPath = flattenPath,
+            wrapPath = wrapPath,
+            wrappedKeys = wrappedKeysConfig?.let {
+                WrappedKeysModel(
+                    sourceKeys = it.keys,
+                    omitIfEmpty = it.omitIfEmpty,
+                    omitIfAbsent = it.omitIfAbsent,
+                    unwrapFields = wrappedUnwrapFields,
+                )
+            },
+            isInferredSignature = prop.hasAnnotation(name = AC.GHOST_SIGNATURE),
+            isProto = hasProto
+        )
+    }
+
+    private fun getEnumValues(
         classDeclaration: KSClassDeclaration,
-        isData: Boolean,
-        isSealed: Boolean,
-        isValue: Boolean,
         isEnum: Boolean
-    ) {
-        if (!isData && !isSealed && !isValue && !isEnum) {
-            logger.error(
-                C.STR_ERR_CLASS_1 +
-                        "${C.STR_ERR_CLASS_2}${
-                            classDeclaration
-                                .simpleName
-                                .asString()
-                        }${C.STR_ERR_CLASS_3}",
-                classDeclaration
-            )
-        }
+    ): Map<String, String>? {
+        return if (isEnum) {
+            classDeclaration.declarations
+                .filter { it is KSClassDeclaration && it.classKind == ClassKind.ENUM_ENTRY }
+                .map { it as KSClassDeclaration }
+                .associate { entry -> entry.simpleName.asString() to getSerialName(declaration = entry) }
+        } else null
     }
 
     /**
-     * Validates that none of the serialization properties are declared as private.
+     * Checks if a type requires contextual serialization (e.g., non-built-in/third-party types).
      */
-    private fun validatePropertyVisibility(
-        classDeclaration: KSClassDeclaration,
-        properties: List<KSPropertyDeclaration>
-    ) {
-        val hasPrivateProperties = properties.any {
-            it.modifiers.contains(Modifier.PRIVATE)
+    private fun isContextualType(
+        type: KSType,
+        isList: Boolean,
+        isSet: Boolean,
+        isMap: Boolean,
+        isPrimitiveArray: Boolean
+    ): Boolean {
+        val isCollectionOrPrimitiveArray = isList || isSet || isMap || isPrimitiveArray
+        if (isCollectionOrPrimitiveArray) {
+            return false
         }
-        if (hasPrivateProperties) {
-            logger.error(
-                C.STR_ERR_PRIV_1 +
-                        "${C.STR_ERR_PRIV_2}${
-                            classDeclaration
-                                .simpleName
-                                .asString()
-                        }${C.STR_ERR_PRIV_3}",
-                classDeclaration
-            )
+        if (isGhostType(type = type)) {
+            return false
+        }
+        if (isEnumType(type = type)) {
+            return false
+        }
+
+        val qualifiedName = type.declaration.qualifiedName?.asString()
+        val isBuiltIn = qualifiedName?.startsWith(AC.STR_KOTLIN_PREFIX) == true ||
+                qualifiedName?.startsWith(AC.STR_JAVA_PREFIX) == true
+
+        if (isBuiltIn) {
+            return when (qualifiedName) {
+                AC.K_STRING, AC.K_INT, AC.K_LONG, AC.K_ULONG, AC.K_UINT, AC.K_USHORT, AC.K_UBYTE,
+                AC.K_DOUBLE, AC.K_FLOAT,
+                AC.K_BOOLEAN, AC.K_BYTE, AC.K_SHORT, AC.K_CHAR, AC.K_UNIT, AC.K_ANY,
+                AC.K_BYTE_ARRAY -> false
+
+                else -> true
+            }
+        }
+
+        if (qualifiedName == AC.K_RAW_JSON) {
+            return false
+        }
+
+        return true // Third party types
+    }
+
+    /** True if the property or its declaring class is annotated `@GhostResilient`. */
+    private fun isResilientProperty(prop: KSPropertyDeclaration): Boolean {
+        return prop.hasAnnotation(name = AC.GHOST_RESILIENT) || prop.parentDeclaration
+            ?.let {
+                it is KSClassDeclaration &&
+                        it.annotations.any { ann -> ann.shortName.asString() == AC.GHOST_RESILIENT }
+            } ?: false
+    }
+
+    private fun resolvePathAnnotation(
+        prop: KSPropertyDeclaration,
+        annotationName: String
+    ): List<String>? {
+        return prop.annotations.find {
+            it.shortName.asString() == annotationName
+        }?.let { ann ->
+            val path = ann.arguments.find { it.name?.asString() == AC.PATH_ARG }?.value as? String
+            path?.split(CC.STR_DOT)
         }
     }
 
-    /**
-     * Resolves the list of property models for standard or enum DTO classes.
-     */
+    /** For enums, returns a single synthetic `name` property model; otherwise maps declared properties. */
     private fun resolvePropertyModels(
         classDeclaration: KSClassDeclaration,
         properties: List<KSPropertyDeclaration>,
@@ -129,8 +298,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return if (isEnum) {
             listOf(
                 GhostPropertyModel(
-                    kotlinName = C.NAME,
-                    jsonName = C.NAME,
+                    kotlinName = AC.NAME,
+                    jsonName = AC.NAME,
                     type = classDeclaration.asType(emptyList()),
                     typeName = classDeclaration.toClassName(),
                     isNullable = false,
@@ -142,12 +311,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 )
             )
         } else {
-            properties.map { prop -> buildPropertyModel(prop, parameters) }
+            properties.map { prop -> buildPropertyModel(prop = prop, parameters = parameters) }
         }
     }
 
     /**
-     * Inspects the sealed subclass hierarchies and recursively builds inferred subclass metadata.
+     * Attaches inferred subclass metadata for sealed classes; falls back to a placeholder
+     * property model when the class has none of its own.
      */
     private fun resolveSealedSubclasses(
         classDeclaration: KSClassDeclaration,
@@ -159,8 +329,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 .getSealedSubclasses()
                 .map { subclass ->
                     InferredSubclassModel(
-                        subclass,
-                        analyze(subclass)
+                        declaration = subclass,
+                        properties = analyze(subclass)
                     )
                 }
                 .toList()
@@ -168,8 +338,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 .ifEmpty {
                     listOf(
                         GhostPropertyModel(
-                            kotlinName = C.STR_EMPTY,
-                            jsonName = C.STR_EMPTY,
+                            kotlinName = CC.STR_EMPTY,
+                            jsonName = CC.STR_EMPTY,
                             type = classDeclaration.asType(emptyList()),
                             typeName = classDeclaration.toClassName(),
                             isNullable = false,
@@ -186,598 +356,12 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
-    private fun getEnumValues(
-        classDeclaration: KSClassDeclaration,
-        isEnum: Boolean
-    ): Map<String, String>? {
-        return if (isEnum) {
-            classDeclaration.declarations
-                .filter { it is KSClassDeclaration && it.classKind == ClassKind.ENUM_ENTRY }
-                .map { it as KSClassDeclaration }
-                .associate { entry -> entry.simpleName.asString() to getSerialName(entry) }
-        } else null
-    }
-
-    private fun validateWrappedKeys(
-        properties: List<GhostPropertyModel>,
-        clazz: KSClassDeclaration,
-    ) {
-        val wireKeys = mutableMapOf<String, String>()
-        properties.forEach { prop ->
-            prop.wrappedSourceKeys?.forEach { key ->
-                val owner = wireKeys.put(key, prop.kotlinName)
-                if (owner != null && owner != prop.kotlinName) {
-                    logger.error(
-                        C.STR_ERR_WRAPPED_DUP_KEY_1 + key + C.STR_ERR_WRAPPED_DUP_KEY_2 +
-                                clazz.simpleName.asString() + C.STR_ERR_WRAPPED_DUP_KEY_3 + owner +
-                                C.STR_ERR_WRAPPED_DUP_KEY_4 + prop.kotlinName + C.STR_ERR_WRAPPED_DUP_KEY_5,
-                        clazz,
-                    )
-                }
-            }
-            if (prop.wrappedOmitIfEmpty && !prop.isNullable) {
-                logger.error(
-                    C.STR_ERR_WRAPPED_OMIT_IF_EMPTY_1 + prop.kotlinName + C.STR_ERR_WRAPPED_OMIT_IF_EMPTY_2,
-                    clazz,
-                )
-            }
-            if (prop.flattenPath != null || prop.wrapPath != null) {
-                if (prop.wrappedSourceKeys != null) {
-                    logger.error(
-                        C.STR_ERR_WRAPPED_COMBINE_1 + prop.kotlinName + C.STR_ERR_WRAPPED_COMBINE_2,
-                        clazz,
-                    )
-                }
-            }
-        }
-        properties.forEach { prop ->
-            if (prop.wrappedSourceKeys == null) {
-                return@forEach
-            }
-            prop.wrappedSourceKeys.forEach { key ->
-                if (properties.any { it.wrappedSourceKeys == null && it.jsonName == key }) {
-                    logger.error(
-                        C.STR_ERR_WRAPPED_KEY_CONFLICT_1 + key + C.STR_ERR_WRAPPED_KEY_CONFLICT_2 +
-                                clazz.simpleName.asString() + C.STR_ERR_WRAPPED_KEY_CONFLICT_3,
-                        clazz,
-                    )
-                }
-            }
-        }
-    }
-
-    private fun validateNames(
-        properties: List<GhostPropertyModel>,
-        clazz: KSClassDeclaration
-    ) {
-        val names = properties.groupBy { it.jsonName }
-        names.forEach { (name, props) ->
-            if (props.size > C.VAL_ONE) {
-                logger.error(
-                    "${C.STR_ERR_DUP_1}$name${C.STR_ERR_DUP_2}${
-                        clazz
-                            .simpleName
-                            .asString()
-                    }${C.STR_ERR_DUP_3}" +
-                            "${C.STR_ERR_DUP_4}${props.joinToString { it.kotlinName }}",
-                    clazz
-                )
-            }
-        }
-    }
-
-    private fun buildPropertyModel(
-        prop: KSPropertyDeclaration,
-        parameters: List<KSValueParameter>
-    ): GhostPropertyModel {
-        val type = prop.type.resolve()
-        val qualifiedName = type.declaration.qualifiedName?.asString()
-
-        val isList = qualifiedName == C.LIST_QUALIFIED
-        val isSet = qualifiedName == C.SET_QUALIFIED
-        val isMap = qualifiedName == C.MAP_QUALIFIED
-
-        val innerType = if (isList || isSet) {
-            resolveFirstTypeArg(type)
-        } else {
-            null
-        }
-        val mapKeyType = if (isMap) {
-            resolveFirstTypeArg(type)
-        } else {
-            null
-        }
-        val mapValueType = if (isMap) {
-            resolveSecondTypeArg(type)
-        } else {
-            null
-        }
-
-        validateMapKey(prop, isMap, mapKeyType)
-
-        val param = parameters.find {
-            it.name?.asString() == prop.simpleName.asString()
-        }
-
-        val isPrimitiveArray = qualifiedName in PRIMITIVE_ARRAYS
-        val primitiveArrayType =
-            if (isPrimitiveArray) {
-                qualifiedName?.removePrefix(C.STR_KOTLIN_DOT)
-            } else {
-                null
-            }
-
-        val customDecoder = resolveCustomCoder(prop, C.GHOST_DECODER)
-        val customEncoder = resolveCustomCoder(prop, C.GHOST_ENCODER)
-
-        val flattenPath = resolvePathAnnotation(prop, C.GHOST_FLATTEN)
-        val wrapPath = resolvePathAnnotation(prop, C.GHOST_WRAP)
-        val wrappedKeysConfig = resolveWrappedKeysAnnotation(prop)
-
-        warnIfCustomCoder(prop.simpleName.asString(), customDecoder, customEncoder)
-
-        val parentClass = prop.parentDeclaration as? KSClassDeclaration
-        val hasProto = parentClass?.annotations?.any {
-            it.shortName.asString() == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
-        } == true
-
-        val serialNameAnnotation = prop.annotations.any {
-            val name = it.shortName.asString()
-            name == C.GHOST_NAME || name == C.SERIAL_NAME || name.endsWith(C.STR_SERIAL_NAME_SUFFIX)
-        }
-
-        var jsonName = flattenPath?.last() ?: getJsonName(prop)
-        if (hasProto && !serialNameAnnotation) {
-            jsonName = toLowerCamelCase(jsonName)
-        }
-
-        val wrappedUnwrapFields = if (wrappedKeysConfig != null) {
-            resolveWrappedUnwrapFields(
-                type = type.makeNotNullable(),
-                wrapperPath = emptyList(),
-                sourceKeys = wrappedKeysConfig.keys,
-            )
-        } else {
-            emptyList()
-        }
-
-        return GhostPropertyModel(
-            kotlinName = prop.simpleName.asString(),
-            jsonName = jsonName,
-            type = type,
-            typeName = type.toTypeName(),
-            isNullable = type.isMarkedNullable,
-            isGhost = isGhostType(type),
-            isList = isList,
-            isSet = isSet,
-            listInnerType = innerType,
-            isEnum = isEnumType(type),
-            listInnerIsGhost = innerType?.let { isGhostType(it) } ?: false,
-            listInnerIsEnum = innerType?.let { isEnumType(it) } ?: false,
-            hasDefaultValue = param?.hasDefault ?: false,
-            defaultExpression = param
-                ?.takeIf { it.hasDefault }
-                ?.let { DefaultExpressionExtractor.extract(it) },
-            isInConstructor = param != null,
-            isMap = isMap,
-            mapValueType = mapValueType,
-            mapValueIsGhost = mapValueType?.let { isGhostType(it) } ?: false,
-            isPrimitiveArray = isPrimitiveArray,
-            primitiveArrayType = primitiveArrayType,
-            isValueClass = isValueClass(type) && !type.isKotlinUnsignedPrimitive(),
-            valueClassProperty = if (isValueClass(type) && !type.isKotlinUnsignedPrimitive()) {
-                resolveValueClassProperty(type, hasProto)
-            } else {
-                null
-            },
-            isSealedClass = isSealedClass(type),
-            sealedSubclasses = resolveSealedSubclassesForType(type),
-            isResilient = isResilientProperty(prop),
-            isContextual = isContextualType(type, isList, isSet, isMap, isPrimitiveArray),
-            customDecoder = customDecoder,
-            customEncoder = customEncoder,
-            flattenPath = flattenPath,
-            wrapPath = wrapPath,
-            wrappedSourceKeys = wrappedKeysConfig?.keys,
-            wrappedOmitIfEmpty = wrappedKeysConfig?.omitIfEmpty ?: false,
-            wrappedOmitIfAbsent = wrappedKeysConfig?.omitIfAbsent ?: emptyList(),
-            wrappedUnwrapFields = wrappedUnwrapFields,
-            isInferredSignature = prop.hasAnnotation(C.GHOST_SIGNATURE),
-            isProto = hasProto
-        )
-    }
-
-    private fun toLowerCamelCase(str: String): String {
-        if (str.isEmpty()) return str
-        val sb = StringBuilder()
-        var uppercaseNext = false
-        var i = 0
-        val len = str.length
-        while (i < len) {
-            val c = str[i]
-            if (c == C.CHAR_UNDERSCORE) {
-                uppercaseNext = true
-            } else {
-                if (uppercaseNext) {
-                    sb.append(c.uppercaseChar())
-                    uppercaseNext = false
-                } else {
-                    if (i == 0) {
-                        sb.append(c.lowercaseChar())
-                    } else {
-                        sb.append(c)
-                    }
-                }
-            }
-            i++
-        }
-        return sb.toString()
-    }
-
-    private fun warnIfCustomCoder(
-        propName: String,
-        customDecoder: CustomCoderModel?,
-        customEncoder: CustomCoderModel?
-    ) {
-        if (customDecoder != null || customEncoder != null) {
-            logger.info(
-                C.STR_WARN_CUSTOM_CODER.format(
-                    propName,
-                    customDecoder,
-                    customEncoder
-                )
-            )
-        }
-    }
-
-    /**
-     * Determines whether the property or its parent class is annotated as resilient.
-     */
-    private fun isResilientProperty(prop: KSPropertyDeclaration): Boolean {
-        return prop.hasAnnotation(C.GHOST_RESILIENT) || prop.parentDeclaration
-            ?.let {
-                it is KSClassDeclaration &&
-                        it.annotations.any { ann -> ann.shortName.asString() == C.GHOST_RESILIENT }
-            } ?: false
-    }
-
     private fun resolveSealedSubclassesForType(type: KSType): List<KSClassDeclaration> {
-        return if (isSealedClass(type)) {
+        return if (isSealedClass(type = type)) {
             (type.declaration as KSClassDeclaration).getSealedSubclasses().toList()
         } else {
             emptyList()
         }
-    }
-
-    /**
-     * Resolves the custom decoder or encoder helper config model if declared.
-     */
-    private fun resolveCustomCoder(
-        prop: KSPropertyDeclaration,
-        annotationName: String
-    ): CustomCoderModel? {
-        return prop.annotations.find {
-            it.shortName.asString() == annotationName
-        }?.let { ann ->
-            val provider =
-                ann.arguments.find { it.name?.asString() == C.PROVIDER_ARG }?.value as? KSType
-            val function =
-                ann.arguments.find { it.name?.asString() == C.FUNCTION_NAME_ARG }?.value as? String
-            if (provider != null && function != null) {
-                CustomCoderModel(
-                    provider = provider.toTypeName(),
-                    functionName = function,
-                    readerKinds = resolveCustomCoderReaderKinds(provider, function),
-                )
-            } else null
-        }
-    }
-
-    private fun resolveCustomCoderReaderKinds(
-        provider: KSType,
-        functionName: String,
-    ): Set<CustomCoderReaderKind> {
-        val declaration =
-            provider.declaration as? KSClassDeclaration ?: return setOf(CustomCoderReaderKind.BYTES)
-        val kinds = declaration.getAllFunctions()
-            .filter { it.simpleName.asString() == functionName }
-            .mapNotNull { fn ->
-                when (fn.parameters.firstOrNull()?.type?.resolve()?.declaration?.qualifiedName?.asString()) {
-                    C.STR_GHOST_JSON_STRING_READER_QUALIFIED -> CustomCoderReaderKind.STRING
-                    C.STR_GHOST_JSON_FLAT_READER_QUALIFIED -> CustomCoderReaderKind.FLAT
-                    C.STR_GHOST_JSON_READER_QUALIFIED -> CustomCoderReaderKind.BYTES
-                    else -> null
-                }
-            }
-            .toSet()
-        return kinds.ifEmpty { setOf(CustomCoderReaderKind.BYTES) }
-    }
-
-    private data class WrappedKeysConfig(
-        val keys: List<String>,
-        val omitIfEmpty: Boolean,
-        val omitIfAbsent: List<String>,
-    )
-
-    private fun resolveWrappedKeysAnnotation(prop: KSPropertyDeclaration): WrappedKeysConfig? {
-        resolveWrappedKeysFromAnnotated(prop)?.let { return it }
-
-        val classDecl = prop.parentDeclaration as? KSClassDeclaration
-        val parameter = classDecl?.primaryConstructor?.parameters?.firstOrNull {
-            it.name?.asString() == prop.simpleName.asString()
-        }
-        parameter?.let { resolveWrappedKeysFromAnnotated(it) }?.let { return it }
-
-        return null
-    }
-
-    private fun resolveWrappedKeysFromAnnotated(annotated: KSAnnotated): WrappedKeysConfig? {
-        try {
-            when (annotated) {
-                is KSPropertyDeclaration -> {
-                    annotated.getAnnotationsByType(GhostWrappedKeys::class)
-                        .firstOrNull()
-                        ?.let { wrappedKeysConfigFromAnnotation(it, annotated) }
-                        ?.let { return it }
-                }
-
-                is KSValueParameter -> {
-                    annotated.getAnnotationsByType(GhostWrappedKeys::class)
-                        .firstOrNull()
-                        ?.let { wrappedKeysConfigFromAnnotation(it, annotated) }
-                        ?.let { return it }
-                }
-            }
-        } catch (_: Exception) {
-            // kspCommonMainKotlinMetadata may throw on getAnnotationsByType for array args.
-        }
-
-        return annotated.annotations
-            .find { it.shortName.asString() == C.GHOST_WRAPPED_KEYS }
-            ?.let { wrappedKeysConfigFromKsAnnotation(it, annotated) }
-    }
-
-    private fun wrappedKeysConfigFromAnnotation(
-        annotation: GhostWrappedKeys,
-        source: KSAnnotated,
-    ): WrappedKeysConfig {
-        return wrappedKeysConfigFromValues(
-            keys = annotation.keys.toList(),
-            omitIfEmpty = annotation.omitIfEmpty,
-            omitIfAbsent = annotation.omitIfAbsent.toList(),
-            source = source,
-        )
-    }
-
-    private fun wrappedKeysConfigFromKsAnnotation(
-        annotation: KSAnnotation,
-        source: KSAnnotated,
-    ): WrappedKeysConfig {
-        return wrappedKeysConfigFromValues(
-            keys = annotation.readStringArrayArgument(C.KEYS_ARG),
-            omitIfEmpty = annotation.readBooleanArgument(C.OMIT_IF_EMPTY_ARG),
-            omitIfAbsent = annotation.readStringArrayArgument(C.OMIT_IF_ABSENT_ARG),
-            source = source,
-        )
-    }
-
-    private fun wrappedKeysConfigFromValues(
-        keys: List<String>,
-        omitIfEmpty: Boolean,
-        omitIfAbsent: List<String>,
-        source: KSAnnotated,
-    ): WrappedKeysConfig {
-        if (keys.isEmpty()) {
-            val name = when (source) {
-                is KSPropertyDeclaration -> source.simpleName.asString()
-                is KSValueParameter -> source.name?.asString() ?: C.STR_EMPTY
-                else -> C.STR_EMPTY
-            }
-            logger.error(
-                C.STR_ERR_WRAPPED_EMPTY_KEYS_1 + name + C.STR_ERR_WRAPPED_EMPTY_KEYS_2,
-                source,
-            )
-            return WrappedKeysConfig(emptyList(), false, emptyList())
-        }
-        return WrappedKeysConfig(
-            keys = keys,
-            omitIfEmpty = omitIfEmpty,
-            omitIfAbsent = omitIfAbsent,
-        )
-    }
-
-    private fun KSAnnotation.readStringArrayArgument(argName: String): List<String> {
-        val value = arguments.find { it.name?.asString() == argName }?.value ?: return emptyList()
-        return when (value) {
-            is Array<*> -> value.filterIsInstance<String>()
-            is List<*> -> value.filterIsInstance<String>()
-            else -> emptyList()
-        }
-    }
-
-    private fun KSAnnotation.readBooleanArgument(argName: String): Boolean {
-        return arguments.find { it.name?.asString() == argName }?.value as? Boolean ?: false
-    }
-
-    private fun resolveWrappedUnwrapFields(
-        type: KSType,
-        wrapperPath: List<String>,
-        sourceKeys: List<String>,
-    ): List<WrappedUnwrapFieldModel> {
-        val declaration = type.declaration as? KSClassDeclaration ?: return emptyList()
-        if (!isGhostType(type)) {
-            return emptyList()
-        }
-
-        val properties = declaration.getAllProperties()
-            .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
-            .toList()
-
-        return sourceKeys.mapNotNull { wireKey ->
-            resolveUnwrapFieldForWireKey(properties, wrapperPath, wireKey, type)
-        }
-    }
-
-    private fun resolveUnwrapFieldForWireKey(
-        properties: List<KSPropertyDeclaration>,
-        wrapperPath: List<String>,
-        wireKey: String,
-        ownerType: KSType,
-    ): WrappedUnwrapFieldModel? {
-        val direct = properties.find { getJsonName(it) == wireKey }
-        if (direct != null) {
-            val directType = direct.type.resolve()
-            return WrappedUnwrapFieldModel(
-                jsonName = wireKey,
-                kotlinPath = wrapperPath + direct.simpleName.asString(),
-                isNullable = directType.isMarkedNullable,
-                typeName = directType.toTypeName(),
-                type = directType,
-            )
-        }
-
-        for (property in properties) {
-            val nestedConfig = resolveWrappedKeysAnnotation(property) ?: continue
-            if (wireKey !in nestedConfig.keys) {
-                continue
-            }
-            val nestedType = property.type.resolve().makeNotNullable()
-            val nestedPath = wrapperPath + property.simpleName.asString()
-            val nestedDecl = nestedType.declaration as? KSClassDeclaration ?: continue
-            val nestedProps = nestedDecl.getAllProperties()
-                .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
-                .toList()
-            val leaf = resolveUnwrapFieldForWireKey(nestedProps, nestedPath, wireKey, nestedType)
-            if (leaf != null) {
-                return leaf
-            }
-        }
-
-        resolveUnwrapFieldFromSealedSubclass(wrapperPath, wireKey, ownerType)?.let { return it }
-
-        logger.warn(
-            C.STR_WARN_WRAPPED_UNMAPPED_1 + wireKey + C.STR_WARN_WRAPPED_UNMAPPED_2 +
-                    ownerType.declaration.simpleName.asString(),
-        )
-        return null
-    }
-
-    /**
-     * proto3 `oneof` support: when the wrapped type is sealed, wire keys live on its subclasses
-     * rather than the parent. Resolves the key against each subclass and tags the result with it
-     * so the emitter can smart-cast before accessing it.
-     */
-    private fun resolveUnwrapFieldFromSealedSubclass(
-        wrapperPath: List<String>,
-        wireKey: String,
-        ownerType: KSType,
-    ): WrappedUnwrapFieldModel? {
-        val ownerDecl = ownerType.declaration as? KSClassDeclaration ?: return null
-        if (!ownerDecl.modifiers.contains(Modifier.SEALED)) {
-            return null
-        }
-
-        for (subclass in ownerDecl.getSealedSubclasses()) {
-            val subclassProps = subclass.getAllProperties()
-                .filterNot { it.hasAnnotation(C.GHOST_IGNORE) }
-                .toList()
-            val direct = subclassProps.find { getJsonName(it) == wireKey } ?: continue
-            val directType = direct.type.resolve()
-            return WrappedUnwrapFieldModel(
-                jsonName = wireKey,
-                kotlinPath = wrapperPath + direct.simpleName.asString(),
-                isNullable = directType.isMarkedNullable,
-                typeName = directType.toTypeName(),
-                type = directType,
-                sealedSubclassName = subclass.toClassName(),
-            )
-        }
-        return null
-    }
-
-    /**
-     * Resolves the flatten/wrap key paths from annotations.
-     */
-    private fun resolvePathAnnotation(
-        prop: KSPropertyDeclaration,
-        annotationName: String
-    ): List<String>? {
-        return prop.annotations.find {
-            it.shortName.asString() == annotationName
-        }?.let { ann ->
-            val path = ann.arguments.find { it.name?.asString() == C.PATH_ARG }?.value as? String
-            path?.split(C.STR_DOT)
-        }
-    }
-
-    /**
-     * Validates that map keys are Strings.
-     */
-    private fun validateMapKey(
-        prop: KSPropertyDeclaration,
-        isMap: Boolean,
-        mapKeyType: KSType?
-    ) {
-        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != C.STRING_QUALIFIED) {
-            logger.error(
-                "${C.STR_ERR_MAP_1}${prop.simpleName.asString()}${C.STR_ERR_MAP_2}" +
-                        C.STR_ERR_MAP_3,
-                prop
-            )
-        }
-    }
-
-    /**
-     * Checks if a type requires contextual serialization (e.g., non-built-in/third-party types).
-     */
-    private fun isContextualType(
-        type: KSType,
-        isList: Boolean,
-        isSet: Boolean,
-        isMap: Boolean,
-        isPrimitiveArray: Boolean
-    ): Boolean {
-        if (isList || isSet || isMap || isPrimitiveArray) {
-            return false
-        }
-        if (isGhostType(type)) {
-            return false
-        }
-        if (isEnumType(type)) {
-            return false
-        }
-
-        val qualifiedName = type.declaration.qualifiedName?.asString()
-        val isBuiltIn = qualifiedName?.startsWith(C.STR_KOTLIN_PREFIX) == true ||
-                qualifiedName?.startsWith(C.STR_JAVA_PREFIX) == true
-
-        if (isBuiltIn) {
-            return when (qualifiedName) {
-                C.K_STRING, C.K_INT, C.K_LONG, C.K_ULONG, C.K_UINT, C.K_USHORT, C.K_UBYTE,
-                C.K_DOUBLE, C.K_FLOAT,
-                C.K_BOOLEAN, C.K_BYTE, C.K_SHORT, C.K_CHAR, C.K_UNIT, C.K_ANY,
-                C.K_BYTE_ARRAY -> false
-
-                else -> true
-            }
-        }
-
-        if (qualifiedName == C.K_RAW_JSON) {
-            return false
-        }
-
-        return true // Third party types
-    }
-
-    private fun isValueClass(type: KSType): Boolean {
-        val declaration = type.declaration as? KSClassDeclaration ?: return false
-        return declaration.modifiers.contains(Modifier.VALUE) ||
-                declaration.modifiers.contains(Modifier.INLINE)
-    }
-
-    private fun isSealedClass(type: KSType): Boolean {
-        val declaration = type.declaration as? KSClassDeclaration ?: return false
-        return declaration.modifiers.contains(Modifier.SEALED)
     }
 
     private fun resolveValueClassProperty(
@@ -791,76 +375,92 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             .find { it.simpleName.asString() == param.name?.asString() } ?: return null
         // The value class itself (e.g. `UserId`) is never @GhostProtoSerialization-annotated;
         // it inherits proto-ness from whichever outer property wraps it.
-        return buildPropertyModel(prop, listOf(param)).copy(isProto = isProto)
+        return buildPropertyModel(prop = prop, parameters = listOf(param)).copy(isProto = isProto)
     }
 
-    private fun resolveFirstTypeArg(type: KSType): KSType? {
-        return type.arguments.firstOrNull()?.type?.resolve()
-    }
-
-    private fun resolveSecondTypeArg(type: KSType): KSType? {
-        return type.arguments.getOrNull(1)?.type?.resolve()
-    }
-
-    private fun getJsonName(prop: KSPropertyDeclaration): String = getSerialName(prop)
-
-    private fun KSPropertyDeclaration.hasAnnotation(name: String): Boolean {
-        return annotations.any { it.shortName.asString() == name }
-    }
-
-    /**
-     * Resolves the serialized name for an annotated element, checking GhostName or kotlinx SerialName.
-     */
-    private fun getSerialName(declaration: KSAnnotated): String {
-        val annotations = declaration.annotations.toList()
-
-        // 1. GhostName (Primary)
-        val ghostName = annotations.find { it.shortName.asString() == C.GHOST_NAME }
-        if (ghostName != null) {
-            val arg = ghostName.arguments.find { it.name?.asString() == C.NAME }
-                ?: ghostName.arguments.firstOrNull()
-            return arg?.value?.toString() ?: C.STR_EMPTY
+    private fun validateClassKind(
+        classDeclaration: KSClassDeclaration,
+        isData: Boolean,
+        isSealed: Boolean,
+        isValue: Boolean,
+        isEnum: Boolean
+    ) {
+        val isRegularClass = !isData && !isSealed && !isValue && !isEnum
+        if (isRegularClass) {
+            logger.error(
+                AC.STR_ERR_CLASS_1 +
+                        "${AC.STR_ERR_CLASS_2}${
+                            classDeclaration
+                                .simpleName
+                                .asString()
+                        }${AC.STR_ERR_CLASS_3}",
+                classDeclaration
+            )
         }
-
-        // 2. SerialName (kotlinx compatibility)
-        val serialName = annotations.find {
-            val name = it.shortName.asString()
-            name == C.SERIAL_NAME || name.endsWith(C.STR_SERIAL_NAME_SUFFIX)
-        }
-
-        if (serialName != null) {
-            val arg = serialName.arguments.find { it.name?.asString() == C.STR_VALUE_ARG }
-                ?: serialName.arguments.firstOrNull()
-
-            return arg?.value?.toString()
-                ?: (declaration as? KSDeclaration)?.simpleName?.asString()
-                ?: C.STR_EMPTY
-        }
-
-        return (declaration as? KSDeclaration)
-            ?.simpleName?.asString()
-            ?: C.STR_EMPTY
     }
 
-    private fun isEnumType(type: KSType): Boolean =
-        (type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
-
-    /**
-     * Checks if the type is annotated with @GhostSerialization.
-     */
-    private fun isGhostType(type: KSType): Boolean =
-        type.declaration.annotations.any {
-            val name = it.shortName.asString()
-            name == C.ANNOTATION_GHOST_SERIALIZATION || name == C.ANNOTATION_GHOST_PROTO_SERIALIZATION
+    private fun validateMapKey(
+        prop: KSPropertyDeclaration,
+        isMap: Boolean,
+        mapKeyType: KSType?
+    ) {
+        if (isMap && mapKeyType?.declaration?.qualifiedName?.asString() != AC.STRING_QUALIFIED) {
+            logger.error(
+                "${AC.STR_ERR_MAP_1}${prop.simpleName.asString()}${AC.STR_ERR_MAP_2}" +
+                        AC.STR_ERR_MAP_3,
+                prop
+            )
         }
+    }
+
+    private fun validateNames(
+        properties: List<GhostPropertyModel>,
+        clazz: KSClassDeclaration
+    ) {
+        val names = properties.groupBy { it.jsonName }
+        names.forEach { (name, props) ->
+            if (props.size > CC.VAL_ONE) {
+                logger.error(
+                    "${AC.STR_ERR_DUP_1}$name${AC.STR_ERR_DUP_2}${
+                        clazz
+                            .simpleName
+                            .asString()
+                    }${AC.STR_ERR_DUP_3}" +
+                            "${AC.STR_ERR_DUP_4}${props.joinToString { it.kotlinName }}",
+                    clazz
+                )
+            }
+        }
+    }
+
+    /** Rejects properties declared private. */
+    private fun validatePropertyVisibility(
+        classDeclaration: KSClassDeclaration,
+        properties: List<KSPropertyDeclaration>
+    ) {
+        val hasPrivateProperties = properties.any {
+            it.modifiers.contains(Modifier.PRIVATE)
+        }
+        if (hasPrivateProperties) {
+            logger.error(
+                AC.STR_ERR_PRIV_1 +
+                        "${AC.STR_ERR_PRIV_2}${
+                            classDeclaration
+                                .simpleName
+                                .asString()
+                        }${AC.STR_ERR_PRIV_3}",
+                classDeclaration
+            )
+        }
+    }
 
     companion object {
         private val PRIMITIVE_ARRAYS = setOf(
-            C.STR_TYPE_INT_ARRAY,
-            C.STR_TYPE_LONG_ARRAY,
-            C.STR_TYPE_FLOAT_ARRAY,
-            C.STR_TYPE_DOUBLE_ARRAY,
-            C.STR_TYPE_BOOLEAN_ARRAY
+            AC.STR_TYPE_INT_ARRAY,
+            AC.STR_TYPE_LONG_ARRAY,
+            AC.STR_TYPE_FLOAT_ARRAY,
+            AC.STR_TYPE_DOUBLE_ARRAY,
+            AC.STR_TYPE_BOOLEAN_ARRAY
         )
     }
 }

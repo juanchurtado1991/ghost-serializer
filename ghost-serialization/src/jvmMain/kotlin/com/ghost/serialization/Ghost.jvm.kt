@@ -39,7 +39,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
                     .iterator()
             }
                 .getOrDefault(
-                    emptyList<GhostRegistry>()
+                    defaultValue = emptyList<GhostRegistry>()
                         .iterator()
                 ).also { slow = it }
             return slowIterator.hasNext()
@@ -49,7 +49,7 @@ actual fun discoverRegistries(): Iterable<GhostRegistry> = Iterable {
             if (!hasNext()) throw NoSuchElementException()
             val fast = fastIterator
             if (fast != null && fast.hasNext()) return fast.next()
-            return checkNotNull(slow).next()
+            return checkNotNull(value = slow).next()
         }
     }
 }

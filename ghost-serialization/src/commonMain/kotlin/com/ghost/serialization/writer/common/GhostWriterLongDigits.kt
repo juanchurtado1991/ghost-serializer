@@ -1,13 +1,13 @@
 package com.ghost.serialization.writer.common
 
-import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT
-import com.ghost.serialization.parser.common.GhostJsonConstants.DOUBLE_DIGIT_LUT_CHARS
-import com.ghost.serialization.parser.common.GhostJsonConstants.HUNDRED_LONG
-import com.ghost.serialization.parser.common.GhostJsonConstants.LONG_SCRATCH_SIZE
-import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS
-import com.ghost.serialization.parser.common.GhostJsonConstants.MINUS_INT
-import com.ghost.serialization.parser.common.GhostJsonConstants.TEN_LONG
-import com.ghost.serialization.parser.common.GhostJsonConstants.ZERO_INT
+import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits.HUNDRED_LONG
+import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits.TEN_LONG
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.MINUS
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.MINUS_INT
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.ZERO_INT
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.DOUBLE_DIGIT_LUT
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.DOUBLE_DIGIT_LUT_CHARS
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.LONG_SCRATCH_SIZE
 
 /**
  * Shared decimal digit emission for writer long values.

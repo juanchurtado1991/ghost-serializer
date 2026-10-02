@@ -16,8 +16,8 @@ The Ghost Gradle plugin automatically adds runtime dependencies and wires the KS
 // build.gradle.kts (app module)
 plugins {
     id("com.android.application")
-    id("com.google.devtools.ksp") version "2.3.10"
-    id("com.ghostserializer.ghost") version "1.3.1"
+    id("com.google.devtools.ksp") version "2.3.12"
+    id("com.ghostserializer.ghost") version "1.3.2"
 }
 
 // Recommended for Retrofit/OkHttp/Ktor byte-first modules: omit native String
@@ -223,7 +223,7 @@ object LegacyUtils {
         return someDateParser(raw)
     }
 
-    fun writeDate(writer: GhostJsonFlatWriter, value: Long) {
+    fun writeDate(writer: GhostJsonWriter, value: Long) {
         writer.value(someDateFormatter(value))
     }
 }

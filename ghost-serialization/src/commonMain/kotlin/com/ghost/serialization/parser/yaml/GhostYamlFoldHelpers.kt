@@ -1,6 +1,6 @@
 package com.ghost.serialization.parser.yaml
 
-import com.ghost.serialization.yaml.GhostYamlConstants as C
+import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
 /**
  * Result of consuming a newline and scanning whether the following line is blank
@@ -22,18 +22,15 @@ internal class FoldBlankLineScan(
  */
 internal fun scanFoldBlankLine(rawData: ByteArray, position: Int, limit: Int): FoldBlankLineScan {
     var afterNewline = position
-    if (afterNewline < limit && rawData[afterNewline] == C.CR_BYTE) afterNewline++
-    if (afterNewline < limit && rawData[afterNewline] == C.NEWLINE_BYTE) afterNewline++
+    if (afterNewline < limit && rawData[afterNewline] == TOK.CR_BYTE) afterNewline++
+    if (afterNewline < limit && rawData[afterNewline] == TOK.NEWLINE_BYTE) afterNewline++
 
     var contentStart = afterNewline
-    while (contentStart < limit &&
-        (rawData[contentStart] == C.SPACE_BYTE || rawData[contentStart] == C.TAB_BYTE)
-    ) {
+    while (contentStart < limit && isInlineWhitespaceByte(byte = rawData[contentStart])) {
         contentStart++
     }
-    val isBlank = contentStart >= limit ||
-        rawData[contentStart] == C.NEWLINE_BYTE || rawData[contentStart] == C.CR_BYTE
-    return FoldBlankLineScan(afterNewline, contentStart, isBlank)
+    val isBlank = contentStart >= limit || isLineBreakByte(byte = rawData[contentStart])
+    return FoldBlankLineScan(afterNewline = afterNewline, contentStart = contentStart, isBlank = isBlank)
 }
 
 /**

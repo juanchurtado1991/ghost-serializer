@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,7 +22,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun longFieldsAreQuotedOnSerializeAndCoercedOnDeserialize() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoCounter.kt",
                 """
                 package fixtures
@@ -36,30 +37,30 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(value.request_id.toString())" in generated,
-            "Expected quoted int64 write for request_id:\n$generated"
+            actual = "writer.value(value.request_id.toString())" in generated,
+            message = "Expected quoted int64 write for request_id:\n$generated"
         )
         assertFalse(
-            "writer.writeField(H_REQUESTID, value.request_id)" in generated,
-            "Long field must not use the unquoted fused writeField path under @GhostProtoSerialization:\n$generated"
+            actual = "writer.writeField(H_REQUESTID, value.request_id)" in generated,
+            message = "Long field must not use the unquoted fused writeField path under @GhostProtoSerialization:\n$generated"
         )
 
         assertTrue(
-            "reader.coerceStringsToNumbers" in generated,
-            "Expected quoted-int64 coercion toggle for request_id:\n$generated"
+            actual = "reader.coerceStringsToNumbers" in generated,
+            message = "Expected quoted-int64 coercion toggle for request_id:\n$generated"
         )
 
         // int32 stays a bare JSON number under proto3, unlike int64.
         assertTrue(
-            "writer.writeField(H_RETRIES, value.retries)" in generated,
-            "Int32 field should still use the fast fused writeField path:\n$generated"
+            actual = "writer.writeField(H_RETRIES, value.retries)" in generated,
+            message = "Int32 field should still use the fast fused writeField path:\n$generated"
         )
     }
 
     @Test
     fun byteArrayFieldsAreBase64EncodedUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoBlob.kt",
                 """
                 package fixtures
@@ -74,27 +75,27 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(encodeBase64String(value.payload))" in generated,
-            "Expected Base64-encoded write for a proto ByteArray field:\n$generated"
+            actual = "writer.value(encodeBase64String(value.payload))" in generated,
+            message = "Expected Base64-encoded write for a proto ByteArray field:\n$generated"
         )
         assertTrue(
-            "decodeBase64String(reader.nextString())" in generated,
-            "Expected Base64-decoded read for a proto ByteArray field:\n$generated"
+            actual = "decodeBase64String(reader.nextString())" in generated,
+            message = "Expected Base64-decoded read for a proto ByteArray field:\n$generated"
         )
         assertFalse(
-            "writer.rawValue(value.payload)" in generated,
-            "Proto ByteArray fields must not use the raw-JSON-passthrough path:\n$generated"
+            actual = "writer.rawValue(value.payload)" in generated,
+            message = "Proto ByteArray fields must not use the raw-JSON-passthrough path:\n$generated"
         )
         assertFalse(
-            "captureRawJsonBytes" in generated,
-            "Proto ByteArray fields must not use the raw-JSON-passthrough capture:\n$generated"
+            actual = "captureRawJsonBytes" in generated,
+            message = "Proto ByteArray fields must not use the raw-JSON-passthrough capture:\n$generated"
         )
     }
 
     @Test
     fun plainByteArrayFieldsStayAsRawJsonPassthrough() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "PlainBlob.kt",
                 """
                 package fixtures
@@ -109,8 +110,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.rawValue(value.payload)" in generated,
-            "Non-proto ByteArray fields must keep the raw-JSON-passthrough path:\n$generated"
+            actual = "writer.rawValue(value.payload)" in generated,
+            message = "Non-proto ByteArray fields must keep the raw-JSON-passthrough path:\n$generated"
         )
         assertFalse("encodeBase64String" in generated, generated)
     }
@@ -118,7 +119,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun zeroValueFieldsAreOmittedOnSerializeUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoSettings.kt",
                 """
                 package fixtures
@@ -133,20 +134,20 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "if (value.retries != 0) {" in generated,
-            "Expected int32 zero-value guard:\n$generated"
+            actual = "if (value.retries != 0) {" in generated,
+            message = "Expected int32 zero-value guard:\n$generated"
         )
         assertTrue(
-            "if (value.label.isNotEmpty()) {" in generated,
-            "Expected empty-string guard:\n$generated"
+            actual = "if (value.label.isNotEmpty()) {" in generated,
+            message = "Expected empty-string guard:\n$generated"
         )
-        assertTrue("if (value.active) {" in generated, "Expected boolean-false guard:\n$generated")
+        assertTrue(actual = "if (value.active) {" in generated, message = "Expected boolean-false guard:\n$generated")
     }
 
     @Test
     fun zeroValueLongFieldCombinesOmissionAndQuoting() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoDeviceStatus.kt",
                 """
                 package fixtures
@@ -161,8 +162,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "if (value.device_id != 0L) {" in generated,
-            "Expected zero-value guard combined with quoting for a proto Long field:\n$generated"
+            actual = "if (value.device_id != 0L) {" in generated,
+            message = "Expected zero-value guard combined with quoting for a proto Long field:\n$generated"
         )
         assertTrue("writer.value(value.device_id.toString())" in generated, generated)
     }
@@ -170,7 +171,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun listOfLongIsQuotedElementwiseUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoIdList.kt",
                 """
                 package fixtures
@@ -185,8 +186,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(item0.toString())" in generated,
-            "Expected List<Long> elements to be quoted under proto:\n$generated"
+            actual = "writer.value(item0.toString())" in generated,
+            message = "Expected List<Long> elements to be quoted under proto:\n$generated"
         )
         assertTrue("reader.coerceStringsToNumbers" in generated, generated)
     }
@@ -194,7 +195,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun mapOfLongValuesIsQuotedUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoCounters.kt",
                 """
                 package fixtures
@@ -209,15 +210,15 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(mapVal0.toString())" in generated,
-            "Expected Map<String, Long> values to be quoted under proto:\n$generated"
+            actual = "writer.value(mapVal0.toString())" in generated,
+            message = "Expected Map<String, Long> values to be quoted under proto:\n$generated"
         )
     }
 
     @Test
     fun listOfByteArrayIsBase64EncodedUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoChunks.kt",
                 """
                 package fixtures
@@ -232,8 +233,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(encodeBase64String(item0))" in generated,
-            "Expected List<ByteArray> elements to be Base64-encoded under proto:\n$generated"
+            actual = "writer.value(encodeBase64String(item0))" in generated,
+            message = "Expected List<ByteArray> elements to be Base64-encoded under proto:\n$generated"
         )
         assertTrue("decodeBase64String(reader.nextString())" in generated, generated)
         assertFalse("captureRawJsonBytes" in generated, generated)
@@ -242,7 +243,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun valueClassWrappedLongIsQuotedUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoAccount.kt",
                 """
                 package fixtures
@@ -260,8 +261,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(value.account_id.`value`.toString())" in generated,
-            "Expected value-class-wrapped Long to be quoted under proto:\n$generated"
+            actual = "writer.value(value.account_id.`value`.toString())" in generated,
+            message = "Expected value-class-wrapped Long to be quoted under proto:\n$generated"
         )
         assertTrue("reader.coerceStringsToNumbers" in generated, generated)
     }
@@ -269,7 +270,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun plainGhostSerializationDoesNotOmitZeroValues() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "PlainSettings.kt",
                 """
                 package fixtures
@@ -284,8 +285,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertFalse(
-            "if (value.retries != 0)" in generated,
-            "Non-proto classes must not omit zero values:\n$generated"
+            actual = "if (value.retries != 0)" in generated,
+            message = "Non-proto classes must not omit zero values:\n$generated"
         )
         assertTrue("writer.writeField(H_RETRIES, value.retries)" in generated, generated)
     }
@@ -293,7 +294,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun protoClassOverridesIsProtoRuntimeFlag() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoFlagged.kt",
                 """
                 package fixtures
@@ -308,17 +309,17 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "override val isProto: Boolean = true" in generated,
-            "Expected a runtime-checkable isProto flag on the generated serializer (the " +
+            actual = "override val isProto: Boolean = true" in generated,
+            message = "Expected a runtime-checkable isProto flag on the generated serializer (the " +
                     "@GhostProtoSerialization annotation itself is BINARY-retained, not reflectively " +
                     "visible):\n$generated"
         )
     }
 
     @Test
-    fun plainClassDoesNotOverrideIsProtoFlag() {
+    fun plainClassOverridesIsProtoFlagAsFalse() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "PlainFlagged.kt",
                 """
                 package fixtures
@@ -332,16 +333,17 @@ class GhostProtoSerializationKspTest {
             serializerFileName = "PlainFlaggedSerializer.kt"
         )
 
-        assertFalse(
-            "isProto" in generated,
-            "Plain @GhostSerialization classes should not emit isProto:\n$generated"
+        assertTrue(
+            actual = "override val isProto: Boolean = false" in generated,
+            message = "Plain @GhostSerialization classes should still override isProto (as false) since " +
+                "GhostSerializer no longer provides a default:\n$generated"
         )
     }
 
     @Test
     fun plainGhostSerializationLeavesLongUnquoted() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "PlainCounter.kt",
                 """
                 package fixtures
@@ -356,19 +358,19 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.writeField(H_REQUESTID, value.requestId)" in generated,
-            "Non-proto Long fields must keep the fast unquoted fused path:\n$generated"
+            actual = "writer.writeField(H_REQUESTID, value.requestId)" in generated,
+            message = "Non-proto Long fields must keep the fast unquoted fused path:\n$generated"
         )
         assertFalse(
-            ".toString())" in generated,
-            "Non-proto Long fields must not be quoted:\n$generated"
+            actual = ".toString())" in generated,
+            message = "Non-proto Long fields must not be quoted:\n$generated"
         )
     }
 
     @Test
     fun listOfValueClassWrappedLongIsQuotedUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoAccountIdList.kt",
                 """
                 package fixtures
@@ -386,19 +388,19 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(item0.value.toString())" in generated,
-            "Expected List<AccountId> value class elements to be unboxed and quoted under proto:\n$generated"
+            actual = "writer.value(item0.value.toString())" in generated,
+            message = "Expected List<AccountId> value class elements to be unboxed and quoted under proto:\n$generated"
         )
         assertTrue(
-            "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
-            "Expected List<AccountId> elements to be deserialized by instantiating value class with coerced long:\n$generated"
+            actual = "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
+            message = "Expected List<AccountId> elements to be deserialized by instantiating value class with coerced long:\n$generated"
         )
     }
 
     @Test
     fun mapOfValueClassWrappedLongIsQuotedUnderProto() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoAccountIdMap.kt",
                 """
                 package fixtures
@@ -416,19 +418,19 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "writer.value(mapVal0.value.toString())" in generated,
-            "Expected Map values of AccountId to be unboxed and quoted under proto:\n$generated"
+            actual = "writer.value(mapVal0.value.toString())" in generated,
+            message = "Expected Map values of AccountId to be unboxed and quoted under proto:\n$generated"
         )
         assertTrue(
-            "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
-            "Expected Map values of AccountId to be deserialized by instantiating value class with coerced long:\n$generated"
+            actual = "AccountId(run {" in generated && "reader.coerceStringsToNumbers = true" in generated,
+            message = "Expected Map values of AccountId to be deserialized by instantiating value class with coerced long:\n$generated"
         )
     }
 
     @Test
     fun valueClassWrappingCollectionOmitsEmptyAndQuotesElements() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoAccountIdsWrap.kt",
                 """
                 package fixtures
@@ -446,19 +448,19 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "if (value.ids.value.isNotEmpty()) {" in generated,
-            "Expected empty-list guard on value-class-wrapped collection:\n$generated"
+            actual = "if (value.ids.value.isNotEmpty()) {" in generated,
+            message = "Expected empty-list guard on value-class-wrapped collection:\n$generated"
         )
         assertTrue(
-            "writer.value(item0.toString())" in generated,
-            "Expected quoted long elements inside wrapped list:\n$generated"
+            actual = "writer.value(item0.toString())" in generated,
+            message = "Expected quoted long elements inside wrapped list:\n$generated"
         )
     }
 
     @Test
     fun uLongFieldIsQuotedAndUsesProtoUInt64Reader() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoShard.kt",
                 """
                 package fixtures
@@ -480,7 +482,7 @@ class GhostProtoSerializationKspTest {
     @Test
     fun valueClassWrappingCollectionDeserializesWithCoercionBlock() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoAccountIdsWrapRead.kt",
                 """
                 package fixtures
@@ -498,23 +500,23 @@ class GhostProtoSerializationKspTest {
         )
 
         assertTrue(
-            "readList" in generated,
-            "Expected list reader for value-class-wrapped collection:\n$generated"
+            actual = "readList" in generated,
+            message = "Expected list reader for value-class-wrapped collection:\n$generated"
         )
         assertTrue(
-            "reader.coerceStringsToNumbers = true" in generated,
-            "Expected proto int64 coercion inside list elements:\n$generated"
+            actual = "reader.coerceStringsToNumbers = true" in generated,
+            message = "Expected proto int64 coercion inside list elements:\n$generated"
         )
         assertTrue(
-            "AccountIds(" in generated,
-            "Expected value class constructor wrapper:\n$generated"
+            actual = "AccountIds(" in generated,
+            message = "Expected value class constructor wrapper:\n$generated"
         )
     }
 
     @Test
     fun uLongFieldDoesNotUseInternalDataPropertyOnSerialize() {
         val generated = compileAndReadSerializer(
-            SourceFile.kotlin(
+            source = SourceFile.kotlin(
                 "ProtoShardClean.kt",
                 """
                 package fixtures
@@ -529,8 +531,8 @@ class GhostProtoSerializationKspTest {
         )
 
         assertFalse(
-            ".data" in generated,
-            "ULong must not codegen internal .data access:\n$generated"
+            actual = ".data" in generated,
+            message = "ULong must not codegen internal .data access:\n$generated"
         )
         assertTrue("value.shard_id.toString()" in generated, generated)
     }
@@ -548,13 +550,11 @@ class GhostProtoSerializationKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc can't read metadata from jars built with a newer
-            // Kotlin via inheritClassPath; this flag skips that version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
             jvmTarget = "17"
         }
         return compilation to compilation.compile()

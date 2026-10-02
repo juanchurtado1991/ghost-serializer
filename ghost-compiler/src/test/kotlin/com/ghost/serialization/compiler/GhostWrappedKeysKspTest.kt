@@ -8,6 +8,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -47,7 +48,7 @@ class GhostWrappedKeysKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         lastCompilation = compilation
-        val source = compilationOutput("WrappedKeysFixtureSerializer.kt")
+        val source = compilationOutput(fileName = "WrappedKeysFixtureSerializer.kt")
         assertTrue("extra1" in source, source)
         assertTrue("captureWrappedKey" in source, source)
         assertTrue("materializeWrappedObject" in source, source)
@@ -84,7 +85,7 @@ class GhostWrappedKeysKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         lastCompilation = compilation
-        val source = compilationOutput("WrappedFixtureSerializer.kt")
+        val source = compilationOutput(fileName = "WrappedFixtureSerializer.kt")
         assertTrue("GhostWrappedKeysCapture" in source, source)
         assertTrue("materializeWrappedObject" in source, source)
         assertTrue("captureWrappedKey" in source, source)
@@ -121,7 +122,7 @@ class GhostWrappedKeysKspTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         lastCompilation = compilation
-        val source = compilationOutput("OneofFixtureSerializer.kt")
+        val source = compilationOutput(fileName = "OneofFixtureSerializer.kt")
         // No fallback warning/silent drop: each wire key resolves to its owning sealed subclass.
         assertTrue("value.payload is Payload.Text" in source, source)
         assertTrue("value.payload is Payload.Code" in source, source)
@@ -135,13 +136,11 @@ class GhostWrappedKeysKspTest {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
             inheritClassPath = true
+            useKsp2()
             symbolProcessorProviders = mutableListOf(GhostSerializationProvider())
             kspWithCompilation = true
             languageVersion = "1.9"
             apiVersion = "1.9"
-            // kctfork's embedded kotlinc can't read metadata from jars built with a newer
-            // Kotlin via inheritClassPath; this flag skips that version check.
-            kotlincArguments = listOf("-Xskip-metadata-version-check")
         }
         return compilation to compilation.compile()
     }

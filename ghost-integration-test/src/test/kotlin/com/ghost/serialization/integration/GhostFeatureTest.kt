@@ -18,14 +18,14 @@ class GhostFeatureTest {
         val model = IgnoreModel(id = 1, secret = "TOP_SECRET", name = "Juan")
         val json = Ghost.serialize(model)
 
-        assertFalse(json.contains("secret"))
-        assertFalse(json.contains("TOP_SECRET"))
-        assertTrue(json.contains("\"id\":1"))
-        assertTrue(json.contains("\"name\":\"Juan\""))
+        assertFalse(actual = json.contains("secret"))
+        assertFalse(actual = json.contains("TOP_SECRET"))
+        assertTrue(actual = json.contains("\"id\":1"))
+        assertTrue(actual = json.contains("\"name\":\"Juan\""))
 
         val deserialized =
             Ghost.deserialize<IgnoreModel>("{\"id\":1,\"secret\":\"HACKED\",\"name\":\"Juan\"}")
-        assertEquals("default", deserialized.secret)
+        assertEquals(expected = "default", actual = deserialized.secret)
     }
 
     @Test
@@ -39,15 +39,15 @@ class GhostFeatureTest {
         val json = Ghost.serialize(model)
         val deserialized = Ghost.deserialize<UniCodeModel>(json)
 
-        assertEquals(model.text, deserialized.text)
-        assertEquals(model.emoji, deserialized.emoji)
-        assertEquals(model.escaped, deserialized.escaped)
+        assertEquals(expected = model.text, actual = deserialized.text)
+        assertEquals(expected = model.emoji, actual = deserialized.emoji)
+        assertEquals(expected = model.escaped, actual = deserialized.escaped)
 
         val jsonWithUnicode =
             "{\"text\":\"\\u0041\\u0042\\u0043\",\"emoji\":\"\\uD83D\\uDE80\",\"escaped\":\"\"}"
         val deserialized2 = Ghost.deserialize<UniCodeModel>(jsonWithUnicode)
-        assertEquals("ABC", deserialized2.text)
-        assertEquals("🚀", deserialized2.emoji)
+        assertEquals(expected = "ABC", actual = deserialized2.text)
+        assertEquals(expected = "🚀", actual = deserialized2.emoji)
     }
 
     @Test
@@ -70,14 +70,14 @@ class GhostFeatureTest {
         val model = NamingModel(id = 42, name = "Juan", active = true)
         val json = Ghost.serialize(model)
 
-        assertTrue(json.contains("\"user_id\":42"))
-        assertTrue(json.contains("\"full_name\":\"Juan\""))
-        assertTrue(json.contains("\"is_active\":true"))
+        assertTrue(actual = json.contains("\"user_id\":42"))
+        assertTrue(actual = json.contains("\"full_name\":\"Juan\""))
+        assertTrue(actual = json.contains("\"is_active\":true"))
 
         val deserialized = Ghost.deserialize<NamingModel>(json)
-        assertEquals(model.id, deserialized.id)
-        assertEquals(model.name, deserialized.name)
-        assertEquals(model.active, deserialized.active)
+        assertEquals(expected = model.id, actual = deserialized.id)
+        assertEquals(expected = model.name, actual = deserialized.name)
+        assertEquals(expected = model.active, actual = deserialized.active)
     }
 
     @Test
@@ -85,7 +85,7 @@ class GhostFeatureTest {
         val json =
             "{\"user_id\":42, \"unknown\": \"garbage\", \"full_name\":\"Juan\", \"is_active\":true}"
         val deserialized = Ghost.deserialize<NamingModel>(json)
-        assertEquals(42, deserialized.id)
-        assertEquals("Juan", deserialized.name)
+        assertEquals(expected = 42, actual = deserialized.id)
+        assertEquals(expected = "Juan", actual = deserialized.name)
     }
 }

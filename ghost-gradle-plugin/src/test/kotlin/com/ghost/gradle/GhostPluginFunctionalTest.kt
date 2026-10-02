@@ -1,5 +1,6 @@
 package com.ghost.gradle
 
+import com.ghost.gradle.GhostPluginTestConstants as T
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -11,8 +12,8 @@ class GhostPluginFunctionalTest {
     @TempDir
     lateinit var testProjectDir: File
 
-    private val buildFile by lazy { testProjectDir.resolve("build.gradle.kts") }
-    private val settingsFile by lazy { testProjectDir.resolve("settings.gradle.kts") }
+    private val buildFile by lazy { testProjectDir.resolve(relative = "build.gradle.kts") }
+    private val settingsFile by lazy { testProjectDir.resolve(relative = "settings.gradle.kts") }
 
     private val kotlinVersion: String
         get() = System.getProperty("kotlinVersion") ?: "2.4.0"
@@ -25,19 +26,19 @@ class GhostPluginFunctionalTest {
 
     @Test
     fun `plugin supports configuration cache`() {
-        settingsFile.writeText("rootProject.name = \"cache-test\"")
+        settingsFile.writeText(text = "rootProject.name = \"cache-test\"")
         buildFile.writeText(
-            """
+            text = """
             plugins {
                 kotlin("jvm") version "$kotlinVersion"
                 id("com.ghostserializer.ghost")
             }
-            
+
             repositories {
                 mavenLocal()
                 mavenCentral()
             }
-            
+
             ghost {
                 version.set("$ghostVersion")
                 autoInjectKtor.set(false)
@@ -54,26 +55,26 @@ class GhostPluginFunctionalTest {
 
         val result1 = runner.build()
         assertTrue(
-            result1.output.contains("Configuration cache entry stored."),
-            "Should store configuration cache"
+            actual = result1.output.contains(other = "Configuration cache entry stored."),
+            message = "Should store configuration cache"
         )
 
         val result2 = runner.build()
         assertTrue(
-            result2.output.contains("Reusing configuration cache."),
-            "Should reuse configuration cache"
+            actual = result2.output.contains(other = "Reusing configuration cache."),
+            message = "Should reuse configuration cache"
         )
     }
 
     @Test
     fun `plugin handles incremental builds correctly`() {
-        settingsFile.writeText("rootProject.name = \"incremental-test\"")
+        settingsFile.writeText(text = "rootProject.name = \"incremental-test\"")
 
-        val srcDir = testProjectDir.resolve("src/main/kotlin/com/example")
+        val srcDir = testProjectDir.resolve(relative = T.SOURCE_DIR)
         srcDir.mkdirs()
-        val modelFile = srcDir.resolve("Model.kt")
+        val modelFile = srcDir.resolve(relative = T.MODEL_FILE)
         modelFile.writeText(
-            """
+            text = """
             package com.example
             import com.ghost.serialization.annotations.GhostSerialization
             @GhostSerialization
@@ -82,18 +83,18 @@ class GhostPluginFunctionalTest {
         )
 
         buildFile.writeText(
-            """
+            text = """
             plugins {
                 kotlin("jvm") version "$kotlinVersion"
                 id("com.google.devtools.ksp") version "$kspVersion"
                 id("com.ghostserializer.ghost")
             }
-            
+
             repositories {
                 mavenLocal()
                 mavenCentral()
             }
-            
+
             ghost {
                 version.set("$ghostVersion")
                 autoInjectKtor.set(false)
@@ -104,14 +105,14 @@ class GhostPluginFunctionalTest {
 
         val runner = GradleRunner.create()
             .withProjectDir(testProjectDir)
-            .withArguments("kspKotlin")
+            .withArguments(T.TASK_KSP_KOTLIN)
             .withPluginClasspath()
             .forwardOutput()
 
         runner.build()
 
         modelFile.writeText(
-            """
+            text = """
             package com.example
             import com.ghost.serialization.annotations.GhostSerialization
             @GhostSerialization
@@ -120,18 +121,21 @@ class GhostPluginFunctionalTest {
         )
 
         val result = runner.build()
-        assertTrue(result.output.contains("SUCCESS"), "Incremental build should succeed")
+        assertTrue(
+            actual = result.output.contains(other = "SUCCESS"),
+            message = "Incremental build should succeed"
+        )
     }
 
     @Test
     fun `plugin works when applied before KSP`() {
-        settingsFile.writeText("rootProject.name = \"order-test\"")
+        settingsFile.writeText(text = "rootProject.name = \"order-test\"")
 
-        val srcDir = testProjectDir.resolve("src/main/kotlin/com/example")
+        val srcDir = testProjectDir.resolve(relative = T.SOURCE_DIR)
         srcDir.mkdirs()
-        val modelFile = srcDir.resolve("Model.kt")
+        val modelFile = srcDir.resolve(relative = T.MODEL_FILE)
         modelFile.writeText(
-            """
+            text = """
             package com.example
             import com.ghost.serialization.annotations.GhostSerialization
             @GhostSerialization
@@ -140,18 +144,18 @@ class GhostPluginFunctionalTest {
         )
 
         buildFile.writeText(
-            """
+            text = """
             plugins {
                 id("com.ghostserializer.ghost")
                 kotlin("jvm") version "$kotlinVersion"
                 id("com.google.devtools.ksp") version "$kspVersion"
             }
-            
+
             repositories {
                 mavenLocal()
                 mavenCentral()
             }
-            
+
             ghost {
                 version.set("$ghostVersion")
                 autoInjectKtor.set(false)
@@ -162,25 +166,25 @@ class GhostPluginFunctionalTest {
 
         val runner = GradleRunner.create()
             .withProjectDir(testProjectDir)
-            .withArguments("kspKotlin")
+            .withArguments(T.TASK_KSP_KOTLIN)
             .withPluginClasspath()
             .forwardOutput()
 
         val result = runner.build()
         assertTrue(
-            result.output.contains("SUCCESS"),
-            "Build with plugin applied before KSP should succeed"
+            actual = result.output.contains(other = "SUCCESS"),
+            message = "Build with plugin applied before KSP should succeed"
         )
     }
 
     @Test
     fun `ksp textChannel option generates native string deserialize overload`() {
-        settingsFile.writeText("rootProject.name = \"text-channel-test\"")
+        settingsFile.writeText(text = "rootProject.name = \"text-channel-test\"")
 
-        val srcDir = testProjectDir.resolve("src/main/kotlin/com/example")
+        val srcDir = testProjectDir.resolve(relative = T.SOURCE_DIR)
         srcDir.mkdirs()
-        srcDir.resolve("Model.kt").writeText(
-            """
+        srcDir.resolve(relative = T.MODEL_FILE).writeText(
+            text = """
             package com.example
             import com.ghost.serialization.annotations.GhostSerialization
             @GhostSerialization
@@ -189,7 +193,7 @@ class GhostPluginFunctionalTest {
         )
 
         buildFile.writeText(
-            """
+            text = """
             plugins {
                 kotlin("jvm") version "$kotlinVersion"
                 id("com.google.devtools.ksp") version "$kspVersion"
@@ -215,7 +219,7 @@ class GhostPluginFunctionalTest {
 
         GradleRunner.create()
             .withProjectDir(testProjectDir)
-            .withArguments("kspKotlin")
+            .withArguments(T.TASK_KSP_KOTLIN)
             .withPluginClasspath()
             .forwardOutput()
             .build()
@@ -225,10 +229,13 @@ class GhostPluginFunctionalTest {
             .map { it.readText() }
             .firstOrNull()
 
-        assertTrue(generated != null, "Expected generated ModelSerializer.kt")
         assertTrue(
-            "override fun deserialize(reader: GhostJsonStringReader)" in generated!!,
-            "Expected native string deserialize when ghost.textChannel=true:\n$generated"
+            actual = generated != null,
+            message = "Expected generated ModelSerializer.kt"
+        )
+        assertTrue(
+            actual = "override fun deserialize(reader: GhostJsonStringReader)" in generated!!,
+            message = "Expected native string deserialize when ghost.textChannel=true:\n$generated"
         )
     }
 }

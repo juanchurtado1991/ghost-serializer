@@ -30,9 +30,9 @@ val InkMuted = Color(0xFF7C6F94)
 
 val CardBg = Color(0xFFFCFAFF)
 val CardBorder = Color(0xFFE6DCFA)
+val CardVariantBg = Color(0xFFF5F5F4)
 val CodeBg = Color(0xFF2E1065)
 val CodeText = Color(0xFF6EE7B7)
-val CodeAccent = Color(0xFFFDE68A)
 
 val PageGradient = Brush.verticalGradient(listOf(CanvasTop, CanvasMid, CanvasBottom))
 
@@ -45,7 +45,7 @@ private val colors = lightColorScheme(
     onBackground = Ink,
     surface = CardBg,
     onSurface = Ink,
-    surfaceVariant = Color(0xFFF5F5F4),
+    surfaceVariant = CardVariantBg,
     onSurfaceVariant = InkSoft,
     outline = CardBorder,
     error = Rose,

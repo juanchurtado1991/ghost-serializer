@@ -4,7 +4,7 @@ import com.ghost.serialization.parser.yaml.GhostYamlFlatReader
 import com.ghost.serialization.writer.yaml.GhostYamlWriter
 
 interface GhostYamlSerializer<T> {
-    fun serialize(writer: GhostYamlWriter, value: T)
     fun deserialize(reader: GhostYamlFlatReader): T
-}
 
+    fun serialize(writer: GhostYamlWriter, value: T)
+}

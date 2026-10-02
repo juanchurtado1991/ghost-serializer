@@ -3,13 +3,12 @@
 package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.InternalGhostApi
-import com.ghost.serialization.contract.GhostRegistry
+import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
 import kotlin.reflect.KClass
 
 @InternalGhostApi
-object RetrofitTestRegistry : GhostRegistry {
-    override fun prewarm() {}
+object RetrofitTestRegistry : AbstractGhostRegistry() {
     override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
         mapOf(RetrofitUser::class to RetrofitUserSerializer)
 

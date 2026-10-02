@@ -20,33 +20,51 @@ class GhostFlatReaderLatin1SourceTest {
 
     @Test
     fun flatReaderUsesJvmByteArraySource() {
-        val reader = GhostJsonFlatReader("""{"a":"hello"}""".encodeToByteArray())
+        val reader = GhostJsonFlatReader(rawData = """{"a":"hello"}""".encodeToByteArray())
         assertIs<JvmByteArraySource>(reader.source)
     }
 
     @Test
     fun resetSliceRebindsSameJvmSourceWrapper() {
-        val reader = GhostJsonFlatReader("""{"a":1}""".encodeToByteArray())
+        val reader = GhostJsonFlatReader(rawData = """{"a":1}""".encodeToByteArray())
         val first = reader.source
         assertIs<JvmByteArraySource>(first)
 
         val next = """{"b":"world"}""".encodeToByteArray()
-        reader.resetSlice(next, 0, next.size)
-        assertTrue(reader.source === first, "resetSlice should reuse the source wrapper")
-        assertEquals(next, first.data)
+        reader.resetSlice(buffer = next, offset = 0, length = next.size)
+        assertTrue(
+            actual = reader.source === first,
+            message = "resetSlice should reuse the source wrapper"
+        )
+        assertEquals(
+            expected = next,
+            actual = first.data
+        )
     }
 
     @Test
     fun sevenBitStringsDecodeCorrectlyViaLatin1Path() {
         val json = """{"msg":"plain ascii value","n":42}""".encodeToByteArray()
-        val reader = GhostJsonFlatReader(json)
+        val reader = GhostJsonFlatReader(rawData = json)
         reader.beginObject()
-        assertEquals("msg", reader.nextKey())
+        assertEquals(
+            expected = "msg",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals("plain ascii value", reader.nextString())
-        assertEquals("n", reader.nextKey())
+        assertEquals(
+            expected = "plain ascii value",
+            actual = reader.nextString()
+        )
+        assertEquals(
+            expected = "n",
+            actual = reader.nextKey()
+        )
         reader.consumeKeySeparator()
-        assertEquals(42, reader.nextInt())
+        assertEquals(
+            expected = 42,
+            actual = reader.nextInt()
+        )
         reader.endObject()
     }
 }
