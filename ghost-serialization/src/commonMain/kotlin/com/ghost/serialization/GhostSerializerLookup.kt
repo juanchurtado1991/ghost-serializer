@@ -57,8 +57,8 @@ import kotlin.reflect.KClass
 
 /**
  * [Ghost.getSerializer]'s lookup tables: fast-path dispatch for primitives, protobuf well-known
- * types, and manually/service-loader-registered [com.ghost.serialization.contract.GhostRegistry]
- * modules. Split out of `Ghost.kt` since none of these are called by name from outside it.
+ * types, manually/service-loader-registered [com.ghost.serialization.contract.GhostRegistry]
+ * modules and, last, serializers linked by the Ghost compiler plugin ([findLinkedSerializer]). Split out of `Ghost.kt` since none of these are called by name from outside it.
  */
 
 /** Fast path serializer lookup for native primitive types. */
@@ -95,7 +95,8 @@ internal fun <T : Any> Ghost.getSerializerFromRegistries(clazz: KClass<T>): Ghos
         registry.getSerializer(clazz = clazz)?.let { return it }
     }
 
-    return null
+    @Suppress("UNCHECKED_CAST")
+    return findLinkedSerializer(clazz = clazz) as GhostSerializer<T>?
 }
 
 /**

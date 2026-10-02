@@ -37,7 +37,7 @@ object RawJsonDecode {
         registry: GhostRegistry = Ghost
     ): T {
         val serializer = registry.getSerializer(clazz = clazz)
-            ?: error(message = "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}")
+            ?: error(message = Ghost.serializerNotFoundMessage(type = clazz.simpleName))
         return decode(raw = raw, serializer = serializer)
     }
 }

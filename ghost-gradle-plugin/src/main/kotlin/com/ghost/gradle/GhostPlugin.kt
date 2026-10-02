@@ -12,7 +12,9 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
  * `ghost-retrofit`) is a separate concern — see [GhostNetworkAutoInjector].
  *
  * KSP wiring is reactive, via `PluginContainer.withId` listeners, so it works regardless of
- * whether the KSP/KMP/Android plugins are applied before or after this plugin.
+ * whether the KSP/KMP/Android plugins are applied before or after this plugin. In KMP projects it
+ * also applies [GhostCompilerPluginSupport] (automatic Kotlin/Native and Kotlin/Wasm registration);
+ * that class is only loaded once the Kotlin Gradle plugin is known to be on the classpath.
  */
 class GhostPlugin : Plugin<Project> {
 
@@ -26,6 +28,9 @@ class GhostPlugin : Plugin<Project> {
             project = project,
             extension = extension
         )
+        project.plugins.withId(PLUGIN_KMP) {
+            project.plugins.apply(GhostCompilerPluginSupport::class.java)
+        }
     }
 
     private fun addCoreDependencies(project: Project, version: Provider<String>, configuration: String) {
@@ -57,6 +62,7 @@ class GhostPlugin : Plugin<Project> {
         return project.extensions.create(EXTENSION_NAME, GhostExtension::class.java).apply {
             autoInjectKtor.convention(true)
             autoInjectRetrofit.convention(true)
+            autoRegistration.convention(true)
             version.convention(DEFAULT_VERSION)
         }
     }

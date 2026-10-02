@@ -1,16 +1,17 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     kotlin("multiplatform") version "2.2.21"
     id("com.google.devtools.ksp") version "2.3.12"
     id("com.android.kotlin.multiplatform.library") version "9.1.1"
+    id("com.ghostserializer.ghost")
 }
 
-/** Ghost version under test: `-PghostVersion=…`, else the repo's own `publish-version`. */
-val ghostVersion: String = providers.gradleProperty("ghostVersion").getOrElse(
-    Regex("""publish-version\s*=\s*"([^"]+)"""")
-        .find(rootDir.resolve("../../gradle/libs.versions.toml").readText())
-        ?.groupValues?.get(1)
-        ?: error("publish-version not found in gradle/libs.versions.toml")
-)
+val ghostVersion = gradle.extra["ghostVersion"] as String
+
+ghost {
+    version = ghostVersion
+}
 
 kotlin {
     jvmToolchain(17)
@@ -22,14 +23,15 @@ kotlin {
     }
     iosArm64()
     iosSimulatorArm64()
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        nodejs()
+    }
 
     sourceSets {
-        commonMain {
-            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
-            dependencies {
-                implementation("com.ghostserializer:ghost-serialization:$ghostVersion")
-                implementation("com.ghostserializer:ghost-ktor:$ghostVersion")
-            }
+        commonMain.dependencies {
+            implementation(project(":models"))
+            implementation("com.ghostserializer:ghost-ktor:$ghostVersion")
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -39,15 +41,4 @@ kotlin {
 
 ksp {
     arg("ghost.moduleName", "compat")
-}
-
-dependencies {
-    add("kspCommonMainMetadata", "com.ghostserializer:ghost-compiler:$ghostVersion")
-}
-
-tasks.configureEach {
-    val runsAfterCommonKsp = name.startsWith("compile") || name.startsWith("ksp")
-    if (runsAfterCommonKsp && name != "kspCommonMainKotlinMetadata") {
-        dependsOn(tasks.matching { it.name == "kspCommonMainKotlinMetadata" })
-    }
 }

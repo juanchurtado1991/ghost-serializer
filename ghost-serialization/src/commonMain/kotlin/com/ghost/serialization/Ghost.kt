@@ -35,10 +35,22 @@ import okio.BufferedSource
 expect fun <K, V> createAtomicMap(): MutableMap<K, V>
 
 /**
- * Service-loader/reflection based module discovery. iOS/Wasm actuals return empty — register
- * modules manually via [Ghost.addRegistry]; JVM/Android use ServiceLoader/reflection.
+ * Service-loader/reflection based module discovery. iOS/Wasm actuals return empty — there,
+ * serializers resolve through [findLinkedSerializer] or modules registered via [Ghost.addRegistry];
+ * JVM/Android use ServiceLoader/reflection.
  */
 expect fun discoverRegistries(): Iterable<GhostRegistry>
+
+/**
+ * Serializer the Ghost compiler plugin linked to [clazz] (`@GhostSerializerLink`), resolved with
+ * `findAssociatedObject` on Kotlin/Native and Kotlin/Wasm. JVM/Android return `null`.
+ */
+internal expect fun findLinkedSerializer(
+    clazz: KClass<*>
+): GhostSerializer<*>?
+
+/** Platform-specific registration advice appended to [Ghost.serializerNotFoundMessage]. */
+internal expect val serializerRegistrationHint: String
 
 /**
  * Serializes via the pooled in-memory writer but discards the output without allocating a
@@ -158,6 +170,11 @@ object Ghost : GhostRegistry {
     }
 
     fun throwError(message: String): Nothing = throw IllegalArgumentException(message)
+
+    /** Error message for a [type] with no resolvable serializer, including the platform's registration hint. */
+    internal fun serializerNotFoundMessage(
+        type: Any?
+    ): String = "$NOT_FOUND $type. $MISSING_ANN$serializerRegistrationHint"
 
     /** Caches every (KClass, name)→serializer mapping [registry] exposes.
      *  Shared by [addRegistry] and [prewarm]. */
@@ -359,7 +376,7 @@ object Ghost : GhostRegistry {
         val type = typeProducer()
         return (getSerializer(type = type)
             ?: getSerializer(clazz = kClass as KClass<Any>)) as? GhostSerializer<T>
-            ?: throwError(message = "$NOT_FOUND $kClass. $MISSING_ANN")
+            ?: throwError(message = serializerNotFoundMessage(type = kClass))
     }
 
     /**
@@ -463,7 +480,7 @@ object Ghost : GhostRegistry {
         limit: Int = bytes.size
     ): T = ghostInternalUseFlatReader(bytes = bytes, limit = limit) { reader ->
         val serializer = getSerializer(clazz = clazz)
-            ?: throwError(message = "$NOT_FOUND ${clazz.simpleName}")
+            ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
 
         serializer.deserialize(reader = reader)
     }
@@ -472,7 +489,7 @@ object Ghost : GhostRegistry {
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T =
         readSourceIntoFlatReader(source = source) { reader ->
             val serializer = getSerializer(clazz = clazz)
-                ?: throwError(message = "$NOT_FOUND ${clazz.simpleName}")
+                ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
 
             serializer.deserialize(reader = reader)
         }
@@ -542,7 +559,7 @@ object Ghost : GhostRegistry {
     @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
         val serializer = getSerializer(clazz = clazz)
-            ?: throwError(message = "$NOT_FOUND ${clazz.simpleName}. $MISSING_ANN")
+            ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
 
         ghostInternalEncodeAndDrainTo(sink = sink) { writer ->
             serializer.serialize(writer = writer, value = value)

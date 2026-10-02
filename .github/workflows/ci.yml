@@ -123,9 +123,10 @@ jobs:
 
   consumer-compat:
     name: Consumer compatibility (Kotlin 2.2.21)
-    # Publishes Ghost to mavenLocal and builds compat-tests/kotlin-consumer, a standalone KMP project on the
-    # minimum supported Kotlin (2.2.21), proving the published klibs/metadata and the KSP-generated code work
-    # for consumers — including a round-trip test on the iOS simulator.
+    # Publishes Ghost to mavenLocal and builds compat-tests/kotlin-consumer, a standalone two-module KMP project on
+    # the minimum supported Kotlin (2.2.21) using the Ghost Gradle plugin. Proves the published klibs/metadata, the
+    # KSP-generated code and automatic Native/Wasm registration (compiler plugin) work for consumers: round-trip
+    # tests with no Ghost.addRegistry call on JVM, the iOS simulator and Wasm (Node.js).
     runs-on: macos-26
     timeout-minutes: 60
 
@@ -143,13 +144,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Publish Ghost to mavenLocal
-        run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-ktor:publishToMavenLocal --console=plain
+        run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-compiler-plugin:publishToMavenLocal :ghost-gradle-plugin:publishToMavenLocal :ghost-ktor:publishToMavenLocal -PskipTests --console=plain
 
-      - name: Build and test the Kotlin 2.2.21 consumer (JVM, Android, iOS simulator)
+      - name: Build and test the Kotlin 2.2.21 consumer (JVM, Android, iOS simulator, Wasm)
         run: |
           set -euo pipefail
           log="$(mktemp)"
-          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain iosSimulatorArm64Test --console=plain 2>&1 | tee "$log"
+          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain iosSimulatorArm64Test wasmJsNodeTest --console=plain 2>&1 | tee "$log"
           gradle_exit="${PIPESTATUS[0]}"
           if [[ "$gradle_exit" -ne 0 ]]; then
             echo "::error::Gradle exited with $gradle_exit"

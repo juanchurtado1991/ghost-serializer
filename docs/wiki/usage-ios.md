@@ -2,7 +2,7 @@
 
 [![iOS](https://img.shields.io/badge/iOS-000000.png?style=flat&logo=apple&logoColor=white)](usage-ios.md)
 
-Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Because Kotlin/Native does not support `ServiceLoader`, manual registry registration is required once at startup.
+Ghost generates a pre-compiled **XCFramework** that Swift consumes as a regular Apple framework. Kotlin/Native has no `ServiceLoader`, so since 1.4.0 the Ghost Gradle plugin links every `@GhostSerialization` model to its serializer at compile time (a Kotlin compiler plugin plus associated objects): `Ghost.deserialize` works on iOS with no registration code.
 
 Start with the shared-module setup in the [Quick Start](quick-start.md), then add the XCFramework export below.
 
@@ -77,9 +77,9 @@ data class Product(
 
 ---
 
-## 3. Create a Swift-Accessible Bridge
+## 3. Optional: Prewarm Through a Swift-Accessible Bridge
 
-Kotlin/Native does not support `ServiceLoader`, so you must register the KSP-generated registry manually once:
+Serializers resolve lazily on first use, with no setup. To pay that cost at launch instead, or to use the name-based APIs (`getSerializerByName`, `getAllSerializers`), register the KSP-generated registry once. `prewarm()` can only warm the modules it knows about:
 
 ```kotlin
 // shared/src/iosMain/kotlin/GhostBridge.kt
@@ -94,8 +94,11 @@ object GhostBridge {
 }
 ```
 
+> [!NOTE]
+> The registry class name is derived from `ghost.moduleName`. If you set `arg("ghost.moduleName", "shared_utils")`, the generated class is `GhostModuleRegistry_shared_utils`. Call `prewarm()` once at app launch — typically in `AppDelegate` or the SwiftUI `@main` entry point.
+
 > [!IMPORTANT]
-> The registry class name is derived from `ghost.moduleName`. If you set `arg("ghost.moduleName", "shared_utils")`, the generated class is `GhostModuleRegistry_shared_utils`. **Call `prewarm()` once at app launch** — typically in `AppDelegate` or the SwiftUI `@main` entry point.
+> Automatic registration needs the `com.ghostserializer.ghost` Gradle plugin. Without it, or with `ghost { autoRegistration.set(false) }`, the `addRegistry` call above is **required**. The compiler plugin is built for Kotlin 2.2.21; on another Kotlin version the build logs a warning, and if Native compilation fails, disable `autoRegistration` and register manually.
 
 ---
 

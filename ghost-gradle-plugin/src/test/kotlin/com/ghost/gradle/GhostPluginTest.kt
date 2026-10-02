@@ -4,6 +4,7 @@ import com.ghost.gradle.GhostPluginTestConstants as T
 import org.gradle.api.Project
 import org.gradle.api.internal.project.DefaultProject
 import org.gradle.testfixtures.ProjectBuilder
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -210,5 +211,77 @@ class GhostPluginTest {
             actual = kspCommonDeps.any { it.name == T.ARTIFACT_COMPILER },
             message = "Should add ghost-compiler to kspCommonMainMetadata for the implicit 'metadata' target"
         )
+    }
+
+    @Test
+    fun `plugin defaults autoRegistration to true`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(GhostPlugin::class.java)
+
+        val extension = project.extensions.getByType(GhostExtension::class.java)
+        assertTrue(actual = extension.autoRegistration.get())
+    }
+
+    @Test
+    fun `plugin applies compiler plugin support only to kmp projects`() {
+        val jvmProject = ProjectBuilder.builder().build()
+        jvmProject.pluginManager.apply(T.PLUGIN_KOTLIN_JVM)
+        jvmProject.pluginManager.apply(GhostPlugin::class.java)
+
+        val kmpProject = ProjectBuilder.builder().build()
+        kmpProject.pluginManager.apply(T.PLUGIN_KOTLIN_MULTIPLATFORM)
+        kmpProject.pluginManager.apply(GhostPlugin::class.java)
+
+        assertFalse(actual = jvmProject.plugins.hasPlugin(GhostCompilerPluginSupport::class.java))
+        assertTrue(actual = kmpProject.plugins.hasPlugin(GhostCompilerPluginSupport::class.java))
+    }
+
+    @Test
+    fun `compiler plugin is added to wasm compilations but not jvm compilations`() {
+        val project = kmpProjectWithJvmAndWasm()
+
+        evaluated(project = project)
+
+        val wasmPlugins = project.configurations.getByName(T.CONFIG_PLUGIN_CLASSPATH_WASM_MAIN).dependencies
+        val jvmPlugins = project.configurations.getByName(T.CONFIG_PLUGIN_CLASSPATH_JVM_MAIN).dependencies
+        assertTrue(
+            actual = wasmPlugins.any { it.name == T.ARTIFACT_COMPILER_PLUGIN },
+            message = "Should add ghost-compiler-plugin to the wasmJs main compilation"
+        )
+        assertFalse(
+            actual = jvmPlugins.any { it.name == T.ARTIFACT_COMPILER_PLUGIN },
+            message = "JVM compilations keep ServiceLoader discovery and must not get the compiler plugin"
+        )
+    }
+
+    @Test
+    fun `compiler plugin option follows autoRegistration`() {
+        val project = kmpProjectWithJvmAndWasm()
+        project.extensions.getByType(GhostExtension::class.java).autoRegistration.set(false)
+
+        evaluated(project = project)
+
+        val wasmMain = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+            .wasmJs()
+            .compilations
+            .getByName(T.COMPILATION_MAIN)
+        val options = GhostCompilerPluginSupport().applyToCompilation(kotlinCompilation = wasmMain).get()
+        assertEquals(
+            expected = false.toString(),
+            actual = options.single { it.key == T.OPTION_ENABLED }.value
+        )
+    }
+
+    @OptIn(ExperimentalWasmDsl::class)
+    private fun kmpProjectWithJvmAndWasm(): Project {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(T.PLUGIN_KOTLIN_MULTIPLATFORM)
+        project.pluginManager.apply(GhostPlugin::class.java)
+        val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+        kotlin.jvm()
+        kotlin.wasmJs {
+            nodejs()
+        }
+        return project
     }
 }

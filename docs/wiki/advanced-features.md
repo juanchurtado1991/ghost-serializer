@@ -524,7 +524,7 @@ Reduce cold-start latency by pre-loading the serializer registry before the firs
 Ghost.prewarm()
 ```
 
-On iOS, call the bridge before prewarm:
+On iOS/Wasm, serializers otherwise resolve lazily through the compiler-plugin link, so `prewarm()` only warms modules registered first:
 ```kotlin
 // iosMain
 Ghost.addRegistry(GhostModuleRegistry_shared_utils())

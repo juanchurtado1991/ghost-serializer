@@ -12,12 +12,18 @@ internal object GhostPluginTestConstants {
 
     const val ARTIFACT_API = "ghost-api"
     const val ARTIFACT_COMPILER = "ghost-compiler"
+    const val ARTIFACT_COMPILER_PLUGIN = "ghost-compiler-plugin"
     const val ARTIFACT_KTOR = "ghost-ktor"
     const val ARTIFACT_RETROFIT = "ghost-retrofit"
     const val ARTIFACT_SERIALIZATION = "ghost-serialization"
 
     const val KTOR_CLIENT_COORDINATE = "io.ktor:ktor-client-core:3.5.1"
     const val RETROFIT_COORDINATE = "com.squareup.retrofit2:retrofit:2.9.0"
+
+    const val CONFIG_PLUGIN_CLASSPATH_JVM_MAIN = "kotlinCompilerPluginClasspathJvmMain"
+    const val CONFIG_PLUGIN_CLASSPATH_WASM_MAIN = "kotlinCompilerPluginClasspathWasmJsMain"
+    const val COMPILATION_MAIN = "main"
+    const val OPTION_ENABLED = "enabled"
 
     const val TARGET_JVM = "jvm"
     const val TASK_KSP_KOTLIN = "kspKotlin"

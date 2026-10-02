@@ -55,7 +55,7 @@ object ProtoAnyRegistry {
                     "Call ProtoAnyRegistry.register<${kClass.simpleName}>(typeUrl) first."
         )
         val serializer = registry.getSerializer(clazz = kClass)
-            ?: Ghost.throwError(message = "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}")
+            ?: Ghost.throwError(message = Ghost.serializerNotFoundMessage(type = kClass.simpleName))
         val bytes = Ghost.encodeToBytes(serializer = serializer, value = message)
         return ProtoAny(typeUrl = typeUrl, value = bytes)
     }
@@ -119,7 +119,7 @@ object ProtoAnyRegistry {
             )
         }
         val serializer = registry.getSerializer(clazz = kClass)
-            ?: Ghost.throwError(message = "${Ghost.NOT_FOUND} ${kClass.simpleName}. ${Ghost.MISSING_ANN}")
+            ?: Ghost.throwError(message = Ghost.serializerNotFoundMessage(type = kClass.simpleName))
         return ghostProtoInternalUseFlatReader(bytes = any.value) { reader ->
             serializer.deserialize(reader = reader)
         }

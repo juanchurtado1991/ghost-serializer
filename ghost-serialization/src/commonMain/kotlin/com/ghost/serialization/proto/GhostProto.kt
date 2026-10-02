@@ -41,7 +41,7 @@ object GhostProto {
         registry: GhostRegistry = Ghost
     ): T {
         val serializer = registry.getSerializer(clazz = clazz)
-            ?: Ghost.throwError(message = "${Ghost.NOT_FOUND} ${clazz.simpleName}. ${Ghost.MISSING_ANN}")
+            ?: Ghost.throwError(message = Ghost.serializerNotFoundMessage(type = clazz.simpleName))
         return ghostProtoInternalUseFlatReader(bytes = bytes) { reader ->
             serializer.deserialize(reader = reader)
         }

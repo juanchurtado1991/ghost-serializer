@@ -48,6 +48,7 @@ dependencies {
     kover(project(":ghost-serialization"))
     kover(project(":ghost-ktor"))
     kover(project(":ghost-compiler"))
+    kover(project(":ghost-compiler-plugin"))
     kover(project(":ghost-integration-test"))
     kover(project(":ghost-retrofit"))
     kover(project(":ghost-spring-boot-starter"))
@@ -153,6 +154,7 @@ val ciTestJvmModules = listOf(
     ":ghost-serialization:jvmTest",
     ":ghost-ktor:jvmTest",
     ":ghost-compiler:test",
+    ":ghost-compiler-plugin:test",
     ":ghost-integration-test:test",
     ":ghost-retrofit:test",
     ":ghost-spring-boot-starter:test",

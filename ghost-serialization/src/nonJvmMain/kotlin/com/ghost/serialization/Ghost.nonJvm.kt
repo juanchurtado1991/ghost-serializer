@@ -54,6 +54,11 @@ internal fun acquireStringWriterPair(): WriterStringPair {
 
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 
+internal actual val serializerRegistrationHint: String =
+    " On Kotlin/Native and Kotlin/Wasm, serializers are linked at compile time by the Ghost Gradle plugin " +
+        "(com.ghostserializer.ghost). If the plugin is not applied, or ghost { autoRegistration = false } is set, " +
+        "call Ghost.addRegistry(registry = GhostModuleRegistry_<moduleName>.INSTANCE) at startup."
+
 @InternalGhostApi
 actual inline fun ghostInternalEncodeAndDiscard(
     crossinline block: (GhostJsonWriter) -> Unit
