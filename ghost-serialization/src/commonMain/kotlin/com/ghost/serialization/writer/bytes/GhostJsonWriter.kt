@@ -31,8 +31,11 @@ import okio.ByteString
  * Every byte goes out through the `emit*` helpers, which call the concrete [FlatByteArrayWriter]
  * directly when that is the backend and fall back to the [GhostByteSink] interface otherwise: one
  * writer serving both channels made each sink call site bimorphic, and keeping the in-memory path
- * monomorphic measured +3% Encode (Bytes) on benchmarkTwitterFast (4 alternated A/B pairs).
+ * monomorphic measured +3% Encode (Bytes) on benchmarkTwitterFast (4 alternated A/B pairs). Those
+ * helpers are `inline` on purpose (hence `NOTHING_TO_INLINE` suppressed): the flat-sink check must
+ * be fused into each call site to stay monomorphic.
  */
+@Suppress("NOTHING_TO_INLINE")
 class GhostJsonWriter private constructor(
     @PublishedApi internal val sink: GhostByteSink
 ) {
@@ -456,7 +459,6 @@ class GhostJsonWriter private constructor(
         )
     }
 
-    @Suppress("NOTHING_TO_INLINE")
     internal inline fun appendSeparator() {
         if (needsComma) {
             emitByte(COMMA_INT)

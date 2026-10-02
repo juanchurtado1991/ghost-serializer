@@ -2,6 +2,7 @@
 
 package com.ghost.serialization
 
+import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.readSet
@@ -218,8 +219,8 @@ class FeatureTriChannelSerializerTest {
         assertScalarRoundTrip(serializer = CharSerializer, json = "\"Z\"", expected = 'Z')
     }
 
-    private inline fun <T : Any> assertScalarRoundTrip(
-        serializer: com.ghost.serialization.contract.GhostSerializer<T>,
+    private fun <T : Any> assertScalarRoundTrip(
+        serializer: GhostSerializer<T>,
         json: String,
         expected: T
     ) {

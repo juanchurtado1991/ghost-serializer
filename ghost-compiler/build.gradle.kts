@@ -8,17 +8,11 @@ plugins {
 
 kotlin {
     jvmToolchain(17)
-    compilerOptions {
-        optIn.add("org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi")
-    }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
-        freeCompilerArgs.addAll(
-            "-opt-in=org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi",
-        )
     }
 }
 
