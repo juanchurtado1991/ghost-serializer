@@ -20,6 +20,11 @@ internal object GhostPluginTestConstants {
     const val KTOR_CLIENT_COORDINATE = "io.ktor:ktor-client-core:3.5.1"
     const val RETROFIT_COORDINATE = "com.squareup.retrofit2:retrofit:2.9.0"
 
+    const val CONFIG_KSP_COMMON_MAIN_METADATA = "kspCommonMainMetadata"
+    const val CONFIG_KSP_JVM = "kspJvm"
+    const val KSP_COMMON_METADATA_OUTPUT = "build/generated/ksp/metadata/commonMain/kotlin"
+    const val KSP_COMMON_METADATA_RESOURCES = "generated/ksp/metadata/commonMain/resources"
+    const val SOURCE_SET_COMMON_MAIN = "commonMain"
     const val CONFIG_PLUGIN_CLASSPATH_JVM_MAIN = "kotlinCompilerPluginClasspathJvmMain"
     const val CONFIG_PLUGIN_CLASSPATH_WASM_MAIN = "kotlinCompilerPluginClasspathWasmJsMain"
     const val COMPILATION_MAIN = "main"

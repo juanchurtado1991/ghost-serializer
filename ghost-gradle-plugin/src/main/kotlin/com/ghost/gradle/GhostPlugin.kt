@@ -3,7 +3,6 @@ package com.ghost.gradle
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
  * Gradle plugin (id `com.ghostserializer.ghost`) that wires Ghost Serialization into Android, JVM,
@@ -13,8 +12,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
  *
  * KSP wiring is reactive, via `PluginContainer.withId` listeners, so it works regardless of
  * whether the KSP/KMP/Android plugins are applied before or after this plugin. In KMP projects it
- * also applies [GhostCompilerPluginSupport] (automatic Kotlin/Native and Kotlin/Wasm registration);
- * that class is only loaded once the Kotlin Gradle plugin is known to be on the classpath.
+ * delegates KSP wiring to [GhostKmpKspWiring] and applies [GhostCompilerPluginSupport] (automatic
+ * Kotlin/Native and Kotlin/Wasm registration). Both are separate classes because they reference
+ * Kotlin Gradle plugin types: kept out of this class's signatures, they are only loaded once the
+ * KMP plugin is known to be on the classpath, so JVM/Android-only builds can still apply it.
  */
 class GhostPlugin : Plugin<Project> {
 
@@ -40,24 +41,6 @@ class GhostPlugin : Plugin<Project> {
         project.dependencies.add(configuration, apiDep)
     }
 
-    private fun configureKspForKmp(project: Project, compilerDep: Provider<String>) {
-        val kotlinExtension = project
-            .extensions
-            .findByType(KotlinMultiplatformExtension::class.java)
-
-        kotlinExtension?.targets?.configureEach {
-            if (name == TARGET_METADATA) {
-                project.dependencies.add(CONFIG_KSP_COMMON, compilerDep)
-            } else {
-                val capitalizedTarget = name.replaceFirstChar { it.uppercase() }
-                project.dependencies.add(
-                    "$PREFIX_KSP$capitalizedTarget",
-                    compilerDep
-                )
-            }
-        }
-    }
-
     private fun createExtension(project: Project): GhostExtension {
         return project.extensions.create(EXTENSION_NAME, GhostExtension::class.java).apply {
             autoInjectKtor.convention(true)
@@ -79,7 +62,7 @@ class GhostPlugin : Plugin<Project> {
         val compilerDep = ghostVersion.map { "$GROUP_ID:$ARTIFACT_COMPILER:$it" }
         return when {
             project.plugins.hasPlugin(PLUGIN_KMP) -> {
-                configureKspForKmp(
+                GhostKmpKspWiring.wire(
                     project = project,
                     compilerDep = compilerDep
                 )
@@ -170,9 +153,8 @@ class GhostPlugin : Plugin<Project> {
 
         private const val CONFIG_COMMON_MAIN_IMPL = "commonMainImplementation"
         private const val CONFIG_IMPL = "implementation"
-        private const val CONFIG_KSP_COMMON = "kspCommonMainMetadata"
         private const val PREFIX_KSP = "ksp"
 
-        private const val TARGET_METADATA = "metadata"
+
     }
 }

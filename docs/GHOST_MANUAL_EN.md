@@ -913,7 +913,7 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 `GhostPlugin.kt` when applied:
 
-1. If KSP → adds ghost-compiler to ksp / kspCommonMainMetadata
+1. If KSP → adds ghost-compiler to ksp / kspCommonMainMetadata (KMP: also to each target, unless `commonMain` already includes the metadata KSP output — then only metadata, plus its resources)
 2. If KMP → ghost-serialization + ghost-api on commonMain
 3. If Android/JVM → runtime implementation + api
 4. afterEvaluate: if Retrofit/Ktor on classpath → ghost-retrofit / ghost-ktor
@@ -1311,6 +1311,7 @@ Ghost.getSerializer(MyClass::class)
 
 - **Defaults that reference a nested class compile again**: a constructor default such as `Lifecycle.Type.UNKNOWN`, where `Lifecycle` is nested in the model, is now emitted fully qualified in the generated serializer (it failed with `Unresolved reference` since 1.3.0 on models with more than four defaults).
 - **Android AARs no longer force `compileSdk 36` on consumers**: `minCompileSdk` in the AAR metadata is 21 (Ghost's `minSdk`) instead of following Ghost's own `compileSdk`.
+- **Gradle plugin and shared KSP output**: when `commonMain` already includes `build/generated/ksp/metadata/commonMain/kotlin`, the plugin runs `ghost-compiler` only on the metadata compilation (no duplicate serializers) and adds the metadata KSP resources (`META-INF/services`) to `commonMain`.
 
 ### 1.3.2 highlights
 
