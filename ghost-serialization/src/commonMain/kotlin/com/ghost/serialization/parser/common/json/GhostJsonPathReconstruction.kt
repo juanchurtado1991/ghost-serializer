@@ -21,62 +21,75 @@ internal object GhostJsonPathReconstruction {
         tracker: GhostJsonPathTracker,
         start: Int,
         end: Int,
+        limit: Int,
         getByte: (Int) -> Int,
         decodeRange: (Int, Int) -> String
     ): GhostJsonPathTracker {
         tracker.reset()
-        var containers = IntArray(INITIAL_SCAN_DEPTH)
+        var states = IntArray(INITIAL_SCAN_DEPTH)
         var depth = 0
         var index = start
         while (index < end) {
             val byte = getByte(index)
-            val top = if (depth > 0) containers[depth - 1] else CONTAINER_NONE
+            val state = if (depth > 0) states[depth - 1] else STATE_ROOT
             when (byte) {
+                TOK.SPACE_INT, TOK.LF_INT, TOK.CR_INT, TOK.TAB_INT -> {
+                    index++
+                    continue
+                }
                 TOK.OPEN_OBJ_INT, TOK.OPEN_ARR_INT -> {
-                    if (top == CONTAINER_ARRAY) tracker.enterArrayElement()
+                    if (!acceptsValue(state = state)) break
+                    if (isArrayState(state = state)) tracker.enterArrayElement()
+                    if (depth > 0) states[depth - 1] = stateAfterValue(state = state)
                     val isObject = byte == TOK.OPEN_OBJ_INT
                     if (isObject) tracker.pushObject() else tracker.pushArray()
-                    if (depth == containers.size) {
-                        containers = containers.copyOf(newSize = containers.size * SCAN_DEPTH_GROWTH)
+                    if (depth == states.size) {
+                        states = states.copyOf(newSize = states.size * SCAN_DEPTH_GROWTH)
                     }
-                    containers[depth] = if (isObject) CONTAINER_OBJECT_KEY else CONTAINER_ARRAY
+                    states[depth] = if (isObject) STATE_OBJECT_START else STATE_ARRAY_START
                     depth++
                     index++
                 }
                 TOK.CLOSE_OBJ_INT, TOK.CLOSE_ARR_INT -> {
+                    if (!acceptsClose(state = state, closeByte = byte)) break
                     if (byte == TOK.CLOSE_OBJ_INT) tracker.finishObjectValue() else tracker.finishArrayValue()
-                    if (depth > 0) depth--
+                    depth--
                     index++
                 }
                 TOK.COMMA_INT -> {
-                    if (top == CONTAINER_OBJECT_VALUE) containers[depth - 1] = CONTAINER_OBJECT_KEY
+                    if (!acceptsComma(state = state)) break
+                    states[depth - 1] = stateAfterComma(state = state)
                     index++
                 }
                 TOK.COLON_INT -> {
-                    if (top == CONTAINER_OBJECT_KEY) containers[depth - 1] = CONTAINER_OBJECT_VALUE
+                    if (state != STATE_OBJECT_COLON) break
+                    states[depth - 1] = STATE_OBJECT_VALUE
                     index++
                 }
                 TOK.QUOTE_INT -> {
+                    val isKey = acceptsKey(state = state)
+                    if (!isKey && !acceptsValue(state = state)) break
+                    if (isArrayState(state = state)) tracker.enterArrayElement()
                     val closingQuote = findClosingQuote(
                         from = index + 1,
                         end = end,
                         getByte = getByte
                     )
-                    val isKey = top == CONTAINER_OBJECT_KEY
-                    if (!isKey && top == CONTAINER_ARRAY) tracker.enterArrayElement()
                     val endsAtError = closingQuote < 0 || closingQuote + 1 >= end
                     if (!isKey && endsAtError) return tracker
                     if (closingQuote < 0) return tracker
                     if (isKey) {
                         tracker.pushKey(name = unescapeKey(raw = decodeRange(index + 1, closingQuote)))
+                        states[depth - 1] = STATE_OBJECT_COLON
                     } else {
                         tracker.finishScalarValue()
+                        if (depth > 0) states[depth - 1] = stateAfterValue(state = state)
                     }
                     index = closingQuote + 1
                 }
-                TOK.SPACE_INT, TOK.LF_INT, TOK.CR_INT, TOK.TAB_INT -> index++
                 else -> {
-                    if (top == CONTAINER_ARRAY) tracker.enterArrayElement()
+                    if (!acceptsValue(state = state)) break
+                    if (isArrayState(state = state)) tracker.enterArrayElement()
                     val scalarEnd = findScalarEnd(
                         from = index,
                         end = end,
@@ -84,10 +97,14 @@ internal object GhostJsonPathReconstruction {
                     )
                     if (scalarEnd >= end) return tracker
                     tracker.finishScalarValue()
+                    if (depth > 0) states[depth - 1] = stateAfterValue(state = state)
                     index = scalarEnd
                 }
             }
         }
+        val pendingState = if (depth > 0) states[depth - 1] else STATE_ROOT
+        val tokenAtStop = if (index < limit) getByte(index) else TOK.CLOSE_ARR_INT
+        if (isElementPending(state = pendingState, tokenAtStop = tokenAtStop)) tracker.enterArrayElement()
         return tracker
     }
 
@@ -160,17 +177,93 @@ internal object GhostJsonPathReconstruction {
         return end
     }
 
+    /** Whether a value (scalar, string, `{`, `[`) may start in [state]. Array elements need a comma
+     * between them (`readList` rejects a missing one), unlike object keys — see [acceptsKey]. */
     @PublishedApi
-    internal const val CONTAINER_NONE = 0
+    internal fun acceptsValue(
+        state: Int
+    ): Boolean = state == STATE_ROOT ||
+        state == STATE_OBJECT_VALUE ||
+        state == STATE_ARRAY_START ||
+        state == STATE_ARRAY_AFTER_COMMA
+
+    /** Whether a key may start in [state]; a key right after a value (missing comma) is accepted,
+     * as the readers do outside strict mode. */
+    @PublishedApi
+    internal fun acceptsKey(
+        state: Int
+    ): Boolean = state == STATE_OBJECT_START ||
+        state == STATE_OBJECT_AFTER_COMMA ||
+        state == STATE_OBJECT_AFTER_VALUE
 
     @PublishedApi
-    internal const val CONTAINER_OBJECT_KEY = 1
+    internal fun acceptsClose(
+        state: Int,
+        closeByte: Int
+    ): Boolean = if (closeByte == TOK.CLOSE_OBJ_INT) {
+        state == STATE_OBJECT_START || state == STATE_OBJECT_AFTER_VALUE
+    } else {
+        state == STATE_ARRAY_START || state == STATE_ARRAY_AFTER_VALUE
+    }
 
     @PublishedApi
-    internal const val CONTAINER_OBJECT_VALUE = 2
+    internal fun acceptsComma(
+        state: Int
+    ): Boolean = state == STATE_OBJECT_AFTER_VALUE || state == STATE_ARRAY_AFTER_VALUE
 
     @PublishedApi
-    internal const val CONTAINER_ARRAY = 3
+    internal fun isArrayState(
+        state: Int
+    ): Boolean = state == STATE_ARRAY_START ||
+        state == STATE_ARRAY_AFTER_COMMA ||
+        state == STATE_ARRAY_AFTER_VALUE
+
+    /** An element the readers would already have entered (`[` or `,` consumed, value not started):
+     * readList/hasNext advance the index before parsing it, so the path must name it too. A `]`
+     * right after `[` is an empty array, not a pending element. */
+    @PublishedApi
+    internal fun isElementPending(
+        state: Int,
+        tokenAtStop: Int
+    ): Boolean = state == STATE_ARRAY_AFTER_COMMA ||
+        (state == STATE_ARRAY_START && tokenAtStop != TOK.CLOSE_ARR_INT)
+
+    @PublishedApi
+    internal fun stateAfterComma(
+        state: Int
+    ): Int = if (state == STATE_OBJECT_AFTER_VALUE) STATE_OBJECT_AFTER_COMMA else STATE_ARRAY_AFTER_COMMA
+
+    @PublishedApi
+    internal fun stateAfterValue(
+        state: Int
+    ): Int = if (isArrayState(state = state)) STATE_ARRAY_AFTER_VALUE else STATE_OBJECT_AFTER_VALUE
+
+    @PublishedApi
+    internal const val STATE_ROOT = 0
+
+    @PublishedApi
+    internal const val STATE_OBJECT_START = 1
+
+    @PublishedApi
+    internal const val STATE_OBJECT_COLON = 2
+
+    @PublishedApi
+    internal const val STATE_OBJECT_VALUE = 3
+
+    @PublishedApi
+    internal const val STATE_OBJECT_AFTER_VALUE = 4
+
+    @PublishedApi
+    internal const val STATE_OBJECT_AFTER_COMMA = 5
+
+    @PublishedApi
+    internal const val STATE_ARRAY_START = 6
+
+    @PublishedApi
+    internal const val STATE_ARRAY_AFTER_VALUE = 7
+
+    @PublishedApi
+    internal const val STATE_ARRAY_AFTER_COMMA = 8
 
     @PublishedApi
     internal const val ESCAPE_PAIR_LENGTH = 2

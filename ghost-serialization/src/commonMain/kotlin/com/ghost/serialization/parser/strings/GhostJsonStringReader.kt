@@ -219,6 +219,7 @@ class GhostJsonStringReader(
             tracker = pathTracker,
             start = 0,
             end = errorEnd,
+            limit = limit,
             getByte = { localData[it].code },
             decodeRange = { from, to -> localData.substring(startIndex = from, endIndex = to) }
         )

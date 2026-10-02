@@ -351,6 +351,7 @@ open class GhostJsonFlatReader(
             tracker = pathTracker,
             start = sliceStart,
             end = errorEnd,
+            limit = limit,
             getByte = { localData[it].toInt() and TOK.BYTE_MASK },
             decodeRange = { from, to -> localData.decodeToString(startIndex = from, endIndex = to) }
         )

@@ -16,7 +16,7 @@
 
 ### Performance
 All measured with `benchmarkTwitter` / `benchmarkSynthetic`; none of these increase allocation.
-- **JSONPath for decode errors is rebuilt only when an error is thrown** (bytes and string readers): instead of pushing/popping breadcrumbs on every key, scalar and array element, the reader re-scans the input prefix up to the error position and reconstructs the same path. Error messages are unchanged; the streaming reader keeps eager tracking because it releases consumed input. Decode −4–5% time.
+- **JSONPath for decode errors is rebuilt only when an error is thrown** (bytes and string readers): instead of pushing/popping breadcrumbs on every key, scalar and array element, the reader re-scans the input prefix up to the error position with a small JSON state machine and rebuilds the path, naming the element or key whose value contains the error (a token the parser rejects ends the scan). Checked differentially on 3,880 corrupted copies of the Twitter fixture: the bytes and string channels always agree and never fail with anything but `GhostJsonException`. The streaming reader keeps eager tracking because it releases consumed input. Decode −4–5% time.
 - **`GhostJsonWriter` calls the in-memory buffer directly** instead of through the `GhostByteSink` interface on every write (the interface stays for the Okio channel). Encode (Bytes) +3%.
 - **Buffer capacity checks are inlined** in `FlatByteArrayWriter`/`FlatCharArrayWriter`; the grow path moved out of line. Encode (Bytes) +10%, Encode (Streaming) +9%.
 - **Peeking the next token skips zero or one space inline** in the bytes and string readers (`"key": value`), falling back to the full whitespace skip for indentation. Decode (Bytes) +1.5%, Decode (String) +1.7%.
