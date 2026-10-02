@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.3] - 2026-10-02
+
+Consumer-compatibility fixes found while moving a Kotlin 2.2 / AGP 8 KMP app (Ktor 3, Ktorfit, Room) from Ghost 1.2.7 to 1.3.2.
+
+### Fixed
+- **Constructor defaults that reference a class nested in the model no longer break the generated serializer.** Since 1.3.0, a model with more than four defaulted parameters builds its instance in a single constructor call and copies each whitelisted default into the generated serializer as source text. A default such as `lifecycleType: Lifecycle.Type = Lifecycle.Type.UNKNOWN`, where `Lifecycle` is nested in the model, then failed with `Unresolved reference 'Lifecycle'`, because the serializer is a separate top-level file. The KSP processor now rewrites a qualifier that starts with a class nested in the model (or in one of its enclosing classes) to that class's fully-qualified name. Other defaults are emitted unchanged. Covered by `DefaultExpressionSingleShotKspTest`, which fails without the fix.
+- **Ghost's Android AARs no longer require consumers to compile against Android 36.** Since 1.3.0, the AGP 9 Kotlin Multiplatform Android plugin wrote Ghost's own `compileSdk` (36) as `minCompileSdk` in the AAR metadata, so any consumer on `compileSdk 35` (for example on AGP 8.6) failed `checkAarMetadata`. `ghost-api`, `ghost-serialization` and `ghost-ktor` now declare `minCompileSdk = 21`, matching Ghost's `minSdk`. `compat-tests/kotlin-consumer` now compiles with `compileSdk 35` and runs `checkAndroidMainAarMetadata` in CI, so this cannot regress unnoticed.
+
 ## [1.3.2] - 2026-10-01
 
 ### Changed
