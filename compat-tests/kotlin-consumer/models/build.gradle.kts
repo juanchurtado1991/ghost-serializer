@@ -18,7 +18,7 @@ kotlin {
     jvm()
     android {
         namespace = "compat.consumer.models"
-        compileSdk = 36
+        compileSdk = 35
         minSdk = 21
     }
     iosArm64()

@@ -11,6 +11,9 @@ kotlin {
     android {
         namespace = "com.ghost.serialization.api"
         compileSdk = 36
+        aarMetadata {
+            minCompileSdk = libs.versions.android.min.compile.sdk.get().toInt()
+        }
         optimization {
             consumerKeepRules.file("ghost-proguard-rules.pro")
         }
