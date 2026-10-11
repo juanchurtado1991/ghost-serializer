@@ -129,7 +129,7 @@ val ciTestIosSkipped = tasks.register("ciTestIosSkipped") {
     onlyIf { !isMac }
     doLast {
         println(
-            "ciTest: skipping :ghost-serialization:iosSimulatorArm64Test (requires macOS + Xcode)"
+            "ciTest: skipping iosSimulatorArm64Test and watchosSimulatorArm64Test (requires macOS + Xcode)"
         )
     }
 }
@@ -142,6 +142,19 @@ val ciTestIos = tasks.register("ciTestIos") {
     dependsOn(
         ":ghost-serialization:kspCommonMainKotlinMetadata",
         ":ghost-serialization:iosSimulatorArm64Test",
+    )
+}
+
+val ciTestWatchos = tasks.register("ciTestWatchos") {
+    group = "verification"
+    description = "watchOS simulator tests (same as CI test-watchos job; macOS with a watchOS simulator runtime)"
+    val isMac = isMacOsHost
+    onlyIf { isMac }
+    dependsOn(
+        ":ghost-serialization:kspCommonMainKotlinMetadata",
+        ":ghost-api:watchosSimulatorArm64Test",
+        ":ghost-serialization:watchosSimulatorArm64Test",
+        ":ghost-ktor:watchosSimulatorArm64Test",
     )
 }
 
@@ -170,10 +183,11 @@ val ciTestJvm = tasks.register("ciTestJvm") {
 
 tasks.register("ciTest") {
     group = "verification"
-    description = "Full CI test suite (GitHub Actions); iOS auto-skipped on Linux/Windows"
+    description = "Full CI test suite (GitHub Actions); iOS and watchOS auto-skipped on Linux/Windows"
     dependsOn(
         ciTestIosSkipped,
         ciTestIos,
+        ciTestWatchos,
         ciTestJvm,
         ":ghost-serialization:testAndroidHostTest",
     )
@@ -182,7 +196,7 @@ tasks.register("ciTest") {
 /** Alias for [ciTest] — run every test module before benchmarks or releases. */
 tasks.register("allTests") {
     group = "verification"
-    description = "All tests (JVM + Android + iOS on macOS) — same as ciTest"
+    description = "All tests (JVM + Android + iOS and watchOS on macOS) — same as ciTest"
     dependsOn("ciTest")
 }
 

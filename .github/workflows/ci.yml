@@ -121,12 +121,9 @@ jobs:
           fi
           echo "iosSimulatorArm64Test completed (BUILD SUCCESSFUL)"
 
-  consumer-compat:
-    name: Consumer compatibility (Kotlin 2.2.21)
-    # Publishes Ghost to mavenLocal and builds compat-tests/kotlin-consumer, a standalone two-module KMP project on
-    # the minimum supported Kotlin (2.2.21) using the Ghost Gradle plugin. Proves the published klibs/metadata, the
-    # KSP-generated code and automatic Native/Wasm registration (compiler plugin) work for consumers: round-trip
-    # tests with no Ghost.addRegistry call on JVM, the iOS simulator and Wasm (Node.js).
+  test-watchos:
+    name: Tests (watchOS)
+    # Same as test-ios on the watchOS simulator (watchosSimulatorArm64) for the modules that publish watchOS.
     runs-on: macos-26
     timeout-minutes: 60
 
@@ -143,14 +140,58 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Publish Ghost to mavenLocal
-        run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-compiler-plugin:publishToMavenLocal :ghost-gradle-plugin:publishToMavenLocal :ghost-ktor:publishToMavenLocal -PskipTests --console=plain
+      - name: Ensure a watchOS simulator runtime
+        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
 
-      - name: Build and test the Kotlin 2.2.21 consumer (JVM, Android, iOS simulator, Wasm)
+      - name: watchOS simulator tests
         run: |
           set -euo pipefail
           log="$(mktemp)"
-          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain checkAndroidMainAarMetadata iosSimulatorArm64Test wasmJsNodeTest --console=plain 2>&1 | tee "$log"
+          ./gradlew ciTestWatchos --rerun-tasks --console=plain 2>&1 | tee "$log"
+          gradle_exit="${PIPESTATUS[0]}"
+          if [[ "$gradle_exit" -ne 0 ]]; then
+            echo "::error::Gradle exited with $gradle_exit"
+            exit "$gradle_exit"
+          fi
+          if grep -qE "> Task :ghost-[a-z]+:watchosSimulatorArm64Test SKIPPED" "$log"; then
+            echo "::error::a watchosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + a watchOS simulator)"
+            exit 1
+          fi
+          echo "watchosSimulatorArm64Test completed (BUILD SUCCESSFUL)"
+
+  consumer-compat:
+    name: Consumer compatibility (Kotlin 2.2.21)
+    # Publishes Ghost to mavenLocal and builds compat-tests/kotlin-consumer, a standalone two-module KMP project on
+    # the minimum supported Kotlin (2.2.21) using the Ghost Gradle plugin. Proves the published klibs/metadata, the
+    # KSP-generated code and automatic Native/Wasm registration (compiler plugin) work for consumers: round-trip
+    # tests with no Ghost.addRegistry call on JVM, the iOS and watchOS simulators and Wasm (Node.js).
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Ensure a watchOS simulator runtime
+        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
+
+      - name: Publish Ghost to mavenLocal
+        run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-compiler-plugin:publishToMavenLocal :ghost-gradle-plugin:publishToMavenLocal :ghost-ktor:publishToMavenLocal -PskipTests --console=plain
+
+      - name: Build and test the Kotlin 2.2.21 consumer (JVM, Android, iOS and watchOS simulators, Wasm)
+        run: |
+          set -euo pipefail
+          log="$(mktemp)"
+          ./gradlew -p compat-tests/kotlin-consumer jvmTest compileAndroidMain checkAndroidMainAarMetadata iosSimulatorArm64Test watchosSimulatorArm64Test wasmJsNodeTest --console=plain 2>&1 | tee "$log"
           gradle_exit="${PIPESTATUS[0]}"
           if [[ "$gradle_exit" -ne 0 ]]; then
             echo "::error::Gradle exited with $gradle_exit"
@@ -158,6 +199,10 @@ jobs:
           fi
           if grep -q "> Task :iosSimulatorArm64Test SKIPPED" "$log"; then
             echo "::error::consumer iosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + Apple Silicon)"
+            exit 1
+          fi
+          if grep -q "> Task :watchosSimulatorArm64Test SKIPPED" "$log"; then
+            echo "::error::consumer watchosSimulatorArm64Test was SKIPPED (needs macOS + Xcode + a watchOS simulator)"
             exit 1
           fi
 
@@ -191,7 +236,7 @@ jobs:
         run: ./gradlew :ghost-api:publishToMavenLocal :ghost-serialization:publishToMavenLocal :ghost-compiler:publishToMavenLocal :ghost-compiler-plugin:publishToMavenLocal :ghost-gradle-plugin:publishToMavenLocal :ghost-ktor:publishToMavenLocal -PskipTests --console=plain
 
       - name: Build and test the consumer on Kotlin ${{ matrix.kotlin }} (JVM, Android, Wasm, Native compile)
-        run: ./gradlew -p compat-tests/kotlin-consumer -PkotlinVersion=${{ matrix.kotlin }} jvmTest wasmJsNodeTest compileAndroidMain checkAndroidMainAarMetadata compileKotlinIosArm64 --console=plain
+        run: ./gradlew -p compat-tests/kotlin-consumer -PkotlinVersion=${{ matrix.kotlin }} jvmTest wasmJsNodeTest compileAndroidMain checkAndroidMainAarMetadata compileKotlinIosArm64 compileKotlinWatchosArm64 --console=plain
 
   test-wasm:
     name: Tests (WasmJs)

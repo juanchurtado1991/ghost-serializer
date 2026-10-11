@@ -13,7 +13,7 @@ Thank you for helping improve Ghost!
 | **JDK** | **17** — required for all modules |
 | **Gradle wrapper** | `./gradlew` — do not rely on a system Gradle installation |
 | **Android SDK** | Needed for `:ghost-serialization:testAndroidHostTest` (compile SDK 36) |
-| **Xcode** *(macOS only)* | Needed for `iosSimulatorArm64Test` |
+| **Xcode** *(macOS only)* | Needed for `iosSimulatorArm64Test` and `watchosSimulatorArm64Test` (plus the watchOS simulator runtime) |
 
 ```bash
 git clone https://github.com/juanchurtado1991/ghost-serializer.git
@@ -28,7 +28,8 @@ cd ghost-serializer
 
 | Command | What it runs |
 |:---|:---|
-| `./gradlew allTests` | **All tests** — alias of `ciTest` (JVM + Android + iOS on macOS) |
+| `./gradlew allTests` | **All tests** — alias of `ciTest` (JVM + Android + iOS and watchOS on macOS) |
+| `./gradlew ciTestWatchos` | watchOS simulator tests for `ghost-api`, `ghost-serialization`, `ghost-ktor` (CI job **Tests (watchOS)**) |
 | `./gradlew ciTestJvm` | JVM test modules only (CI job **Tests (JVM)** on Ubuntu) |
 | `./gradlew :ghost-serialization:wasmJsBrowserTest` | Wasm browser tests for the core runtime |
 | `./gradlew :ghost-playground:jvmTest` | Ghost Playground unit tests (Studio presets, dispatch preview, Speed Test engine) |
@@ -51,7 +52,7 @@ Kover only measures JVM bytecode — it does not cover Kotlin/Native (`iosSimula
 
 Every `RegressionCalculator.report` run (the regression gate inside `benchmarkRegression*`/`run`) also writes a JSON snapshot to `ghost-benchmark/build/reports/regression/regression-report.json` — useful to diff against a previous local run or paste into a PR description. This is local, pre-PR tooling only; regression checks are **not** a CI gate (they take 1–9 minutes per run and would tax every PR for full-machine JIT warmup), so run one of the `benchmarkRegression*` commands above yourself before opening a PR that touches a hot path.
 
-On **Linux/Windows**, `ciTest` skips iOS. On **macOS** with Xcode it also runs `iosSimulatorArm64Test`. Wasm coverage is exercised separately by the CI `test-wasm` job (`wasmJsBrowserTest` on the KMP modules).
+On **Linux/Windows**, `ciTest` skips iOS and watchOS. On **macOS** with Xcode it also runs `iosSimulatorArm64Test` and `watchosSimulatorArm64Test` (install the watchOS simulator once with `xcodebuild -downloadPlatform watchOS`). Wasm coverage is exercised separately by the CI `test-wasm` job (`wasmJsBrowserTest` on the KMP modules).
 
 ---
 
