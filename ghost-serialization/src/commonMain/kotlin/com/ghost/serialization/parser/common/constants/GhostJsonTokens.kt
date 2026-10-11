@@ -171,6 +171,10 @@ object GhostJsonTokens {
     const val UTF8_BOM_1 = 0xBB
     const val UTF8_BOM_2 = 0xBF
     const val UTF8_BOM_SIZE = 3
+
+    /** U+FEFF as it appears at the start of a decoded [String] (one UTF-16 code unit). */
+    const val BYTE_ORDER_MARK_CHAR = '\uFEFF'
+    const val BYTE_ORDER_MARK_CHAR_COUNT = 1
     const val UTF16_BE_BOM_0 = 0xFE
     const val UTF16_LE_BOM_0 = 0xFF
 

@@ -327,6 +327,9 @@ object Ghost : GhostRegistry {
                     }
 
                     Map::class -> {
+                        val hasStringKey = type.arguments.getOrNull(index = 0)?.type?.classifier == String::class
+                        if (!hasStringKey) return@runSynchronized null
+
                         val valueType = type.arguments.getOrNull(index = 1)?.type
                             ?: return@runSynchronized null
 
