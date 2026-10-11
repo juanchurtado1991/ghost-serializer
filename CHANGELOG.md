@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.4] - 2026-10-10
+
+watchOS targets and code generation fixes found while adding them.
 
 ### Added
 - **watchOS targets.** `ghost-api`, `ghost-serialization` and `ghost-ktor` now publish `watchosArm64` (arm64_32, Apple Watch up to Series 8), `watchosDeviceArm64` (arm64, Series 9 and later) and `watchosSimulatorArm64`, so Kotlin Multiplatform libraries that use Ghost can ship to Apple Watch. Ghost's Apple code only uses `platform.objc` locks, so the former `iosMain` source set is now `appleMain` and serves iOS and watchOS (`IosConcurrentMap` is now `AppleConcurrentMap`; internal, no API change). The full `ghost-serialization`, `ghost-api` and `ghost-ktor` test suites pass on the watchOS 26.4 simulator, and `compat-tests/kotlin-consumer` (Kotlin 2.2.21) builds for the three watchOS targets and runs its round-trip tests, with automatic compiler-plugin registration, on the simulator.
