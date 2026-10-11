@@ -11,6 +11,7 @@ import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.lang.reflect.WildcardType
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -18,7 +19,9 @@ import kotlin.reflect.KClass
  * Resolves a [GhostSerializer] from a `java.lang.reflect.Type` for the JVM HTTP integrations
  * (Retrofit, Spring): a raw [Class] is looked up in [registry], and top-level `List<T>`/`Set<T>`/
  * `Map<String, V>` are unwrapped by resolving the element/value type recursively and wrapping it in
- * the matching collection serializer. With [yamlOnly], only serializers implementing
+ * the matching collection serializer. A wildcard (`List<? extends Animal>`, which Kotlin emits for a
+ * non-final element type in parameter positions, including a `suspend` function's return type) resolves
+ * through its bound. With [yamlOnly], only serializers implementing
  * [GhostYamlSerializer] qualify and the YAML collection wrappers are used. Top-level classes for
  * which [isExcludedTopLevel] is true resolve to `null` (still valid as collection elements), and
  * top-level results are cached per [Type]. Ktor resolves from `KType` through [Ghost.getSerializer]
@@ -49,6 +52,7 @@ class GhostReflectTypeSerializers(
 
     private fun resolve(type: Type): GhostSerializer<Any>? {
         if (type is Class<*>) return resolveClass(clazz = type)
+        if (type is WildcardType) return resolveElement(type = wildcardBound(type = type))
         if (type !is ParameterizedType) return null
         val rawType = type.rawType as? Class<*> ?: return null
         val arguments = type.actualTypeArguments
@@ -59,7 +63,8 @@ class GhostReflectTypeSerializers(
             Set::class.java.isAssignableFrom(rawType) ->
                 resolveElement(type = arguments.firstOrNull())?.let(::wrapSet)
             Map::class.java.isAssignableFrom(rawType) -> {
-                val hasStringKey = arguments.getOrNull(0) == String::class.java
+                val keyType = arguments.getOrNull(0)?.let { if (it is WildcardType) wildcardBound(type = it) else it }
+                val hasStringKey = keyType == String::class.java
                 if (hasStringKey) resolveElement(type = arguments.getOrNull(1))?.let(::wrapMap) else null
             }
             else -> null
@@ -67,6 +72,10 @@ class GhostReflectTypeSerializers(
     }
 
     private fun resolveElement(type: Type?): GhostSerializer<Any>? = type?.let(::resolve)
+
+    private fun wildcardBound(
+        type: WildcardType
+    ): Type? = type.lowerBounds.firstOrNull() ?: type.upperBounds.firstOrNull()
 
     @Suppress("UNCHECKED_CAST")
     private fun wrapList(item: GhostSerializer<Any>): GhostSerializer<Any>? = when {

@@ -155,4 +155,19 @@ class GhostRetrofitTest {
             apiService.getUser()
         }
     }
+
+    @Test
+    fun `suspend function returning a list of a non-final type resolves through the wildcard`() = runTest {
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""[{"name":"cat"},{"name":"dog"}]""")
+                .addHeader(GhostRetrofitMediaTypes.CONTENT_TYPE_HEADER, GhostRetrofitMediaTypes.APPLICATION_JSON)
+        )
+
+        assertEquals(
+            expected = listOf(RetrofitAnimal(name = "cat"), RetrofitAnimal(name = "dog")),
+            actual = apiService.getAnimals()
+        )
+    }
 }
