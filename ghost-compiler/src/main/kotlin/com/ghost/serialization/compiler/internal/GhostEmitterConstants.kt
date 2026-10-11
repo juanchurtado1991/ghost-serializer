@@ -285,8 +285,9 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_TEMP_FLAT_BUFFER_DECL = "val %L = %T()"
     const val TEMPLATE_TEMP_FLAT_WRITER_DECL = "val %L = %T(%L)"
     const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = "%T.%L(%L, %L)"
+    // rawValue (not a direct buffer write) so the string writer knows a value was written and puts the next comma.
     const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
-        "writer.buffer.writeString(%L.toStringUtf8())"
+        "writer.rawValue(bytes = %1L.array, offset = 0, length = %1L.size)"
 
     const val TEMPLATE_ENUM_ELSE_FALLBACK = "else -> %T.%L"
     const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
