@@ -43,6 +43,23 @@ internal class SerializerImportResolver(
             )
         }
 
+        // Each @GhostFlatten group checks for a null object before opening it (a null parent counts as absent).
+        val hasFlattenedGroup = ctx.properties.any { prop ->
+            (prop.flattenPath?.size ?: CC.VAL_ONE) > CC.VAL_ONE || prop.wrapPath != null
+        }
+        if (hasFlattenedGroup) {
+            fileBuilder.addImport(
+                CC.PKG_PARSER_STREAMING,
+                CG.STR_CONSUME_NULL_NAME,
+                CG.STR_IS_NEXT_NULL_VALUE_NAME,
+            )
+            mirrorStringChannelImports(
+                fileBuilder,
+                CG.STR_CONSUME_NULL_NAME,
+                CG.STR_IS_NEXT_NULL_VALUE_NAME,
+            )
+        }
+
         val (allTypes, hasNullable) = resolveAllTypes()
         addParserImports(fileBuilder = fileBuilder, allTypes = allTypes, hasNullable = hasNullable)
 

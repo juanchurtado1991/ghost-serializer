@@ -28,4 +28,18 @@ class RoundTripTest {
 
         assertEquals(expected = device, actual = Ghost.deserialize<Device>(json = json))
     }
+
+    @Test
+    fun nullParentOfFlattenedPathKeepsDefaults() {
+        val json = """{"id":"v-1","virtual":{"name":"lamp","commandMappings":null}}"""
+
+        assertEquals(
+            expected = VirtualDevice(id = "v-1", name = "lamp"),
+            actual = Ghost.deserialize<VirtualDevice>(json = json)
+        )
+        assertEquals(
+            expected = VirtualDevice(id = "v-1"),
+            actual = Ghost.deserialize<VirtualDevice>(json = """{"id":"v-1","virtual":null}""")
+        )
+    }
 }

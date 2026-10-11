@@ -3,7 +3,6 @@ package com.ghost.serialization.compiler.codegen.emit
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
@@ -35,52 +34,10 @@ internal class StandardSerializeEmitter(
 
         val currentPath = mutableListOf<String>()
         properties.forEach { prop ->
-            val targetPath = prop.flattenPath?.dropLast(1)
-                ?: prop.wrapPath
-                ?: emptyList()
-
-            // Close objects that are not in the new target path
-            while (currentPath.isNotEmpty() && !isPrefix(prefix = currentPath, full = targetPath)) {
-                code.addStatement(C.STR_WRITER_END_OBJ)
-                currentPath.removeAt(currentPath.size - 1)
-            }
-
-            val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
-            val prefix = if (isStringWriter) {
-                CG.STR_HS_PREFIX
-            } else {
-                CG.STR_H_VAL_PREFIX
-            }
-            // Open new objects in the target path
-            targetPath.drop(currentPath.size).forEach { segment ->
-                code.addStatement(
-                    C.STR_WRITE_NAME_RAW,
-                    prefix + segment.uppercase()
-                )
-                code.addStatement(C.STR_WRITER_BEGIN_OBJ)
-                currentPath.add(segment)
-            }
-
+            emitPathTransition(code = code, currentPath = currentPath, prop = prop)
             emitProperty(code = code, prop = prop)
         }
-
-        // Close remaining open objects
-        while (currentPath.isNotEmpty()) {
-            code.addStatement(C.STR_WRITER_END_OBJ)
-            currentPath.removeAt(currentPath.size - 1)
-        }
+        emitClosePath(code = code, currentPath = currentPath)
         code.addStatement(C.STR_WRITER_END_OBJ)
-    }
-
-    private fun isPrefix(prefix: List<String>, full: List<String>): Boolean {
-        if (prefix.size > full.size) {
-            return false
-        }
-        for (i in prefix.indices) {
-            if (prefix[i] != full[i]) {
-                return false
-            }
-        }
-        return true
     }
 }

@@ -37,6 +37,8 @@ internal object GhostEmitterConstants {
     const val STR_MINUS_TWO_ARROW = "-2 ->"
     const val STR_SKIP_VALUE = "reader.skipValue()"
     const val STR_END_OBJECT = "reader.endObject()"
+    const val STR_IF_NEXT_NULL_VALUE = "if (reader.isNextNullValue())"
+    const val STR_CONSUME_NULL = "reader.consumeNull()"
     const val TEMPLATE_DESERIALIZE_T = "%T.deserialize(reader)"
     const val TEMPLATE_DESERIALIZE_L = "%L.deserialize(reader)"
     const val STR_NEXT_INT = "reader.nextInt()"
@@ -283,10 +285,14 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_TEMP_FLAT_BUFFER_DECL = "val %L = %T()"
     const val TEMPLATE_TEMP_FLAT_WRITER_DECL = "val %L = %T(%L)"
     const val TEMPLATE_CUSTOM_ENCODER_BRIDGE_CALL = "%T.%L(%L, %L)"
+    // rawValue (not a direct buffer write) so the string writer knows a value was written and puts the next comma.
     const val TEMPLATE_WRITE_STRING_CHANNEL_BRIDGE =
-        "writer.buffer.writeString(%L.toStringUtf8())"
+        "writer.rawValue(bytes = %1L.array, offset = 0, length = %1L.size)"
 
     const val TEMPLATE_ENUM_ELSE_FALLBACK = "else -> %T.%L"
+    const val STR_ERR_FRAGMENTED_WRAPPED_KEYS_1 = "@GhostWrappedKeys is not supported yet in classes with more than " +
+        "$PROPERTY_MAX_SIZE properties: "
+    const val STR_ERR_FRAGMENTED_WRAPPED_KEYS_2 = ". Move the wrapped-keys property into a nested class."
     const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
         "Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class "
 

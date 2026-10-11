@@ -4,11 +4,11 @@ import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
 
 /**
- * Thread-safe map for Kotlin/Native (iOS), guarded by [objc_sync_enter]/[objc_sync_exit] —
+ * Thread-safe map for Kotlin/Native on Apple platforms (iOS, watchOS), guarded by [objc_sync_enter]/[objc_sync_exit] —
  * the same primitive as [runSynchronized] — for correct visibility under K/N's shared-object
  * memory model.
  */
-internal class IosConcurrentMap<K, V> : MutableMap<K, V> {
+internal class AppleConcurrentMap<K, V> : MutableMap<K, V> {
     private val delegate = mutableMapOf<K, V>()
     private val lock = Any()
 
@@ -68,4 +68,3 @@ internal class IosConcurrentMap<K, V> : MutableMap<K, V> {
     override val values: MutableCollection<V>
         get() = withLock { delegate.values.toMutableList() }
 }
-

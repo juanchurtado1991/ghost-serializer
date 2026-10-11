@@ -110,6 +110,64 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
+    /**
+     * Closes the objects of [currentPath] that [prop]'s path doesn't share and opens the ones it adds,
+     * so `@GhostFlatten`/`@GhostWrap` properties land inside their nested JSON objects. [currentPath]
+     * carries the open objects from one property to the next (across chunk functions too).
+     */
+    fun emitPathTransition(
+        code: CodeBlock.Builder,
+        currentPath: MutableList<String>,
+        prop: GhostPropertyModel
+    ) {
+        val targetPath = prop.flattenPath?.dropLast(1)
+            ?: prop.wrapPath
+            ?: emptyList()
+
+        while (currentPath.isNotEmpty() && !isPrefix(prefix = currentPath, full = targetPath)) {
+            code.addStatement(C.STR_WRITER_END_OBJ)
+            currentPath.removeAt(currentPath.size - 1)
+        }
+
+        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
+        val prefix = if (isStringWriter) {
+            CG.STR_HS_PREFIX
+        } else {
+            CG.STR_H_VAL_PREFIX
+        }
+        targetPath.drop(currentPath.size).forEach { segment ->
+            code.addStatement(
+                C.STR_WRITE_NAME_RAW,
+                prefix + segment.uppercase()
+            )
+            code.addStatement(C.STR_WRITER_BEGIN_OBJ)
+            currentPath.add(segment)
+        }
+    }
+
+    /** Closes every object still open in [currentPath]. */
+    fun emitClosePath(
+        code: CodeBlock.Builder,
+        currentPath: MutableList<String>
+    ) {
+        while (currentPath.isNotEmpty()) {
+            code.addStatement(C.STR_WRITER_END_OBJ)
+            currentPath.removeAt(currentPath.size - 1)
+        }
+    }
+
+    private fun isPrefix(prefix: List<String>, full: List<String>): Boolean {
+        if (prefix.size > full.size) {
+            return false
+        }
+        for (i in prefix.indices) {
+            if (prefix[i] != full[i]) {
+                return false
+            }
+        }
+        return true
+    }
+
     /** Writes a property's key, applies nullable/proto3-omission checks, then delegates to [emitValue]. */
     fun emitProperty(code: CodeBlock.Builder, prop: GhostPropertyModel) {
         if (prop.wrappedKeys != null) {

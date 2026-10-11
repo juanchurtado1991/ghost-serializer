@@ -1,5 +1,6 @@
 package com.ghost.serialization.compiler.codegen.emit
 
+import com.ghost.serialization.compiler.analysis.DispatchNamesResolver
 import com.ghost.serialization.compiler.analysis.allDefaultsHaveExpressions
 import com.ghost.serialization.compiler.analysis.getFragmentedDefaultValueReturnExpression
 import com.ghost.serialization.compiler.analysis.getFragmentedReturnExpression
@@ -24,7 +25,8 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 /**
  * Emitter for fragmented deserialization logic, used for large classes (> `PROPERTY_MAX_SIZE`
  * properties) to avoid JVM method size limits. Fragments decoding across a `DecodingContext`
- * class and per-chunk methods (`decodeChunk0`, `decodeChunk1`, ...).
+ * class and per-chunk methods (`decodeChunk0`, `decodeChunk1`, ...). Chunks follow the OPTIONS
+ * indexes (top-level JSON keys), so a `@GhostFlatten`/`@GhostWrap` group is decoded by one branch.
  */
 internal class FragmentedEmitter(
     properties: List<GhostPropertyModel>,
@@ -39,13 +41,17 @@ internal class FragmentedEmitter(
         typeSpecBuilder: TypeSpec.Builder,
         isFlatPath: Boolean = false
     ) {
+        check(properties.none { it.wrappedKeys != null }) {
+            C.STR_ERR_FRAGMENTED_WRAPPED_KEYS_1 + originalClassName + C.STR_ERR_FRAGMENTED_WRAPPED_KEYS_2
+        }
         emitPropertyMaskConstants(typeSpecBuilder = typeSpecBuilder)
         val contextClassName = ClassName(
             CC.STR_EMPTY,
             C.STR_CTX_CLASS
         )
         val chunkSize = C.DEFAULT_CHUNK_SIZE
-        val chunks = properties.chunked(chunkSize)
+        // One entry per OPTIONS index: flattened/wrapped properties sharing a root JSON key share an entry.
+        val chunks = DispatchNamesResolver.topLevelNames(properties = properties).chunked(chunkSize)
 
         buildDecodingContext(
             typeSpecBuilder = typeSpecBuilder,
@@ -53,10 +59,10 @@ internal class FragmentedEmitter(
             isFlatPath = isFlatPath
         )
 
-        chunks.forEachIndexed { chunkIdx, chunkProps ->
+        chunks.forEachIndexed { chunkIdx, chunkNames ->
             emitChunkFunction(
                 chunkIdx = chunkIdx,
-                chunkProps = chunkProps,
+                chunkNames = chunkNames,
                 chunkSize = chunkSize,
                 contextClassName = contextClassName,
                 typeSpecBuilder = typeSpecBuilder
@@ -114,7 +120,7 @@ internal class FragmentedEmitter(
     /** Chunk decoding helper mapping index selections to field/mask assignments, keeping methods small. */
     private fun emitChunkFunction(
         chunkIdx: Int,
-        chunkProps: List<GhostPropertyModel>,
+        chunkNames: List<String>,
         chunkSize: Int,
         contextClassName: ClassName,
         typeSpecBuilder: TypeSpec.Builder
@@ -131,21 +137,28 @@ internal class FragmentedEmitter(
 
         val chunkBody = CodeBlock.builder()
         chunkBody.beginControlFlow(C.STR_WHEN_INDEX_PLAIN)
-        chunkProps.forEachIndexed { innerIdx, prop ->
-            val globalIndex = chunkIdx * chunkSize + innerIdx
-            val call = buildCall(prop = prop)
-            val maskIdx = globalIndex / C.MASK_SIZE_BITS.toInt()
-            val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+        chunkNames.forEachIndexed { innerIdx, topName ->
+            val topIndex = chunkIdx * chunkSize + innerIdx
+            val propsForThisName = properties.filter { fullPaths[propertyIndices[it]!!].first() == topName }
 
-            chunkBody.beginControlFlow("$globalIndex${C.STR_ARROW}")
-            if (prop.isResilient && supportsResilience) {
-                chunkBody.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
-                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.localTrackingName())
-                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
-                chunkBody.endControlFlow()
+            chunkBody.beginControlFlow("$topIndex${C.STR_ARROW}")
+            val isSingleTopLevelProperty = propsForThisName.size == CC.VAL_ONE &&
+                fullPaths[propertyIndices[propsForThisName[C.VAL_ZERO]]!!].size == CC.VAL_ONE
+            if (isSingleTopLevelProperty) {
+                emitContextAssignment(
+                    body = chunkBody,
+                    prop = propsForThisName[C.VAL_ZERO],
+                    index = propertyIndices[propsForThisName[C.VAL_ZERO]]!!
+                )
             } else {
-                chunkBody.addStatement(C.TEMPLATE_CTX_FIELD_ASSIGN, prop.localTrackingName(), call)
-                chunkBody.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
+                emitFlattenedGroup(
+                    body = chunkBody,
+                    name = topName,
+                    props = propsForThisName,
+                    pathIndex = CC.VAL_ONE,
+                    parentPrefix = CC.STR_EMPTY,
+                    assignLeaf = ::emitContextAssignment
+                )
             }
             chunkBody.endControlFlow()
         }
@@ -154,10 +167,31 @@ internal class FragmentedEmitter(
         typeSpecBuilder.addFunction(chunkFun.build())
     }
 
+    /** Stores a decoded property in the `DecodingContext` and marks it present in the context mask. */
+    private fun emitContextAssignment(
+        body: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        index: Int
+    ) {
+        val call = buildCall(prop = prop)
+        val maskIdx = index / C.MASK_SIZE_BITS.toInt()
+        val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()
+
+        if (prop.isResilient && supportsResilience) {
+            body.beginControlFlow(C.TEMPLATE_DECODE_RESILIENT, call)
+            body.addStatement(C.TEMPLATE_CTX_FIELD_SET_IT, prop.localTrackingName())
+            body.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
+            body.endControlFlow()
+        } else {
+            body.addStatement(C.TEMPLATE_CTX_FIELD_ASSIGN, prop.localTrackingName(), call)
+            body.addStatement(C.TEMPLATE_CTX_MASK_OR, maskIdx, maskIdx, constName)
+        }
+    }
+
     /** Maps selector indexes to their fragmented chunk-function calls. */
     private fun emitMainParseLoop(
         body: CodeBlock.Builder,
-        chunks: List<List<GhostPropertyModel>>,
+        chunks: List<List<String>>,
         chunkSize: Int
     ) {
         body.addStatement(C.STR_CTX_INIT)
@@ -166,9 +200,9 @@ internal class FragmentedEmitter(
         body.addStatement(C.STR_SELECT_NAME_AND_CONSUME)
         body.beginControlFlow(C.STR_WHEN_INDEX)
 
-        chunks.forEachIndexed { chunkIdx, chunkProps ->
+        chunks.forEachIndexed { chunkIdx, chunkNames ->
             val start = chunkIdx * chunkSize
-            val end = start + chunkProps.size - CC.VAL_ONE
+            val end = start + chunkNames.size - CC.VAL_ONE
             val chunkFunName = C.TEMPLATE_DECODE_CHUNK_NAME
                 .format(C.STR_DECODE_CHUNK_PREFIX, chunkIdx)
 
