@@ -418,7 +418,7 @@ class GhostJsonStringWriter @InternalGhostApi constructor(
         GhostJsonWriterHelpers.writeULongValueRawCore(
             value = value,
             writeLongValueRaw = { writeLongValueRaw(it) },
-            writeStringValueRaw = { writeStringValueRaw(it) },
+            writeAsciiDigits = { buffer.writeString(text = it) },
         )
     }
 

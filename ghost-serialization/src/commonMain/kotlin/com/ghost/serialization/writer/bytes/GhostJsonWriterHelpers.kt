@@ -246,12 +246,12 @@ internal object GhostJsonWriterHelpers {
     inline fun writeULongValueRawCore(
         value: ULong,
         writeLongValueRaw: (Long) -> Unit,
-        writeStringValueRaw: (String) -> Unit,
+        writeAsciiDigits: (String) -> Unit,
     ) {
         if (value <= Long.MAX_VALUE.toULong()) {
             writeLongValueRaw(value.toLong())
         } else {
-            writeStringValueRaw(value.toString())
+            writeAsciiDigits(value.toString())
         }
     }
 }

@@ -75,6 +75,36 @@ internal inline fun narrowToShort(
     return value.toShort()
 }
 
+/** Narrows an already-parsed [Int] to [UByte], rejecting negatives and values above 255. */
+internal inline fun narrowToUByte(
+    value: Int,
+    throwError: (String) -> Nothing,
+): UByte {
+    if (value < 0) throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    if (value > UByte.MAX_VALUE.toInt()) throwError(EM.ERR_UBYTE_OVERFLOW)
+    return value.toUByte()
+}
+
+/** Narrows an already-parsed [Long] to [UInt], rejecting negatives and values above 4294967295. */
+internal inline fun narrowToUInt(
+    value: Long,
+    throwError: (String) -> Nothing,
+): UInt {
+    if (value < 0) throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    if (value > UInt.MAX_VALUE.toLong()) throwError(EM.ERR_UINT_OVERFLOW)
+    return value.toUInt()
+}
+
+/** Narrows an already-parsed [Int] to [UShort], rejecting negatives and values above 65535. */
+internal inline fun narrowToUShort(
+    value: Int,
+    throwError: (String) -> Nothing,
+): UShort {
+    if (value < 0) throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    if (value > UShort.MAX_VALUE.toInt()) throwError(EM.ERR_USHORT_OVERFLOW)
+    return value.toUShort()
+}
+
 internal inline fun isDigit(
     byteCode: Int
 ): Boolean {

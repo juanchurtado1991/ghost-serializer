@@ -45,6 +45,10 @@ import com.ghost.serialization.serializers.LongArraySerializer
 import com.ghost.serialization.serializers.LongSerializer
 import com.ghost.serialization.serializers.ShortSerializer
 import com.ghost.serialization.serializers.StringSerializer
+import com.ghost.serialization.serializers.UByteSerializer
+import com.ghost.serialization.serializers.UIntSerializer
+import com.ghost.serialization.serializers.ULongSerializer
+import com.ghost.serialization.serializers.UShortSerializer
 import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
@@ -74,6 +78,10 @@ internal fun <T : Any> Ghost.getPrimitiveSerializer(clazz: KClass<T>): GhostSeri
         Byte::class -> ByteSerializer as GhostSerializer<T>
         Short::class -> ShortSerializer as GhostSerializer<T>
         Char::class -> CharSerializer as GhostSerializer<T>
+        UByte::class -> UByteSerializer as GhostSerializer<T>
+        UInt::class -> UIntSerializer as GhostSerializer<T>
+        ULong::class -> ULongSerializer as GhostSerializer<T>
+        UShort::class -> UShortSerializer as GhostSerializer<T>
         IntArray::class -> IntArraySerializer as GhostSerializer<T>
         LongArray::class -> LongArraySerializer as GhostSerializer<T>
         FloatArray::class -> FloatArraySerializer as GhostSerializer<T>

@@ -448,7 +448,7 @@ class GhostJsonWriter private constructor(
         GhostJsonWriterHelpers.writeULongValueRawCore(
             value = value,
             writeLongValueRaw = { writeLongValueRaw(it) },
-            writeStringValueRaw = { writeStringValueRaw(it) },
+            writeAsciiDigits = { emitUtf8(text = it) },
         )
     }
 
