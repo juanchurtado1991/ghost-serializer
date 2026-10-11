@@ -1,30 +1,38 @@
 package com.ghost.serialization
 
+import com.ghost.serialization.parser.common.parseDecimalLiteralToDouble
+import com.ghost.serialization.parser.common.parseDecimalLiteralToFloat
 import okio.Buffer
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * `Double`/`Float` decode exactly like the platform's correctly rounded `String.toDouble()` /
- * `toFloat()` on every channel, and encoded values read back bit for bit. Covers the cases the
- * fast paths used to get wrong: leading fraction zeros eating the 17-digit budget, Float scaling
- * done in Float arithmetic, subnormals, literals longer than 17 digits, values exactly halfway
- * between two Floats, and fractions the fixed-decimal writer rounded to `.0`. A literal that
- * overflows the target type is rejected, so its expected decoded value is `null`.
+ * `Double`/`Float` decode exactly like a correctly rounded parse on every channel, and encoded
+ * values read back bit for bit. Covers the cases the fast paths used to get wrong: leading
+ * fraction zeros eating the 17-digit budget, Float scaling done in Float arithmetic, subnormals,
+ * literals longer than 17 digits, values exactly halfway between two Floats, and fractions the
+ * fixed-decimal writer rounded to `.0`. A literal that overflows the target type is rejected, so
+ * its expected decoded value is `null`.
+ *
+ * The random literals are checked against [parseDecimalLiteralToDouble]/[parseDecimalLiteralToFloat]
+ * (the platform `toDouble()`/`toFloat()` outside Wasm, whose own `toDouble()` is not correctly
+ * rounded). The hard literals carry expected bits computed in exact rational arithmetic, so the
+ * Wasm tie-breaking path is checked independently: Doubles halfway between two Floats, the Float
+ * overflow threshold, and the subnormal Float boundary.
  */
 class GhostFloatingPointDecodingTest {
 
     @Test
-    fun doubleAndFloatDecodeLikePlatformParsing() {
+    fun doubleAndFloatDecodeLikeCorrectlyRoundedParsing() {
         val random = Random(seed = RANDOM_SEED)
         val randomLiterals = List(size = RANDOM_LITERAL_COUNT) { randomLiteral(random = random) }
 
         (EDGE_LITERALS + randomLiterals).forEach { literal ->
             assertEveryChannelDecodesBits(
                 literal = literal,
-                expectedDouble = literal.toDouble(),
-                expectedFloat = literal.toFloat()
+                expectedDouble = parseDecimalLiteralToDouble(literal = literal),
+                expectedFloat = parseDecimalLiteralToFloat(literal = literal)
             )
         }
     }
@@ -43,6 +51,24 @@ class GhostFloatingPointDecodingTest {
                 expected = value.toRawBits(),
                 actual = Ghost.deserialize<Float>(Ghost.encodeToString(value = value)).toRawBits(),
                 message = "Float $value"
+            )
+        }
+    }
+
+    @Test
+    fun hardLiteralsDecodeToExactBits() {
+        HARD_DOUBLE_BITS.forEach { (literal, expectedBits) ->
+            assertEveryChannelDecodesBits(
+                literal = literal,
+                expectedDouble = Double.fromBits(bits = expectedBits),
+                expectedFloat = parseDecimalLiteralToFloat(literal = literal)
+            )
+        }
+        HARD_FLOAT_BITS.forEach { (literal, expectedBits) ->
+            assertEveryChannelDecodesBits(
+                literal = literal,
+                expectedDouble = parseDecimalLiteralToDouble(literal = literal),
+                expectedFloat = Float.fromBits(bits = expectedBits)
             )
         }
     }
@@ -113,6 +139,24 @@ class GhostFloatingPointDecodingTest {
             "1.000000059604644775390625",
             "0.30000000000000004",
             "9007199254740993"
+        )
+        private val HARD_DOUBLE_BITS = listOf(
+            "64.90e-5" to 4559125191723490205L,
+            "9007199254740993" to 4845873199050653696L,
+            "2.2250738585072012e-308" to 4503599627370496L,
+            "1.00000000000000011102230246251565404236316680908203125" to 4607182418800017408L,
+            "1.00000000000000011102230246251565404236316680908203126" to 4607182418800017409L,
+            "1e23" to 4950912855330343670L,
+            "8.98846567431158e307" to 9214364837600034816L
+        )
+        private val HARD_FLOAT_BITS = listOf(
+            "1.000000059604644775390625" to 0x3F800000,
+            "1.00000005960464477539062500001" to 0x3F800001,
+            "1.000000178813934326171874999" to 0x3F800001,
+            "340282356779733661637539395458142568447" to 0x7F7FFFFF,
+            "340282356779733661637539395458142568448" to 0x7F800000,
+            "7.006492321624085354618647916449580656401309709382578858785341419448955413429303e-46" to 0,
+            "7.0064923216240853546186479164495806564013097093825788587853414194489554134293031e-46" to 1
         )
         private val ROUND_TRIP_DOUBLES = listOf(1.0000000004, 0.9999999996, 3.2e-8, 1e-9, 123456.0000000001)
         private val ROUND_TRIP_FLOATS = listOf(3.23844E-8f, -6.2243353E-9f, 1.0000001f, 0.9999999f, 1.4E-45f)

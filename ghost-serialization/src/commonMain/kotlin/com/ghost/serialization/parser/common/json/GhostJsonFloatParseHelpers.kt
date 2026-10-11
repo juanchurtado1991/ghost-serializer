@@ -2,6 +2,8 @@ package com.ghost.serialization.parser.common.json
 
 import com.ghost.serialization.parser.common.isDigit
 import com.ghost.serialization.parser.common.isExponentMarker
+import com.ghost.serialization.parser.common.parseDecimalLiteralToDouble
+import com.ghost.serialization.parser.common.parseDecimalLiteralToFloat
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
@@ -18,7 +20,7 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
 /**
  * Scales a parsed mantissa/exponent into a finite [Double]. [truncatedLiteral] is the source
  * text when the literal had more significant digits than the mantissa holds; it is then parsed
- * by the platform, which rounds correctly, instead of scaling the truncated mantissa.
+ * by [parseDecimalLiteralToDouble], which rounds correctly, instead of scaling the truncated mantissa.
  */
 internal inline fun finalizeParsedDouble(
     mantissa: Long,
@@ -27,10 +29,14 @@ internal inline fun finalizeParsedDouble(
     truncatedLiteral: String?,
     throwError: (String) -> Nothing,
 ): Double {
-    var result = truncatedLiteral?.toDouble() ?: scaleToDouble(
-        mantissa = mantissa,
-        exponent = exponent
-    )
+    var result = if (truncatedLiteral != null) {
+        parseDecimalLiteralToDouble(literal = truncatedLiteral)
+    } else {
+        scaleToDouble(
+            mantissa = mantissa,
+            exponent = exponent
+        )
+    }
     if (isNegative) {
         result = -result
     }
@@ -43,7 +49,7 @@ internal inline fun finalizeParsedDouble(
 /**
  * Scales a parsed mantissa/exponent into a finite [Float] through the correctly rounded
  * [Double]. Narrowing that Double can round twice only when it lands exactly halfway between
- * two Floats; that case (and a truncated literal) is parsed by the platform instead.
+ * two Floats; that case (and a truncated literal) is parsed by [parseDecimalLiteralToFloat] instead.
  */
 internal inline fun finalizeParsedFloat(
     mantissa: Long,
@@ -53,7 +59,7 @@ internal inline fun finalizeParsedFloat(
     throwError: (String) -> Nothing,
 ): Float {
     var result = if (truncatedLiteral != null) {
-        truncatedLiteral.toFloat()
+        parseDecimalLiteralToFloat(literal = truncatedLiteral)
     } else {
         val exactDouble = scaleToDouble(
             mantissa = mantissa,
@@ -64,7 +70,7 @@ internal inline fun finalizeParsedFloat(
             exact = exactDouble,
             narrowed = narrowed
         )
-        if (needsPlatformParse) "${mantissa}e$exponent".toFloat() else narrowed
+        if (needsPlatformParse) parseDecimalLiteralToFloat(literal = "${mantissa}e$exponent") else narrowed
     }
     if (isNegative) {
         result = -result
@@ -131,7 +137,7 @@ internal inline fun scaleToDouble(
             }
         }
     }
-    return "${mantissa}e$exponent".toDouble()
+    return parseDecimalLiteralToDouble(literal = "${mantissa}e$exponent")
 }
 
 /**
