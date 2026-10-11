@@ -158,7 +158,7 @@ class GhostKtorTest {
 
     @Test
     fun test204NoContentForNonNullableBodyThrows() = runTest {
-        val client = noContentClient()
+        val client = emptyBodyClient(status = HttpStatusCode.NoContent)
 
         assertFailsWith<ContentConvertException> {
             client.get("/empty").body<KtorUser>()
@@ -167,7 +167,14 @@ class GhostKtorTest {
 
     @Test
     fun test204NoContentForNullableBodyReturnsNull() = runTest {
-        val client = noContentClient()
+        val client = emptyBodyClient(status = HttpStatusCode.NoContent)
+
+        assertNull(actual = client.get("/empty").body<KtorUser?>())
+    }
+
+    @Test
+    fun testEmptyOkBodyForNullableBodyReturnsNull() = runTest {
+        val client = emptyBodyClient(status = HttpStatusCode.OK)
 
         assertNull(actual = client.get("/empty").body<KtorUser?>())
     }
@@ -260,11 +267,13 @@ class GhostKtorTest {
         assertEquals(expected = "Fallback", actual = user.name)
     }
 
-    private fun noContentClient(): HttpClient {
+    private fun emptyBodyClient(
+        status: HttpStatusCode
+    ): HttpClient {
         val mockEngine = MockEngine {
             respond(
                 content = "",
-                status = HttpStatusCode.NoContent,
+                status = status,
                 headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
             )
         }

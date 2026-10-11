@@ -22,5 +22,5 @@ actual fun <T> ghostProtoInternalUseFlatReader(
         length = length
     )
 
-    return block(reader)
+    return block(reader).also { reader.requireEndOfInput() }
 }

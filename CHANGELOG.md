@@ -3,8 +3,12 @@
 ## [Unreleased]
 
 ### Changed
-- **Content after the root JSON value is now rejected, like kotlinx.serialization.** `Ghost.deserialize("""{"k":1} extra""")` used to return `{k=1}` and silently ignore the rest; every channel (string, bytes, `BufferedSource`, `deserializeStreaming`) and the Ktor/Retrofit/Spring converters now throw `GhostJsonException` ("Expected end of input after the root value"). Trailing whitespace is still accepted. Measured with `benchmarkTwitter`: no throughput or memory change.
+- **Content after the root JSON value is now rejected, like kotlinx.serialization.** `Ghost.deserialize("""{"k":1} extra""")` used to return `{k=1}` and silently ignore the rest; every channel (string, bytes, `BufferedSource`, `deserializeStreaming`, `GhostProto.deserialize`) and the Ktor/Retrofit/Spring converters now throw `GhostJsonException` ("Expected end of input after the root value"). Trailing whitespace is still accepted. Measured with `benchmarkTwitter`: no throughput or memory change.
 - **Ktor: an empty response body decodes to `null`, like Ktor's kotlinx.serialization converter.** `body<User?>()` on a 204 or an empty 200 now returns `null`; `body<User>()` throws Ktor's `ContentConvertException` instead of `GhostJsonException`.
+
+### Fixed
+- **Streaming decode errors no longer throw while building their message.** On `deserializeStreaming`, reading `GhostJsonException.message` threw `IndexOutOfBoundsException` when the error came after the first 16 KB of the stream (the line/column scan re-read bytes already released from the buffer); `line`/`column` are now reported as `-1` in that case, while `position` and `path` stay exact. A truncated stream (`{"k":1 `, `{`, empty input) now throws `GhostJsonException` with the same message as the bytes channel instead of a raw `IndexOutOfBoundsException`.
+- **Proto3 JSON on iOS/Wasm honors `offset`/`length` on the first decode of each thread.** The non-JVM reader pool skipped `resetSlice` when it created the reader, so the first proto3 decode through Ktor/Retrofit parsed the whole scratch buffer instead of the received bytes.
 
 ## [1.3.4] - 2026-10-10
 

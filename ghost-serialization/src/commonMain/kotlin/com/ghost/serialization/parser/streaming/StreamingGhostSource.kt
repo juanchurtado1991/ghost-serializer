@@ -55,6 +55,8 @@ class StreamingGhostSource(val okioSource: BufferedSource) : AbstractGhostSource
     internal var discarded: Int = 0
         private set
 
+    internal val availableEnd: Int get() = discarded + buffer.size.toInt()
+
     private var pinStack = IntArray(PIN_STACK_INITIAL_CAPACITY)
     private var pinCount = 0
 

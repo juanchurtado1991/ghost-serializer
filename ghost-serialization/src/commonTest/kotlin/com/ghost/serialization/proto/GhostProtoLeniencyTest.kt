@@ -183,4 +183,23 @@ class GhostProtoLeniencyTest {
             actual = plainReader.nextInt()
         )
     }
+
+    @Test
+    fun ghostProtoDeserializeAcceptsTrailingWhitespace() {
+        val parsed = GhostProto.deserialize<ProtoEntryPointDevice>("{\"deviceId\":42,\"label\":\"x\"} \n")
+        assertEquals(
+            expected = 42L,
+            actual = parsed.deviceId
+        )
+    }
+
+    @Test
+    fun ghostProtoDeserializeRejectsTrailingContent() {
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"} extra""")
+        }
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"} extra""".encodeToByteArray())
+        }
+    }
 }

@@ -82,8 +82,14 @@ class GhostProtoReaderPoolTest {
         var second: GhostProtoJsonFlatReader? = null
         val payload = "\"1s\"".encodeToByteArray()
 
-        ghostProtoInternalUseFlatReader(bytes = payload) { first = it }
-        ghostProtoInternalUseFlatReader(bytes = payload) { second = it }
+        ghostProtoInternalUseFlatReader(bytes = payload) { reader ->
+            first = reader
+            reader.skipValue()
+        }
+        ghostProtoInternalUseFlatReader(bytes = payload) { reader ->
+            second = reader
+            reader.skipValue()
+        }
 
         assertEquals(
             expected = first,

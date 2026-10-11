@@ -326,31 +326,17 @@ class GhostJsonReader(
 
     /** Throws a [GhostJsonException] with exact position, line, column, and JSONPath. */
     fun throwError(message: String): Nothing {
-        val errorPosition = position
+        val errorPosition = errorPositionWithinData()
         val sourceRef = source
-        val errorEnd = if (errorPosition > sourceRef.size) {
-            sourceRef.size
-        } else {
-            errorPosition
-        }
         val errorPath = pathTracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition",
             computeLineCol = {
-                var columnNumber = 0
-                var lineNumber = 0
-                var byteIndex = 0
-                while (byteIndex < errorEnd) {
-                    if (sourceRef[byteIndex] == TOK.NEWLINE_INT) {
-                        lineNumber++
-                        columnNumber = 0
-                    } else {
-                        columnNumber++
-                    }
-                    byteIndex++
-                }
-                intArrayOf(lineNumber, columnNumber)
+                lineColumnBefore(
+                    source = sourceRef,
+                    end = errorPosition
+                )
             },
             path = errorPath,
             hint = message.hintForJsonError(),
@@ -369,6 +355,39 @@ class GhostJsonReader(
     private inline fun advancePastQuotedValue(end: Int) {
         position = end + 1
         nextTokenByte = SCN.RESET_TOKEN_BYTE
+    }
+
+    private fun errorPositionWithinData(): Int {
+        val streamingSource = source as? StreamingGhostSource
+        val isPastEndOfStream = streamingSource != null && position > streamingSource.availableEnd
+        return when {
+            isPastEndOfStream -> streamingSource.availableEnd
+            position > source.size -> source.size
+            else -> position
+        }
+    }
+
+    private fun lineColumnBefore(
+        source: GhostSource,
+        end: Int
+    ): IntArray {
+        var columnNumber = 0
+        var lineNumber = 0
+        var byteIndex = 0
+        while (byteIndex < end) {
+            val currentByte = source.byteOrEof(index = byteIndex)
+            if (currentByte == SCN.MATCH_END) {
+                return intArrayOf(SCN.UNKNOWN_LINE_COLUMN, SCN.UNKNOWN_LINE_COLUMN)
+            }
+            if (currentByte == TOK.NEWLINE_INT) {
+                lineNumber++
+                columnNumber = 0
+            } else {
+                columnNumber++
+            }
+            byteIndex++
+        }
+        return intArrayOf(lineNumber, columnNumber)
     }
 
     private fun GhostJsonReader.readQuotedStringSlow(start: Int): String =

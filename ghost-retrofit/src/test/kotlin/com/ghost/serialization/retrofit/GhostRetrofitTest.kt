@@ -4,6 +4,7 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -138,6 +139,19 @@ class GhostRetrofitTest {
         )
 
         assertFailsWith<retrofit2.HttpException> {
+            apiService.getUser()
+        }
+    }
+
+    @Test
+    fun `rejects content after the json body`() = runTest {
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"id": 42, "name": "John Doe", "isActive": true} extra""")
+        )
+
+        assertFailsWith<GhostJsonException> {
             apiService.getUser()
         }
     }

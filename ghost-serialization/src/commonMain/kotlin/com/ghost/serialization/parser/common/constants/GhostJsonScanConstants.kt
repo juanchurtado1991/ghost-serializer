@@ -12,6 +12,7 @@ object GhostJsonScanConstants {
     const val MATCH_END = -1
     const val RESET_TOKEN_BYTE = -1
     const val MATCH_NONE = -2
+    const val UNKNOWN_LINE_COLUMN = -1
 
     // --- SWAR Packing Shifts ---
     const val SHIFT_56 = 56
