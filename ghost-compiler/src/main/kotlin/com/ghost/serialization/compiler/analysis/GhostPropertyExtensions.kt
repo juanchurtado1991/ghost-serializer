@@ -287,16 +287,41 @@ internal fun GhostPropertyModel.isRequiredOnWire(): Boolean =
     !isNullable && !hasDefaultValue && protoOmittedZeroLiteral() == null
 
 /**
- * The proto3 zero value, as Kotlin source, of a field that `@GhostProtoSerialization` omits on
- * encode when it holds that value (numbers, `Boolean`, `String`, `ByteArray`, collections,
- * also inside a value class); `null` when the field is not omitted or already has a nullable
- * or constructor default. A missing field decodes as this value, so a message reads back what
- * it wrote (proto3 JSON treats an absent field as its zero value).
+ * True when the encoder may omit a proto3 field holding its zero value: the field has a
+ * [protoZeroLiteral] and either no constructor default (a missing field decodes as the zero
+ * value) or a default that is that same zero. A different default (`val active: Boolean = true`)
+ * would turn an omitted zero into the default on decode, so such a field is always written.
  */
-internal fun GhostPropertyModel.protoOmittedZeroLiteral(): String? {
-    val isOmittableProtoField = isProto && !isNullable && !hasDefaultValue &&
-        customDecoder == null && customEncoder == null
-    if (!isOmittableProtoField) {
+internal fun GhostPropertyModel.omitsProtoZeroOnEncode(): Boolean {
+    val zeroLiteral = protoZeroLiteral() ?: return false
+    if (!hasDefaultValue) {
+        return true
+    }
+    val expression = defaultExpression ?: return false
+    return when (zeroLiteral) {
+        AC.STR_EMPTY_LIST_CALL, AC.STR_EMPTY_SET_CALL, AC.STR_EMPTY_MAP_CALL ->
+            expression in AC.DEFAULT_EXPR_EMPTY_COLLECTION_CALLS
+
+        CC.STR_FALSE, CG.STR_EMPTY_STRING, AC.STR_EMPTY_BYTE_ARRAY_CALL -> expression == zeroLiteral
+        else -> expression.trimEnd(*AC.NUMERIC_LITERAL_SUFFIXES).toDoubleOrNull() == 0.0
+    }
+}
+
+/**
+ * The proto3 zero value, as Kotlin source, of a field that has no constructor default and is
+ * omitted on encode when it holds that value; a missing field decodes as this value, so a
+ * message reads back what it wrote (proto3 JSON treats an absent field as its zero value).
+ */
+internal fun GhostPropertyModel.protoOmittedZeroLiteral(): String? = protoZeroLiteral()?.takeIf { !hasDefaultValue }
+
+/**
+ * The proto3 zero value, as Kotlin source, of a `@GhostProtoSerialization` field whose type
+ * has one (numbers, `Boolean`, `String`, `ByteArray`, collections, also inside a value class);
+ * `null` for nullable fields, custom coders and types without a zero value.
+ */
+internal fun GhostPropertyModel.protoZeroLiteral(): String? {
+    val hasZeroValueSemantics = isProto && !isNullable && customDecoder == null && customEncoder == null
+    if (!hasZeroValueSemantics) {
         return null
     }
     val target = valueClassProperty?.takeIf { isValueClass } ?: this
@@ -325,3 +350,10 @@ internal fun GhostPropertyModel.requireLocalValue(
     val zeroLiteral = protoOmittedZeroLiteral() ?: return local + AC.STR_BANG_BANG
     return AC.TEMPLATE_ELVIS_PARENTHESIZED.format(local, zeroLiteral)
 }
+
+/**
+ * True when the encoder may skip a nullable property holding `null`: its constructor default is
+ * `null`, so the omitted field decodes back to `null`. Any other default (`val age: Int? = 42`)
+ * would turn the omitted `null` into that default, so `null` is written explicitly.
+ */
+internal fun GhostPropertyModel.omitsNullOnEncode(): Boolean = hasDefaultValue && defaultExpression == CC.STR_NULL

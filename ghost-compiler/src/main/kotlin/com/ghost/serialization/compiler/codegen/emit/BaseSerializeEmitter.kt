@@ -8,6 +8,8 @@ import com.ghost.serialization.compiler.analysis.isMap
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isValueClassType
+import com.ghost.serialization.compiler.analysis.omitsNullOnEncode
+import com.ghost.serialization.compiler.analysis.omitsProtoZeroOnEncode
 import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 import com.ghost.serialization.compiler.analysis.serializerClassName
 import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -78,7 +80,7 @@ internal abstract class BaseSerializeEmitter(
         prop: GhostPropertyModel,
         accessor: CodeBlock
     ): CodeBlock? {
-        if (!prop.isProto || prop.customEncoder != null) {
+        if (!prop.omitsProtoZeroOnEncode()) {
             return null
         }
 
@@ -248,7 +250,7 @@ internal abstract class BaseSerializeEmitter(
         accessor: CodeBlock
     ) {
         val canUseFused = isFusedType(prop = prop) && !prop.isContextual
-        if (prop.hasDefaultValue) {
+        if (prop.omitsNullOnEncode()) {
             code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
             if (canUseFused) {
                 code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)

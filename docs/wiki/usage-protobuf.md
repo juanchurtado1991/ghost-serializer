@@ -66,7 +66,7 @@ Full matrix → **[Advanced Features — Format compatibility](advanced-features
 | `int32`/`uint32` as bare JSON numbers | ✅ | Default Ghost behavior — no change needed |
 | `bytes` as Base64 strings | ✅ | Direct properties, value-class-wrapped, and `List`/`Set`/`Map` elements |
 | Enums as strings | ✅ | Already Ghost's default enum wire format |
-| Default/empty values omitted on serialize | ✅ | `Int`/`Long`/`Double`/`Float`/`Short`/`Byte` `!= 0`, `Boolean` only when `true`, `String`/`ByteArray`/`List`/`Set`/`Map` only when non-empty |
+| Default/empty values omitted on serialize | ✅ | `Int`/`Long`/`Double`/`Float`/`Short`/`Byte` `!= 0`, `Boolean` only when `true`, `String`/`ByteArray`/`List`/`Set`/`Map` only when non-empty. A missing field decodes as its zero value; a field whose Kotlin default is not the zero value (`val active: Boolean = true`) is always written, so it reads back unchanged |
 | `oneof` | ✅ | Via `@GhostWrappedKeys` + `@GhostSerialization(inferred = true)` — see [§4](#4-oneof-mapping) |
 | Full `uint64` range | ✅ | Direct `ULong` properties on `@GhostProtoSerialization` messages, plus `ProtoUInt64Value` WKT ([§5](#5-well-known-types)) |
 | `google.protobuf.Any` pack/unpack by type registry | ✅ | `ProtoAnyRegistry.pack()`/`.unpack<T>()`/`.unpackDynamic()` — see [§5](#5-well-known-types) |

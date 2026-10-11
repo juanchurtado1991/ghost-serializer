@@ -55,4 +55,19 @@ class GhostNullabilityStressTest {
         assertEquals(expected = "Default", actual = decoded3.name)
         assertNull(actual = decoded3.age)
     }
+
+    @Test
+    fun testExplicitNullOverNonNullDefaultSurvivesRoundTrip() {
+        val model = DefaultValueNullModel(age = null)
+        val json = Ghost.encodeToString(value = model)
+
+        assertEquals(
+            expected = "{\"name\":\"Default\",\"age\":null}",
+            actual = json
+        )
+        assertEquals(
+            expected = model,
+            actual = Ghost.deserialize<DefaultValueNullModel>(json = json)
+        )
+    }
 }

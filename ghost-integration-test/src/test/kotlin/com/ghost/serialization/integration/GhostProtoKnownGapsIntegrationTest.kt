@@ -4,6 +4,7 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.ProtoAccountIds
 import com.ghost.serialization.integration.model.ProtoAccountIdsMessage
+import com.ghost.serialization.integration.model.ProtoBenchUser
 import com.ghost.serialization.integration.model.ProtoDeviceEventListItem
 import com.ghost.serialization.integration.model.ProtoUInt64FieldMessage
 import com.ghost.serialization.proto.GhostProto
@@ -166,6 +167,25 @@ class GhostProtoKnownGapsIntegrationTest {
         assertEquals(
             expected = accounts,
             actual = GhostProto.deserialize<ProtoAccountIdsMessage>(json = accountsJson)
+        )
+    }
+
+    @Test
+    fun zeroValueOverNonZeroDefaultIsWrittenSoItReadsBack() {
+        val user = ProtoBenchUser(
+            user_id = 1L,
+            name = "n",
+            email = "e",
+            score = 0.5,
+            is_active = false,
+            role = ""
+        )
+        val json = Ghost.encodeToString(value = user)
+
+        assertTrue(actual = json.contains("\"isActive\":false"), message = json)
+        assertEquals(
+            expected = user,
+            actual = GhostProto.deserialize<ProtoBenchUser>(json = json)
         )
     }
 }
