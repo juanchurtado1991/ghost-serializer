@@ -183,7 +183,7 @@ object GhostDiscriminatorPeeker {
                     return null
                 }
                 val valueEnd = skipString(start = position + 1, limit = scanLimit, getByte = getByte)
-                if (valueEnd >= scanLimit && getByte(valueEnd - 1) != QUOTE_INT) {
+                if (valueEnd >= scanLimit) {
                     return null
                 }
                 return decodeStringBody(

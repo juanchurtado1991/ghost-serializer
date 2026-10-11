@@ -52,6 +52,15 @@ class EscapedKeyTriChannelTest {
     }
 
     @Test
+    fun discriminatorPeekNeverThrowsOnMalformedStrings() {
+        MALFORMED_PEEK_INPUTS.forEach { json ->
+            GhostJsonFlatReader(rawData = json.encodeToByteArray()).peekStringField(name = TYPE_KEY)
+            GhostJsonReader(okioSource = Buffer().writeUtf8(string = json)).peekStringField(name = TYPE_KEY)
+            GhostJsonStringReader(rawData = json).peekStringField(name = TYPE_KEY)
+        }
+    }
+
+    @Test
     fun escapedKeysAreMatchedByTheirDecodedName() {
         val options = JsonReaderOptions.of(BRIGHTNESS_KEY)
 
@@ -116,7 +125,13 @@ class EscapedKeyTriChannelTest {
             """{"meta":{"type":"Inner"},"type":"Outer"}""" to "Outer",
             """{"a\"":"type","type":"Light"}""" to "Light",
             """{"brightness":5}""" to null,
-            """{"type":5}""" to null
+            """{"type":5}""" to null,
+            """{"type":"""" to null
+        )
+        private val MALFORMED_PEEK_INPUTS = listOf(
+            """{"type":"Li\uZZZZ"}""",
+            """{"t\u00":"x"}""",
+            """{"type":"\""""
         )
     }
 }
