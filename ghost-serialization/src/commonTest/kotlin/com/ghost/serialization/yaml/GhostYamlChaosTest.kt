@@ -58,6 +58,30 @@ class GhostYamlChaosTest {
     }
 
     @Test
+    fun escapedSurrogatePairDecodesToOneCodePoint() {
+        val yaml = """v: "\uD83D\uDE00""""
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        reader.beginObject()
+        reader.nextKey()
+        assertEquals(
+            expected = "😀",
+            actual = reader.nextString()
+        )
+    }
+
+    @Test
+    fun loneLowSurrogateEscapeDecodesToReplacementCharacter() {
+        val yaml = """v: "a\uDE00b""""
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        reader.beginObject()
+        reader.nextKey()
+        assertEquals(
+            expected = "a\uFFFDb",
+            actual = reader.nextString()
+        )
+    }
+
+    @Test
     fun loneHighSurrogateEscapeDecodesToReplacementCharacter() {
         val yaml = """v: "\uD83D\u0020""""
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())

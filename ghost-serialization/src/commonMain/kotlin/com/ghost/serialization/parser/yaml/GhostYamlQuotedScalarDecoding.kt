@@ -342,14 +342,14 @@ private fun GhostYamlFlatReader.processEscapeSequence(): Int {
             if (position + SC.HEX_ESCAPE_U_LEN > localLimit) yamlError(message = EM.ERR_INCOMPLETE_U_ESCAPE)
             val hexVal = parseHex(data = rawData, start = position, length = SC.HEX_ESCAPE_U_LEN)
             position += SC.HEX_ESCAPE_U_LEN
-            hexVal
+            combineSurrogateEscape(codeUnit = hexVal)
         }
 
         TOK.UPPERCASE_U_BYTE -> {        // \UXXXXXXXX
             if (position + SC.HEX_ESCAPE_U32_LEN > localLimit) yamlError(message = EM.ERR_INCOMPLETE_U32_ESCAPE)
             val hexVal = parseHex(data = rawData, start = position, length = SC.HEX_ESCAPE_U32_LEN)
             position += SC.HEX_ESCAPE_U32_LEN
-            hexVal
+            if (isSurrogate(codeUnit = hexVal)) SC.CODE_REPLACEMENT_CHAR else hexVal
         }
 
         TOK.ZERO_BYTE -> SC.CODE_ZERO
@@ -363,6 +363,39 @@ private fun GhostYamlFlatReader.processEscapeSequence(): Int {
         else -> yamlError(message = "${EM.ERR_UNKNOWN_ESCAPE_PREFIX}${currentByteInt.toChar()}")
     }
 }
+
+/**
+ * Joins a `\uD83D\uDE00` escape pair into one code point (YAML is a JSON superset, where escaped
+ * pairs are the only way to write astral characters). A lone surrogate becomes U+FFFD: written as
+ * UTF-8 it would be an invalid sequence that each platform decodes differently.
+ */
+private fun GhostYamlFlatReader.combineSurrogateEscape(
+    codeUnit: Int
+): Int {
+    val isHighSurrogate = codeUnit in SC.HIGH_SURROGATE_START..SC.HIGH_SURROGATE_END
+    if (!isHighSurrogate) {
+        return if (isSurrogate(codeUnit = codeUnit)) SC.CODE_REPLACEMENT_CHAR else codeUnit
+    }
+    val lowEscapeStart = position + SC.U_ESCAPE_PREFIX_LEN
+    val hasFollowingUEscape = lowEscapeStart + SC.HEX_ESCAPE_U_LEN <= limit &&
+        rawData[position] == TOK.BACKSLASH_BYTE &&
+        rawData[position + 1] == TOK.LOWERCASE_U_BYTE
+    if (!hasFollowingUEscape) {
+        return SC.CODE_REPLACEMENT_CHAR
+    }
+    val lowUnit = parseHex(data = rawData, start = lowEscapeStart, length = SC.HEX_ESCAPE_U_LEN)
+    val isLowSurrogate = lowUnit in SC.LOW_SURROGATE_START..SC.LOW_SURROGATE_END
+    if (!isLowSurrogate) {
+        return SC.CODE_REPLACEMENT_CHAR
+    }
+    position = lowEscapeStart + SC.HEX_ESCAPE_U_LEN
+    val highPayload = (codeUnit - SC.HIGH_SURROGATE_START) shl SC.SURROGATE_PAYLOAD_BITS
+    return SC.SUPPLEMENTARY_PLANE_START + highPayload + (lowUnit - SC.LOW_SURROGATE_START)
+}
+
+private fun isSurrogate(
+    codeUnit: Int
+): Boolean = codeUnit in SC.HIGH_SURROGATE_START..SC.LOW_SURROGATE_END
 
 private fun GhostYamlFlatReader.parseHex(data: ByteArray, start: Int, length: Int): Int {
     var value = 0
