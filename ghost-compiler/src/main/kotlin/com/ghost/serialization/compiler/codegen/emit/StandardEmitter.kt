@@ -174,7 +174,10 @@ internal class StandardEmitter(
         }
     }
 
-    /** Recursive nested parse loops for `@GhostFlatten` properties, matching the JSON's key hierarchy. */
+    /**
+     * Recursive nested parse loops for `@GhostFlatten` properties, matching the JSON's key hierarchy.
+     * A `null` object on the path counts as absent, so its flattened properties keep their defaults.
+     */
     private fun emitFlattenedGroup(
         body: CodeBlock.Builder,
         name: String,
@@ -190,6 +193,9 @@ internal class StandardEmitter(
 
         val optionsName = CG.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
 
+        body.beginControlFlow(C.STR_IF_NEXT_NULL_VALUE)
+        body.addStatement(C.STR_CONSUME_NULL)
+        body.nextControlFlow(C.STR_ELSE)
         body.addStatement(C.STR_BEGIN_OBJECT)
         body.beginControlFlow(C.STR_WHILE_TRUE)
         val subIndexName = "${C.STR_SUB_INDEX_PREFIX}$pathIndex"
@@ -256,6 +262,7 @@ internal class StandardEmitter(
         body.endControlFlow() // when
         body.endControlFlow() // while
         body.addStatement(C.STR_END_OBJECT)
+        body.endControlFlow() // if null
     }
 
     /**

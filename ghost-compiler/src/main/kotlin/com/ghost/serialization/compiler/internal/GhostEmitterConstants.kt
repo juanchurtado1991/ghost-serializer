@@ -37,6 +37,8 @@ internal object GhostEmitterConstants {
     const val STR_MINUS_TWO_ARROW = "-2 ->"
     const val STR_SKIP_VALUE = "reader.skipValue()"
     const val STR_END_OBJECT = "reader.endObject()"
+    const val STR_IF_NEXT_NULL_VALUE = "if (reader.isNextNullValue())"
+    const val STR_CONSUME_NULL = "reader.consumeNull()"
     const val TEMPLATE_DESERIALIZE_T = "%T.deserialize(reader)"
     const val TEMPLATE_DESERIALIZE_L = "%L.deserialize(reader)"
     const val STR_NEXT_INT = "reader.nextInt()"

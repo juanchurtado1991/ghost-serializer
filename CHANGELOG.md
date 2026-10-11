@@ -5,6 +5,9 @@
 ### Added
 - **watchOS targets.** `ghost-api`, `ghost-serialization` and `ghost-ktor` now publish `watchosArm64` (arm64_32, Apple Watch up to Series 8), `watchosDeviceArm64` (arm64, Series 9 and later) and `watchosSimulatorArm64`, so Kotlin Multiplatform libraries that use Ghost can ship to Apple Watch. Ghost's Apple code only uses `platform.objc` locks, so the former `iosMain` source set is now `appleMain` and serves iOS and watchOS (`IosConcurrentMap` is now `AppleConcurrentMap`; internal, no API change). The full `ghost-serialization`, `ghost-api` and `ghost-ktor` test suites pass on the watchOS 26.4 simulator, and `compat-tests/kotlin-consumer` (Kotlin 2.2.21) builds for the three watchOS targets and runs its round-trip tests, with automatic compiler-plugin registration, on the simulator.
 
+### Fixed
+- **A `null` object on a `@GhostFlatten` path no longer fails decoding.** The generated serializer opened every object on a flattened path with `beginObject()`, so JSON such as `{"virtual": {"commandMappings": null}}` for `@GhostFlatten("virtual.commandMappings.commands")`, or `{"virtual": null}`, threw `Expected '{'`, failing the whole model. APIs that send `null` for an empty sub-object (the SmartThings device API does for `commandMappings`) forced consumers into wrapper classes. A `null` parent now counts as absent: the properties under it keep their defaults, a required one still fails with the usual missing-field error, and the rest of the document decodes. Covered on the string, bytes and streaming channels by `GhostNullFlattenPathTest` (3 of its 5 cases fail without the fix), and on JVM, the iOS and watchOS simulators and Wasm by `compat-tests/kotlin-consumer`'s `nullParentOfFlattenedPathKeepsDefaults`.
+
 ## [1.3.3] - 2026-10-02
 
 Consumer-compatibility fixes found while moving a Kotlin 2.2 / AGP 8 KMP app (Ktor 3, Ktorfit, Room) from Ghost 1.2.7 to 1.3.2.
