@@ -12,7 +12,9 @@ import com.ghost.serialization.compiler.analysis.omitsNullOnEncode
 import com.ghost.serialization.compiler.analysis.omitsProtoZeroOnEncode
 import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.codegen.HeaderConstantNames
 import com.ghost.serialization.compiler.model.GhostPropertyModel
+import com.ghost.serialization.compiler.model.collectJsonNames
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -39,6 +41,10 @@ internal abstract class BaseSerializeEmitter(
      * isn't enough — sibling list/map fields at the same depth would collide on `size0`, `i0`, etc.
      */
     private var loopCounter = 0
+
+    private val headerSuffixes: Map<String, String> by lazy {
+        HeaderConstantNames.allocate(jsonNames = collectJsonNames(properties = properties))
+    }
 
     /** Whether the property can be written with a fused fast-path writer method, skipping [emitValue]. */
     protected fun isFusedType(prop: GhostPropertyModel): Boolean {
@@ -140,7 +146,7 @@ internal abstract class BaseSerializeEmitter(
         targetPath.drop(currentPath.size).forEach { segment ->
             code.addStatement(
                 C.STR_WRITE_NAME_RAW,
-                prefix + segment.uppercase()
+                prefix + headerSuffix(jsonName = segment)
             )
             code.addStatement(C.STR_WRITER_BEGIN_OBJ)
             currentPath.add(segment)
@@ -157,6 +163,10 @@ internal abstract class BaseSerializeEmitter(
             currentPath.removeAt(currentPath.size - 1)
         }
     }
+
+    private fun headerSuffix(
+        jsonName: String
+    ): String = headerSuffixes[jsonName] ?: HeaderConstantNames.suffixFor(jsonName = jsonName)
 
     private fun isPrefix(prefix: List<String>, full: List<String>): Boolean {
         if (prefix.size > full.size) {
@@ -177,9 +187,7 @@ internal abstract class BaseSerializeEmitter(
             return
         }
 
-        val cleanName = prop.jsonName
-            .replace(CC.STR_DOT, CC.STR_UNDERSCORE)
-            .uppercase()
+        val cleanName = headerSuffix(jsonName = prop.jsonName)
 
         val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
         val headerName = if (isStringWriter) {
@@ -293,7 +301,7 @@ internal abstract class BaseSerializeEmitter(
 
         prop.wrappedKeys?.unwrapFields.orEmpty().forEach { field ->
             val headerName =
-                prefix + field.jsonName.replace(CC.STR_DOT, CC.STR_UNDERSCORE).uppercase()
+                prefix + headerSuffix(jsonName = field.jsonName)
 
             // proto3 oneof: this wire key lives on one sealed subclass, not the parent — guard
             // with an `is` smart-cast instead of a plain path accessor.

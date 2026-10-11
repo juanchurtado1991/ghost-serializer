@@ -20,18 +20,18 @@ object ProtoBytesValueSerializer : AbstractGhostSerializer<ProtoBytesValue>() {
     override val typeName: String get() = PC.WKT_BYTES_VALUE_TYPE
 
     override fun deserialize(reader: GhostJsonReader): ProtoBytesValue =
-        ProtoBytesValue(value = decodeBase64String(value = reader.nextString()))
+        ProtoBytesValue(value = decodeBase64String(value = reader.nextString()) { reader.throwError(message = it) })
 
     // Fast path for GhostProtoJsonFlatReader (pooled scratch buffer); else shared decoder.
     override fun deserialize(reader: GhostJsonFlatReader): ProtoBytesValue {
         if (reader is GhostProtoJsonFlatReader) {
             return ProtoBytesValue(value = reader.nextProtoBytes())
         }
-        return ProtoBytesValue(value = decodeBase64String(value = reader.nextString()))
+        return ProtoBytesValue(value = decodeBase64String(value = reader.nextString()) { reader.throwError(message = it) })
     }
 
     override fun deserialize(reader: GhostJsonStringReader): ProtoBytesValue =
-        ProtoBytesValue(value = decodeBase64String(value = reader.nextString()))
+        ProtoBytesValue(value = decodeBase64String(value = reader.nextString()) { reader.throwError(message = it) })
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoBytesValue) {
         writer.value(text = encodeBase64String(source = value.value))

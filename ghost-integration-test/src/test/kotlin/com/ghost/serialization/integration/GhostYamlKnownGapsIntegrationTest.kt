@@ -67,4 +67,23 @@ class GhostYamlKnownGapsIntegrationTest {
     fun decodeAllFromYamlReturnsEmptyListForEmptyInput() {
         assertEquals(expected = emptyList(), actual = Ghost.decodeAllFromYaml<YamlBenchUser>(""))
     }
+
+    @Test
+    fun enumPropertiesRoundTripAndDecodeFromJson() {
+        val value = YamlLightLevelHolder(
+            level = YamlLightLevel.BRIGHT_WHITE,
+            history = listOf(YamlLightLevel.DIM, YamlLightLevel.BRIGHT_WHITE),
+            byRoom = mapOf("hall" to YamlLightLevel.DIM),
+        )
+        val yaml = Ghost.encodeToYaml(value = value)
+
+        assertEquals(
+            expected = value,
+            actual = Ghost.decodeFromYaml<YamlLightLevelHolder>(yaml = yaml)
+        )
+        assertEquals(
+            expected = value,
+            actual = Ghost.decodeFromYaml<YamlLightLevelHolder>(yaml = Ghost.encodeToString(value = value))
+        )
+    }
 }

@@ -23,6 +23,7 @@ object GhostJsonErrorMessages {
     const val ERR_EXPECTED_COLON = "Expected ':'"
     const val ERR_EXPECTED_BOOLEAN = "Expected boolean but found "
     const val ERR_EXPECTED_KEY = "Expected key but found "
+    const val ERR_EXPECTED_KEY_BEFORE_OBJECT_END = "Expected key but found the end of the object"
     const val ERR_EXPECTED_STRING = "Expected string"
     const val ERR_MAX_COLLECTION_SIZE = "Collection size exceeds maximum allowed"
     const val ERR_EXPECTED_COMMA_OR_CLOSE_ARR = "Expected ',' or ']'"

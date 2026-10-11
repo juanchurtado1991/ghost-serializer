@@ -108,7 +108,7 @@ internal object GhostJsonPathReconstruction {
         return tracker
     }
 
-    /** Resolves `\\x` and `\\uXXXX` escapes in a raw key; keys without a backslash are returned as-is. */
+    /** Resolves the escapes of a raw JSON string body; text without a backslash is returned as is. */
     @PublishedApi
     internal fun unescapeKey(
         raw: String
@@ -128,7 +128,7 @@ internal object GhostJsonPathReconstruction {
                     index += UNICODE_ESCAPE_LENGTH + 1
                 }
                 char == BACKSLASH_CHAR && index + 1 < raw.length -> {
-                    builder.append(raw[index + 1])
+                    builder.append(simpleEscapedChar(escaped = raw[index + 1]))
                     index += ESCAPE_PAIR_LENGTH
                 }
                 else -> {
@@ -138,6 +138,17 @@ internal object GhostJsonPathReconstruction {
             }
         }
         return builder.toString()
+    }
+
+    private fun simpleEscapedChar(
+        escaped: Char
+    ): Char = when (escaped.code) {
+        TOK.B_BYTE_INT -> TOK.BS_INT.toChar()
+        TOK.F_BYTE_INT -> TOK.FF_INT.toChar()
+        TOK.N_BYTE_INT -> TOK.LF_INT.toChar()
+        TOK.R_BYTE_INT -> TOK.CR_INT.toChar()
+        TOK.T_BYTE_INT -> TOK.TAB_INT.toChar()
+        else -> escaped
     }
 
     /** Index of the unescaped closing quote at or after [from], or `-1` if [end] comes first. */

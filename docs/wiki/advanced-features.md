@@ -32,7 +32,7 @@ Ghost generates separate code paths for **JSON** (default via `@GhostSerializati
 | Contextual serializers | Registry hooks tied to JSON codegen |
 | `RawJson` | Captures raw JSON bytes |
 | Non-proto `ByteArray` | Opaque JSON bytes (proto uses Base64 via `@GhostProtoSerialization`) |
-| Nested `@GhostSerialization` types in YAML graphs | YAML codegen supports flat DTOs only (including `@GhostSerialization` enums as properties) |
+| Nested `@GhostSerialization` types in YAML graphs | YAML codegen supports flat DTOs only; enum properties (direct, `List`, `Map` values) are supported when the enum is also annotated with `@GhostYamlSerialization` |
 
 ### Proto3 JSON (`@GhostProtoSerialization`)
 

@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.parser.common
 
+import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
@@ -12,11 +13,25 @@ import com.ghost.serialization.proto.GhostProtoConstants as PC
  *
  * Operates on an already-materialized Kotlin [String] (e.g. from `reader.nextString()`), so
  * it works from any reader flavor ([GhostJsonReader] or [GhostJsonStringReader]) — unlike a
- * scratch-buffer-pooled decoder tied to a specific byte buffer implementation.
- *
- * @throws IllegalArgumentException if [value] contains a non-alphabet, non-whitespace character.
+ * scratch-buffer-pooled decoder tied to a specific byte buffer implementation. Input that is not
+ * valid Base64 (a non-alphabet, non-whitespace character, or a final group of a single
+ * character) throws [IllegalArgumentException]; the overload taking `throwError` lets a reader
+ * report it as its own decode error instead.
  */
-fun decodeBase64String(value: String): ByteArray {
+fun decodeBase64String(
+    value: String
+): ByteArray = decodeBase64String(value = value) { message -> throw IllegalArgumentException(message) }
+
+@InternalGhostApi
+inline fun decodeBase64String(
+    value: String,
+    throwError: (String) -> Nothing
+): ByteArray = decodeBase64StringOrNull(value = value) ?: throwError(PC.ERR_INVALID_BASE64)
+
+@PublishedApi
+internal fun decodeBase64StringOrNull(
+    value: String
+): ByteArray? {
     val lut = PC.BASE64_LUT
     val length = value.length
     val output = ByteArray(length)
@@ -36,7 +51,7 @@ fun decodeBase64String(value: String): ByteArray {
 
             val hasInvalidChar = value0 < 0 || value1 < 0 ||
                 value2 == PC.B64_INVALID_CODE || value3 == PC.B64_INVALID_CODE
-            if (hasInvalidChar) throw IllegalArgumentException(PC.ERR_INVALID_BASE64)
+            if (hasInvalidChar) return null
 
             output[outputPosition++] = combineFirstByte(value0 = value0, value1 = value1)
             if (value2 != PC.B64_PADDING_CODE) {
@@ -50,17 +65,18 @@ fun decodeBase64String(value: String): ByteArray {
     }
 
     if (chunkIndex > 0) {
+        if (chunkIndex == 1) return null
         while (chunkIndex < PC.B64_PAD_MULTIPLIER) {
             chunk[chunkIndex++] = TOK.EQUALS_INT
         }
         val value0 = lookupBase64Code(lut = lut, code = chunk[0])
         val value1 = lookupBase64Code(lut = lut, code = chunk[1])
         val value2 = lookupBase64Code(lut = lut, code = chunk[2])
-        if (value0 >= 0 && value1 >= 0) {
-            output[outputPosition++] = combineFirstByte(value0 = value0, value1 = value1)
-            if (value2 != PC.B64_PADDING_CODE && value2 >= 0) {
-                output[outputPosition++] = combineSecondByte(value1 = value1, value2 = value2)
-            }
+        val isValidFinalGroup = value0 >= 0 && value1 >= 0 && value2 != PC.B64_INVALID_CODE
+        if (!isValidFinalGroup) return null
+        output[outputPosition++] = combineFirstByte(value0 = value0, value1 = value1)
+        if (value2 != PC.B64_PADDING_CODE) {
+            output[outputPosition++] = combineSecondByte(value1 = value1, value2 = value2)
         }
     }
 
@@ -112,7 +128,7 @@ fun encodeBase64String(source: ByteArray): String {
 /**
  * Chars outside the LUT's range (any non-Latin-1 code unit) are never valid base64 alphabet
  * members — bounds-check rather than indexing [lut] directly, since a raw index would throw
- * [IndexOutOfBoundsException] instead of the documented [IllegalArgumentException].
+ * [IndexOutOfBoundsException] instead of reporting invalid Base64.
  */
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun lookupBase64Code(lut: IntArray, code: Int): Int =

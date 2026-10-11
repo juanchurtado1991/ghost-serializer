@@ -43,6 +43,9 @@ internal object GhostAnalyzerConstants {
     const val K_RAW_JSON = "com.ghost.serialization.types.RawJson"
     const val STR_KOTLIN_PREFIX = "kotlin."
     const val STR_JAVA_PREFIX = "java."
+    const val STR_ERR_ENUM_NOT_ANNOTATED_1 = "Enum '"
+    const val STR_ERR_ENUM_NOT_ANNOTATED_2 = "' used by property '"
+    const val STR_ERR_ENUM_NOT_ANNOTATED_3 = "' must be annotated with @GhostSerialization."
     const val STR_ERR_CLASS_1 =
         "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class', 'value class' or 'enum class'. "
 

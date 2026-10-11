@@ -13,6 +13,7 @@ internal object GhostYamlErrorMessages {
     const val ERR_EXPECTED_DOUBLE_PREFIX = "Expected Double but found "
     const val ERR_EXPECTED_FLOAT_PREFIX = "Expected Float but found "
     const val ERR_EXPECTED_BOOLEAN_PREFIX = "Expected Boolean but found "
+    const val ERR_EXPECTED_STRING_PREFIX = "Expected String but found "
     const val ERR_EXPECTED_SINGLE_CHAR_LEN_PREFIX = "Expected single-character string but found length "
     const val ERR_EXPECTED_LIST_PREFIX = "Expected List but found "
     const val ERR_PLAIN_SCALAR_PERCENT =

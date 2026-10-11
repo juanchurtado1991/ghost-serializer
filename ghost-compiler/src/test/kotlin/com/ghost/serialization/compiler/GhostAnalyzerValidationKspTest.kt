@@ -117,6 +117,60 @@ class GhostAnalyzerValidationKspTest {
         )
     }
 
+    @Test
+    fun rejectsEnumWithoutGhostSerialization() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "PlainEnumHolder.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                enum class PlainColor { RED, GREEN }
+
+                @GhostSerialization
+                data class PlainEnumHolder(val colors: List<PlainColor>)
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
+        assertTrue(
+            result.messages.contains("Enum 'PlainColor' used by property 'colors' must be annotated"),
+            result.messages
+        )
+    }
+
+    @Test
+    fun acceptsJsonNamesThatAreNotIdentifiers() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "OddNames.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostName
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class OddNames(
+                    @GhostName("renamed-key") val dashed: String,
+                    @GhostName("with space") val spaced: Int,
+                    @GhostName("caf\u00e9") val accented: Boolean,
+                    @GhostName("renamed_key") val underscored: String,
+                    @GhostName("id") val lowerId: Int,
+                    @GhostName("ID") val upperId: Int,
+                    @GhostName("a.b") val dotted: Int,
+                    @GhostName("a_b") val underscoredAb: Int,
+                )
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(expected = KotlinCompilation.ExitCode.OK, actual = result.exitCode, message = result.messages)
+    }
+
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()

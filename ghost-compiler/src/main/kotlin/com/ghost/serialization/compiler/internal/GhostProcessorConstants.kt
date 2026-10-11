@@ -91,13 +91,18 @@ internal object GhostProcessorConstants {
         "GhostYamlSerialization: inferred polymorphism is JSON-only and cannot use @GhostYamlSerialization."
 
     const val STR_ERR_YAML_CUSTOM_CODEC =
-        "GhostYamlSerialization: @GhostDecoder/@GhostEncoder are JSON-only and cannot be used on YAML-enabled models."
+        "GhostYamlSerialization: contextual types (a property type without @GhostSerialization that is not built in, " +
+            "such as a plain value class) and @GhostDecoder/@GhostEncoder are JSON-only and cannot be used on " +
+            "YAML-enabled models."
 
     const val STR_ERR_YAML_STRUCTURAL =
         "GhostYamlSerialization: @GhostFlatten/@GhostWrap/@GhostWrappedKeys are JSON-only and cannot be used on YAML-enabled models."
 
     const val STR_ERR_YAML_NESTED_GHOST =
         "GhostYamlSerialization: nested @GhostSerialization types are not supported on YAML paths."
+
+    const val STR_ERR_YAML_ENUM_WITHOUT_YAML =
+        "GhostYamlSerialization: an enum used by a YAML-enabled model must also be annotated with @GhostYamlSerialization."
 
     const val STR_ERR_YAML_RAW_JSON =
         "GhostYamlSerialization: RawJson is JSON-only and cannot be used on YAML-enabled models."

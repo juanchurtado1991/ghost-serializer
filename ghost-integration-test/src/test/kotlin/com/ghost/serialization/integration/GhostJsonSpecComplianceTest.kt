@@ -4,6 +4,8 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.IgnoreModel
 import com.ghost.serialization.integration.model.OverlappingKeyModel
+import com.ghost.serialization.integration.model.SmartDevice
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -88,5 +90,32 @@ class GhostJsonSpecComplianceTest {
 
         assertEquals(expected = 2, actual = model.id, message = "Last key 'id' should win")
         assertEquals(expected = 100, actual = model.id_internal)
+    }
+
+    @Test
+    fun testEscapedKeysAndDiscriminatorsDecodeOnEveryChannel() {
+        ESCAPED_KEY_CASES.forEach { json ->
+            val decoded = listOf(
+                Ghost.deserialize<SmartDevice>(json = json),
+                Ghost.deserialize<SmartDevice>(bytes = json.encodeToByteArray()),
+                Ghost.deserializeStreaming<SmartDevice>(source = Buffer().writeUtf8(string = json))
+            )
+            decoded.forEach { device ->
+                assertEquals(
+                    expected = SmartDevice.Light(brightness = 5),
+                    actual = device,
+                    message = json
+                )
+            }
+        }
+    }
+
+    companion object {
+        private val ESCAPED_KEY_CASES = listOf(
+            """{"type":"Light","a\"b":[1],"bright\u006eess":5}""",
+            """{"type":"Li\u0067ht","brightness":5}""",
+            """{"t\u0079pe":"Light","brightness":5}""",
+            """{"label":"type","type":"Light","brightness":5}"""
+        )
     }
 }

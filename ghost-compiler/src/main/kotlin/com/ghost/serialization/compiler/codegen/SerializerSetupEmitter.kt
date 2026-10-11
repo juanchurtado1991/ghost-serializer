@@ -37,8 +37,8 @@ internal class SerializerSetupEmitter(
 ) {
 
     fun addCachedHeaderProperties(typeSpecBuilder: TypeSpec.Builder) {
-        for (name in ctx.getAllJsonNames()) {
-            val cleanName = name.replace(CC.STR_DOT, CC.STR_UNDERSCORE).uppercase()
+        val headerSuffixes = HeaderConstantNames.allocate(jsonNames = ctx.getAllJsonNames())
+        for ((name, cleanName) in headerSuffixes) {
 
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(

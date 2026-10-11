@@ -104,6 +104,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
 
         validateMapKey(prop = prop, isMap = isMap, mapKeyType = mapKeyType)
+        validateEnumsAnnotated(prop = prop, type = type)
 
         val param = parameters.find {
             it.name?.asString() == prop.simpleName.asString()
@@ -384,6 +385,17 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return buildPropertyModel(prop = prop, parameters = listOf(param)).copy(isProto = isProto)
     }
 
+    private fun findUnannotatedEnum(
+        type: KSType
+    ): KSType? {
+        if (isEnumType(type = type) && !isGhostType(type = type)) {
+            return type
+        }
+        return type.arguments.firstNotNullOfOrNull { argument ->
+            argument.type?.resolve()?.let { argumentType -> findUnannotatedEnum(type = argumentType) }
+        }
+    }
+
     private fun validateClassKind(
         classDeclaration: KSClassDeclaration,
         isData: Boolean,
@@ -403,6 +415,18 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 classDeclaration
             )
         }
+    }
+
+    private fun validateEnumsAnnotated(
+        prop: KSPropertyDeclaration,
+        type: KSType
+    ) {
+        val unannotatedEnum = findUnannotatedEnum(type = type) ?: return
+        logger.error(
+            AC.STR_ERR_ENUM_NOT_ANNOTATED_1 + unannotatedEnum.declaration.simpleName.asString() +
+                AC.STR_ERR_ENUM_NOT_ANNOTATED_2 + prop.simpleName.asString() + AC.STR_ERR_ENUM_NOT_ANNOTATED_3,
+            prop
+        )
     }
 
     private fun validateMapKey(

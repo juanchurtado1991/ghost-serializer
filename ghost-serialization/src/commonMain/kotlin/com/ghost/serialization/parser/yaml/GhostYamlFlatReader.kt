@@ -171,13 +171,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     inline fun <K, V> readMap(
-        crossinline keyParser: () -> K,
+        crossinline keyParser: () -> K?,
         crossinline valueParser: () -> V
     ): Map<K, V> {
         beginObject()
         val map = HashMap<K, V>()
         while (hasNext()) {
-            val key = keyParser()
+            val key = keyParser() ?: throwError(EM.ERR_EXPECTED_KEY_BEFORE_OBJECT_END)
             consumeKeySeparator()
             val value = valueParser()
             map[key] = value

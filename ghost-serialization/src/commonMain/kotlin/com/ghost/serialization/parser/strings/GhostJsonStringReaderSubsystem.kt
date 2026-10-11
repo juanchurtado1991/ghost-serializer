@@ -24,6 +24,7 @@ import com.ghost.serialization.parser.common.json.hasNextCore
 import com.ghost.serialization.parser.common.json.nextBooleanCore
 import com.ghost.serialization.parser.common.json.nextKeyCommaPreambleCore
 import com.ghost.serialization.parser.common.json.nextOrNullCore
+import com.ghost.serialization.parser.common.json.selectEscapedKeyCore
 import com.ghost.serialization.parser.common.json.selectValidateCommasCore
 import com.ghost.serialization.parser.common.json.skipValueCore
 import com.ghost.serialization.parser.common.matchCoerceBooleanBytes
@@ -343,7 +344,14 @@ private fun GhostJsonStringReader.internalSelect(
     val end = findClosingQuote(start, charLimit)
 
     if (end == -1) {
-        throwUnterminatedStringError()
+        return selectEscapedKeyCore(
+            options = options,
+            consumeSeparator = consumeSeparator,
+            strictMode = strictMode,
+            readQuotedKey = { readQuotedString() },
+            consumeKeySeparator = { consumeKeySeparator() },
+            throwError = { throwError(it) },
+        )
     }
 
     val length = end - start
@@ -405,10 +413,6 @@ private fun GhostJsonStringReader.handleSelectNoMatch(
 
 private fun GhostJsonStringReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
     throwError(if (consumeSeparator) EM.ERR_EXPECTED_KEY else EM.ERR_EXPECTED_STRING)
-}
-
-private fun GhostJsonStringReader.throwUnterminatedStringError() {
-    throwError(EM.UNTERMINATED_STRING_ERROR)
 }
 
 private fun GhostJsonStringReader.computeKeyHash(
