@@ -52,7 +52,7 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
             AC.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)
 
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+            val bang = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
                 CC.STR_EMPTY
             } else {
                 AC.STR_BANG_BANG
@@ -100,7 +100,7 @@ internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
             AC.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)
 
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+            val bang = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
                 CC.STR_EMPTY
             } else {
                 AC.STR_BANG_BANG
@@ -140,7 +140,7 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     return when {
         isPrimitive -> ctxVar
         isUnboxedValueClass -> {
-            val unwrapped = if (valueClassProperty!!.type.isPrimitive()) {
+            val unwrapped = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
                 ctxVar
             } else {
                 requireLocalValue(local = ctxVar)
@@ -215,7 +215,7 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
     return when {
         isPrimitive -> varName
         isUnboxedValueClass -> {
-            val unwrapped = if (valueClassProperty!!.type.isPrimitive()) {
+            val unwrapped = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
                 varName
             } else {
                 requireLocalValue(local = varName)
@@ -357,3 +357,6 @@ internal fun GhostPropertyModel.requireLocalValue(
  * would turn the omitted `null` into that default, so `null` is written explicitly.
  */
 internal fun GhostPropertyModel.omitsNullOnEncode(): Boolean = hasDefaultValue && defaultExpression == CC.STR_NULL
+
+/** Whether a value-class property's local can be passed to the wrapper as is (no `!!`/default needed). */
+internal fun GhostPropertyModel.holdsNullableOrPrimitive(): Boolean = isNullable || type.isPrimitive()

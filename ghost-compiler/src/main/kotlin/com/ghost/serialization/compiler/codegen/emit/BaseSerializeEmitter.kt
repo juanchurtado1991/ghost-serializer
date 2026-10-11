@@ -373,7 +373,7 @@ internal abstract class BaseSerializeEmitter(
                         code = code,
                         type = innerType,
                         accessor = innerAccessor,
-                        skipNullCheck = true,
+                        skipNullCheck = false,
                         isProto = isProto
                     )
                     if (isNullable && !skipNullCheck) {
@@ -441,6 +441,23 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
+    /** [emitValue], preceded by a `null` branch when [prop] is nullable (e.g. a value class wrapping `String?`). */
+    fun emitValueOrNull(
+        code: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        accessor: Any
+    ) {
+        if (!prop.isNullable) {
+            emitValue(code = code, prop = prop, accessor = accessor)
+            return
+        }
+        code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)
+        code.addStatement(C.STR_WRITER_NULL_VAL)
+        code.nextControlFlow(C.STR_ELSE)
+        emitValue(code = code, prop = prop, accessor = accessor)
+        code.endControlFlow()
+    }
+
     /** Emits the value-write statement for a property, dispatching by kind (custom encoder, value class, sealed, etc). */
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
@@ -481,7 +498,7 @@ internal abstract class BaseSerializeEmitter(
                     accessor,
                     prop.valueClassProperty.kotlinName
                 )
-                emitValue(code = code, prop = prop.valueClassProperty, accessor = innerAccessor)
+                emitValueOrNull(code = code, prop = prop.valueClassProperty, accessor = innerAccessor)
             }
 
             prop.isSealedClass -> {
