@@ -54,14 +54,11 @@ class GhostYamlFlatReaderEdgeCaseTest {
     }
 
     @Test
-    fun veryLargeNumberClampsToLongMaxValue() {
+    fun veryLargeNumberOverflowingLongThrows() {
         val reader = readerOf("v: 99999999999999999999")
         reader.beginObject()
         reader.selectNameAndConsume(options = JsonReaderOptions.of("v"))
-        assertEquals(
-            expected = Long.MAX_VALUE,
-            actual = reader.nextLong()
-        )
+        assertFailsWith<GhostYamlException> { reader.nextLong() }
     }
 
     @Test

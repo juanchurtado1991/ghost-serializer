@@ -202,16 +202,8 @@ fun GhostJsonReader.nextString(): String {
     return value
 }
 
-/** proto3 `uint64` on the streaming reader channel — quoted decimal string on the wire. */
-fun GhostJsonReader.nextProtoUInt64(): ULong {
-    val saved = coerceStringsToNumbers
-    coerceStringsToNumbers = true
-    return try {
-        nextString().toULong()
-    } finally {
-        coerceStringsToNumbers = saved
-    }
-}
+/** proto3 `uint64` on the streaming reader channel: quoted decimal string or bare number. */
+fun GhostJsonReader.nextProtoUInt64(): ULong = nextULong()
 
 /**
  * Reads a JSON string value that must contain exactly one [Char].

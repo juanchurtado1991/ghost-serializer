@@ -150,49 +150,31 @@ private inline fun <T> GhostYamlFlatReader.nextOrNullImpl(readValue: () -> T): T
 internal fun GhostYamlFlatReader.nextIntImpl(): Int {
     val value = nextValue
     nextValue = null
-    if (value is Number) {
-        pathTracker.finishScalarValue()
-        return value.toInt()
+    val wholeNumber = wholeNumberOrNull(value = value)
+    val isInIntRange = wholeNumber != null && wholeNumber >= Int.MIN_VALUE && wholeNumber <= Int.MAX_VALUE
+    if (!isInIntRange) {
+        throwError("${EM.ERR_EXPECTED_INT_PREFIX}$value")
     }
-    if (value is String) {
-        if (coerceStringsToNumbers) {
-            pathTracker.finishScalarValue()
-            return value.toIntOrNull() ?: 0
-        }
-        val parsed = value.toIntOrNull()
-            ?: throwError("${EM.ERR_EXPECTED_INT_PREFIX}$value")
-        pathTracker.finishScalarValue()
-        return parsed
-    }
-    throwError("${EM.ERR_EXPECTED_INT_PREFIX}$value")
+    pathTracker.finishScalarValue()
+    return wholeNumber.toInt()
 }
 
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.nextLongImpl(): Long {
     val value = nextValue
     nextValue = null
-    if (value is Number) {
-        pathTracker.finishScalarValue()
-        return value.toLong()
-    }
-    if (value is String) {
-        if (coerceStringsToNumbers) {
-            pathTracker.finishScalarValue()
-            return value.toLongOrNull() ?: 0L
-        }
-        val parsed = value.toLongOrNull()
-            ?: throwError("${EM.ERR_EXPECTED_LONG_PREFIX}$value")
-        pathTracker.finishScalarValue()
-        return parsed
-    }
-    throwError("${EM.ERR_EXPECTED_LONG_PREFIX}$value")
+    val wholeNumber = wholeNumberOrNull(value = value)
+        ?: throwError("${EM.ERR_EXPECTED_LONG_PREFIX}$value")
+    pathTracker.finishScalarValue()
+    return wholeNumber
 }
 
 internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
     val previous = coerceStringsToNumbers
     coerceStringsToNumbers = true
     return try {
-        nextString().toULong()
+        val text = nextString()
+        text.toULongOrNull() ?: throwError("${EM.ERR_EXPECTED_ULONG_PREFIX}$text")
     } finally {
         coerceStringsToNumbers = previous
     }
@@ -202,23 +184,17 @@ internal fun GhostYamlFlatReader.nextProtoUInt64Impl(): ULong {
 internal fun GhostYamlFlatReader.nextULongImpl(): ULong {
     val value = nextValue
     nextValue = null
-    when (value) {
-        is Number -> {
-            pathTracker.finishScalarValue()
-            return value.toLong().toULong()
+    val unsignedNumber = when (value) {
+        is String -> value.toULongOrNull()
+        is Long -> value.takeIf { it >= 0L }?.toULong()
+        is Double -> {
+            val isWholeInULongRange = value % 1.0 == 0.0 && value >= 0.0 && value < ULong.MAX_VALUE.toDouble()
+            if (isWholeInULongRange) value.toULong() else null
         }
-        is String -> {
-            if (coerceStringsToNumbers) {
-                pathTracker.finishScalarValue()
-                return value.toULongOrNull() ?: 0uL
-            }
-            val parsed = value.toULongOrNull()
-                ?: throwError("${EM.ERR_EXPECTED_ULONG_PREFIX}$value")
-            pathTracker.finishScalarValue()
-            return parsed
-        }
-    }
-    throwError("${EM.ERR_EXPECTED_ULONG_PREFIX}$value")
+        else -> null
+    } ?: throwError("${EM.ERR_EXPECTED_ULONG_PREFIX}$value")
+    pathTracker.finishScalarValue()
+    return unsignedNumber
 }
 
 internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? = nextOrNullImpl { nextULong() }
@@ -227,42 +203,44 @@ internal fun GhostYamlFlatReader.nextULongOrNullImpl(): ULong? = nextOrNullImpl 
 internal fun GhostYamlFlatReader.nextDoubleImpl(): Double {
     val value = nextValue
     nextValue = null
-    if (value is Number) {
-        pathTracker.finishScalarValue()
-        return value.toDouble()
-    }
-    if (value is String) {
-        if (coerceStringsToNumbers) {
-            pathTracker.finishScalarValue()
-            return value.toDoubleOrNull() ?: 0.0
-        }
-        val parsed = value.toDoubleOrNull()
-            ?: throwError("${EM.ERR_EXPECTED_DOUBLE_PREFIX}$value")
-        pathTracker.finishScalarValue()
-        return parsed
-    }
-    throwError("${EM.ERR_EXPECTED_DOUBLE_PREFIX}$value")
+    val number = when (value) {
+        is Number -> value.toDouble()
+        is String -> value.toDoubleOrNull()
+        else -> null
+    } ?: throwError("${EM.ERR_EXPECTED_DOUBLE_PREFIX}$value")
+    pathTracker.finishScalarValue()
+    return number
 }
 
 @OptIn(InternalGhostApi::class)
 internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
     val value = nextValue
     nextValue = null
-    if (value is Number) {
-        pathTracker.finishScalarValue()
-        return value.toFloat()
+    val number = when (value) {
+        is Number -> value.toDouble().toFloat().takeIf { it.isFinite() || !value.toDouble().isFinite() }
+        is String -> value.toFloatOrNull()
+        else -> null
+    } ?: throwError("${EM.ERR_EXPECTED_FLOAT_PREFIX}$value")
+    pathTracker.finishScalarValue()
+    return number
+}
+
+/**
+ * A YAML integer scalar, a numeric string, or a float scalar with no fractional part (`1e2`,
+ * `1.0`) as a [Long]; `null` for anything else, including a fraction or a value outside [Long],
+ * so callers throw instead of truncating or wrapping it.
+ */
+internal fun wholeNumberOrNull(value: Any?): Long? = when (value) {
+    is Long -> value
+    is Int -> value.toLong()
+    is String -> value.toLongOrNull()
+    is Double -> {
+        val isWholeInLongRange = value % 1.0 == 0.0 &&
+            value >= Long.MIN_VALUE.toDouble() &&
+            value < -Long.MIN_VALUE.toDouble()
+        if (isWholeInLongRange) value.toLong() else null
     }
-    if (value is String) {
-        if (coerceStringsToNumbers) {
-            pathTracker.finishScalarValue()
-            return value.toFloatOrNull() ?: 0.0f
-        }
-        val parsed = value.toFloatOrNull()
-            ?: throwError("${EM.ERR_EXPECTED_FLOAT_PREFIX}$value")
-        pathTracker.finishScalarValue()
-        return parsed
-    }
-    throwError("${EM.ERR_EXPECTED_FLOAT_PREFIX}$value")
+    else -> null
 }
 
 @OptIn(InternalGhostApi::class)

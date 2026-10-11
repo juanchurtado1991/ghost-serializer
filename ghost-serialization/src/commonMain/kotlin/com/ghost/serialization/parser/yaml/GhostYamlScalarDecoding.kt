@@ -1,5 +1,6 @@
 package com.ghost.serialization.parser.yaml
 
+import com.ghost.serialization.yaml.GhostYamlErrorMessages as EM
 import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
 import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
@@ -9,7 +10,8 @@ import com.ghost.serialization.yaml.GhostYamlTokens as TOK
  * `GhostYamlFlatReader` since this layer is only called *from* the core block/flow parser and
  * never calls back into it. Quoted-string unescaping and number parsing live alongside this in
  * `GhostYamlQuotedScalarDecoding.kt`/`GhostYamlNumberDecoding.kt`, since [interpretScalar] is
- * their only caller outside those files.
+ * their only caller outside those files. A scalar that does not match its explicit `!!int`,
+ * `!!float` or `!!bool` tag is an error, not a silent `0`/`false`.
  */
 internal fun GhostYamlFlatReader.interpretScalar(data: ByteArray, start: Int, end: Int, expectedTag: Int): Any? {
     val length = end - start
@@ -28,21 +30,18 @@ internal fun GhostYamlFlatReader.interpretScalar(data: ByteArray, start: Int, en
     if (expectedTag == GhostYamlTags.TAG_BOOL) {
         if (isTrueLiteral(data = data, start = start, length = length)) return true
         if (isFalseLiteral(data = data, start = start, length = length)) return false
-        return false
+        yamlError("${EM.ERR_EXPECTED_BOOLEAN_PREFIX}${data.decodeToString(start, end)}")
     }
     if (expectedTag == GhostYamlTags.TAG_INT) {
-        tryParseNumber(data = data, start = start, end = end)?.let {
-            if (it is Long) return it
-            if (it is Double) return it.toLong()
-        }
-        return data.decodeToString(start, end).toLongOrNull() ?: 0L
+        val number = tryParseNumber(data = data, start = start, end = end) ?: data.decodeToString(start, end)
+        return wholeNumberOrNull(value = number)
+            ?: yamlError("${EM.ERR_EXPECTED_INT_PREFIX}${data.decodeToString(start, end)}")
     }
     if (expectedTag == GhostYamlTags.TAG_FLOAT) {
-        tryParseNumber(data = data, start = start, end = end)?.let {
-            if (it is Double) return it
-            if (it is Long) return it.toDouble()
-        }
-        return data.decodeToString(start, end).toDoubleOrNull() ?: 0.0
+        val number = tryParseNumber(data = data, start = start, end = end)
+        return (number as? Number)?.toDouble()
+            ?: data.decodeToString(start, end).toDoubleOrNull()
+            ?: yamlError("${EM.ERR_EXPECTED_DOUBLE_PREFIX}${data.decodeToString(start, end)}")
     }
 
     // null: ~, null, Null, NULL

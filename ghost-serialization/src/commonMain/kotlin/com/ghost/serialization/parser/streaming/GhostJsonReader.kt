@@ -9,6 +9,8 @@ import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
@@ -47,6 +49,9 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * field index when JSON objects list fields in declaration order; reset on `beginObject`, and a
  * misprediction falls back to hashed dispatch, so it never affects correctness.
  * [pathTracker] holds JSONPath breadcrumbs, formatted only when [throwError] builds an exception.
+ * A streaming [limit] is [Int.MAX_VALUE] (the length is unknown), so it cannot bound reads past
+ * the end: number parsing reads through [numberByteAt], which returns a NUL byte there to end the
+ * number, and [throwError] clamps the reported position to the bytes actually received.
  */
 class GhostJsonReader(
     @PublishedApi internal var source: GhostSource,
@@ -159,10 +164,20 @@ class GhostJsonReader(
         return rawData[index].toInt() and TOK.BYTE_MASK
     }
 
+    @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun numberByteAt(index: Int): Int {
+        if (!isStreaming) return rawData[index].toInt() and TOK.BYTE_MASK
+        val byte = source.byteOrEof(index = index)
+        return if (byte == SCN.MATCH_END) TOK.NUL_BYTE else byte
+    }
+
     fun internalSkip(byteCount: Int) {
         position += byteCount
         nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
+
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
 
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
@@ -172,6 +187,8 @@ class GhostJsonReader(
         internalSkip(1)
         return nextToken
     }
+
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
 
     fun peekByte(): Byte = peekNextToken().toByte()
 

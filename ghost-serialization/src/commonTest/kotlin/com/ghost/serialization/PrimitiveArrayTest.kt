@@ -206,18 +206,16 @@ class PrimitiveArrayTest {
     }
 
     @Test
-    fun testIntArrayFastPathBailsOnWhitespaceAndDecimalCoercion() {
+    fun testIntArrayFastPathBailsOnWhitespaceAndRejectsDecimals() {
         // Whitespace between elements: falls back to the general loop, which tolerates it.
         assertContentEquals(
             expected = intArrayOf(1, 2, 3),
             actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[1, 2, 3]".encodeToByteArray()))
         )
-        // A decimal value inside an IntArray: falls back to the general loop's
-        // nextDouble().toInt() coercion path.
-        assertContentEquals(
-            expected = intArrayOf(1, 2, 3),
-            actual = IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[1,2.0,3]".encodeToByteArray()))
-        )
+        // A decimal value inside an IntArray: the general loop rejects it instead of truncating.
+        assertFailsWith<GhostJsonException> {
+            IntArraySerializer.deserialize(GhostJsonFlatReader(rawData = "[1,2.0,3]".encodeToByteArray()))
+        }
     }
 
     @Test

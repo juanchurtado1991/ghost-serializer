@@ -1,6 +1,7 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.ProtoAccountIds
 import com.ghost.serialization.integration.model.ProtoAccountIdsMessage
 import com.ghost.serialization.integration.model.ProtoDeviceEventListItem
@@ -8,6 +9,7 @@ import com.ghost.serialization.integration.model.ProtoUInt64FieldMessage
 import com.ghost.serialization.proto.GhostProto
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -65,11 +67,17 @@ class GhostProtoKnownGapsIntegrationTest {
     }
 
     @Test
-    fun uLongBareNumberAboveLongMaxFallsBackToInt64Path() {
-        // Bare JSON numbers take the int64 fast path — full uint64 range requires a quoted string.
+    fun uLongBareNumberAboveLongMaxDecodesExactly() {
         val json = """{"shardId":18446744073709551615}"""
         val parsed = GhostProto.deserialize<ProtoUInt64FieldMessage>(json)
-        assertEquals(expected = Long.MAX_VALUE.toULong(), actual = parsed.shard_id)
+        assertEquals(expected = ULong.MAX_VALUE, actual = parsed.shard_id)
+    }
+
+    @Test
+    fun uLongBareNegativeNumberIsRejected() {
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoUInt64FieldMessage>("""{"shardId":-1}""")
+        }
     }
 
     @Test

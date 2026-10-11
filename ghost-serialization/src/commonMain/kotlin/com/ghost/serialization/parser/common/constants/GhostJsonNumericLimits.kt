@@ -51,6 +51,12 @@ object GhostJsonNumericLimits {
     const val INT_OVERFLOW_LIMIT = 214748364
     const val INT_MIN_LAST_DIGIT = 8
     const val INT_MAX_LAST_DIGIT = 7
+    const val INT_MAX_MAGNITUDE = 2147483647uL
+    const val INT_MIN_MAGNITUDE = 2147483648uL
+    const val LONG_MAX_MAGNITUDE = 9223372036854775807uL
+    const val LONG_MIN_MAGNITUDE = 9223372036854775808uL
+    const val ULONG_OVERFLOW_LIMIT = 1844674407370955161uL
+    const val ULONG_MAX_LAST_DIGIT = 5
 
     /** Pre-calculated powers of ten to avoid expensive Math.pow calls. */
     val POWERS_OF_TEN = DoubleArray(size = 309).apply {

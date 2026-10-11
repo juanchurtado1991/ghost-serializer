@@ -7,6 +7,8 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.byteToCharPosition
@@ -101,6 +103,8 @@ class GhostJsonStringReader(
         nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
 
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
+
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
         if (nextToken == -1) {
@@ -109,6 +113,8 @@ class GhostJsonStringReader(
         internalSkip(1)
         return nextToken
     }
+
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
 
     fun peekByte(): Byte = peekNextToken().toByte()
 

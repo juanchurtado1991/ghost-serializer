@@ -69,8 +69,8 @@ internal object GhostEmitterConstants {
 
     const val STR_NEXT_DOUBLE = "reader.nextDouble()"
     const val STR_NEXT_FLOAT = "reader.nextFloat()"
-    const val STR_NEXT_BYTE = "reader.nextInt().toByte()"
-    const val STR_NEXT_SHORT = "reader.nextInt().toShort()"
+    const val STR_NEXT_BYTE = "reader.nextByte()"
+    const val STR_NEXT_SHORT = "reader.nextShort()"
     const val STR_NEXT_CHAR = "reader.nextChar()"
     const val STR_NEXT_STRING = "reader.nextString()"
     const val STR_NEXT_INT_OR_NULL = "reader.nextIntOrNull()"

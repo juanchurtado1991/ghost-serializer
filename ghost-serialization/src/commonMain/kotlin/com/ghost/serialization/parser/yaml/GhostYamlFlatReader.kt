@@ -2,6 +2,8 @@ package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
@@ -103,7 +105,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     open fun nextLongOrNull(): Long? = nextLongOrNullImpl()
     fun nextBooleanOrNull(): Boolean? = nextBooleanOrNullImpl()
 
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
     fun nextInt(): Int = nextIntImpl()
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
     open fun nextLong(): Long = nextLongImpl()
     open fun nextProtoUInt64(): ULong = nextProtoUInt64Impl()
 

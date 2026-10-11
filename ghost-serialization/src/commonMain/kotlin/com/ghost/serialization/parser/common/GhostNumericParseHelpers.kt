@@ -3,6 +3,7 @@
 package com.ghost.serialization.parser.common
 
 import kotlin.math.pow
+import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
@@ -49,6 +50,30 @@ internal inline fun accumulateLongWithOverflowCheck(
         onOverflow()
     }
     return current * WR.BASE_TEN + digitValue
+}
+
+/** Narrows an already-parsed [Int] to [Byte], throwing [EM.ERR_BYTE_OVERFLOW] instead of wrapping. */
+internal inline fun narrowToByte(
+    value: Int,
+    throwError: (String) -> Nothing,
+): Byte {
+    val isOutOfRange = value < Byte.MIN_VALUE || value > Byte.MAX_VALUE
+    if (isOutOfRange) {
+        throwError(EM.ERR_BYTE_OVERFLOW)
+    }
+    return value.toByte()
+}
+
+/** Narrows an already-parsed [Int] to [Short], throwing [EM.ERR_SHORT_OVERFLOW] instead of wrapping. */
+internal inline fun narrowToShort(
+    value: Int,
+    throwError: (String) -> Nothing,
+): Short {
+    val isOutOfRange = value < Short.MIN_VALUE || value > Short.MAX_VALUE
+    if (isOutOfRange) {
+        throwError(EM.ERR_SHORT_OVERFLOW)
+    }
+    return value.toShort()
 }
 
 internal inline fun getFloatPowerOfTen(
