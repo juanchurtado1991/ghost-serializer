@@ -35,6 +35,7 @@ CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R
 FOOTER_Y = PAGE_H - 10
 BODY_BOTTOM = FOOTER_Y - 2
 
+TOC_ANCHOR = "navigation-index"
 ANCHOR_RE = re.compile(r"\s*\{#([a-z0-9_-]+)\}\s*$", re.I)
 LINK_RE = re.compile(r"\[([^\]]+)\]\(#([a-z0-9_-]+)\)", re.I)
 
@@ -46,12 +47,28 @@ def _strip_md_inline(text: str) -> str:
 
 
 def _slug(text: str) -> str:
+    """Same anchor GitHub generates for the heading, so the Markdown index links work in both."""
     text = re.sub(r"^#+\s*", "", text)
-    text = ANCHOR_RE.sub("", text).strip().lower()
-    text = unicodedata.normalize("NFKD", text)
-    text = "".join(c for c in text if not unicodedata.combining(c))
-    text = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
-    return text or "section"
+    text = ANCHOR_RE.sub("", text).strip()
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text).replace("`", "").lower()
+    kept = (
+        c for c in text
+        if c in " -_" or unicodedata.category(c)[0] in "LN" or unicodedata.category(c) in ("Mn", "Mc")
+    )
+    return "".join(kept).replace(" ", "-") or "section"
+
+
+class _SlugRegistry:
+    """Appends -1, -2, ... to repeated heading slugs, as GitHub does."""
+
+    def __init__(self) -> None:
+        self._seen: dict[str, int] = {}
+
+    def unique(self, title: str) -> str:
+        base = _slug(title)
+        count = self._seen.get(base, 0)
+        self._seen[base] = count + 1
+        return base if count == 0 else f"{base}-{count}"
 
 
 def _parse_anchor_title(line: str) -> tuple[str, str | None]:
@@ -308,6 +325,7 @@ def _parse_table_row(line: str) -> list[str]:
 
 def parse_and_build(md: str, pdf: ManualPDF) -> None:
     lines = md.splitlines()
+    slugs = _SlugRegistry()
     i = 0
     in_code = False
     code_buf: list[str] = []
@@ -350,18 +368,18 @@ def parse_and_build(md: str, pdf: ManualPDF) -> None:
             if pdf._in_toc:
                 pdf._in_toc = False
             title, anchor = _parse_anchor_title(line[2:])
-            pdf.h1(title, anchor or _slug(title))
+            pdf.h1(title, anchor or slugs.unique(title))
         elif line.startswith("## "):
             title, anchor = _parse_anchor_title(line[3:])
-            anchor = anchor or _slug(title)
-            if anchor == "indice":
+            anchor = anchor or slugs.unique(title)
+            if anchor == TOC_ANCHOR:
                 pdf._in_toc = True
-            elif pdf._in_toc and anchor != "indice":
+            elif pdf._in_toc and anchor != TOC_ANCHOR:
                 pdf._in_toc = False
             pdf.h2(title, anchor)
         elif line.startswith("### "):
             title, anchor = _parse_anchor_title(line[4:])
-            pdf.h3(title, anchor or _slug(title))
+            pdf.h3(title, anchor or slugs.unique(title))
         elif line.strip() == "---":
             if pdf._in_toc:
                 pdf._in_toc = False

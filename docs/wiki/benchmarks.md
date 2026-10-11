@@ -149,7 +149,7 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 
 ---
 
-## 👻 Ghost Special Features
+## Ghost Special Features
 
 | Feature | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
 |:---|:---:|:---:|:---:|
@@ -166,7 +166,7 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 
 ---
 
-## 👻 RawJson Capture (bytes vs string channels)
+## RawJson Capture (bytes vs string channels)
 
 | Scenario | Throughput (GB/s) | Latency (µs/op) | Allocation (KB/op) |
 |:---|:---:|:---:|:---:|
@@ -185,7 +185,7 @@ Latency-only micro-benchmarks on tiny payloads (GB/s is omitted — it would be 
 
 ---
 
-## 👻 YAML Round-Trip (Ghost-only)
+## YAML Round-Trip (Ghost-only)
 
 Ghost-only suite — there is no KSER/Moshi YAML equivalent. Exercises KSP-generated `GhostYamlSerializer` on the integration [`YamlBenchUser`](../../ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/YamlBenchUser.kt) fixture via `Ghost.decodeFromYaml` / `encodeToYaml` / `encodeToYamlBytes`.
 
@@ -216,7 +216,7 @@ Prefer **`ByteArray`** inputs when your client already exposes bytes — avoids 
 
 ---
 
-## 👻 YAML Spec Compliance (Ghost-only)
+## YAML Spec Compliance (Ghost-only)
 
 Not a performance benchmark — a **spec-conformance report** against the vendored
 [yaml-test-suite](https://github.com/yaml/yaml-test-suite) snapshot (`ghost-serialization/src/jvmTest/resources/yaml-test-suite`,
@@ -271,7 +271,7 @@ build if a tracked case ever regresses or a stale entry survives a snapshot refr
 
 ---
 
-## 👻 YAML Writer Conformance (Ghost-only)
+## YAML Writer Conformance (Ghost-only)
 
 The reader-side report above says nothing about the **writer** (`GhostYamlWriter`). This report runs every
 vendored yaml-test-suite case the reader can decode through `decode -> encode -> decode` and checks two things:
@@ -319,7 +319,7 @@ violation; every one of those cases round-trips correctly through Ghost's own re
 
 ---
 
-## 👻 Proto3 JSON Round-Trip (Ghost-only)
+## Proto3 JSON Round-Trip (Ghost-only)
 
 Ghost-only suite — there is no KSER/Moshi proto3-JSON equivalent. Exercises KSP-generated `@GhostProtoSerialization` serializers through **`GhostProto`** (`GhostProtoJsonFlatReader` on decode; proto quoting / default omission on encode) on [`ProtoBenchUser`](../../ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/ProtoBenchUser.kt).
 

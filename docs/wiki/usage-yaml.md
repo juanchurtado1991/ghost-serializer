@@ -128,7 +128,7 @@ Ghost-only YAML round-trip numbers (`GhostYamlFlatReader` / `GhostYamlWriter` on
 ./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
 ```
 
-→ **[Benchmarks — YAML round-trip](benchmarks.md#-yaml-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
+→ **[Benchmarks — YAML round-trip](benchmarks.md#yaml-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
 
 ---
 

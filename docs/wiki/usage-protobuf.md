@@ -186,7 +186,7 @@ When a `@GhostProtoSerialization` model is eligible for YAML codegen, KSP emits 
 ./gradlew :ghost-benchmark:benchmarkProto -PskipTests
 ```
 
-→ **[Benchmarks — Proto3 JSON round-trip](benchmarks.md#-proto3-json-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
+→ **[Benchmarks — Proto3 JSON round-trip](benchmarks.md#proto3-json-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
 
 **Well-Known Types** (`ProtoDuration`, `ProtoTimestamp`, …) — micro-benchmarks inside `benchmarkSpecial`:
 

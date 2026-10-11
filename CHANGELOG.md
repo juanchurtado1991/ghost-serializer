@@ -282,9 +282,9 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 ### Added
 - **ProtoLab Benchmark (Sample App)**: New interactive UI in the sample app to compare Ghost, GhostProto, and KotlinX Serialization on Standard JSON vs Proto3 JSON payloads, using real OpenLibrary API data.
 - **`ghost-protobuf` module**: New Kotlin Multiplatform module (`com.ghostserializer:ghost-protobuf`, package `com.ghost.protobuf`, targets Android / iOS arm64+simulator / JVM) that layers proto3 JSON mapping rules on top of the existing byte-first JSON engine. Entry point `GhostProtobuf.deserialize<T>()` accepts `ByteArray`, `String`, `BufferedSource`, or a pre-built `GhostProtoJsonFlatReader`. See the new [Usage — Protobuf](docs/wiki/usage-protobuf.md) wiki page.
-- **Jazzer fuzzing suite**: Added `ProtoWktFuzzTest` leveraging coverage-guided fuzzing (Jazzer) on WKT parsers (`parseDuration`, `parseTimestamp`, `decodeBase64String`) and round-trip assertions.
+- **Jazzer fuzzing suite**: Added `ProtoWktFuzzTest`, coverage-guided fuzzing (Jazzer) on WKT parsers (`parseDuration`, `parseTimestamp`, `decodeBase64String`) and round-trip assertions.
 - **`@GhostProtoSerialization` annotation** (`ghost-api`): Proto3-JSON-mapping variant of `@GhostSerialization` — lowerCamelCase field names, default/empty values omitted on serialize, 64-bit integers (`Long`) as quoted strings, enums as strings (already Ghost's default), `ByteArray` as Base64. Covers direct properties, `@JvmInline value class`-wrapped properties, and `List`/`Set`/`Map` elements. `GhostSerializationProcessor` scans for both annotations; `GhostAnalyzer` auto-converts `snake_case` field names to `lowerCamelCase` for `@GhostProtoSerialization` classes (unless an explicit `@GhostName`/`@SerialName` overrides it) and recognizes `@GhostProtoSerialization` types as valid nested Ghost types alongside `@GhostSerialization`.
-- **oneof mapping**: proto3 `oneof` (variant field appears as a sibling of the message's other fields, no wrapper/discriminator) is supported by composing `@GhostWrappedKeys` with `@GhostSerialization(inferred = true)` sealed hierarchies — no dedicated annotation needed. Fixed `GhostAnalyzer.resolveWrappedUnwrapFields`/`BaseSerializeEmitter.emitWrappedKeysProperty` to resolve wire keys against a wrapped sealed type's *subclasses* (an `is`-check + smart-cast per resolved field) — previously the serialize direction silently dropped the payload (`resolveWrappedUnwrapFields` only looked at the wrapped type's own properties, and a sealed parent has none). See [Usage — Protobuf §3](docs/wiki/usage-protobuf.md#3-oneof-mapping).
+- **oneof mapping**: proto3 `oneof` (variant field appears as a sibling of the message's other fields, no wrapper/discriminator) is supported by composing `@GhostWrappedKeys` with `@GhostSerialization(inferred = true)` sealed hierarchies — no dedicated annotation needed. Fixed `GhostAnalyzer.resolveWrappedUnwrapFields`/`BaseSerializeEmitter.emitWrappedKeysProperty` to resolve wire keys against a wrapped sealed type's *subclasses* (an `is`-check + smart-cast per resolved field) — previously the serialize direction silently dropped the payload (`resolveWrappedUnwrapFields` only looked at the wrapped type's own properties, and a sealed parent has none). See [Usage — Protobuf §3](docs/wiki/usage-protobuf.md#4-oneof-mapping).
 - **`ProtoAnyRegistry`** (`ghost-protobuf/wkt`): `register<T>(typeUrl)` / `pack(value)` / `unpack<T>(any)` / `unpackDynamic(any)` — resolves a `ProtoAny`'s `typeUrl` to a concrete Kotlin type (via `Ghost`'s own serializer registry) instead of requiring callers to decode `ProtoAny.value` manually.
 - **Full-range `uint64`**: `ProtoUInt64Value` is now backed by `ULong` instead of `Long` — `Long` can only represent about half of `uint64`'s range (0–`Long.MAX_VALUE`), silently failing/overflowing above that. `ULong.toString()` is unsigned-aware, so serialize no longer needs the `Long`-specific `formatLong()` helper. Also fixed `GhostProtoJsonFlatReader.nextProtoUInt64()`, previously dead code that just delegated to the `Long`-range-limited `nextProtoInt64()`.
 - **`GhostProtoConverterFactory`** (`ghost-retrofit`): Retrofit `Converter.Factory` for proto3-JSON APIs — reads through `GhostProtoJsonFlatReader` instead of the plain flat reader. Direct (non-generic) types only, unlike `GhostConverterFactory`.
@@ -324,7 +324,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 ## [1.2.5] - 2026-07-06
 
 ### Distribution
-- **GitHub Packages**: `1.2.5` is published to [GitHub Packages](docs/wiki/github-packages.md) while Maven Central monthly publishing limits are in effect. Maven Central remains at `1.2.4`; use the GitHub Packages repository (see wiki) for `1.2.5+`.
+- **GitHub Packages**: `1.2.5` is published to GitHub Packages while Maven Central monthly publishing limits are in effect. Maven Central remains at `1.2.4`; use the GitHub Packages repository for `1.2.5+`.
 
 ### Added
 - **`@GhostWrappedKeys` structural transformation**: Collapses sibling JSON keys into a single Kotlin property (inverse of `@GhostWrap`, SmartThings `@WrappedKeys` parity). Deserialize captures each wire key as a zero-copy `RawJson` slice, assembles a synthetic wrapper object in a pooled scratch buffer, and parses the target type; serialize unwraps inner fields back to sibling keys. Supports `omitIfEmpty`, `omitIfAbsent`, repeated annotations on different properties, and nested hierarchy composition. Integration tests port `WrappedKeysTypeAdapterFactoryTest` scenarios.
@@ -388,7 +388,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 - **Bytes Decode**: `GhostJsonFlatReader` reaches **1120.0 ops/s** (+71.4% faster than KSer) with **-84.4% memory** (671.7 KB vs 4297.0 KB).
 - **Streaming Decode**: `GhostJsonReader` reaches **501.7 ops/s** (+63.2% faster than KSer) with **-30.7% memory**.
 - **Streaming segment-buffering**: Implemented an internal 8 KB segment buffer directly in `StreamingGhostSource` that copies and holds active Okio segments. This completely bypasses the virtual dispatch and segment-walking overhead associated with Okio's generic APIs on every character read.
-- **Dynamic String Writer Heap Sizing**: Reduced the default initial capacity of `FlatCharArrayWriter` from **8 KB (16 KB heap)** to **1 KB (2 KB heap)**. Built custom platform heuristics defining `maxWarmCharWriteBufferCapacity` (JVM: `512 KB`, Android: `256 KB`), yielding a massive heap memory footprint reduction per thread on the String serialization pool.
+- **Dynamic String Writer Heap Sizing**: Reduced the default initial capacity of `FlatCharArrayWriter` from **8 KB (16 KB heap)** to **1 KB (2 KB heap)**. Built custom platform heuristics defining `maxWarmCharWriteBufferCapacity` (JVM: `512 KB`, Android: `256 KB`), reducing the per-thread heap footprint of the String serialization pool.
 - **Mobile Buffer Warm Capacity and Heuristics**: Fine-tuned target-specific buffer retention limits for mobile devices (Android and iOS) to `1024 * 1024` bytes (1MB) and `512 * 1024` chars. This prevents aggressive warm buffer contraction on moderately sized payloads (up to ~1MB) during string encoding, dropping `WRITE_STRING` memory allocations by **78%** on Android (from `1960KB` to `418KB`) and accelerating speed to beat KSER.
 - **Native Bulk String Copy Restoration**: Restored native JVM-backed `copyRangeToCharArray` optimization paths for JVM/Android targets, bypassing slow byte-by-byte conversion loops.
 - **Bitwise Escape Mask Checks**: Refactored string escape validation loops in `GhostJsonStringWriter` and `GhostJsonWriter` to use dedicated bitwise checks via `ESCAPE_MASKS` with hoisted local registers, keeping in alignment with the `BITWISE sobre TODO` design rules.
@@ -402,8 +402,8 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 - **Lazy `stringDispatch` table in `JsonReaderOptions`**: The `stringDispatch` IntArray is now initialized lazily via a custom getter. Modules that do not enable `ghost.textChannel` incur zero initialization cost at class-loading time.
 
 ### Refactored
-- **Zero Magic Strings & Numbers in compiler**: Hardened `GhostEmitterConstants` and `GhostJsonConstants` by centralizing all template strings, error messages, and identifiers. Compiler logic is now 100% literal-free.
-- **Zero Magic Strings in runtime**: Hardened `GhostStringUtil.jvm.kt` by replacing `Unsafe` literal names and offsets with explicit descriptive constants.
+- **Zero Magic Strings & Numbers in compiler**: Moved all template strings, error messages, and identifiers into `GhostEmitterConstants` and `GhostJsonConstants`; compiler logic no longer uses inline literals.
+- **Zero Magic Strings in runtime**: Replaced the `Unsafe` literal names and offsets in `GhostStringUtil.jvm.kt` with named constants.
 - **KMP Deprecations Cleanup**: Replaced deprecated raw `String(CharArray, Int, Int)` platform constructors with the standard Kotlin Multiplatform `CharArray.concatToString(startIndex, endIndex)` inside the `GhostJsonStringReader` slow path.
 - **Removed deprecated String reader overload**: The KSP compiler no longer generates the `deserialize(json: String)` direct-string overload in modules without `ghost.textChannel=true`, eliminating dead code and the associated dispatch table allocation.
 
@@ -420,18 +420,18 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 ### Fixed
 - **Contextual Serializers Class-Loading NullPointerException (Critical):** Resolved a critical NPE during class initialization of KSP-generated serializers (like `ContextualModelSerializer`). When `Ghost.prewarm()` loaded the default registry, serializers containing external types loaded their static fields early and threw NPEs if their contextual serializers weren't already registered. Fixed by allowing pre-registration of manual registries before calling `Ghost.prewarm()`.
 - **Twitter Benchmark Codebase Refactoring:** Refactored the benchmark suite by extracting configurations, engines, data models, and the Twitter macro benchmark into `BenchmarkModels.kt` and `TwitterBenchmark.kt`, reducing the size of `GhostBenchmark.kt` and removing all compiler warnings.
-- **100% Data Fidelity Guarantee:** Added robust, automated deep-equivalence testing (`GhostTwitterReproductionTest.kt`) verifying 100% exact structural parity with Kotlinx Serialization and complete zero-data-loss serialization roundtrips over the entire Twitter macro dataset.
+- **Twitter dataset parity test:** Added `GhostTwitterReproductionTest.kt`, a deep-equivalence test checking that Ghost decodes the whole Twitter macro dataset to the same structure as Kotlinx Serialization and round-trips it without data loss.
 
 ### Added
 - **Twitter Benchmark Memory Metrics:** Integrated `ThreadMXBean` memory tracking to profile real-time allocated memory per operation (KB/op) in the Twitter Macro Dataset benchmark, demonstrating up to **6.5x memory reduction** when using direct bytes.
-- **Special Features Twitter Tests:** Included integration tests verifying Ghost's advanced structural features (`@GhostFlatten`, `@GhostWrap`, and `@GhostIgnore`) on Twitter-like payloads with flawless serialization roundtrips.
+- **Special Features Twitter Tests:** Included integration tests verifying Ghost's advanced structural features (`@GhostFlatten`, `@GhostWrap`, and `@GhostIgnore`) on Twitter-like payloads with exact serialization roundtrips.
 
 ## [1.2.0] - 2026-05-30
 
 ### Added
-- **Native Declarative Annotations (@GhostStrict & @GhostCoerce)**: Shipped new dynamic annotations for elegant, declarative, and zero-allocation parsing customization.
+- **Native Declarative Annotations (@GhostStrict & @GhostCoerce)**: Shipped new dynamic annotations for declarative, zero-allocation parsing customization.
   - **Retrofit**: Supports `@GhostStrict` and `@GhostCoerce` on API service interface methods.
-  - **Spring Boot**: Fully supports `@GhostStrict` and `@GhostCoerce` at the controller class, method, or `@RequestBody` parameter levels with 100% thread-safety.
+  - **Spring Boot**: Fully supports `@GhostStrict` and `@GhostCoerce` at the controller class, method, or `@RequestBody` parameter levels, thread-safely.
   - **Ktor**: Enhanced `GhostContentConverter` with a customizable configurer lambda for direct reader tuning on KMP.
 
 ### Fixed
@@ -455,7 +455,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 - **Negative Depth Boundary Safety**: Protected reader depth decrement operations in `endObject()` and `endArray()` to stay non-negative, preventing bitmask corruption under malformed or resilient parsing.
 
 ### Performance
-- **Zero-Allocation Stream Decoding**: In `StreamingGhostSource.decodeToString`, eliminated a temporary `Buffer` allocation and segment copy. Now leverages Okio's `snapshot(end).substring(start, end).utf8()` directly, resulting in zero-copy range views of existing buffered segments.
+- **Zero-Allocation Stream Decoding**: In `StreamingGhostSource.decodeToString`, eliminated a temporary `Buffer` allocation and segment copy. Now uses Okio's `snapshot(end).substring(start, end).utf8()` directly, resulting in zero-copy range views of existing buffered segments.
 - **Pool Tier Collision**: Resolved a collision in `GhostPools.kt` where `SCRATCH_BUFFER_SIZE` (48 bytes) and `TIER_SMALL` (1024 bytes) shared the same pool slot. Added a dedicated `scratch` field to `GhostPool` to prevent buffer eviction leaks and improve recycling of intermediate parsing arrays.
 
 ## [1.1.20] - 2026-05-28
@@ -463,7 +463,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 ### Performance — Reader (Parser)
 - **Bypassed Virtual Dispatch in General Reader**: In `GhostJsonReader` (the general-purpose JSON reader), optimized hot-path methods (`skipWhitespace`, `skipAndValidateLiteral`, `readQuotedString`, and `skipQuotedString`) to check `isStreaming` and perform direct, static array operations when `isStreaming` is false.
 - **Bypassed Virtual Dispatch in Subsystem Select**: In `internalSelect` (used by generated serializers for fast field name dispatch), replaced the virtual `source.findClosingQuote` call with `findClosingQuoteImpl` directly on the underlying `rawData` array.
-- **Benchmarking Gains**: These changes result in a **5% to 10%** deserialization speedup on flat payloads, and up to **60%** speedup for custom property-level decoders (`@GhostDecoder`) which leverage the reader APIs.
+- **Benchmarking Gains**: These changes result in a **5% to 10%** deserialization speedup on flat payloads, and up to **60%** speedup for custom property-level decoders (`@GhostDecoder`) which use the reader APIs.
 
 ## [1.1.19] - 2026-05-27
 
@@ -564,17 +564,17 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 - **Registry Fragmentation (Sharding)**: Implemented automatic "sharding" for the `GhostModuleRegistry`. In projects with thousands of models, the registry is split into smaller, JVM-compliant chunks to avoid the 64KB method size limit while maintaining O(1) average lookup performance.
 - **Dynamic Import Optimization**: Serializers now perform property-aware import generation. Only the necessary parser functions (e.g., `readList`, `nextInt`) are imported, eliminating "unused import" warnings and reducing build-time bloat.
 - **Lazy Registry Discovery (O(1))**: Rewrote the cross-platform discovery engine to be fully lazy. Ghost now loads the default module via `Class.forName` (fast-path) and stops before invoking the expensive `ServiceLoader` scan. **Reduces cold start by ~20-30% on JVM/Android.**
-- **Automatic Fragmented Emission**: Models with more than 40 properties are now automatically serialized/deserialized using a "Chunked" strategy. This prevents JVM "method too large" errors and maintains peak JIT performance even for massive objects.
+- **Automatic Fragmented Emission**: Models with more than 40 properties are now automatically serialized/deserialized using a "Chunked" strategy. This prevents JVM "method too large" errors and maintains peak JIT performance even for very large objects.
 - **JIT-Friendly Inlining**: Applied `@Suppress("NOTHING_TO_INLINE")` and mandatory `inline` modifiers to fragmented chunks, guiding the JVM to optimize execution paths while bypassing bytecode limits.
 - **Hot-Path Inlining**: Refactored `resolveSerializer` to be an `inline` function that checks the cache first, eliminating lambda allocations and `typeOf` calls during steady-state execution.
 - **Loop Optimization**: Replaced `forEach` and `forEachIndexed` with standard `for` loops in the code generator to improve efficiency and reduce GC pressure during the KSP phase.
 - **Bitwise-Accelerated Parsing**: All internal validations (hex, whitespace, control characters) now use bitwise masks for maximum throughput.
 - **Optimized Field Matching**: Refactored `selectNameAndConsume` to use an O(1) bitwise Trie lookup, reducing field identification overhead.
 - **Writing Fusion**: Fused separator and header writes in `GhostJsonFlatWriter` to minimize branching and eliminate performance regressions.
-- **Zero-Allocation Numbers**: Hardened the fast-path engine for `Double` and `Long` formatting to ensure zero heap allocation in 99% of use cases.
+- **Zero-Allocation Numbers**: The `Double` and `Long` formatting fast path no longer allocates on the heap in the common case.
 
 ### Added
-- **Production Hardening Suite**: Introduced a comprehensive test battery covering huge models (45+ fields), deeply nested generic collections, and massive inferred polymorphism hierarchies.
+- **Production Hardening Suite**: Introduced a comprehensive test battery covering huge models (45+ fields), deeply nested generic collections, and large inferred polymorphism hierarchies.
 - **Polymorphic Fallbacks**: Introduced `@GhostFallback` for sealed classes. Unknown discriminators now map to a safe default subclass instead of throwing an exception.
 - **Enum & Type Resilience**: New `@GhostResilient` annotation. Prevents crashes when receiving invalid enums or type mismatches by assigning `null` or default values.
 - **Custom Field Decoders/Encoders**: Support for `@GhostDecoder` and `@GhostEncoder` properties. Delegate specific field logic to manual functions while keeping the rest of the class automated.
@@ -593,7 +593,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 - **KSP Format Integrity**: Resolved critical `UnknownFormatConversionException` and `IllegalArgumentException` by strictly segregating KotlinPoet templates (`%L`, `%T`) from standard Java format strings (`%s`).
 - **Signature Mismatch**: Fixed a bug in standard mode where the `deserialize` function was omitted from the generated serializer object due to improper delegation.
 - **Map Serialization Integrity**: Resolved a critical corruption bug in `MapSerializer` where the parser failed to consume separators correctly in complex nested maps.
-- **Unresolved Processor References**: Fixed a build error where generated registry constants were missing the `C.` prefix after the massive constant migration.
+- **Unresolved Processor References**: Fixed a build error where generated registry constants were missing the `C.` prefix after the constant migration.
 - **Large String Flush**: Resolved a boundary condition in `FlatByteArrayWriter` when serializing very large escaped strings near the scratch buffer limit.
 - **Depth Protection**: Improved JIT-friendliness of recursion depth checks in nested objects.
 
@@ -622,7 +622,7 @@ implementation("com.ghostserializer:ghost-ktor:1.3.0") // JSON + YAML + Proto ad
 
 ## [1.1.10] - 2026-04-24
 ### Added
-- **Resilience Transpiler (v2.0)**: Complete rewrite of the Node.js transpiler with a robust parser supporting nested models, list of objects, and Kotlin keyword escaping (including soft keywords like `value`).
+- **Resilience Transpiler (v2.0)**: Complete rewrite of the Node.js transpiler with a parser supporting nested models, list of objects, and Kotlin keyword escaping (including soft keywords like `value`).
 - **Single-Crossing Factory (Fast Path)**: Optimized the JS-to-Wasm bridge for small models (< 10 fields). It now generates a dedicated `@JsFun` factory that creates the entire JS object in a single crossing, reducing bridge latency.
 - **Self-Validating Test Suite**: Shipped a comprehensive test suite with **250+ assertions** covering edge cases, stress payloads, and paranoid naming collisions.
 - **Type-Safe Union Fallbacks**: Implemented smart fallback logic for TypeScript union types (`string | number`) and Literal types (`'a' | 'b'`) ensuring they map safely to Kotlin `String`.

@@ -1,4 +1,4 @@
-# Ghost Serialization 1.3.4 {#titulo}
+# Ghost Serialization 1.3.4
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
@@ -8,67 +8,67 @@
 
 This document is meant to be studied **in PART order (I → VIII)** or by jumping via the index (blue links in the PDF). Tables summarize; paragraphs and JSON examples explain the **why** and **when** to use each piece. If something does not match your project, open the `.kt` file indicated under `build/generated/ksp/` after compiling.
 
-## Navigation index {#indice}
+## Navigation index
 
 In the PDF: tap blue entries to jump between sections. In the PDF reader also use the **Bookmarks/Outline** menu (side panel).
 
 **PART I — Fundamentals**
-- [I.1 Philosophy and architecture](#cap-1--filosofa-y-promesa-de-ghost)
-- [I.2 Module map](#cap-2--mapa-de-mdulos-del-monorepo)
+- [I.1 Philosophy and architecture](#1-ghost-philosophy-and-promise)
+- [I.2 Module map](#2-monorepo-module-map)
 
 **PART II — Public API (ghost-api + Ghost.kt)**
-- [II.1 Annotations](#cap-3--ghost-api-anotaciones)
-- [II.2 Full Ghost.kt API](#cap-8--ghost-kt-api-pblica-runtime)
-- [II.3 GhostSerializer contract](#cap-9--ghostserializer-contrato-dual)
+- [II.1 Annotations](#3-ghost-api--annotations)
+- [II.2 Full Ghost.kt API](#8-ghostkt--public-runtime-api)
+- [II.3 GhostSerializer contract](#9-ghostserializer--dual-contract)
 
 **PART III — KSP compiler (compile-time internals)**
-- [III.1 KSP processor](#cap-4--ksp-entrada-del-compilador)
-- [III.2 GhostAnalyzer](#cap-5--ghostanalyzer-y-modelos-de-propiedad)
-- [III.3 Emitters and generated code](#cap-6--generacin-de-cdigo-emitters)
-- [III.4 Registry and sharding](#cap-7--registry-y-descubrimiento)
+- [III.1 KSP processor](#4-ksp--compiler-entry-point)
+- [III.2 GhostAnalyzer](#5-ghostanalyzer-and-property-models)
+- [III.3 Emitters and generated code](#6-code-generation--emitters)
+- [III.4 Registry and sharding](#7-registry-and-discovery)
 
 **PART IV — Internal runtime**
-- [IV.1 Deserialize/encode pipeline](#pipeline-runtime)
-- [IV.2 GhostJsonFlatReader + JsonReaderOptions](#cap-10--ghostjsonflatreader-parser-rpido)
-- [IV.3 GhostJsonReader streaming](#cap-11--ghostjsonreader-parser-streaming)
-- [IV.4 Writers and warm buffer](#cap-12--writers-flatbytearraywriter)
-- [IV.5 Pools and heuristics](#cap-13--ghostpools-y-scratch-buffers)
-- [IV.6 JVM vs iOS](#cap-7--registry-y-descubrimiento)
+- [IV.1 Deserialize/encode pipeline](#end-to-end-deserialize-and-encode-pipeline)
+- [IV.2 GhostJsonFlatReader + JsonReaderOptions](#10-ghostjsonflatreader--fast-parser)
+- [IV.3 GhostJsonReader streaming](#11-ghostjsonreader--streaming-parser)
+- [IV.4 Writers and warm buffer](#12-writers--flatbytearraywriter)
+- [IV.5 Pools and heuristics](#13-ghostpools-and-scratch-buffers)
+- [IV.6 JVM vs iOS](#7-registry-and-discovery)
 
 **PART V — HTTP adapters**
-- [V.1 Gradle plugin](#cap-17--ghost-gradle-plugin)
-- [V.2 Retrofit](#cap-18--ghost-retrofit)
-- [V.3 Ktor](#cap-19--ghost-ktor)
-- [V.4 Spring Boot](#cap-20--ghost-spring-boot-starter)
+- [V.1 Gradle plugin](#17-ghost-gradle-plugin)
+- [V.2 Retrofit](#18-ghost-retrofit)
+- [V.3 Ktor](#19-ghost-ktor)
+- [V.4 Spring Boot](#20-ghost-spring-boot-starter)
 
 **PART VI — CI, tests, and commands**
-- [VI.1 GitHub Actions CI](#cap-23--ci-y-tests)
-- [VI.2 Gradle commands](#comandos-gradle)
-- [VI.3 Integration-test](#cap-40--modelos-de-prueba-del-integration-test)
-- [VI.4 Benchmark](#comandos-gradle)
+- [VI.1 GitHub Actions CI](#23-ci-and-tests)
+- [VI.2 Gradle commands](#reference-gradle-commands)
+- [VI.3 Integration-test](#40-integration-test-sample-models)
+- [VI.4 Benchmark](#reference-gradle-commands)
 
 **PART VII — Publishing, security, errors**
-- [VII.1 Maven Central](#cap-22--publicacin-maven-central)
-- [VII.2 ProGuard](#cap-21--proguard-r8)
-- [VII.3 Errors and troubleshooting](#cap-28--errores-comunes)
-- [VII.4 Security model](#seguridad)
+- [VII.1 Maven Central](#22-maven-central-publishing)
+- [VII.2 ProGuard](#21-proguard--r8)
+- [VII.3 Errors and troubleshooting](#28-common-errors)
+- [VII.4 Security model](#security-model-and-limits)
 
 **PART VIII — integration-test catalog and generated walkthrough**
-- [VIII.1 Full model catalog](#catalogo-integration-test)
-- [VIII.2 BenchUserSerializer walkthrough](#walkthrough-benchuser)
-- [VIII.3 Module generated registry](#registry-integration-test)
+- [VIII.1 Full model catalog](#viii1-full-model-catalog)
+- [VIII.2 BenchUserSerializer walkthrough](#viii2-walkthrough-benchuserserializer-line-by-line)
+- [VIII.3 Module generated registry](#viii3-integration-test-generated-registry)
 
 **References**
-- [API cheat sheet](#cap-29--api-rpida-cheat-sheet)
-- [Key repo files](#cap-30--archivos-clave-para-leer-en-el-repo)
-- [Glossary](#cap-32--glosario)
-- [Factual verification](#verificacion-factual)
+- [API cheat sheet](#29-quick-api--cheat-sheet)
+- [Key repo files](#30-key-files-to-read-in-the-repo)
+- [Glossary](#32-glossary)
+- [Factual verification](#factual-verification-aligned-with-code-134)
 
 ---
 
-# PART I — Fundamentals {#parte-i}
+# PART I — Fundamentals
 
-## 1. Ghost philosophy and promise {#cap-1--filosofa-y-promesa-de-ghost}
+## 1. Ghost philosophy and promise
 
 ### What problem it solves
 
@@ -134,9 +134,9 @@ If `Ghost.deserialize` throws `NOT_FOUND`, it almost always means: missing annot
 
 ---
 
-# PART II — Public API {#parte-ii}
+# PART II — Public API
 
-## 2. Monorepo module map {#cap-2--mapa-de-mdulos-del-monorepo}
+## 2. Monorepo module map
 
 | Module | Published | Role |
 | ghost-api | Yes | Public annotations, zero deps |
@@ -178,7 +178,7 @@ You do not ship the compiler in your final app as “business logic”; it only 
 
 ---
 
-## 3. ghost-api — Annotations {#cap-3--ghost-api-anotaciones}
+## 3. ghost-api — Annotations
 
 Package: `com.ghost.serialization.annotations`. No external dependencies. Ten public annotations:
 
@@ -340,9 +340,9 @@ Marks which fields uniquely identify a subclass in inferred polymorphism. The co
 
 ---
 
-# PART III — KSP compiler (internals) {#parte-iii}
+# PART III — KSP compiler (internals)
 
-## 4. KSP — Compiler entry point {#cap-4--ksp-entrada-del-compilador}
+## 4. KSP — Compiler entry point
 
 KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost registers its processor via SPI:
 
@@ -391,7 +391,7 @@ Open a `*Serializer.kt` and compare it with PART VIII of this manual (BenchUser 
 
 ---
 
-## 5. GhostAnalyzer and property models {#cap-5--ghostanalyzer-y-modelos-de-propiedad}
+## 5. GhostAnalyzer and property models
 
 `GhostAnalyzer.kt` is the compiler “notary”: it turns each `KSClassDeclaration` into a list of `GhostPropertyModel` that emitters consume.
 
@@ -424,7 +424,7 @@ If the analyzer detects a problem, KSP reports an error and **the build fails**.
 
 ---
 
-## 6. Code generation — Emitters {#cap-6--generacin-de-cdigo-emitters}
+## 6. Code generation — Emitters
 
 | Class | Role |
 | GhostCodeGenerator | Orchestrates serialize + deserialize |
@@ -490,7 +490,7 @@ JVM limits bytecode size per method (~64 KB). A `GodObject` with 80 fields would
 
 ---
 
-## 7. Registry and discovery {#cap-7--registry-y-descubrimiento}
+## 7. Registry and discovery
 
 ### Registry sharding (internal)
 
@@ -562,7 +562,7 @@ When you call `addRegistry`, Ghost walks `registry.getAllSerializers()` and prel
 
 ---
 
-## 8. Ghost.kt — Public runtime API {#cap-8--ghost-kt-api-pblica-runtime}
+## 8. Ghost.kt — Public runtime API
 
 Central file: `ghost-serialization/src/commonMain/kotlin/com/ghost/serialization/Ghost.kt`
 
@@ -659,7 +659,7 @@ Ghost.prewarm()
 
 ---
 
-## 9. GhostSerializer — Dual contract {#cap-9--ghostserializer-contrato-dual}
+## 9. GhostSerializer — Dual contract
 
 `GhostSerializer<T>` (`contract/GhostSerializer.kt`) is a fully abstract contract. Generated serializers extend `AbstractGhostSerializer<T>`, which supplies the defaults (Okio sink/source bridges, string-channel fallbacks, no-op `warmUp`). Hand-written serializers should extend it too, and override only what they need.
 
@@ -698,9 +698,9 @@ Always the same `BenchUserSerializer` object; different paths depending on buffe
 
 ---
 
-# PART IV — Internal runtime {#parte-iv}
+# PART IV — Internal runtime
 
-## End-to-end deserialize and encode pipeline {#pipeline-runtime}
+## End-to-end deserialize and encode pipeline
 
 ### Deserialize (hot path)
 
@@ -739,7 +739,7 @@ value T
 | GhostJsonWriter | encodeToBytes / serialize(sink) | Flat buffer (monomorphic hot path) or Okio sink |
 | GhostJsonStringWriter | encodeToString | Contiguous CharArray path |
 
-## 10. GhostJsonFlatReader — Fast parser {#cap-10--ghostjsonflatreader-parser-rpido}
+## 10. GhostJsonFlatReader — Fast parser
 
 `GhostJsonFlatReader` is the parser used in **almost the entire hot path** of Ghost. It reads a `ByteArray` start to end with a `position` index, without allocating objects per token.
 
@@ -790,7 +790,7 @@ reader.endObject()
 
 ---
 
-## 11. GhostJsonReader — Streaming parser {#cap-11--ghostjsonreader-parser-streaming}
+## 11. GhostJsonReader — Streaming parser
 
 `parser/GhostJsonReader.kt` — on Okio / streaming.
 
@@ -802,7 +802,7 @@ Pools: `ThreadLocal` JVM/Android, `@ThreadLocal` iOS in `Ghost.*.kt`.
 
 ---
 
-## 12. Writers — FlatByteArrayWriter {#cap-12--writers-flatbytearraywriter}
+## 12. Writers — FlatByteArrayWriter
 
 `writer/bytes/FlatByteArrayWriter.kt` + `writer/bytes/GhostJsonWriter.kt`
 
@@ -824,7 +824,7 @@ fun reset() {
 
 ---
 
-## 13. GhostPools and scratch buffers {#cap-13--ghostpools-y-scratch-buffers}
+## 13. GhostPools and scratch buffers
 
 `GhostPools.kt` — expect/actual
 
@@ -841,7 +841,7 @@ fun reset() {
 
 ---
 
-## 14. GhostHeuristics — Platform limits {#cap-14--ghostheuristics-lmites-por-plataforma}
+## 14. GhostHeuristics — Platform limits
 
 `GhostHeuristics` (expect/actual per target) defines **compiled** limits per platform. They are not flags the user changes in `Ghost.deserialize()` today.
 
@@ -870,7 +870,7 @@ fun reset() {
 | `Map<String, V>` | Yes — `MapSerializer` |
 | `Set<T>` | Yes — `SetSerializer` via `getSerializer(KType)`; HTTP adapters unwrap top-level `Set<T>` (Retrofit / Spring / Ktor) |
 
-## 15. Primitive and collection serializers {#cap-15--serializers-de-primitivos-y-colecciones}
+## 15. Primitive and collection serializers
 
 `serializers/PrimitiveSerializers.kt`, `ListSerializer`, `MapSerializer`, etc.
 
@@ -880,7 +880,7 @@ For generics: `getSerializer(KType)` builds or caches `ListSerializer` / `SetSer
 
 ---
 
-## 16. Sealed, inferred, multi-branch {#cap-16--sealed-inferred-multi-branch}
+## 16. Sealed, inferred, multi-branch
 
 ### Sealed with discriminator (flow to visualize)
 
@@ -907,9 +907,9 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 ---
 
-# PART V — HTTP adapters {#parte-v}
+# PART V — HTTP adapters
 
-## 17. ghost-gradle-plugin {#cap-17--ghost-gradle-plugin}
+## 17. ghost-gradle-plugin
 
 `GhostPlugin.kt` when applied:
 
@@ -917,7 +917,7 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 2. If KMP → ghost-serialization + ghost-api on commonMain
 3. If Android/JVM → runtime implementation + api
 4. afterEvaluate: if Retrofit/Ktor on classpath → ghost-retrofit / ghost-ktor
-5. If KMP → applies `ghost-compiler-plugin` to Kotlin/Native and Kotlin/Wasm compilations (automatic registration, see [§7](#cap-7--registry-y-descubrimiento))
+5. If KMP → applies `ghost-compiler-plugin` to Kotlin/Native and Kotlin/Wasm compilations (automatic registration, see [§7](#7-registry-and-discovery))
 
 ```kotlin
 ghost {
@@ -932,7 +932,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.4.
 
 ---
 
-## 18. ghost-retrofit {#cap-18--ghost-retrofit}
+## 18. ghost-retrofit
 
 ### Full configuration
 
@@ -972,7 +972,7 @@ If you add `GhostConverterFactory` **before** `GsonConverterFactory`, Retrofit t
 
 ---
 
-## 19. ghost-ktor {#cap-19--ghost-ktor}
+## 19. ghost-ktor
 
 `GhostContentConverter.kt` + `GhostKtorExtensions.kt`
 
@@ -988,7 +988,7 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ---
 
-## 20. ghost-spring-boot-starter {#cap-20--ghost-spring-boot-starter}
+## 20. ghost-spring-boot-starter
 
 ### Dependencies
 
@@ -1058,7 +1058,7 @@ Spring Boot **3.4.5** verified in starter tests.
 
 ---
 
-## 21. ProGuard / R8 {#cap-21--proguard-r8}
+## 21. ProGuard / R8
 
 Ghost ships R8 keep rules in three layers — you usually **do not** hand-copy rules into `proguard-rules.pro`:
 
@@ -1070,7 +1070,7 @@ Ghost ships R8 keep rules in three layers — you usually **do not** hand-copy r
 
 ---
 
-## 22. Maven Central publishing {#cap-22--publicacin-maven-central}
+## 22. Maven Central publishing
 
 Publishable (publish.gradle.kts): ghost-* except benchmark, integration-test, playground.
 
@@ -1088,9 +1088,9 @@ From Linux: iOS variants may be missing on Central.
 
 ---
 
-# PART VI — CI, tests, and commands {#parte-vi}
+# PART VI — CI, tests, and commands
 
-## 23. CI and tests {#cap-23--ci-y-tests}
+## 23. CI and tests
 
 Single workflow: `.github/workflows/ci.yml`
 
@@ -1118,7 +1118,7 @@ Single workflow: `.github/workflows/ci.yml`
 
 `ghost-benchmark:run` depends on ciTest (except -PskipTests).
 
-## Reference Gradle commands {#comandos-gradle}
+## Reference Gradle commands
 
 | Goal | Command |
 |:---|:---|
@@ -1138,7 +1138,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 
 ---
 
-## 24. Test apps (your 3 repos) {#cap-24--test-apps-tus-3-repos}
+## 24. Test apps (your 3 repos)
 
 | App | What it validates |
 | ghost-android-test-app | Gson/Moshi/KSer vs Ghost, Retrofit, Ktor3 |
@@ -1149,7 +1149,7 @@ All use **1.3.4 Maven Central** (no mavenLocal in final config).
 
 ---
 
-## 25. End-to-end flow on Android {#cap-25--flujo-end-to-end-en-android}
+## 25. End-to-end flow on Android
 
 ### Step by step (from scratch)
 
@@ -1159,7 +1159,7 @@ All use **1.3.4 Maven Central** (no mavenLocal in final config).
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
 6. **Retrofit:** `.addConverterFactory(GhostConverterFactory.create())`
-7. **Release:** R8 keep rules merge automatically from Ghost AARs + KSP (`META-INF/proguard/ghost-serialization.pro` per module). See [§21](#cap-21--proguard-r8).
+7. **Release:** R8 keep rules merge automatically from Ghost AARs + KSP (`META-INF/proguard/ghost-serialization.pro` per module). See [§21](#21-proguard--r8).
 
 ### What happens on the first Retrofit request
 
@@ -1175,7 +1175,7 @@ No reflection on that path.
 
 ---
 
-## 26. End-to-end flow on iOS {#cap-26--flujo-end-to-end-en-ios}
+## 26. End-to-end flow on iOS
 
 1. KMP shared module with ghost plugin + export serialization/api
 2. assembleXCFramework on Mac
@@ -1185,7 +1185,7 @@ No reflection on that path.
 
 ---
 
-## 27. End-to-end Spring flow {#cap-27--flujo-end-to-end-spring}
+## 27. End-to-end Spring flow
 
 1. implementation ghost-spring-boot-starter
 2. ghost plugin + ksp in same module as controllers
@@ -1195,9 +1195,9 @@ No reflection on that path.
 
 ---
 
-# PART VII — Publishing, security, errors {#parte-vii}
+# PART VII — Publishing, security, errors
 
-## Security model and limits {#seguridad}
+## Security model and limits
 
 Ghost separates three policy layers:
 
@@ -1211,7 +1211,7 @@ A 100 MB HTTP body is **not** rejected automatically by Ghost; configure OkHttp,
 
 ---
 
-## 28. Common errors {#cap-28--errores-comunes}
+## 28. Common errors
 
 ### NOT_FOUND or “No serializer found”
 
@@ -1223,7 +1223,7 @@ A 100 MB HTTP body is **not** rejected automatically by Ghost; configure OkHttp,
 2. KSP did not run (broken clean, module without ghost plugin) → `./gradlew :app:kspDebugKotlin` or rebuild.
 3. Model in another module without KSP in that module → each module with models needs plugin + ksp.
 4. **iOS/Wasm:** the module was built without the Ghost Gradle plugin (or with `autoRegistration = false`) and `Ghost.addRegistry(GhostModuleRegistry_xxx.INSTANCE)` was not called. On these targets the error message itself says so.
-5. R8 removed serializers → rebuild; consumer rules from `ghost-api` / `ghost-serialization` AARs and KSP `META-INF/proguard/` should keep `@GhostSerialization` / `@GhostProtoSerialization` / `@GhostYamlSerialization` models and `com.ghost.serialization.generated.**`. See [§21](#cap-21--proguard-r8).
+5. R8 removed serializers → rebuild; consumer rules from `ghost-api` / `ghost-serialization` AARs and KSP `META-INF/proguard/` should keep `@GhostSerialization` / `@GhostProtoSerialization` / `@GhostYamlSerialization` models and `com.ghost.serialization.generated.**`. See [§21](#21-proguard--r8).
 
 ### GhostJsonException — missing required field
 
@@ -1271,7 +1271,7 @@ Almost always R8/ProGuard, or automatic registration disabled without an `addReg
 
 ---
 
-## 29. Quick API — cheat sheet {#cap-29--api-rpida-cheat-sheet}
+## 29. Quick API — cheat sheet
 
 ```kotlin
 Ghost.deserialize<T>(json: String)
@@ -1286,7 +1286,7 @@ Ghost.getSerializer(MyClass::class)
 
 ---
 
-## 30. Key files to read in the repo {#cap-30--archivos-clave-para-leer-en-el-repo}
+## 30. Key files to read in the repo
 
 | Topic | Path |
 |:---|:---|
@@ -1305,7 +1305,7 @@ Ghost.getSerializer(MyClass::class)
 
 ---
 
-## 31. Version 1.3.4 — relevant changes {#cap-31--version-1.3.1-cambios-relevantes}
+## 31. Version 1.3.4 — relevant changes
 
 1.3.4 adds watchOS and fixes code generation bugs (see `CHANGELOG.md`):
 
@@ -1324,7 +1324,7 @@ Ghost.getSerializer(MyClass::class)
 ### 1.3.2 highlights
 
 - **Kotlin 2.2.21 minimum** (down from 2.4.0): KSP **2.3.x** (2.3.12), Ktor **3.3.x+** (3.3.3). Verified in CI by `compat-tests/kotlin-consumer`, a standalone Kotlin 2.2.21 project consuming the published artifacts.
-- **Automatic registration on iOS and Wasm**: `ghost-compiler-plugin`, applied by the Gradle plugin to Native/Wasm compilations, links each model to its serializer through associated objects — no `Ghost.addRegistry` needed (see [§7](#cap-7--registry-y-descubrimiento)).
+- **Automatic registration on iOS and Wasm**: `ghost-compiler-plugin`, applied by the Gradle plugin to Native/Wasm compilations, links each model to its serializer through associated objects — no `Ghost.addRegistry` needed (see [§7](#7-registry-and-discovery)).
 - **Errors**: JSON/YAML decode errors carry a JSONPath and a fix hint; not-found errors on Native/Wasm explain registration.
 - **Performance** (no allocation increase): lazy JSONPath reconstruction on error, monomorphic flat-sink writes, inlined buffer capacity checks, single-space token peek, whole-value string-pool hashing, 8-digit SWAR number parsing, primitive-array decode fast path.
 - **Correctness**: `Double`/`Float` parsing and formatting are round-trip safe.
@@ -1347,7 +1347,7 @@ Earlier 1.2.x notes retained below for historical context:
 
 ---
 
-## 31.1. Version 1.2.3 — changes {#cap-31-1--version-1.2.3-cambios}
+## 31.1. Version 1.2.3 — changes
 
 - **KSP2 AST Scan & Compiler Optimizations**: Integrated full KSP2 compatibility (aligned with Kotlin 2.4.0 / KSP 2.3.10) for faster incremental builds and improved compile-time AST inspection.
 - **Perfect Hashing & O(1) Field Lookup**: Optimized key dispatch tables utilizing precomputations of 4-byte hash slots inside `JsonReaderOptions` to minimize collisions during field lookup.
@@ -1357,7 +1357,7 @@ Earlier 1.2.x notes retained below for historical context:
 
 ---
 
-## 31.5. Version 1.1.17 — legacy changes {#cap-31--versin-1-1-17-cambios-relevantes}
+## 31.5. Version 1.1.17 — legacy changes
 
 - No maxPayloadBytes in core (HTTP limits in OkHttp/Spring/nginx)
 - JVM warm buffer 8 MB (fix inflated WRITE benchmark)
@@ -1368,7 +1368,7 @@ Earlier 1.2.x notes retained below for historical context:
 
 ---
 
-## 32. Glossary {#cap-32--glosario}
+## 32. Glossary
 
 - **KSP:** Kotlin Symbol Processing — compile-time codegen
 - **Flat path:** reader/writer on contiguous ByteArray
@@ -1379,7 +1379,7 @@ Earlier 1.2.x notes retained below for historical context:
 
 ---
 
-## 33. GhostSerializationProcessor — real code {#cap-33--ghostserializationprocessor-cdigo-real}
+## 33. GhostSerializationProcessor — real code
 
 File: `ghost-compiler/src/main/kotlin/com/ghost/serialization/compiler/GhostSerializationProcessor.kt`
 
@@ -1416,7 +1416,7 @@ override fun process(resolver: Resolver): List<KSAnnotated> {
 
 ---
 
-## 34. JsonReaderOptions — O(1) trie in detail {#cap-34--jsonreaderoptions-trie-o-1-en-detalle}
+## 34. JsonReaderOptions — O(1) trie in detail
 
 `parser/JsonReaderOptions.kt` precomputes a 1024-slot dispatch table.
 
@@ -1451,7 +1451,7 @@ when (reader.selectNameAndConsume(OPTIONS)) {
 
 ---
 
-## 35. Ghost.jvm.kt — pools and discovery {#cap-35--ghost-jvm-kt-pools-y-descubrimiento}
+## 35. Ghost.jvm.kt — pools and discovery
 
 **ThreadLocal pools** (same idea on Android):
 
@@ -1479,13 +1479,13 @@ That is why on Android/JVM you **do not need** `addRegistry` if KSP generated th
 
 ---
 
-## 36. Ghost.ios.kt — critical differences {#cap-36--ghost-ios-kt-diferencias-crticas}
+## 36. Ghost.ios.kt — critical differences
 
 ```kotlin
 actual fun discoverRegistries(): Iterable<GhostRegistry> = emptyList()
 ```
 
-iOS/Native **does not** use ServiceLoader. Serializers resolve through the compiler-plugin link (`findAssociatedObject`, see [§7](#cap-7--registry-y-descubrimiento)). Register manually only with `autoRegistration = false` or to `prewarm()`:
+iOS/Native **does not** use ServiceLoader. Serializers resolve through the compiler-plugin link (`findAssociatedObject`, see [§7](#7-registry-and-discovery)). Register manually only with `autoRegistration = false` or to `prewarm()`:
 
 ```kotlin
 // shared/src/iosMain or bridge
@@ -1503,7 +1503,7 @@ Synchronization with `objc_sync_enter/exit` for shared caches.
 
 ---
 
-## 37. GhostConverterFactory — Retrofit flow {#cap-37--ghostconverterfactory-flujo-retrofit}
+## 37. GhostConverterFactory — Retrofit flow
 
 ```kotlin
 class GhostConverterFactory private constructor() : Converter.Factory() {
@@ -1537,7 +1537,7 @@ class GhostConverterFactory private constructor() : Converter.Factory() {
 
 ---
 
-## 38. Ktor integration — ghost() {#cap-38--integracin-ktor-ghost}
+## 38. Ktor integration — ghost()
 
 `GhostContentConverter.kt` implements Ktor’s `ContentConverter`.
 
@@ -1553,7 +1553,7 @@ Same flat reader/writer path as Retrofit. The Gradle plugin can inject `ghost-kt
 
 ---
 
-## 39. Spring — three auto-configurations {#cap-39--spring-tres-auto-configurations}
+## 39. Spring — three auto-configurations
 
 | Class | Activates |
 | GhostAutoConfiguration | Marker / imports |
@@ -1582,7 +1582,7 @@ The converter is inserted at **index 0** to take priority over Jackson on Ghost 
 
 ---
 
-## 40. integration-test sample models {#cap-40--modelos-de-prueba-del-integration-test}
+## 40. integration-test sample models
 
 Package: `ghost-integration-test/src/main/kotlin/com/ghost/serialization/integration/model/`
 
@@ -1603,7 +1603,7 @@ There you will see real `*Serializer.kt` and `GhostModuleRegistry_Default.kt`.
 
 ---
 
-## 41. FragmentedEmitter — huge models {#cap-41--fragmentedemitter-modelos-enormes}
+## 41. FragmentedEmitter — huge models
 
 When a data class exceeds ~40 properties, the compiler **splits** `serialize`/`deserialize` into fragments to avoid the 64 KB JVM bytecode limit per method.
 
@@ -1611,7 +1611,7 @@ Symptom if it did not exist: compile error on generated serializer for massive m
 
 ---
 
-## 42. Multi-branch constructors (≤4 properties with default (`MAX_DEFAULT_BRANCH_COUNT = 4`)) {#cap-42--multi-branch-constructors-3-defaults}
+## 42. Multi-branch constructors (≤4 properties with default (`MAX_DEFAULT_BRANCH_COUNT = 4`))
 
 If a constructor has up to 4 parameters with default, KSP can generate `when (mask)` branches that call the **primary constructor once** with the correct argument combination, avoiding:
 
@@ -1624,7 +1624,7 @@ This reduces allocations on deserialize of objects with many optional fields.
 
 ---
 
-## 43. Sealed inferred vs discriminator {#cap-43--sealed-inferred-vs-discriminador}
+## 43. Sealed inferred vs discriminator
 
 **With discriminator** (`discriminator = "type"`):
 
@@ -1642,7 +1642,7 @@ No `type` field. Useful for inconsistent APIs; more generated code and more seri
 
 ---
 
-## 44. Resilient and Fallback at runtime {#cap-44--resilient-y-fallback-en-runtime}
+## 44. Resilient and Fallback at runtime
 
 `@GhostResilient` on enum: unknown JSON value → null or first value per generated policy.
 
@@ -1652,7 +1652,7 @@ No `type` field. Useful for inconsistent APIs; more generated code and more seri
 
 ---
 
-## 45. ghostInternalUseFlatReader — decode pipeline {#cap-45--ghostinternaluseflatreader-pipeline-deco}
+## 45. ghostInternalUseFlatReader — decode pipeline
 
 ```kotlin
 inline fun <T> ghostInternalUseFlatReader(
@@ -1670,7 +1670,7 @@ inline fun <T> ghostInternalUseFlatReader(
 
 ---
 
-## 46. encodeToString vs serialize(sink) {#cap-46--encodetostring-vs-serialize-sink}
+## 46. encodeToString vs serialize(sink)
 
 | API | Output | Use |
 | encodeToString | UTF-8 String | UI, logs, tests |
@@ -1681,7 +1681,7 @@ inline fun <T> ghostInternalUseFlatReader(
 
 ---
 
-## 47. Gradle — dependencies the plugin injects {#cap-47--gradle-dependencias-que-inyecta-el-plugi}
+## 47. Gradle — dependencies the plugin injects
 
 **KMP commonMain:**
 
@@ -1709,7 +1709,7 @@ ghost {
 
 ---
 
-## 48. R8 / ProGuard — generated rules {#cap-48--r8-proguard-reglas-generadas}
+## 48. R8 / ProGuard — generated rules
 
 The processor writes rules that keep:
 
@@ -1732,7 +1732,7 @@ Without this (or with KSP disabled on a module): `NOT_FOUND` in release even if 
 
 ---
 
-## 49. Benchmark and CI — useful commands {#cap-49--benchmark-y-ci-comandos-tiles}
+## 49. Benchmark and CI — useful commands
 
 ```bash
 # Monorepo JVM tests (like CI)
@@ -1752,7 +1752,7 @@ PDF output: `docs/Ghost-Serialization-Manual-1.3.4.pdf` (A5 format).
 
 ---
 
-## 50. Study checklist (40 min on phone) {#cap-50--checklist-de-estudio-40-min-en-el-celula}
+## 50. Study checklist (40 min on phone)
 
 1. Read ch. 1–4 (philosophy + annotations)
 2. Read ch. 6–7 (generated serializer + registry)
@@ -1764,7 +1764,7 @@ PDF output: `docs/Ghost-Serialization-Manual-1.3.4.pdf` (A5 format).
 
 ---
 
-# PART VIII — integration-test catalog and generated code {#parte-viii}
+# PART VIII — integration-test catalog and generated code
 
 Module `:ghost-integration-test` is the compiler and runtime regression lab. After `./gradlew :ghost-integration-test:compileKotlin`, inspect:
 
@@ -1772,7 +1772,7 @@ Module `:ghost-integration-test` is the compiler and runtime regression lab. Aft
 
 ---
 
-## VIII.1 Full model catalog {#catalogo-integration-test}
+## VIII.1 Full model catalog
 
 **96 types** annotated with `@GhostSerialization` in `src/main` + `src/test` (includes sealed subclasses). **26 test classes** in `src/test/kotlin/com/ghost/serialization/integration/`.
 
@@ -1971,7 +1971,7 @@ Generated under: `build/generated/ksp/test/kotlin/`
 
 ---
 
-## VIII.2 Walkthrough: BenchUserSerializer line by line {#walkthrough-benchuser}
+## VIII.2 Walkthrough: BenchUserSerializer line by line
 
 ### Source model (KSP input)
 
@@ -2146,7 +2146,7 @@ Ghost.deserialize<BenchUser>(json)
 
 ---
 
-## VIII.3 integration-test generated registry {#registry-integration-test}
+## VIII.3 integration-test generated registry
 
 File: `build/generated/ksp/main/kotlin/com/ghost/serialization/generated/GhostModuleRegistry_Default.kt`
 
@@ -2183,7 +2183,7 @@ ls ghost-integration-test/build/generated/ksp/main/kotlin/com/ghost/serializatio
 
 ---
 
-## 51. Maven artifacts table 1.3.4 {#cap-51--tabla-de-artefactos-maven-1-1-17}
+## 51. Maven artifacts table 1.3.4
 
 ```
 com.ghostserializer:ghost-api
@@ -2200,7 +2200,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.3.4) {#verificacion-factual}
+## Factual verification (aligned with code 1.3.4)
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2227,14 +2227,14 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 
 ---
 
-# Appendix: API Reference {#appendix-api}
+# Appendix: API Reference
 
 This section documents the public API of Ghost Serialization, derived from the
 KDoc comments in the source code (version 1.3.4).
 
 ---
 
-## A.1 `Ghost` — Main entry point {#api-ghost}
+## A.1 `Ghost` — Main entry point
 
 `object Ghost` in package `com.ghost.serialization`.
 
@@ -2278,7 +2278,7 @@ and serialization/deserialization across all platforms.
 
 ---
 
-## A.2 `GhostRegistry` — Module contract {#api-ghostregistry}
+## A.2 `GhostRegistry` — Module contract
 
 `interface GhostRegistry` in package `com.ghost.serialization.contract`.
 
@@ -2296,7 +2296,7 @@ Multiplatform project.
 
 ---
 
-## A.3 `GhostJsonException` — Parsing exception {#api-ghostjsonexception}
+## A.3 `GhostJsonException` — Parsing exception
 
 `class GhostJsonException` in package `com.ghost.serialization.exception`.
 
@@ -2317,7 +2317,7 @@ or accesses `message`.
 
 ---
 
-## A.4 `JsonReaderOptions` — Optimized field dispatch {#api-jsonreaderoptions}
+## A.4 `JsonReaderOptions` — Optimized field dispatch
 
 `class JsonReaderOptions` in package `com.ghost.serialization.parser`.
 
@@ -2335,7 +2335,7 @@ or redundant bounds checks inside Okio's `rangeEquals`.
 
 ---
 
-## A.5 `@InternalGhostApi` — Internal use annotation {#api-internalghost}
+## A.5 `@InternalGhostApi` — Internal use annotation
 
 `annotation class InternalGhostApi` in package `com.ghost.serialization`.
 

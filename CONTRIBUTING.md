@@ -2,7 +2,7 @@
 
 The full contributing guide — development environment, verification commands, PR checklist, and supported platforms — has moved to the project wiki:
 
-## 👉 [docs/wiki/contributing.md](docs/wiki/contributing.md)
+## [docs/wiki/contributing.md](docs/wiki/contributing.md)
 
 ---
 

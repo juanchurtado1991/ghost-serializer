@@ -102,7 +102,7 @@ Twitter macro (**631 KB**) decode:
 - **Writer**: **100%** round-trip (decode → encode → decode returns the same tree) across every case the reader accepts; **96.26%** of the re-encoded output is also accepted by an independent second parser ([kaml](https://github.com/charleskorn/kaml)) as a cross-check, not just by Ghost's own reader.
 - **Fuzzing**: every JSON/YAML reader and writer has coverage-guided fuzz testing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)) — the accumulated crash corpus replays on every CI run, no open crashes.
 
-Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-conformance)
+Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-compliance-ghost-only)
 
 ---
 
