@@ -138,6 +138,7 @@ We do not require a CLA for Apache 2.0 contributions. You retain copyright and l
 |:---|:---|:---|
 | Android | `ghost-serialization` (AAR) | KSP on `commonMain` / variant metadata |
 | iOS | `ghost-serialization` (KMP) | XCFramework via consumer project |
+| watchOS | `ghost-api`, `ghost-serialization`, `ghost-ktor` | `watchosArm64`, `watchosDeviceArm64`, `watchosSimulatorArm64` |
 | JVM | `ghost-serialization`, adapters | Server, desktop |
 | Wasm | `ghost-api`, `ghost-serialization`, `ghost-ktor` | Browser `wasmJs`; YAML + Proto ship in `ghost-serialization` |
 

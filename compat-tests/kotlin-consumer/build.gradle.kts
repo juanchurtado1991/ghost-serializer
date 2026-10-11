@@ -25,6 +25,9 @@ kotlin {
     }
     iosArm64()
     iosSimulatorArm64()
+    watchosArm64()
+    watchosDeviceArm64()
+    watchosSimulatorArm64()
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         nodejs()

@@ -30,6 +30,9 @@ kotlin {
     }
     iosArm64()
     iosSimulatorArm64()
+    watchosArm64()
+    watchosDeviceArm64()
+    watchosSimulatorArm64()
     jvm {
         withSourcesJar()
     }
@@ -60,7 +63,7 @@ kotlin {
 
         // Kotlin/Native and Kotlin/Wasm share the same single-threaded-or-@ThreadLocal `actual`s
         // (pools, caches, scalar fallbacks); only genuinely platform-specific ones stay in
-        // nativeMain/iosMain/wasmJsMain.
+        // nativeMain/appleMain/wasmJsMain.
         val nonJvmMain by creating {
             dependsOn(commonMain)
         }
@@ -133,7 +136,14 @@ ksp { arg("ghost.moduleName", "ghost_serialization") }
 
 // Native/Wasm test compilations get ghost-compiler-plugin, linking the nonJvmTest fixtures to
 // their serializers exactly as the Gradle plugin does for consumers.
-val linkedTestCompilations = listOf("IosArm64Test", "IosSimulatorArm64Test", "WasmJsTest")
+val linkedTestCompilations = listOf(
+    "IosArm64Test",
+    "IosSimulatorArm64Test",
+    "WatchosArm64Test",
+    "WatchosDeviceArm64Test",
+    "WatchosSimulatorArm64Test",
+    "WasmJsTest",
+)
 
 dependencies {
     linkedTestCompilations.forEach { compilation ->

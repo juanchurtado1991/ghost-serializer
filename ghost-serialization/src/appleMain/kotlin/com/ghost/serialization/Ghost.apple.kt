@@ -3,7 +3,7 @@ package com.ghost.serialization
 import platform.objc.objc_sync_enter
 import platform.objc.objc_sync_exit
 
-actual fun <K, V> createAtomicMap(): MutableMap<K, V> = IosConcurrentMap()
+actual fun <K, V> createAtomicMap(): MutableMap<K, V> = AppleConcurrentMap()
 
 actual fun <T> runSynchronized(
     lock: Any,
