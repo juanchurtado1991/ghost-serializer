@@ -1114,7 +1114,7 @@ Single workflow: `.github/workflows/ci.yml`
 - ghost-spring-boot-starter test
 - ghost-gradle-plugin, ghost-playground test
 
-**Verified on this repo (Gradle test XML, October 2026):** `ciTestJvm` runs **11,310** tests (8,537 of them in `ghost-serialization:jvmTest`, mostly fuzz-corpus replays and the YAML conformance suite); `testAndroidHostTest` adds **977**; the Wasm suite runs **992**. iOS runs the same common suite on the simulator in CI.
+**Verified on this repo (Gradle test XML, October 2026):** `ciTestJvm` runs **11,363** tests (8,566 of them in `ghost-serialization:jvmTest`, mostly fuzz-corpus replays and the YAML conformance suite); `testAndroidHostTest` adds **1,006**. Wasm and iOS run the same common suite in CI.
 
 `ghost-benchmark:run` depends on ciTest (except -PskipTests).
 
@@ -2212,7 +2212,7 @@ This manual was cross-checked against the `ghost-serializer` repository on the l
 | maxCollectionSize Android 50k / JVM 1M / Native 500k | `GhostHeuristics.android.kt`, `.jvm.kt`, `.native.kt` |
 | maxWarmWriteBuffer 4 MB mobile / 8 MB JVM | same `GhostHeuristics.*.kt` files |
 | maxDepth 255 | `GhostJsonNumericLimits.MAX_DEPTH` |
-| 11,310 tests in `ciTestJvm`, 977 Android host, 992 Wasm | Gradle `build/test-results` XML, October 2026 |
+| 11,363 tests in `ciTestJvm`, 1,006 Android host | Gradle `build/test-results` XML, October 2026 |
 | Kotlin 2.2.21 minimum | `gradle/libs.versions.toml` `kotlin-sdk = "2.2.21"`; `compat-tests/kotlin-consumer` in CI |
 | Spring Boot 3.4.5 in tests | `gradle/libs.versions.toml` `spring-boot = "3.4.5"` |
 | Ktor 3.3.3 | `gradle/libs.versions.toml` `ktor = "3.3.3"` |

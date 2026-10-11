@@ -10,7 +10,7 @@ Ghost is not a rewrite. It is the fast, low-allocation path for the models you o
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
-[![Downloads](https://img.shields.io/badge/downloads-70K%2B%2F3mo-blue)](https://central.sonatype.com)
+[![Tests](https://img.shields.io/badge/tests-11K%2B%20passing-brightgreen)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
 
 **[Quick Start — first DTO in minutes →](docs/wiki/quick-start.md)** ·
 **[Try it in the browser →](https://juanchurtado1991.github.io/ghost-serializer/)** ·
