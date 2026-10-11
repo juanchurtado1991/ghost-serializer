@@ -158,6 +158,7 @@ internal object GhostEmitterConstants {
 
     /** proto3 JSON mapping: `bytes` fields are Base64 strings on the wire, not inline raw JSON. */
     const val STR_WRITER_VAL_BYTES_AS_BASE64 = "writer.value(encodeBase64String(%L))"
+    const val STR_WRITER_PROTO_FLOATING_VALUE = "writer.protoValue(number = %L)"
 
     const val STR_DECODE_BASE64_STRING_CALL = "decodeBase64String(reader.nextString()) { reader.throwError(it) }"
     const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"

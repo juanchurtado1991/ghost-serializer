@@ -9,6 +9,7 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.nextFloat
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.strings.nextFloat
+import com.ghost.serialization.proto.protoValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
 import com.ghost.serialization.proto.GhostProtoConstants as PC
@@ -26,10 +27,10 @@ object ProtoFloatValueSerializer : AbstractGhostSerializer<ProtoFloatValue>() {
         ProtoFloatValue(value = reader.nextFloat())
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoFloatValue) {
-        writer.value(number = value.value.toDouble())
+        writer.protoValue(number = value.value)
     }
 
     override fun serialize(writer: GhostJsonStringWriter, value: ProtoFloatValue) {
-        writer.value(number = value.value.toDouble())
+        writer.protoValue(number = value.value)
     }
 }

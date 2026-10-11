@@ -17,15 +17,24 @@ object ProtoDurationSerializer : AbstractGhostSerializer<ProtoDuration>() {
     override val typeName: String get() = PC.WKT_DURATION_TYPE
 
     override fun deserialize(reader: GhostJsonReader): ProtoDuration {
-        return parseDuration(durationString = reader.nextString())
+        return parseWktString(
+            text = reader.nextString(),
+            throwError = { reader.throwError(message = it) }
+        ) { parseDuration(durationString = it) }
     }
 
     override fun deserialize(reader: GhostJsonFlatReader): ProtoDuration {
-        return parseDuration(durationString = reader.nextString())
+        return parseWktString(
+            text = reader.nextString(),
+            throwError = { reader.throwError(message = it) }
+        ) { parseDuration(durationString = it) }
     }
 
     override fun deserialize(reader: GhostJsonStringReader): ProtoDuration {
-        return parseDuration(durationString = reader.nextString())
+        return parseWktString(
+            text = reader.nextString(),
+            throwError = { reader.throwError(message = it) }
+        ) { parseDuration(durationString = it) }
     }
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoDuration) {

@@ -36,56 +36,48 @@ internal fun parseDuration(durationString: String): ProtoDuration {
     if (!hasValidSuffix) {
         throw IllegalArgumentException(PC.ERR_DURATION_SUFFIX)
     }
-    val dotIndex = durationString.indexOf(char = TOK.CHAR_DOT)
     val limitIndex = durationString.length - 1
-    if (dotIndex == -1) {
-        var seconds = 0L
-        var isNegative = false
-        var start = 0
-        if (durationString[0] == TOK.CHAR_HYPHEN) {
-            isNegative = true
-            start = 1
+    val isNegative = durationString[0] == TOK.CHAR_HYPHEN
+    var index = if (isNegative || durationString[0] == TOK.CHAR_PLUS) 1 else 0
+    val secondsStart = index
+    var seconds = 0L
+    while (index < limitIndex && isAsciiDigit(char = durationString[index])) {
+        seconds = seconds * WR.BASE_TEN + (durationString[index].code - TOK.ZERO_INT)
+        if (seconds > PC.DUR_MAX_SECONDS) {
+            throw IllegalArgumentException(PC.ERR_DURATION_RANGE)
         }
-        var index = start
-        while (index < limitIndex) {
-            seconds = seconds * WR.BASE_TEN + (durationString[index].code - TOK.ZERO_INT)
-            index++
-        }
-        return ProtoDuration(
-            seconds = if (isNegative) -seconds else seconds,
-            nanos = 0
-        )
-    } else {
-        var seconds = 0L
-        var isNegative = false
-        var start = 0
-        if (durationString[0] == TOK.CHAR_HYPHEN) {
-            isNegative = true
-            start = 1
-        }
-        var index = start
-        while (index < dotIndex) {
-            seconds = seconds * WR.BASE_TEN + (durationString[index].code - TOK.ZERO_INT)
-            index++
-        }
-        val fracDigits = limitIndex - (dotIndex + 1)
-        var fractionValue = 0
-        var fractionIndex = dotIndex + 1
-        while (fractionIndex < limitIndex) {
-            fractionValue =
-                fractionValue * WR.BASE_TEN + (durationString[fractionIndex].code - TOK.ZERO_INT)
-            fractionIndex++
-        }
-        var multiplier = 1
-        var multiplierIndex = 0
-        while (multiplierIndex < PC.NANOS_DIGITS - fracDigits) {
-            multiplier *= WR.BASE_TEN
-            multiplierIndex++
-        }
-        val nanos = fractionValue * multiplier
-        return ProtoDuration(
-            seconds = if (isNegative) -seconds else seconds,
-            nanos = if (isNegative) -nanos else nanos
-        )
+        index++
     }
+    if (index == secondsStart) {
+        throw IllegalArgumentException(PC.ERR_DURATION_FORMAT)
+    }
+    var nanos = 0
+    if (index < limitIndex) {
+        if (durationString[index] != TOK.CHAR_DOT) {
+            throw IllegalArgumentException(PC.ERR_DURATION_FORMAT)
+        }
+        val fractionStart = index + 1
+        val fractionDigits = limitIndex - fractionStart
+        if (fractionDigits > PC.NANOS_DIGITS) {
+            throw IllegalArgumentException(PC.ERR_FRACTION_DIGITS)
+        }
+        nanos = durationString.parseDecimalAt(start = fractionStart, end = limitIndex) *
+            nanosScale(fractionDigits = fractionDigits)
+    }
+    return ProtoDuration(
+        seconds = if (isNegative) -seconds else seconds,
+        nanos = if (isNegative) -nanos else nanos
+    )
+}
+
+private fun isAsciiDigit(
+    char: Char
+): Boolean = char.code - TOK.ZERO_INT in 0 until WR.BASE_TEN
+
+internal fun nanosScale(
+    fractionDigits: Int
+): Int {
+    var multiplier = 1
+    repeat(PC.NANOS_DIGITS - fractionDigits) { multiplier *= WR.BASE_TEN }
+    return multiplier
 }

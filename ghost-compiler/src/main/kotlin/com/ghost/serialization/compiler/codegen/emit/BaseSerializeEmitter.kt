@@ -52,10 +52,11 @@ internal abstract class BaseSerializeEmitter(
             return false
         }
         val type = prop.type.declaration.qualifiedName?.asString()
-        // Proto3 requires int64 on the wire as a quoted string, so route Long through emitValue's
-        // proto branch instead of the fused fast path, which always writes a bare number.
-        val isProtoLongType = prop.isProto && (type == AC.K_LONG || type == AC.K_ULONG)
-        if (isProtoLongType) {
+        // Proto3 writes int64 as a quoted string and non-finite double/float as "NaN"/"Infinity",
+        // so route those through emitValue's proto templates instead of the fused fast path.
+        val isProtoQuotedType = prop.isProto &&
+            (type == AC.K_LONG || type == AC.K_ULONG || type == AC.K_DOUBLE || type == AC.K_FLOAT)
+        if (isProtoQuotedType) {
             return false
         }
         return when (type) {

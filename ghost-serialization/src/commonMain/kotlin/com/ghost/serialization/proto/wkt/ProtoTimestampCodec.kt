@@ -141,20 +141,11 @@ internal fun parseTimestamp(timestampString: String): ProtoTimestamp {
             endIndex++
         }
         val fracDigits = endIndex - (PC.TS_SEC_END + 1)
-        var fractionValue = 0
-        var fractionIndex = PC.TS_SEC_END + 1
-        while (fractionIndex < endIndex) {
-            fractionValue =
-                fractionValue * WR.BASE_TEN + (timestampString[fractionIndex].code - TOK.ZERO_INT)
-            fractionIndex++
+        if (fracDigits > PC.NANOS_DIGITS) {
+            throw IllegalArgumentException(PC.ERR_FRACTION_DIGITS)
         }
-        var multiplier = 1
-        var multiplierIndex = 0
-        while (multiplierIndex < PC.NANOS_DIGITS - fracDigits) {
-            multiplier *= WR.BASE_TEN
-            multiplierIndex++
-        }
-        nanos = fractionValue * multiplier
+        nanos = timestampString.parseDecimalAt(start = PC.TS_SEC_END + 1, end = endIndex) *
+            nanosScale(fractionDigits = fracDigits)
         nextIndex = endIndex
     }
 

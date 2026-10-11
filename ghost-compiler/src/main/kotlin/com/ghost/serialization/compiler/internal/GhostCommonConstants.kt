@@ -25,6 +25,7 @@ internal object GhostCommonConstants {
     const val STR_REFLECT_PKG = "kotlin.reflect"
     const val STR_COLLECTIONS_PKG = "kotlin.collections"
     const val PKG_PARSER_COMMON = "com.ghost.serialization.parser.common"
+    const val PKG_PROTO = "com.ghost.serialization.proto"
     const val PKG_PARSER_COMMON_CONSTANTS = "com.ghost.serialization.parser.common.constants"
     const val PKG_PARSER_COMMON_JSON = "com.ghost.serialization.parser.common.json"
     const val PKG_PARSER_STRINGS = "com.ghost.serialization.parser.strings"

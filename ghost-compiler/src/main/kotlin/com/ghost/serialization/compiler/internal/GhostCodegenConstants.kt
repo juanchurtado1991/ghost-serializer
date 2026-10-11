@@ -73,6 +73,7 @@ internal object GhostCodegenConstants {
     const val STR_CAPTURE_RAW_JSON_NAME = "captureRawJson"
     const val STR_DECODE_BASE64_STRING_NAME = "decodeBase64String"
     const val STR_ENCODE_BASE64_STRING_NAME = "encodeBase64String"
+    const val STR_PROTO_VALUE_NAME = "protoValue"
     const val STR_CONSUME_NULL_NAME = "consumeNull"
     const val STR_IS_NEXT_NULL_VALUE_NAME = "isNextNullValue"
     const val STR_ENUM_OPTIONS = "ENUM_OPTIONS"

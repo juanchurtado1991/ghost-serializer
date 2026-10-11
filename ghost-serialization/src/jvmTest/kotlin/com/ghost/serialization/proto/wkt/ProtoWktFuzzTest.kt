@@ -54,14 +54,18 @@ class ProtoWktFuzzTest {
 
     @FuzzTest
     fun fuzzFormatDurationRoundTrip(data: FuzzedDataProvider) {
-        // Round-trip, not crash-safety: any (seconds, nanos) satisfying ProtoDuration's
-        // sign-coherence invariant must format and re-parse back to itself.
-        val seconds = data.consumeLong()
+        // Round-trip, not crash-safety: any (seconds, nanos) within the proto3 Duration range and
+        // satisfying ProtoDuration's sign-coherence invariant must format and re-parse back to itself.
+        val seconds = data.consumeLong(-DURATION_MAX_SECONDS, DURATION_MAX_SECONDS)
         val nanos = data.consumeInt(-999_999_999, 999_999_999)
         if ((seconds > 0 && nanos < 0) || (seconds < 0 && nanos > 0)) return
         val duration = ProtoDuration(seconds = seconds, nanos = nanos)
         val formatted = formatDuration(duration = duration)
         val reparsed = parseDuration(durationString = formatted)
         check(reparsed == duration) { "Round-trip mismatch: $duration -> \"$formatted\" -> $reparsed" }
+    }
+
+    companion object {
+        private const val DURATION_MAX_SECONDS = 315_576_000_000L
     }
 }

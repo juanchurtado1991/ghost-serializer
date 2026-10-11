@@ -86,4 +86,31 @@ class GhostYamlKnownGapsIntegrationTest {
             actual = Ghost.decodeFromYaml<YamlLightLevelHolder>(yaml = Ghost.encodeToString(value = value))
         )
     }
+
+    @Test
+    fun nonFiniteDoubleIsWrittenWithYamlCoreSpelling() {
+        NON_FINITE_SCORES.forEach { (score, literal) ->
+            val user = YamlBenchUser(
+                id = 1,
+                name = "n",
+                email = "e",
+                score = score
+            )
+            val yaml = Ghost.encodeToYaml(value = user)
+
+            assertTrue(actual = yaml.contains("score: $literal"), message = yaml)
+            assertEquals(
+                expected = user,
+                actual = Ghost.decodeFromYaml<YamlBenchUser>(yaml = yaml)
+            )
+        }
+    }
+
+    companion object {
+        private val NON_FINITE_SCORES = listOf(
+            Double.NaN to ".nan",
+            Double.POSITIVE_INFINITY to ".inf",
+            Double.NEGATIVE_INFINITY to "-.inf"
+        )
+    }
 }

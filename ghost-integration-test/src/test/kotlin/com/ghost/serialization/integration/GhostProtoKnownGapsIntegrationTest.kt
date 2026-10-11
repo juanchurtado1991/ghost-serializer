@@ -188,4 +188,21 @@ class GhostProtoKnownGapsIntegrationTest {
             actual = GhostProto.deserialize<ProtoBenchUser>(json = json)
         )
     }
+
+    @Test
+    fun nonFiniteDoubleFieldIsWrittenAsQuotedName() {
+        val user = ProtoBenchUser(
+            user_id = 1L,
+            name = "n",
+            email = "e",
+            score = Double.NEGATIVE_INFINITY
+        )
+        val json = Ghost.encodeToString(value = user)
+
+        assertTrue(actual = json.contains("\"score\":\"-Infinity\""), message = json)
+        assertEquals(
+            expected = user,
+            actual = GhostProto.deserialize<ProtoBenchUser>(json = json)
+        )
+    }
 }
