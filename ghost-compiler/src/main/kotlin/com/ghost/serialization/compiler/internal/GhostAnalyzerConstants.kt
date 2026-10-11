@@ -13,6 +13,8 @@ internal object GhostAnalyzerConstants {
     const val STR_DOUBLE_QUOTE = "\""
     const val CHAR_UNDERSCORE = '_'
     const val STR_BANG_BANG = "!!"
+    const val TEMPLATE_ELVIS_PARENTHESIZED = "(%s ?: %s)"
+    const val STR_EMPTY_BYTE_ARRAY_CALL = "ByteArray(0)"
     const val TEMPLATE_VAR_NAME = "%sValue"
     const val TEMPLATE_RESULT_VAR = "result.%s"
     const val TEMPLATE_MASK_VAR = "mask%s"

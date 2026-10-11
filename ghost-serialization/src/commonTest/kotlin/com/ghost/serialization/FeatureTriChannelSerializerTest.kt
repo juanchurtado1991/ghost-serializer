@@ -212,6 +212,21 @@ class FeatureTriChannelSerializerTest {
     }
 
     @Test
+    fun charThatNeedsEscapingEncodesAsValidJson() {
+        ESCAPE_SENSITIVE_CHARS.forEach { char ->
+            val json = Ghost.encodeToString(value = char)
+            assertEquals(
+                expected = json,
+                actual = Ghost.encodeToBytes(value = char).decodeToString()
+            )
+            assertEquals(
+                expected = char,
+                actual = Ghost.deserialize<Char>(json = json)
+            )
+        }
+    }
+
+    @Test
     fun extendedScalarsRoundTripOnAllReaders() {
         assertScalarRoundTrip(serializer = FloatSerializer, json = "1.5", expected = 1.5f)
         assertScalarRoundTrip(serializer = ByteSerializer, json = "42", expected = 42.toByte())
@@ -265,5 +280,9 @@ class FeatureTriChannelSerializerTest {
             expected = fromFlat,
             actual = fromString
         )
+    }
+
+    companion object {
+        private val ESCAPE_SENSITIVE_CHARS = listOf('\u0000', '\n', '\t', '\u001F', '"', '\\', '/', '\u00E9', '\u20AC', 'Z')
     }
 }

@@ -129,4 +129,43 @@ class GhostProtoKnownGapsIntegrationTest {
             actual = parsed,
         )
     }
+
+    @Test
+    fun zeroValuedFieldsOmittedOnSerializeDecodeBackToTheSameMessage() {
+        val deviceItem = ProtoDeviceEventListItem(
+            device_id = 0L,
+            label = ""
+        )
+        val deviceJson = Ghost.encodeToString(value = deviceItem)
+        assertEquals(
+            expected = "{}",
+            actual = deviceJson
+        )
+        assertEquals(
+            expected = deviceItem,
+            actual = Ghost.deserialize<ProtoDeviceEventListItem>(json = deviceJson)
+        )
+        assertEquals(
+            expected = deviceItem,
+            actual = GhostProto.deserialize<ProtoDeviceEventListItem>(json = deviceJson)
+        )
+
+        val shard = ProtoUInt64FieldMessage(shard_id = 0uL)
+        val shardJson = Ghost.encodeToString(value = shard)
+        assertEquals(
+            expected = shard,
+            actual = Ghost.deserialize<ProtoUInt64FieldMessage>(bytes = shardJson.encodeToByteArray())
+        )
+        assertEquals(
+            expected = shard,
+            actual = GhostProto.deserialize<ProtoUInt64FieldMessage>(json = shardJson)
+        )
+
+        val accounts = ProtoAccountIdsMessage(account_ids = ProtoAccountIds(value = emptyList()))
+        val accountsJson = Ghost.encodeToString(value = accounts)
+        assertEquals(
+            expected = accounts,
+            actual = GhostProto.deserialize<ProtoAccountIdsMessage>(json = accountsJson)
+        )
+    }
 }

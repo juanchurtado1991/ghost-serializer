@@ -238,13 +238,7 @@ class GhostYamlWriter private constructor(
         return this
     }
 
-    fun value(value: Char): GhostYamlWriter {
-        prepareValue(isStructural = false)
-        sink.writeByte(TOK.DOUBLE_QUOTE_INT)
-        sink.writeUtf8(value.toString())
-        sink.writeByte(TOK.DOUBLE_QUOTE_INT)
-        return this
-    }
+    fun value(value: Char): GhostYamlWriter = value(text = value.toString())
 
     @InternalGhostApi
     fun writeStringValueRaw(value: String) {

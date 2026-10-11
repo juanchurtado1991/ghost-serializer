@@ -21,8 +21,10 @@ import okio.ByteString
 
 /**
  * Peeks a JSON discriminator key's value without full parsing, for KSP-generated polymorphic
- * deserializers — returns `null` if key isn't found within [maxDiscriminatorPeekDistance]
- * bytes, or the value looks too complex to extract without a real parse. [peek] serves the
+ * deserializers — returns `null` if key isn't found before the object closes or within
+ * [maxDiscriminatorPeekDistance] bytes, or the value looks too complex to extract without a real
+ * parse. The streaming channel reads through `byteOrEof` and the scan stops at the closing brace,
+ * so a missing key never reads past the end of the stream. [peek] serves the
  * byte-backed channels (flat/streaming) and takes [peek]'s `isStreaming` flag to pick a direct
  * `rawData` array read over the [GhostSource] indirection whenever a raw array is actually
  * available; [peekChars] is the char-channel counterpart for [GhostJsonStringReader], same scan
@@ -77,7 +79,7 @@ object GhostDiscriminatorPeeker {
         key: ByteString,
     ): String? {
         val getByte = if (isStreaming) {
-            { pos: Int -> source[pos] }
+            { pos: Int -> source.byteOrEof(index = pos) }
         } else {
             { pos: Int -> rawData[pos].toInt() and BYTE_MASK }
         }
@@ -161,6 +163,8 @@ object GhostDiscriminatorPeeker {
                     limit = scanLimit,
                     getByte = getByte,
                 )
+
+                CLOSE_OBJ_INT, CLOSE_ARR_INT -> return null
 
                 else -> position++
             }

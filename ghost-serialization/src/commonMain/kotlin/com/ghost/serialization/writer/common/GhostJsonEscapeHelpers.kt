@@ -50,6 +50,14 @@ internal object GhostJsonEscapeHelpers {
                 (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
 
     /**
+     * True when a single [char] value can be written between quotes as is: no escape needed and
+     * not a lone surrogate. Anything else goes through the string path, which escapes controls,
+     * `"` and `\`, and replaces a lone surrogate the same way it does inside a [String].
+     */
+    inline fun isVerbatimStringChar(char: Char): Boolean =
+        !char.isSurrogate() && isSafeUnescapedChar(code = char.code)
+
+    /**
      * Escapes [text] from [start] into [scratchBuf], flushing through sink lambdas.
      * Used by both byte JSON writers when the string does not fit the quoted-scratch path.
      */

@@ -14,7 +14,8 @@ import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 /**
- * Emits zero-copy envelope routing helpers on generated serializer companions.
+ * Emits zero-copy envelope routing helpers on generated serializer companions. Target serializers
+ * are resolved lazily, for the same reason as in [ContextualSerializerRegistry].
  */
 internal class EnvelopeRouterEmitter(
     private val envelope: GhostEnvelopeModel,
@@ -139,7 +140,7 @@ internal class EnvelopeRouterEmitter(
                     ghostSerializerType.parameterizedBy(targetType)
                 )
                     .addModifiers(KModifier.PRIVATE)
-                    .initializer(C.TEMPLATE_ENVELOPE_CACHED_SERIALIZER, ghostClass, targetType)
+                    .delegate(C.TEMPLATE_LAZY_RESOLVE_SERIALIZER, ghostClass, targetType)
                     .build()
             )
         }

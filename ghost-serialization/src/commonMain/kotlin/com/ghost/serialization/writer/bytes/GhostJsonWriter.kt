@@ -400,8 +400,11 @@ class GhostJsonWriter private constructor(
         return this
     }
 
-    /** Writes a single [Char] as a JSON string without allocating an intermediate [String]. */
+    /** Writes a single [Char] as a JSON string, without an intermediate [String] unless it needs escaping. */
     fun value(char: Char): GhostJsonWriter {
+        if (!GhostJsonEscapeHelpers.isVerbatimStringChar(char = char)) {
+            return value(text = char.toString())
+        }
         appendSeparator()
         emitQuotedBmpCodeUnit(codePoint = char.code)
         needsComma = true

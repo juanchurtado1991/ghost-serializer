@@ -121,14 +121,14 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_ELSE_IF_MASK_MISSING = "else if ((ctx.mask%L and %L) == 0L)"
     const val STR_READ_LIST_TEMPLATE = "reader.readList {\n  %L\n}"
     const val STR_READ_SET_TEMPLATE = "reader.readSet {\n  %L\n}"
-    const val STR_READ_MAP_TEMPLATE = "reader.readMap({ reader.nextKey()!! }) {\n  %L\n}"
+    const val STR_READ_MAP_TEMPLATE = "reader.readMap({ reader.nextKey() }) {\n  %L\n}"
     const val STR_MASK_BITWISE_OR = "mask%L = mask%L or %L"
     const val STR_IF_OPEN = "if ("
     const val TEMPLATE_IF_MASK_MATCH_BIT_F = "(ctx.mask%s and %s) != 0L"
     const val TEMPLATE_IF_MASK_NOT_MET = "if ((ctx.mask%L and %L) != %L)"
     const val TEMPLATE_MASK_CHECK_MATCH = "(mask%s and %s) != 0L"
     const val TEMPLATE_MASK_ALL_MET_SIMPLE = "(mask%s and %s) == %s"
-    const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
+    const val TEMPLATE_LAZY_RESOLVE_SERIALIZER = "lazy { %T.requireSerializer(%T::class) }"
     const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
     const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
     const val STR_WRITER_END_OBJ = "writer.endObject()"
@@ -316,7 +316,6 @@ internal object GhostEmitterConstants {
 
     const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = "TargetSerializer"
     const val TEMPLATE_ENVELOPE_FIELD_ACCESS = "envelope.%L"
-    const val TEMPLATE_ENVELOPE_CACHED_SERIALIZER = "%T.getSerializer(%T::class)!!"
     const val STR_KDOC_ROUTE_PAYLOAD =
         "Routes [%T] to its matching opaque JSON payload without re-parsing.\n"
 

@@ -543,7 +543,7 @@ inline fun <T> GhostJsonStringReader.readSet(crossinline itemParser: () -> T): S
 }
 
 inline fun <K, V> GhostJsonStringReader.readMap(
-    crossinline keyParser: () -> K,
+    crossinline keyParser: () -> K?,
     crossinline valueParser: () -> V
 ): Map<K, V> {
     beginObject()
@@ -556,7 +556,7 @@ inline fun <K, V> GhostJsonStringReader.readMap(
     val maxSize = maxCollectionSize
 
     while (true) {
-        val key = keyParser()
+        val key = keyParser() ?: throwError(EM.ERR_TRAILING_COMMA)
         consumeKeySeparator()
         val value = valueParser()
         map[key] = value

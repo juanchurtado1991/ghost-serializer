@@ -8,8 +8,10 @@ import com.ghost.serialization.compiler.analysis.getReturnExpression
 import com.ghost.serialization.compiler.analysis.getSingleShotDefaultArgExpression
 import com.ghost.serialization.compiler.analysis.getVariableType
 import com.ghost.serialization.compiler.analysis.isPrimitive
+import com.ghost.serialization.compiler.analysis.isRequiredOnWire
 import com.ghost.serialization.compiler.analysis.localTrackingName
 import com.ghost.serialization.compiler.analysis.localValueName
+import com.ghost.serialization.compiler.analysis.requireLocalValue
 import com.ghost.serialization.compiler.codegen.GeneratedCallFormat
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
@@ -37,7 +39,7 @@ internal class StandardEmitter(
 ) : BaseDeserializeEmitter(properties = properties, originalClassName = originalClassName, readerClass = readerClass) {
 
     fun emit(body: CodeBlock.Builder, typeSpecBuilder: TypeSpec.Builder) {
-        val requiredPropCount = properties.count { !it.isNullable && !it.hasDefaultValue }
+        val requiredPropCount = properties.count { it.isRequiredOnWire() }
         // Single-required validation uses MASK_<PROP> only; skip unused MASK_REQUIRED_N.
         emitPropertyMaskConstants(
             typeSpecBuilder = typeSpecBuilder,
@@ -163,7 +165,7 @@ internal class StandardEmitter(
     }
 
     private fun emitFieldValidationCall(body: CodeBlock.Builder) {
-        val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
+        val requiredProps = properties.filter { it.isRequiredOnWire() }
         if (requiredProps.isNotEmpty()) {
             body.addStatement(
                 C.TEMPLATE_CALL_VALIDATION,
@@ -191,7 +193,7 @@ internal class StandardEmitter(
             val expr = if (prop.isNullable || isPrimitive) {
                 varName
             } else {
-                varName + AC.STR_BANG_BANG
+                prop.requireLocalValue(local = varName)
             }
             body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, expr)
         }
@@ -448,7 +450,7 @@ internal class StandardEmitter(
     }
 
     private fun emitValidationHelper(typeSpecBuilder: TypeSpec.Builder) {
-        val requiredProps = properties.filter { !it.isNullable && !it.hasDefaultValue }
+        val requiredProps = properties.filter { it.isRequiredOnWire() }
         if (requiredProps.isEmpty()) {
             return
         }

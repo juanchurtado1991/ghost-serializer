@@ -29,6 +29,7 @@ object GhostJsonErrorMessages {
     const val ERR_EXPECTED_COMMA_OR_CLOSE_OBJ = "Expected ',' or '}'"
     const val ERR_UNEXPECTED_EOF = "Unexpected end of input"
     const val ERR_EXPECTED_EOF = "Expected end of input after the root value"
+    const val ERR_EXPECTED_JSON_VALUE = "Expected a JSON value"
     const val ERR_FRACTIONAL_INTEGER = "Expected an integer but found a fractional number"
     const val ERR_EXPECTED_CHAR_PREFIX = "Expected '"
     const val ERR_EXPECTED_CHAR_MID = "' but found '"

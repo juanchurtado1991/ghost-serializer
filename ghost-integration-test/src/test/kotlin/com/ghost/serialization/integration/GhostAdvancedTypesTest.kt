@@ -14,8 +14,10 @@ import com.ghost.serialization.integration.model.GhostUserToken
 import com.ghost.serialization.integration.model.GodObject
 import com.ghost.serialization.integration.model.NestedGenericModel
 import com.ghost.serialization.integration.model.OverlappingKeyModel
+import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class GhostAdvancedTypesTest {
@@ -73,6 +75,20 @@ class GhostAdvancedTypesTest {
         val decoded =
             Ghost.deserialize<NestedGenericModel>(json)
         assertEquals(expected = original, actual = decoded)
+    }
+
+    @Test
+    fun testDeeplyNestedGenericsRejectTrailingCommaInNestedMap() {
+        val json = """{"data":{"level1":[{"item1":1}],}}"""
+        assertFailsWith<GhostJsonException> {
+            Ghost.deserialize<NestedGenericModel>(json = json)
+        }
+        assertFailsWith<GhostJsonException> {
+            Ghost.deserialize<NestedGenericModel>(bytes = json.encodeToByteArray())
+        }
+        assertFailsWith<GhostJsonException> {
+            Ghost.deserializeStreaming<NestedGenericModel>(source = Buffer().writeUtf8(string = json))
+        }
     }
 
     @Test

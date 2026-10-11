@@ -9,6 +9,7 @@ import com.ghost.serialization.compiler.analysis.isMap
 import com.ghost.serialization.compiler.analysis.isPrimitiveLong
 import com.ghost.serialization.compiler.analysis.isPrimitiveULong
 import com.ghost.serialization.compiler.analysis.isRawJson
+import com.ghost.serialization.compiler.analysis.isRequiredOnWire
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isValueClassType
 import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
@@ -63,7 +64,7 @@ internal abstract class BaseDeserializeEmitter(
     protected val requiredMasks: LongArray by lazy {
         val masks = LongArray(maskCount)
         properties.forEachIndexed { index, prop ->
-            if (!prop.isNullable && !prop.hasDefaultValue) {
+            if (prop.isRequiredOnWire()) {
                 val maskIdx = index / C.MASK_SIZE_BITS.toInt()
                 val bitIdx = index % C.MASK_SIZE_BITS.toInt()
                 masks[maskIdx] = masks[maskIdx] or (1L shl bitIdx)

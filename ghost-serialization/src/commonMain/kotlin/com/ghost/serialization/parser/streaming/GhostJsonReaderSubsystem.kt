@@ -676,9 +676,10 @@ inline fun <T> GhostJsonReader.readSet(crossinline itemParser: () -> T): Set<T> 
     return set
 }
 
-/** Decodes a JSON object into a [Map] using [keyParser]/[valueParser]. Enforces [maxCollectionSize]. */
+/** Decodes a JSON object into a [Map] using [keyParser]/[valueParser]. Enforces [maxCollectionSize].
+ * A `null` key means [keyParser] met `}` right after a comma: a trailing comma. */
 inline fun <K, V> GhostJsonReader.readMap(
-    crossinline keyParser: () -> K,
+    crossinline keyParser: () -> K?,
     crossinline valueParser: () -> V
 ): Map<K, V> {
     beginObject()
@@ -691,7 +692,7 @@ inline fun <K, V> GhostJsonReader.readMap(
     val maxSize = maxCollectionSize
 
     while (true) {
-        val key = keyParser()
+        val key = keyParser() ?: throwError(EM.ERR_TRAILING_COMMA)
         consumeKeySeparator()
         val value = valueParser()
         map[key] = value

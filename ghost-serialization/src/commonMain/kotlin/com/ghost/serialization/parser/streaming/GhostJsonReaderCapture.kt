@@ -41,7 +41,15 @@ fun GhostJsonReader.captureRawJson(): RawJson {
 fun GhostJsonReader.captureRawJsonBytes(): ByteArray = captureRawJson().bytes
 
 private fun GhostJsonReader.captureReaderValueBytes() {
-    position = captureJsonValueScan(startPosition = position, limit = limit) { index -> getByte(index) }
+    position = captureJsonValueScan(
+        startPosition = position,
+        limit = limit,
+        getUnit = { index -> source.byteOrEof(index = index) },
+        onError = { message, errorPosition ->
+            position = errorPosition
+            throwError(message = message)
+        }
+    )
 }
 
 private fun GhostJsonReader.captureReaderRangeBytes(start: Int, length: Int): ByteArray {

@@ -21,25 +21,35 @@ import kotlin.test.assertTrue
 @OptIn(InternalGhostApi::class)
 class GhostContextualTest {
 
+    private val manualRegistry = object : AbstractGhostRegistry() {
+        override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
+            return getAllSerializers()[clazz] as GhostSerializer<T>?
+        }
+
+        override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
+            return mapOf(
+                ExternalDate::class to ExternalDateSerializer,
+                ExternalColor::class to ExternalColorSerializer
+            )
+        }
+    }
+
     @BeforeTest
     fun setup() {
         Ghost.resetForTest()
-
-        val manualRegistry = object : AbstractGhostRegistry() {
-            override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? {
-                return getAllSerializers()[clazz] as GhostSerializer<T>?
-            }
-
-            override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> {
-                return mapOf(
-                    ExternalDate::class to ExternalDateSerializer,
-                    ExternalColor::class to ExternalColorSerializer
-                )
-            }
-
-        }
-
         Ghost.addRegistry(registry = manualRegistry)
+    }
+
+    @Test
+    fun prewarmBeforeContextualRegistryLeavesSerializersUsable() {
+        Ghost.resetForTest()
+        Ghost.prewarm()
+        Ghost.addRegistry(registry = manualRegistry)
+        val model = ContextualModel(id = "c2", color = ExternalColor(r = 0, g = 128, b = 255))
+
+        val roundtrip = Ghost.deserialize<ContextualModel>(Ghost.serialize(model))
+
+        assertEquals(expected = model, actual = roundtrip)
     }
 
     @Test

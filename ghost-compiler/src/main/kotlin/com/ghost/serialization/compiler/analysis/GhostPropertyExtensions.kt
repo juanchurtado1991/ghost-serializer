@@ -4,6 +4,7 @@ import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.TypeName
 import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
 import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
 /**
@@ -139,20 +140,20 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     return when {
         isPrimitive -> ctxVar
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
-                CC.STR_EMPTY
+            val unwrapped = if (valueClassProperty!!.type.isPrimitive()) {
+                ctxVar
             } else {
-                AC.STR_BANG_BANG
+                requireLocalValue(local = ctxVar)
             }
 
-            AC.TEMPLATE_WRAP_TYPE.format(typeName, "$ctxVar$bang")
+            AC.TEMPLATE_WRAP_TYPE.format(typeName, unwrapped)
         }
 
         else -> {
             if (isNullable) {
                 ctxVar
             } else {
-                "$ctxVar${AC.STR_BANG_BANG}"
+                requireLocalValue(local = ctxVar)
             }
         }
     }
@@ -214,19 +215,19 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
     return when {
         isPrimitive -> varName
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
-                CC.STR_EMPTY
+            val unwrapped = if (valueClassProperty!!.type.isPrimitive()) {
+                varName
             } else {
-                AC.STR_BANG_BANG
+                requireLocalValue(local = varName)
             }
-            AC.TEMPLATE_WRAP_TYPE.format(typeName, "$varName$bang")
+            AC.TEMPLATE_WRAP_TYPE.format(typeName, unwrapped)
         }
 
         else -> {
             if (isNullable) {
                 varName
             } else {
-                "$varName${AC.STR_BANG_BANG}"
+                requireLocalValue(local = varName)
             }
         }
     }
@@ -276,4 +277,51 @@ internal fun GhostPropertyModel.getVariableType(): TypeName {
 
         else -> typeName.copy(nullable = true)
     }
+}
+
+/**
+ * True when a missing JSON field must fail decoding: the property is non-nullable, has no
+ * constructor default, and is not a proto3 field whose zero value the encoder omits.
+ */
+internal fun GhostPropertyModel.isRequiredOnWire(): Boolean =
+    !isNullable && !hasDefaultValue && protoOmittedZeroLiteral() == null
+
+/**
+ * The proto3 zero value, as Kotlin source, of a field that `@GhostProtoSerialization` omits on
+ * encode when it holds that value (numbers, `Boolean`, `String`, `ByteArray`, collections,
+ * also inside a value class); `null` when the field is not omitted or already has a nullable
+ * or constructor default. A missing field decodes as this value, so a message reads back what
+ * it wrote (proto3 JSON treats an absent field as its zero value).
+ */
+internal fun GhostPropertyModel.protoOmittedZeroLiteral(): String? {
+    val isOmittableProtoField = isProto && !isNullable && !hasDefaultValue &&
+        customDecoder == null && customEncoder == null
+    if (!isOmittableProtoField) {
+        return null
+    }
+    val target = valueClassProperty?.takeIf { isValueClass } ?: this
+    return when {
+        target.isList -> AC.STR_EMPTY_LIST_CALL
+        target.isSet -> AC.STR_EMPTY_SET_CALL
+        target.isMap -> AC.STR_EMPTY_MAP_CALL
+        else -> when (target.type.declaration.qualifiedName?.asString()) {
+            AC.K_BYTE, AC.K_INT, AC.K_SHORT -> AC.STR_ZERO
+            AC.K_BOOLEAN -> CC.STR_FALSE
+            AC.K_BYTE_ARRAY -> AC.STR_EMPTY_BYTE_ARRAY_CALL
+            AC.K_DOUBLE -> AC.STR_ZERO_D
+            AC.K_FLOAT -> AC.STR_ZERO_F
+            AC.K_LONG -> AC.STR_ZERO_L
+            AC.K_STRING -> CG.STR_EMPTY_STRING
+            AC.K_ULONG -> AC.STR_ZERO_UL
+            else -> null
+        }
+    }
+}
+
+/** Non-null constructor argument for a non-nullable property tracked in a nullable [local]. */
+internal fun GhostPropertyModel.requireLocalValue(
+    local: String
+): String {
+    val zeroLiteral = protoOmittedZeroLiteral() ?: return local + AC.STR_BANG_BANG
+    return AC.TEMPLATE_ELVIS_PARENTHESIZED.format(local, zeroLiteral)
 }

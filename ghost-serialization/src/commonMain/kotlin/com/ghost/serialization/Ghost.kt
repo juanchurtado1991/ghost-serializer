@@ -353,6 +353,13 @@ object Ghost : GhostRegistry {
     @Suppress("unused")
     fun getSerializerNames(): List<String> = serializerByName.keys.toList()
 
+    /** Used by compiler-generated code and the [KClass] overloads: the serializer for [clazz], or an error. */
+    @InternalGhostApi
+    fun <T : Any> requireSerializer(
+        clazz: KClass<T>
+    ): GhostSerializer<T> = getSerializer(clazz = clazz)
+        ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
+
     inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
         val cached = serializerCache[T::class]
         if (cached != null) return cached as GhostSerializer<T>
@@ -479,18 +486,14 @@ object Ghost : GhostRegistry {
         clazz: KClass<T>,
         limit: Int = bytes.size
     ): T = ghostInternalUseFlatReader(bytes = bytes, limit = limit) { reader ->
-        val serializer = getSerializer(clazz = clazz)
-            ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
-
+        val serializer = requireSerializer(clazz = clazz)
         serializer.deserialize(reader = reader)
     }
 
     /** Non-inline variant of [deserialize] for reflection/framework contexts where reified types are unavailable. */
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T =
         readSourceIntoFlatReader(source = source) { reader ->
-            val serializer = getSerializer(clazz = clazz)
-                ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
-
+            val serializer = requireSerializer(clazz = clazz)
             serializer.deserialize(reader = reader)
         }
 
@@ -558,9 +561,7 @@ object Ghost : GhostRegistry {
      */
     @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
-        val serializer = getSerializer(clazz = clazz)
-            ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
-
+        val serializer = requireSerializer(clazz = clazz)
         ghostInternalEncodeAndDrainTo(sink = sink) { writer ->
             serializer.serialize(writer = writer, value = value)
         }

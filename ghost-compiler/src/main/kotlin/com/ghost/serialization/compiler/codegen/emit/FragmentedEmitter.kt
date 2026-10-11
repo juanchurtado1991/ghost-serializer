@@ -7,6 +7,7 @@ import com.ghost.serialization.compiler.analysis.getFragmentedReturnExpression
 import com.ghost.serialization.compiler.analysis.getFragmentedSingleShotDefaultArgExpression
 import com.ghost.serialization.compiler.analysis.getInitialValue
 import com.ghost.serialization.compiler.analysis.getVariableType
+import com.ghost.serialization.compiler.analysis.isRequiredOnWire
 import com.ghost.serialization.compiler.analysis.localTrackingName
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
@@ -304,7 +305,7 @@ internal class FragmentedEmitter(
     }
 
     private fun emitValidation(body: CodeBlock.Builder) {
-        val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
+        val hasRequired = properties.any { it.isRequiredOnWire() }
         if (hasRequired) {
             body.addStatement(
                 C.TEMPLATE_CALL_VALIDATION,
@@ -319,7 +320,7 @@ internal class FragmentedEmitter(
         typeSpecBuilder: TypeSpec.Builder,
         contextClassName: ClassName
     ) {
-        val hasRequired = properties.any { !it.isNullable && !it.hasDefaultValue }
+        val hasRequired = properties.any { it.isRequiredOnWire() }
         if (!hasRequired) {
             return
         }
@@ -344,8 +345,7 @@ internal class FragmentedEmitter(
 
                 var isFirst = true
                 properties.forEachIndexed { propIdx, prop ->
-                    val isRequiredInThisMask = !prop.isNullable &&
-                        !prop.hasDefaultValue &&
+                    val isRequiredInThisMask = prop.isRequiredOnWire() &&
                         (propIdx / C.MASK_SIZE_BITS.toInt()) == maskIdx
                     if (isRequiredInThisMask) {
                         val constName = C.STR_MASK_PREFIX + prop.kotlinName.uppercase()

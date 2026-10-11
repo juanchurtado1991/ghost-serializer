@@ -14,12 +14,14 @@ import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.nextBoolean
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.peekStringField
 import okio.Buffer
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -359,6 +361,25 @@ class StreamingGhostSourceTest {
         reader.skipWhitespace(); reader.readQuotedString(); reader.consumeKeySeparator()
         assertEquals(
             expected = 1,
+            actual = reader.nextInt()
+        )
+        reader.endObject()
+    }
+
+    @Test
+    fun peekStringField_stopsAtTheObjectEndWhenTheKeyIsAbsent() {
+        val reader = GhostJsonReader(okioSource = Buffer().writeUtf8(string = "{\"brightness\":80}"))
+
+        assertNull(actual = reader.peekStringField(name = "type"))
+        reader.beginObject()
+        reader.skipWhitespace()
+        assertEquals(
+            expected = "brightness",
+            actual = reader.readQuotedString()
+        )
+        reader.consumeKeySeparator()
+        assertEquals(
+            expected = 80,
             actual = reader.nextInt()
         )
         reader.endObject()

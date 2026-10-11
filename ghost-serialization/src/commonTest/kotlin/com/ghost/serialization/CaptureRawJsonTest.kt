@@ -17,11 +17,13 @@ import com.ghost.serialization.parser.strings.captureRawJsonBytes
 import com.ghost.serialization.parser.strings.consumeKeySeparator
 import com.ghost.serialization.parser.strings.nextKey
 import com.ghost.serialization.parser.strings.nextString
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.types.RawJson
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -160,14 +162,13 @@ class CaptureRawJsonTest {
     @Test
     fun captureRawJsonStringReaderEncodesCapturedFieldOnly() {
         fun nested(level: Int): String {
-            if (level == 0) return "\"leaf\":true"
+            if (level == 0) return "{\"leaf\":true}"
             return buildString {
                 append('{')
                 repeat(4) { index ->
                     if (index > 0) append(',')
-                    append("\"k$level$index\":{")
+                    append("\"k$level$index\":")
                     append(nested(level = level - 1))
-                    append('}')
                 }
                 append('}')
             }
@@ -204,6 +205,74 @@ class CaptureRawJsonTest {
         assertEquals(
             expected = json,
             actual = captured.decodeToString()
+        )
+    }
+
+    @Test
+    fun malformedOrTruncatedValueIsRejectedOnEveryChannel() {
+        MALFORMED_VALUES.forEach { json ->
+            assertFailsWith<GhostJsonException>(message = "string: $json") {
+                Ghost.deserialize<RawJson>(json = json)
+            }
+            assertFailsWith<GhostJsonException>(message = "bytes: $json") {
+                Ghost.deserialize<RawJson>(bytes = json.encodeToByteArray())
+            }
+            assertFailsWith<GhostJsonException>(message = "streaming: $json") {
+                Ghost.deserializeStreaming<RawJson>(source = Buffer().writeUtf8(string = json))
+            }
+        }
+    }
+
+    @Test
+    fun wellFormedValueIsCapturedVerbatimOnEveryChannel() {
+        WELL_FORMED_VALUES.forEach { json ->
+            val captured = listOf(
+                Ghost.deserialize<RawJson>(json = json),
+                Ghost.deserialize<RawJson>(bytes = json.encodeToByteArray()),
+                Ghost.deserializeStreaming<RawJson>(source = Buffer().writeUtf8(string = json))
+            )
+            captured.forEach { value ->
+                assertEquals(
+                    expected = json,
+                    actual = Ghost.serialize(value = value)
+                )
+            }
+        }
+    }
+
+    companion object {
+        private val MALFORMED_VALUES = listOf(
+            "",
+            "tru",
+            "txyz",
+            "nul",
+            "abc",
+            "-",
+            "01",
+            "1.",
+            "1e",
+            "\"abc",
+            "\"\\x\"",
+            "\"\\u12G4\"",
+            "{\"a\":1",
+            "{\"a\":}",
+            "{\"a\" 1}",
+            "{\"a\":1,}",
+            "{a:1}",
+            "[1,2}",
+            "[1 2]",
+            "[1,]",
+            "[txyz]"
+        )
+        private val WELL_FORMED_VALUES = listOf(
+            "true",
+            "null",
+            "-0.5e+10",
+            "\"a\\u00e9\\n\\\"b\"",
+            "{}",
+            "[]",
+            "{\"a\":[1,{\"b\":null},\"x\"],\"c\":false}",
+            "[[[]],{}]"
         )
     }
 }
