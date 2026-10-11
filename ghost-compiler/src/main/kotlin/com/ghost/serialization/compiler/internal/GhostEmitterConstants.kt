@@ -290,6 +290,9 @@ internal object GhostEmitterConstants {
         "writer.rawValue(bytes = %1L.array, offset = 0, length = %1L.size)"
 
     const val TEMPLATE_ENUM_ELSE_FALLBACK = "else -> %T.%L"
+    const val STR_ERR_FRAGMENTED_WRAPPED_KEYS_1 = "@GhostWrappedKeys is not supported yet in classes with more than " +
+        "$PROPERTY_MAX_SIZE properties: "
+    const val STR_ERR_FRAGMENTED_WRAPPED_KEYS_2 = ". Move the wrapped-keys property into a nested class."
     const val STR_ERR_FLATTEN_INFINITE_LOOP_1 =
         "Infinite loop detected in emitFlattenedGroup! Duplicate JSON properties or paths found in class "
 

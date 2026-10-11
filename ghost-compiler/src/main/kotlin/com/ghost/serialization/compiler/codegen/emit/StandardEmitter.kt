@@ -174,96 +174,6 @@ internal class StandardEmitter(
         }
     }
 
-    /**
-     * Recursive nested parse loops for `@GhostFlatten` properties, matching the JSON's key hierarchy.
-     * A `null` object on the path counts as absent, so its flattened properties keep their defaults.
-     */
-    private fun emitFlattenedGroup(
-        body: CodeBlock.Builder,
-        name: String,
-        props: List<GhostPropertyModel>,
-        pathIndex: Int,
-        parentPrefix: String
-    ) {
-        val currentPrefix = if (parentPrefix.isEmpty()) {
-            name
-        } else {
-            "${parentPrefix}${CC.STR_UNDERSCORE}$name"
-        }
-
-        val optionsName = CG.STR_OPTIONS_PREFIX + currentPrefix.uppercase()
-
-        body.beginControlFlow(C.STR_IF_NEXT_NULL_VALUE)
-        body.addStatement(C.STR_CONSUME_NULL)
-        body.nextControlFlow(C.STR_ELSE)
-        body.addStatement(C.STR_BEGIN_OBJECT)
-        body.beginControlFlow(C.STR_WHILE_TRUE)
-        val subIndexName = "${C.STR_SUB_INDEX_PREFIX}$pathIndex"
-        body.addStatement(C.STR_SELECT_SUB_NAME, subIndexName, optionsName)
-        body.beginControlFlow(C.STR_WHEN_SUB_INDEX, subIndexName)
-
-        val nextLevelNames = props.map {
-            val path = fullPaths[propertyIndices[it]!!]
-            if (pathIndex < path.size) {
-                path[pathIndex]
-            } else {
-                it.jsonName
-            }
-        }.distinct()
-
-        nextLevelNames.forEachIndexed { subIndex, subName ->
-            body.beginControlFlow(
-                C.TEMPLATE_WHEN_BRANCH,
-                subIndex
-            )
-            val subProps = props.filter {
-                val path = fullPaths[propertyIndices[it]!!]
-                val currentName = if (pathIndex < path.size) {
-                    path[pathIndex]
-                } else {
-                    it.jsonName
-                }
-                currentName == subName
-            }
-
-            if (subProps.size > 1 && subProps.all { pathIndex >= fullPaths[propertyIndices[it]!!].size }) {
-                throw IllegalStateException(
-                    C.STR_ERR_FLATTEN_INFINITE_LOOP_1 + originalClassName +
-                            C.STR_ERR_FLATTEN_INFINITE_LOOP_2 +
-                            subProps.map { it.kotlinName + " -> " + it.jsonName }
-                )
-            }
-
-            val isSingleLeafProperty = subProps.size == CC.VAL_ONE &&
-                pathIndex >= fullPaths[propertyIndices[subProps[C.VAL_ZERO]]!!].size - CC.VAL_ONE
-            if (isSingleLeafProperty) {
-                emitPropertyAssignment(
-                    body = body,
-                    prop = subProps[C.VAL_ZERO],
-                    index = propertyIndices[subProps[C.VAL_ZERO]]!!
-                )
-            } else {
-                emitFlattenedGroup(
-                    body = body,
-                    name = subName,
-                    props = subProps,
-                    pathIndex = pathIndex + CC.VAL_ONE,
-                    parentPrefix = currentPrefix
-                )
-            }
-            body.endControlFlow()
-        }
-
-        body.addStatement(C.STR_MINUS_ONE_BREAK)
-        body.beginControlFlow(C.STR_ELSE_BRANCH)
-        body.addStatement(C.STR_SKIP_VALUE)
-        body.endControlFlow()
-
-        body.endControlFlow() // when
-        body.endControlFlow() // while
-        body.addStatement(C.STR_END_OBJECT)
-        body.endControlFlow() // if null
-    }
 
     /**
      * Required-args ctor (Kotlin applies real defaults) then optional `.copy(...)`.
@@ -424,7 +334,8 @@ internal class StandardEmitter(
                         name = topName,
                         props = propsForThisName,
                         pathIndex = CC.VAL_ONE,
-                        parentPrefix = CC.STR_EMPTY
+                        parentPrefix = CC.STR_EMPTY,
+                        assignLeaf = ::emitPropertyAssignment
                     )
                 }
             }

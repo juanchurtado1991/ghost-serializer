@@ -9,7 +9,11 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 
 
-/** Serializes large classes as multiple private "chunk" functions to avoid JVM method size limits. */
+/**
+ * Serializes large classes as multiple private "chunk" functions to avoid JVM method size limits.
+ * Nested objects of `@GhostFlatten`/`@GhostWrap` paths may open in one chunk and close in a later one:
+ * chunks run in order, so the open-object path is tracked across them at generation time.
+ */
 internal class FragmentedSerializeEmitter(
     properties: List<GhostPropertyModel>,
     originalClassName: ClassName,
@@ -36,14 +40,17 @@ internal class FragmentedSerializeEmitter(
         val chunks = properties.chunked(C.DEFAULT_CHUNK_SIZE)
         val writerSuffix = writerClass.simpleName
 
+        val currentPath = mutableListOf<String>()
+
         chunks.forEachIndexed { index, chunkProps ->
             val chunkFunName = C.TEMPLATE_CHUNK_FUN_NAME
                 .format(C.STR_SERIALIZE_CHUNK_PREFIX, index, writerSuffix)
 
-            emitChunkFunction(index, chunkProps, typeSpecBuilder, writerSuffix)
+            emitChunkFunction(index, chunkProps, typeSpecBuilder, writerSuffix, currentPath)
             code.addStatement(C.TEMPLATE_CHUNK_CALL_WRITER, chunkFunName)
         }
 
+        emitClosePath(code = code, currentPath = currentPath)
         code.addStatement(C.STR_WRITER_END_OBJ)
     }
 
@@ -51,7 +58,8 @@ internal class FragmentedSerializeEmitter(
         index: Int,
         chunkProps: List<GhostPropertyModel>,
         typeSpecBuilder: TypeSpec.Builder,
-        writerSuffix: String
+        writerSuffix: String,
+        currentPath: MutableList<String>
     ) {
         val chunkFun = FunSpec
             .builder(
@@ -67,6 +75,7 @@ internal class FragmentedSerializeEmitter(
 
         val chunkCode = CodeBlock.builder()
         chunkProps.forEach { prop ->
+            emitPathTransition(code = chunkCode, currentPath = currentPath, prop = prop)
             emitProperty(code = chunkCode, prop = prop)
         }
 

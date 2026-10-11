@@ -132,6 +132,81 @@ class GhostWrappedKeysKspTest {
 
     private lateinit var lastCompilation: KotlinCompilation
 
+    @Test
+    fun wrappedKeysInLargeClassFailsWithClearMessage() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "LargeWrapped.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostName
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostWrappedKeys
+
+                @GhostSerialization
+                data class LargeExtras(
+                    @GhostName("extra1") val extra1: String?,
+                    @GhostName("extra2") val extra2: String?,
+                )
+
+                @GhostSerialization
+                data class LargeWrapped(
+                    val f1: Int = 0,
+                    val f2: Int = 0,
+                    val f3: Int = 0,
+                    val f4: Int = 0,
+                    val f5: Int = 0,
+                    val f6: Int = 0,
+                    val f7: Int = 0,
+                    val f8: Int = 0,
+                    val f9: Int = 0,
+                    val f10: Int = 0,
+                    val f11: Int = 0,
+                    val f12: Int = 0,
+                    val f13: Int = 0,
+                    val f14: Int = 0,
+                    val f15: Int = 0,
+                    val f16: Int = 0,
+                    val f17: Int = 0,
+                    val f18: Int = 0,
+                    val f19: Int = 0,
+                    val f20: Int = 0,
+                    val f21: Int = 0,
+                    val f22: Int = 0,
+                    val f23: Int = 0,
+                    val f24: Int = 0,
+                    val f25: Int = 0,
+                    val f26: Int = 0,
+                    val f27: Int = 0,
+                    val f28: Int = 0,
+                    val f29: Int = 0,
+                    val f30: Int = 0,
+                    val f31: Int = 0,
+                    val f32: Int = 0,
+                    val f33: Int = 0,
+                    val f34: Int = 0,
+                    val f35: Int = 0,
+                    val f36: Int = 0,
+                    val f37: Int = 0,
+                    val f38: Int = 0,
+                    val f39: Int = 0,
+                    val f40: Int = 0,
+                    @GhostWrappedKeys(keys = ["extra1", "extra2"])
+                    @GhostName("extras")
+                    val extras: LargeExtras,
+                )
+                """.trimIndent(),
+            ),
+        )
+
+        assertTrue(result.exitCode != KotlinCompilation.ExitCode.OK, result.messages)
+        assertTrue(
+            "@GhostWrappedKeys is not supported yet in classes with more than 40 properties" in result.messages,
+            result.messages
+        )
+    }
+
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
