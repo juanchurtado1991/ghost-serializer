@@ -46,11 +46,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
 
+        val constructorParameterNames = parameters.mapNotNull { it.name?.asString() }.toSet()
         val allProps = classDeclaration.getAllProperties().toList()
         val overriddenProps = allProps.mapNotNull { it.findOverridee() }.toSet()
         val properties = allProps
             .filterNot { it in overriddenProps }
             .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }
+            .filter { it.hasBackingField || it.simpleName.asString() in constructorParameterNames }
             .toList()
 
         validatePropertyVisibility(classDeclaration = classDeclaration, properties = properties)
@@ -318,7 +320,11 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 )
             )
         } else {
-            properties.map { prop -> buildPropertyModel(prop = prop, parameters = parameters) }
+            val dependencySources = findDefaultDependencySources(parameters = parameters)
+            properties.map { prop ->
+                val model = buildPropertyModel(prop = prop, parameters = parameters)
+                if (model.kotlinName in dependencySources) model.copy(isDefaultDependencySource = true) else model
+            }
         }
     }
 
@@ -383,6 +389,20 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         // The value class itself (e.g. `UserId`) is never @GhostProtoSerialization-annotated;
         // it inherits proto-ness from whichever outer property wraps it.
         return buildPropertyModel(prop = prop, parameters = listOf(param)).copy(isProto = isProto)
+    }
+
+    private fun findDefaultDependencySources(
+        parameters: List<KSValueParameter>
+    ): Set<String> {
+        val parameterNames = parameters.mapNotNull { it.name?.asString() }.toSet()
+        return parameters.flatMap { parameter ->
+            val ownName = parameter.name?.asString()
+            val raw = DefaultExpressionExtractor.extractRaw(param = parameter) ?: return@flatMap emptyList()
+            IDENTIFIER_REFERENCE.findAll(input = raw)
+                .map { it.groupValues[1] }
+                .filter { it in parameterNames && it != ownName }
+                .toList()
+        }.toSet()
     }
 
     private fun findUnannotatedEnum(
@@ -485,6 +505,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     }
 
     companion object {
+        /** An identifier not preceded by `.` (a member access), e.g. `base` in `base * 2`. */
+        private val IDENTIFIER_REFERENCE = Regex(pattern = "(?<![.\\w])([A-Za-z_][A-Za-z0-9_]*)")
         private val PRIMITIVE_ARRAYS = setOf(
             AC.STR_TYPE_INT_ARRAY,
             AC.STR_TYPE_LONG_ARRAY,

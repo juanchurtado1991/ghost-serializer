@@ -19,6 +19,9 @@ import com.squareup.kotlinpoet.TypeName
  *   `null` when the property isn't a wrapped-keys capture.
  * @property isProto True if the enclosing class is `@GhostProtoSerialization`: `Long` fields are
  *   read/written as quoted decimal strings instead of bare JSON numbers.
+ * @property isDefaultDependencySource True if another constructor parameter's default expression
+ *   reads this parameter (`val doubled: Int = base * 2` makes `base` a source), so a decoded value
+ *   must reach the constructor for the dependent default to be computed from it.
  */
 internal data class GhostPropertyModel(
     val kotlinName: String,
@@ -55,5 +58,6 @@ internal data class GhostPropertyModel(
     val wrappedKeys: WrappedKeysModel? = null,
     val isInferredSignature: Boolean = false,
     val inferredSubclasses: List<InferredSubclassModel> = emptyList(),
-    val isProto: Boolean = false
+    val isProto: Boolean = false,
+    val isDefaultDependencySource: Boolean = false
 )

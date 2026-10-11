@@ -280,11 +280,13 @@ internal fun GhostPropertyModel.getVariableType(): TypeName {
 }
 
 /**
- * True when a missing JSON field must fail decoding: the property is non-nullable, has no
- * constructor default, and is not a proto3 field whose zero value the encoder omits.
+ * True when a missing JSON field must fail decoding: the property is a constructor parameter (a
+ * property declared in the class body is written but cannot be set, so it is never required), is
+ * non-nullable, has no constructor default, and is not a proto3 field whose zero value the
+ * encoder omits.
  */
 internal fun GhostPropertyModel.isRequiredOnWire(): Boolean =
-    !isNullable && !hasDefaultValue && protoOmittedZeroLiteral() == null
+    isInConstructor && !isNullable && !hasDefaultValue && protoOmittedZeroLiteral() == null
 
 /**
  * True when the encoder may omit a proto3 field holding its zero value: the field has a

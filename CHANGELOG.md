@@ -14,6 +14,8 @@
 
 - **A `ULong` above `Long.MAX_VALUE` is written as a JSON number.** It was written as a quoted string while smaller values were bare numbers, so the JSON type depended on the value; Ghost reads the full range from a bare number. proto3 `uint64` stays a quoted string.
 
+- **Properties without a backing field are no longer serialized.** A computed `val x get() = …` declared in a model's body was written to JSON (and then required on decode); like kotlinx.serialization and Moshi, only constructor parameters and stored body properties are written now.
+
 ### Fixed
 - **Streaming decode errors no longer throw while building their message.** On `deserializeStreaming`, reading `GhostJsonException.message` threw `IndexOutOfBoundsException` when the error came after the first 16 KB of the stream (the line/column scan re-read bytes already released from the buffer); `line`/`column` are now reported as `-1` in that case, while `position` and `path` stay exact. A truncated stream (`{"k":1 `, `{`, empty input) now throws `GhostJsonException` with the same message as the bytes channel instead of a raw `IndexOutOfBoundsException`.
 - **YAML `\u` escapes for surrogate pairs decode to the real character.** `"\uD83D\uDE00"` decoded as two replacement characters instead of 😀, because each half was written separately; a lone surrogate now decodes to one U+FFFD on every platform (iOS/Wasm produced three).
@@ -41,6 +43,8 @@
 - **YAML writes non-finite floats as `.nan`/`.inf`/`-.inf`.** They were written as `NaN`/`Infinity`, which YAML's core schema reads as strings.
 - **`UInt`, `UShort` and `UByte` work in models and at the top level, and all unsigned types have built-in serializers.** A `UInt`/`UShort`/`UByte` property compiled but threw "No Ghost serializer found for UInt" at runtime, and `Ghost.deserialize<ULong>(...)` had no serializer; they now decode with range checks (negatives and out-of-range values throw `GhostJsonException`) and encode as JSON numbers.
 - **A value class wrapping a nullable type compiles and round-trips.** `@JvmInline value class Note(val value: String?)` generated code that did not compile (the nullable inner value was written without a null check), and decoding a model holding one threw `NullPointerException` on a `null` inner value; the inner `null` is now written and read as JSON `null`, also inside collections.
+- **Body properties no longer make a model undecodable.** A stored `val` declared in the class body (not a constructor parameter) was treated as a required field, so `{"base":2}` failed with "Required field 'stored' missing" even though the value can never be set; such properties are still written but never required.
+- **Defaults that depend on another parameter are computed from the decoded value.** For a model with more than four defaulted parameters, `val doubled: Int = base * 2` decoded from `{"base":5}` gave `doubled = 20` (computed from the default `base`), because the object was built with every default and then `.copy(base = 5)`; parameters read by other defaults are now passed to the constructor when present.
 
 ## [1.3.4] - 2026-10-10
 

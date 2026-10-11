@@ -102,6 +102,40 @@ internal class StandardEmitter(
         return C.TEMPLATE_MASK_ALL_MET_SIMPLE.format(0, constName, constName)
     }
 
+    private fun emitConstructorArguments(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        presentDefaults: List<GhostPropertyModel>
+    ) {
+        requiredProps.forEach { prop ->
+            val varName = prop.localValueName()
+            val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
+            val expr = if (prop.isNullable || isPrimitive) {
+                varName
+            } else {
+                prop.requireLocalValue(local = varName)
+            }
+            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, expr)
+        }
+        presentDefaults.forEach { prop ->
+            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, prop.getReturnExpression())
+        }
+    }
+
+    private fun emitConstructorCall(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        presentDefaults: List<GhostPropertyModel>
+    ) {
+        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+        emitConstructorArguments(
+            body = body,
+            requiredProps = requiredProps,
+            presentDefaults = presentDefaults
+        )
+        body.addStatement(C.STR_PAREN)
+    }
+
     /**
      * Instantiates the class once when every default has a whitelisted source expression;
      * otherwise falls back to required-ctor + `.copy(...)` so arbitrary Kotlin defaults stay correct.
@@ -164,6 +198,36 @@ internal class StandardEmitter(
         typeSpecBuilder.addFunction(funBuilder.build())
     }
 
+    private fun emitDependencySourceConstruction(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        dependencySources: List<Pair<Int, GhostPropertyModel>>,
+        typeSpecBuilder: TypeSpec.Builder
+    ) {
+        body.beginControlFlow(C.STR_VAL_RESULT_WHEN)
+        for (subsetBits in (CC.VAL_ONE shl dependencySources.size) - CC.VAL_ONE downTo C.VAL_ZERO) {
+            val condition = if (subsetBits == C.VAL_ZERO) {
+                C.STR_ELSE
+            } else {
+                buildSubsetCondition(
+                    subsetBits = subsetBits,
+                    defaultPropsWithIndex = dependencySources,
+                    typeSpecBuilder = typeSpecBuilder
+                )
+            }
+            body.addStatement(C.TEMPLATE_WHEN_CONSTRUCTOR_BRANCH, condition, originalClassName)
+            emitConstructorArguments(
+                body = body,
+                requiredProps = requiredProps,
+                presentDefaults = dependencySources
+                    .filterIndexed { bit, _ -> subsetBits and (CC.VAL_ONE shl bit) != C.VAL_ZERO }
+                    .map { (_, prop) -> prop }
+            )
+            body.addStatement(C.STR_PAREN)
+        }
+        body.endControlFlow()
+    }
+
     private fun emitFieldValidationCall(body: CodeBlock.Builder) {
         val requiredProps = properties.filter { it.isRequiredOnWire() }
         if (requiredProps.isNotEmpty()) {
@@ -178,7 +242,10 @@ internal class StandardEmitter(
 
 
     /**
-     * Required-args ctor (Kotlin applies real defaults) then optional `.copy(...)`.
+     * Required-args ctor (Kotlin applies real defaults) then optional `.copy(...)`. Defaults that
+     * other defaults read (`val doubled: Int = base * 2`) are passed to the constructor when present,
+     * one branch per combination, so Kotlin computes the dependent defaults from the decoded values;
+     * `.copy(...)` alone would keep the ones computed from the defaults.
      */
     private fun emitLegacyCopyReturn(
         body: CodeBlock.Builder,
@@ -186,18 +253,21 @@ internal class StandardEmitter(
         defaultPropsWithIndex: List<Pair<Int, GhostPropertyModel>>,
         typeSpecBuilder: TypeSpec.Builder
     ) {
-        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
-        requiredProps.forEach { prop ->
-            val varName = prop.localValueName()
-            val isPrimitive = prop.type.isPrimitive() && !prop.isNullable
-            val expr = if (prop.isNullable || isPrimitive) {
-                varName
-            } else {
-                prop.requireLocalValue(local = varName)
-            }
-            body.addStatement(C.TEMPLATE_NAMED_ARG, prop.kotlinName, expr)
+        val dependencySources = defaultPropsWithIndex.filter { (_, prop) -> prop.isDefaultDependencySource }
+        if (dependencySources.isEmpty() || dependencySources.size > C.MAX_DEFAULT_BRANCH_COUNT) {
+            emitConstructorCall(
+                body = body,
+                requiredProps = requiredProps,
+                presentDefaults = emptyList()
+            )
+        } else {
+            emitDependencySourceConstruction(
+                body = body,
+                requiredProps = requiredProps,
+                dependencySources = dependencySources,
+                typeSpecBuilder = typeSpecBuilder
+            )
         }
-        body.addStatement(C.STR_PAREN)
 
         if (defaultPropsWithIndex.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)

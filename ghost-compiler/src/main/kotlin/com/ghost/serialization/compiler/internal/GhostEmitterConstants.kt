@@ -89,6 +89,8 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_RETURN_T_PAREN = "return %T("
     const val STR_PAREN = ")"
     const val TEMPLATE_VAL_RESULT = "val result = %T("
+    const val STR_VAL_RESULT_WHEN = "val result = when"
+    const val TEMPLATE_WHEN_CONSTRUCTOR_BRANCH = "%L -> %T("
     const val STR_OR = " || "
     const val STR_RETURN_RESULT_COPY = "return result.copy("
     const val STR_ELSE = "else"

@@ -19,14 +19,19 @@ internal object DefaultExpressionExtractor {
      * unavailable or the expression is not a safe literal.
      */
     fun extract(param: KSValueParameter): String? {
+        val raw = extractRaw(param = param) ?: return null
+        return whitelist(expr = raw)
+    }
+
+    /** The default expression of [param] as written in source, or `null` when it is unavailable. */
+    fun extractRaw(param: KSValueParameter): String? {
         if (!param.hasDefault) return null
         val name = param.name?.asString() ?: return null
         val location = param.location as? FileLocation ?: return null
         val file = File(location.filePath)
         if (!file.isFile) return null
         val source = runCatching { file.readText() }.getOrNull() ?: return null
-        val raw = extractRawDefault(source = source, paramName = name, lineNumber = location.lineNumber) ?: return null
-        return whitelist(expr = raw)
+        return extractRawDefault(source = source, paramName = name, lineNumber = location.lineNumber)
     }
 
     /**
