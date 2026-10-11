@@ -36,8 +36,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
- * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
- * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
+ * JSON parser that operates directly on a flat [ByteArray], with no interface dispatch
+ * or hasFastPath boundaries.
  *
  * @property strictMode When true, rejects unknown/unmapped fields and enforces strict comma
  * validation; `false` favors lenient parsing performance.

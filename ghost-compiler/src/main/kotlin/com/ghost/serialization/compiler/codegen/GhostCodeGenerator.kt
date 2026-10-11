@@ -88,7 +88,7 @@ internal class GhostCodeGenerator(
         }
 
         val typeSpecBuilder = TypeSpec.objectBuilder(context.serializerName)
-            .addKdoc(CG.STR_KDOC_HIGH_PERF, context.originalClassName)
+            .addKdoc(CG.STR_KDOC_SERIALIZER, context.originalClassName)
             .addKdoc(CG.STR_KDOC_GENERATED)
             .superclass(context.serializerBaseClass.parameterizedBy(context.originalClassName))
 

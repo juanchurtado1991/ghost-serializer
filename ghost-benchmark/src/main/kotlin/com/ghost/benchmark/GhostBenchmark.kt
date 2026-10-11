@@ -34,9 +34,7 @@ import java.lang.management.ManagementFactory
  * CLI orchestration lives in [main] (`BenchmarkLauncher.kt`).
  */
 
-// ============================================================================
-// Phase Executors
-// ============================================================================
+// ── Phase Executors ──────────────────────────────────────────────────────────
 
 /** Runs and prints the one-shot cold-start parse table before global JIT warmup. */
 internal fun runAndPrintColdStart(smallBytes: ByteString) {
@@ -225,9 +223,7 @@ internal fun performPhaseGc() {
     System.runFinalization()
 }
 
-// ============================================================================
-// Core Execution Logic
-// ============================================================================
+// ── Core Execution Logic ─────────────────────────────────────────────────────
 
 private fun measureStreamingDeserialization(
     threadBean: ThreadMXBean,
@@ -267,9 +263,7 @@ private fun runColdStart(data: ByteString): BenchmarkMetrics {
     )
 }
 
-// ============================================================================
-// Measurement Helpers: Deserialization
-// ============================================================================
+// ── Measurement Helpers: Deserialization ─────────────────────────────────────
 
 private fun measureBytesDeserialization(
     threadBean: ThreadMXBean,
@@ -304,9 +298,7 @@ private fun measureStringDeserialization(
     )
 }
 
-// ============================================================================
-// Measurement Helpers: Serialization
-// ============================================================================
+// ── Measurement Helpers: Serialization ───────────────────────────────────────
 
 private fun measureBytesSerialization(
     threadBean: ThreadMXBean,
@@ -370,9 +362,7 @@ private fun measureStringSerialization(
     )
 }
 
-// ============================================================================
-// Stress & Failure Testing
-// ============================================================================
+// ── Stress & Failure Testing ─────────────────────────────────────────────────
 
 @Suppress("CheckResult")
 private fun runFailureTests(

@@ -5,7 +5,6 @@ package com.ghost.serialization.compiler.internal
 internal object GhostEmitterConstants {
 
     const val STR_DESERIALIZE = "deserialize"
-    const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
     const val PROPERTY_MAX_SIZE = 40
     const val DEFAULT_CHUNK_SIZE = PROPERTY_MAX_SIZE
     const val STR_READER = "reader"

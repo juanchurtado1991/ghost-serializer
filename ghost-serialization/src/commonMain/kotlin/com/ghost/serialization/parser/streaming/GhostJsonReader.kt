@@ -30,7 +30,7 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
- * A high-performance, zero-allocation JSON parser for Kotlin Multiplatform.
+ * Streaming JSON parser for Kotlin Multiplatform.
  *
  * This reader is optimized for generated code and raw speed by:
  * - Using an [Int]-based (0-255) data access pattern to eliminate sign-extension overhead.

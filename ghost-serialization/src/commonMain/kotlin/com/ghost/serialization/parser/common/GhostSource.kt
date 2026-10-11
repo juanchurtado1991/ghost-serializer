@@ -60,10 +60,11 @@ interface GhostSource {
     fun findClosingQuote(position: Int, limit: Int): Int
 
     /**
-     * Ultra-fast-path: scans for the closing quote while computing a rolling hash in one
-     * pass. Returns the rolling hash (low 31 bits) and length (high 32 bits) packed into a
-     * Long, or -1L if an escape/control character is hit.
-     */ fun scanString(start: Int, limit: Int): Long
+     * Scans for the closing quote while computing a rolling hash in one pass. Returns the
+     * rolling hash (low 31 bits) and length (high 32 bits) packed into a Long, or -1L if an
+     * escape/control character is hit.
+     */
+    fun scanString(start: Int, limit: Int): Long
 
     /**
      * Compares source bytes against a cached [String] without allocating a new String for
