@@ -58,14 +58,15 @@ class GhostYamlChaosTest {
     }
 
     @Test
-    fun malformedSurrogateInEscapeSequenceIsAcceptedOrThrows() {
+    fun loneHighSurrogateEscapeDecodesToReplacementCharacter() {
         val yaml = """v: "\uD83D\u0020""""
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
-        runCatching { reader.nextString() }.onFailure {
-            assertFailsWith<GhostYamlException> { throw it }
-        }
+        assertEquals(
+            expected = "\uFFFD ",
+            actual = reader.nextString()
+        )
     }
 
     @Test

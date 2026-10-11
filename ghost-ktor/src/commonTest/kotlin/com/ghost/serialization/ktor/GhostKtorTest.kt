@@ -6,6 +6,7 @@ import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.exception.GhostJsonException
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.mock.MockEngine
@@ -155,7 +156,7 @@ class GhostKtorTest {
     }
 
     @Test
-    fun test204NoContentReturnsNullOrFails() = runTest {
+    fun test204NoContentForNonNullableBodyThrows() = runTest {
         val mockEngine = MockEngine {
             respond(
                 content = "",
@@ -170,8 +171,7 @@ class GhostKtorTest {
             }
         }
 
-        assertFailsWith<Exception> {
-            // Body is empty but KtorUser is not nullable
+        assertFailsWith<GhostJsonException> {
             client.get("/empty").body<KtorUser>()
         }
     }

@@ -7,11 +7,13 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import java.util.Collections
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class GhostConcurrencyExpansionTest {
@@ -75,10 +77,12 @@ class GhostConcurrencyExpansionTest {
         val numThreads = 8
         val dispatcher = Executors.newFixedThreadPool(numThreads).asCoroutineDispatcher()
 
+        val resolved = Collections.synchronizedList(mutableListOf<Any?>())
+
         withContext(dispatcher) {
-            val jobs = (0 until 1000).map { _ ->
+            val jobs = (0 until REGISTRY_LOOKUPS).map { _ ->
                 launch {
-                    Ghost.getSerializer(LargeStringModel::class)
+                    resolved.add(Ghost.getSerializer(LargeStringModel::class))
                 }
             }
             jobs.joinAll()
@@ -90,5 +94,21 @@ class GhostConcurrencyExpansionTest {
                 TimeUnit.SECONDS
             )
         )
+
+        val distinctSerializers = resolved.toSet()
+        assertEquals(
+            expected = REGISTRY_LOOKUPS,
+            actual = resolved.size
+        )
+        assertEquals(
+            expected = 1,
+            actual = distinctSerializers.size,
+            message = "Concurrent lookups must resolve the same serializer instance"
+        )
+        assertNotNull(actual = distinctSerializers.single())
+    }
+
+    companion object {
+        private const val REGISTRY_LOOKUPS = 1000
     }
 }

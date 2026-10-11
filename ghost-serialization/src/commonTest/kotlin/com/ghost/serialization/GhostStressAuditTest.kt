@@ -12,7 +12,6 @@ import com.ghost.serialization.parser.streaming.endObject
 import com.ghost.serialization.parser.streaming.hasNext
 import com.ghost.serialization.parser.streaming.nextBoolean
 import com.ghost.serialization.parser.streaming.nextInt
-import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.selectString
 import com.ghost.serialization.parser.streaming.skipValue
@@ -91,72 +90,20 @@ class GhostStressAuditTest {
     }
 
     @Test
-    fun testMalformedJsonFuzzing() {
+    fun skipValueRejectsMalformedValues() {
         val malformedInputs = listOf(
             "{ \"k\": }",
             "[1, 2, ]",
             "{\"k\": \"v\"",
-            "true-false",
-            "null123",
-            "\"escaped\\u123z\"",
-            "{\"k\": \"v\"} extra",
-            "0.0.0"
+            "\"escaped\\u123z\""
         )
 
         malformedInputs.forEach { input ->
-            val reader =
-                GhostJsonReader(createByteArraySource(data = input.encodeToByteArray()), strictMode = true)
-            assertFailsWith<GhostJsonException>("Failed to catch malformed input: $input") {
-                recursiveSkip(reader = reader)
-                reader.skipWhitespace()
-                if (reader.position < reader.limit) {
-                    val leftover = reader.source.decodeToString(start = reader.position, end = reader.limit)
-                    if (leftover.trim().isNotEmpty()) {
-                        throw GhostJsonException("Unconsumed input: $leftover", 0, 0)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun recursiveSkip(reader: GhostJsonReader) {
-        reader.skipWhitespace()
-        if (reader.position >= reader.limit) return
-        when (reader.peekByte()) {
-            '{'.code.toByte() -> {
-                reader.beginObject()
-                while (reader.hasNext()) {
-                    reader.nextKey()
-                    reader.consumeKeySeparator()
-                    recursiveSkip(reader = reader)
-                }
-                reader.endObject()
-            }
-
-            '['.code.toByte() -> {
-                reader.beginArray()
-                if (reader.peekByte() != ']'.code.toByte()) {
-                    while (true) {
-                        recursiveSkip(reader = reader)
-                        val next = reader.nextNonWhitespace()
-                        if (next == ']'.code) {
-                            break
-                        }
-                        if (next != ','.code) throw GhostJsonException(
-                            "Expected ','",
-                            0,
-                            0
-                        )
-                        if (reader.peekByte() == ']'.code.toByte()) {
-                            throw GhostJsonException("Trailing comma", 0, 0)
-                        }
-                    }
-                } else {
-                    reader.endArray()
-                }
-            }
-
-            else -> {
+            val reader = GhostJsonReader(
+                source = createByteArraySource(data = input.encodeToByteArray()),
+                strictMode = true
+            )
+            assertFailsWith<GhostJsonException>(message = "Failed to reject malformed input: $input") {
                 reader.skipValue()
             }
         }

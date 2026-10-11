@@ -1,12 +1,14 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.DeepGenericModel
 import com.ghost.serialization.integration.model.RecursiveNode
 import com.ghost.serialization.integration.model.ReservedWordModel
 import com.ghost.serialization.integration.model.WideModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class GhostStressTest {
@@ -93,25 +95,33 @@ class GhostStressTest {
     }
 
     @Test
-    fun testDepthProtection() {
-        // 300 levels exceeds the default 255 depth limit
-        var current = RecursiveNode(id = 0, name = "leaf")
-        for (i in 1..300) {
-            current = RecursiveNode(id = i, name = "node_$i", children = listOf(current))
-        }
-
-        // Depth protection may trip in either serialize or deserialize
-        try {
-            val json = Ghost.serialize(current)
-            Ghost.deserialize<RecursiveNode>(json)
-            assertTrue(actual = false, message = "Should have thrown GhostJsonException due to depth")
-        } catch (e: Exception) {
-            val isGhostException = e is com.ghost.serialization.exception.GhostJsonException ||
-                    e.message?.contains("depth") == true
-            assertTrue(
-                actual = isGhostException,
-                message = "Expected depth protection exception but got: ${e.javaClass.simpleName}: ${e.message}"
+    fun serializeBeyondMaxDepthThrows() {
+        var current = RecursiveNode(
+            id = 0,
+            name = "leaf"
+        )
+        repeat(times = DEPTH_BEYOND_DEFAULT_LIMIT) { level ->
+            current = RecursiveNode(
+                id = level + 1,
+                name = "node_$level",
+                children = listOf(current)
             )
+        }
+        val root = current
+
+        assertFailsWith<GhostJsonException> {
+            Ghost.serialize(root)
+        }
+    }
+
+    @Test
+    fun deserializeBeyondMaxDepthThrows() {
+        val json = NESTED_NODE_OPEN.repeat(n = DEPTH_BEYOND_DEFAULT_LIMIT) +
+            NESTED_NODE_LEAF +
+            NESTED_NODE_CLOSE.repeat(n = DEPTH_BEYOND_DEFAULT_LIMIT)
+
+        assertFailsWith<GhostJsonException> {
+            Ghost.deserialize<RecursiveNode>(json)
         }
     }
 
@@ -122,5 +132,12 @@ class GhostStressTest {
         val deserialized = Ghost.deserialize<List<RecursiveNode>>(json)
         assertEquals(expected = 10000, actual = deserialized.size)
         assertEquals(expected = "name_9999", actual = deserialized.last().name)
+    }
+
+    companion object {
+        private const val DEPTH_BEYOND_DEFAULT_LIMIT = 300
+        private const val NESTED_NODE_CLOSE = "]}"
+        private const val NESTED_NODE_LEAF = """{"id":1,"name":"leaf"}"""
+        private const val NESTED_NODE_OPEN = """{"id":0,"name":"node","children":["""
     }
 }
