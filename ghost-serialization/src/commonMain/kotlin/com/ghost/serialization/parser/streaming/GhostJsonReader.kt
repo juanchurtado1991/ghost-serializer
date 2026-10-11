@@ -284,6 +284,12 @@ class GhostJsonReader(
     }
 
     @InternalGhostApi
+    fun requireEndOfInput() {
+        if (peekNextToken() != SCN.MATCH_END) {
+            throwError(message = EM.ERR_EXPECTED_EOF)
+        }
+    }
+
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
         val isValid = if (isStreaming) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **Content after the root JSON value is now rejected, like kotlinx.serialization.** `Ghost.deserialize("""{"k":1} extra""")` used to return `{k=1}` and silently ignore the rest; every channel (string, bytes, `BufferedSource`, `deserializeStreaming`) and the Ktor/Retrofit/Spring converters now throw `GhostJsonException` ("Expected end of input after the root value"). Trailing whitespace is still accepted. Measured with `benchmarkTwitter`: no throughput or memory change.
+- **Ktor: an empty response body decodes to `null`, like Ktor's kotlinx.serialization converter.** `body<User?>()` on a 204 or an empty 200 now returns `null`; `body<User>()` throws Ktor's `ContentConvertException` instead of `GhostJsonException`.
+
 ## [1.3.4] - 2026-10-10
 
 watchOS targets and code generation fixes found while adding them.

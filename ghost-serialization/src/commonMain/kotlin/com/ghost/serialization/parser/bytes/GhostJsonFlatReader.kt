@@ -253,6 +253,12 @@ open class GhostJsonFlatReader(
         return nextTokenByte
     }
 
+    fun requireEndOfInput() {
+        if (peekNextToken() != SCN.MATCH_END) {
+            throwError(message = EM.ERR_EXPECTED_EOF)
+        }
+    }
+
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {
         resetSlice(buffer = newData, offset = 0, length = newLimit)
     }

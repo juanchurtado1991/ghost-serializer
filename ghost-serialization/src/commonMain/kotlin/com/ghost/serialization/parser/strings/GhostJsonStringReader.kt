@@ -138,6 +138,12 @@ class GhostJsonStringReader(
     }
 
     @Suppress("StringReferentialEquality")
+    fun requireEndOfInput() {
+        if (peekNextToken() != SCN.MATCH_END) {
+            throwError(message = EM.ERR_EXPECTED_EOF)
+        }
+    }
+
     fun reset(newData: String, newLimit: Int = newData.length) {
         val oldData = rawData
         rawData = newData

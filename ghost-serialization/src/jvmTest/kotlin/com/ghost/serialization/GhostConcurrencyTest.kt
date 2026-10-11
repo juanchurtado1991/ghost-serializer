@@ -6,6 +6,7 @@ import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.contract.GhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +33,10 @@ class GhostConcurrencyTest {
 
     private class ThreadSafeMockSerializer(val id: Int) : AbstractGhostSerializer<Int>() {
         override val typeName: String = "Int_$id"
-        override fun deserialize(reader: GhostJsonReader): Int = id
+        override fun deserialize(reader: GhostJsonReader): Int {
+            reader.skipValue()
+            return id
+        }
         override fun serialize(writer: GhostJsonWriter, value: Int) {
             writer.value(value.toLong())
         }

@@ -19,6 +19,9 @@ import kotlin.reflect.KClass
  * plain-[KClass] fallback path, since generic-type resolution (`List<T>`/`Set<T>`/`Map<K, V>`
  * via [TypeInfo.kotlinType]) always goes through [Ghost] itself, which is the only place that
  * capability exists.
+ *
+ * An empty body decodes to `null`, like Ktor's kotlinx.serialization converter: Ktor then returns
+ * `null` for a nullable target type and throws `ContentConvertException` for a non-nullable one.
  */
 @OptIn(InternalGhostApi::class)
 class GhostContentConverter(
@@ -38,6 +41,10 @@ class GhostContentConverter(
         ) ?: return null
 
         return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
+            val isEmptyBody = offset == 0
+            if (isEmptyBody) {
+                return null
+            }
             ghostInternalUseFlatReader(bytes = scratch, limit = offset) { reader ->
                 configurer?.invoke(reader)
                 serializer.deserialize(reader)

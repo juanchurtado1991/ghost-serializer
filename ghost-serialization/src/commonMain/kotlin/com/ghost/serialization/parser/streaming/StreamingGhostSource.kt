@@ -248,8 +248,8 @@ class StreamingGhostSource(val okioSource: BufferedSource) : AbstractGhostSource
                 currentPosition = localPosition
                 if (currentPosition >= limit) return -1
             } else {
-                getSlow(index = currentPosition)
-                if (bufferStart == -1 || currentPosition >= bufferEnd) return -1
+                val isEndOfStream = byteOrEof(index = currentPosition) == SCN.MATCH_END
+                if (isEndOfStream || bufferStart == -1 || currentPosition >= bufferEnd) return -1
             }
         }
     }
