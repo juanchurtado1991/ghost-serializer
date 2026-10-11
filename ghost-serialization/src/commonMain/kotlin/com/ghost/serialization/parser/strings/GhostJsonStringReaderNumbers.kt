@@ -89,7 +89,7 @@ fun GhostJsonStringReader.nextFloat(): Float {
 
     nextTokenByte = SCN.RESET_TOKEN_BYTE
     val result = parseJsonFloatingBodyCore(
-        precisionLimit = NUM.FLOAT_PRECISION_LIMIT,
+        precisionLimit = NUM.DOUBLE_PRECISION_LIMIT,
         allowBulkDigitRead = true,
         getPosition = { position },
         setPosition = { position = it },
@@ -97,8 +97,13 @@ fun GhostJsonStringReader.nextFloat(): Float {
         getByte = { getByte(it) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
-    ) { mantissa, exponent ->
-        finalizeParsedFloat(mantissa = mantissa, exponent = exponent, isNegative = isNegativeValue) { throwError(it) }
+    ) { mantissa, exponent, truncatedLiteral ->
+        finalizeParsedFloat(
+            mantissa = mantissa,
+            exponent = exponent,
+            isNegative = isNegativeValue,
+            truncatedLiteral = truncatedLiteral
+        ) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -125,8 +130,13 @@ fun GhostJsonStringReader.nextDouble(): Double {
         getByte = { getByte(it) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
-    ) { mantissa, exponent ->
-        finalizeParsedDouble(mantissa = mantissa, exponent = exponent, isNegative = isNegativeValue) { throwError(it) }
+    ) { mantissa, exponent, truncatedLiteral ->
+        finalizeParsedDouble(
+            mantissa = mantissa,
+            exponent = exponent,
+            isNegative = isNegativeValue,
+            truncatedLiteral = truncatedLiteral
+        ) { throwError(it) }
     }
 
     if (isQuoted) {

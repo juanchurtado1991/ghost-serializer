@@ -1,6 +1,5 @@
 package com.ghost.serialization.parser.common.json
 
-import com.ghost.serialization.parser.common.getFloatPowerOfTen
 import com.ghost.serialization.parser.common.isDigit
 import com.ghost.serialization.parser.common.isExponentMarker
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
@@ -17,26 +16,105 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  */
 
 /**
- * Scales a parsed mantissa/exponent into a finite [Double].
- *
- * Exact for `|exponent| <= 22` (the only range where `10^n` is an exactly-representable Double)
- * or when extra exponent can be folded into the mantissa without exceeding 2^53. Otherwise falls
- * back to string parsing — correctly rounded but allocates; rare in practice, no measurable
- * throughput cost in `benchmarkTwitter`.
+ * Scales a parsed mantissa/exponent into a finite [Double]. [truncatedLiteral] is the source
+ * text when the literal had more significant digits than the mantissa holds; it is then parsed
+ * by the platform, which rounds correctly, instead of scaling the truncated mantissa.
  */
 internal inline fun finalizeParsedDouble(
     mantissa: Long,
     exponent: Int,
     isNegative: Boolean,
+    truncatedLiteral: String?,
     throwError: (String) -> Nothing,
 ): Double {
-    var result = Double.NaN
+    var result = truncatedLiteral?.toDouble() ?: scaleToDouble(
+        mantissa = mantissa,
+        exponent = exponent
+    )
+    if (isNegative) {
+        result = -result
+    }
+    if (result.isInfinite() || result.isNaN()) {
+        throwError(EM.ERR_NUMERIC_OVERFLOW)
+    }
+    return result
+}
+
+/**
+ * Scales a parsed mantissa/exponent into a finite [Float] through the correctly rounded
+ * [Double]. Narrowing that Double can round twice only when it lands exactly halfway between
+ * two Floats; that case (and a truncated literal) is parsed by the platform instead.
+ */
+internal inline fun finalizeParsedFloat(
+    mantissa: Long,
+    exponent: Int,
+    isNegative: Boolean,
+    truncatedLiteral: String?,
+    throwError: (String) -> Nothing,
+): Float {
+    var result = if (truncatedLiteral != null) {
+        truncatedLiteral.toFloat()
+    } else {
+        val exactDouble = scaleToDouble(
+            mantissa = mantissa,
+            exponent = exponent
+        )
+        val narrowed = exactDouble.toFloat()
+        val needsPlatformParse = isAmbiguousFloatNarrowing(
+            exact = exactDouble,
+            narrowed = narrowed
+        )
+        if (needsPlatformParse) "${mantissa}e$exponent".toFloat() else narrowed
+    }
+    if (isNegative) {
+        result = -result
+    }
+    if (result.isInfinite() || result.isNaN()) {
+        throwError(EM.ERR_NUMERIC_OVERFLOW)
+    }
+    return result
+}
+
+/**
+ * Whether narrowing [exact] to [narrowed] may have rounded twice: [exact] sits exactly halfway
+ * between two Floats, or the narrowing overflowed a finite value. Magnitudes are never negative
+ * here (the sign is applied afterwards), so the adjacent Float is one raw-bit step away
+ * (`Float.nextUp`/`nextDown` are JVM-only).
+ */
+internal inline fun isAmbiguousFloatNarrowing(
+    exact: Double,
+    narrowed: Float,
+): Boolean {
+    if (narrowed.isInfinite()) {
+        return exact.isFinite()
+    }
+    val narrowedAsDouble = narrowed.toDouble()
+    if (narrowedAsDouble == exact) {
+        return false
+    }
+    val neighborBitStep = if (narrowedAsDouble < exact) 1 else -1
+    val neighbor = Float.fromBits(bits = narrowed.toRawBits() + neighborBitStep)
+    return (narrowedAsDouble + neighbor.toDouble()) / 2.0 == exact
+}
+
+/**
+ * Exact for `|exponent| <= 22` (the only range where `10^n` is an exactly-representable Double)
+ * or when extra exponent can be folded into the mantissa without exceeding 2^53. Otherwise falls
+ * back to string parsing — correctly rounded but allocates; rare in practice, no measurable
+ * throughput cost in `benchmarkTwitter`.
+ */
+internal inline fun scaleToDouble(
+    mantissa: Long,
+    exponent: Int,
+): Double {
     if (mantissa <= NUM.MAX_EXACT_DOUBLE_MANTISSA) {
         if (exponent in 0..NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN) {
-            result = mantissa.toDouble() * NUM.POWERS_OF_TEN[exponent]
-        } else if (exponent in -NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN..-1) {
-            result = mantissa.toDouble() / NUM.POWERS_OF_TEN[-exponent]
-        } else if (exponent > NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN) {
+            return mantissa.toDouble() * NUM.POWERS_OF_TEN[exponent]
+        }
+        if (exponent in -NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN..-1) {
+            return mantissa.toDouble() / NUM.POWERS_OF_TEN[-exponent]
+        }
+        if (exponent > NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN) {
             var shift = exponent - NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN
             var shiftedMantissa = mantissa
             while (shift > 0) {
@@ -49,48 +127,11 @@ internal inline fun finalizeParsedDouble(
                 shift--
             }
             if (shiftedMantissa >= 0) {
-                result = shiftedMantissa.toDouble() * NUM.POWERS_OF_TEN[NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN]
+                return shiftedMantissa.toDouble() * NUM.POWERS_OF_TEN[NUM.MAX_EXACT_DOUBLE_POWER_OF_TEN]
             }
         }
     }
-    if (result.isNaN()) {
-        result = "${mantissa}e$exponent".toDouble()
-    }
-    if (isNegative) {
-        result = -result
-    }
-    if (result.isInfinite() || result.isNaN()) {
-        throwError(EM.ERR_NUMERIC_OVERFLOW)
-    }
-    return result
-}
-
-/**
- * Scales a parsed mantissa/exponent into a finite [Float].
- */
-internal inline fun finalizeParsedFloat(
-    mantissa: Long,
-    exponent: Int,
-    isNegative: Boolean,
-    throwError: (String) -> Nothing,
-): Float {
-    var result = mantissa.toFloat()
-    if (exponent > 0) {
-        result *= getFloatPowerOfTen(exponent = exponent)
-    } else if (exponent < 0) {
-        // Divide by the exact positive power instead of multiplying by a precomputed
-        // reciprocal (1/10^n is itself not exactly representable for n >= 1) — division
-        // by an exact operand is correctly rounded, multiplication by the inexact
-        // reciprocal compounds rounding error (e.g. 98.6 -> 98.60000000000001).
-        result /= getFloatPowerOfTen(exponent = -exponent)
-    }
-    if (isNegative) {
-        result = -result
-    }
-    if (result.isInfinite() || result.isNaN()) {
-        throwError(EM.ERR_NUMERIC_OVERFLOW)
-    }
-    return result
+    return "${mantissa}e$exponent".toDouble()
 }
 
 /**
@@ -156,13 +197,15 @@ internal inline fun <R> parseJsonFloatingBodyCore(
     getByte: (Int) -> Int,
     parseExponentValue: () -> Int,
     throwError: (String) -> Nothing,
-    finish: (mantissa: Long, exponent: Int) -> R,
+    finish: (mantissa: Long, exponent: Int, truncatedLiteral: String?) -> R,
 ): R {
     var mantissa = 0L
     var exponent = 0
     var digitCount = 0
     var sawIntDigit = false
-    var position = getPosition()
+    var droppedNonZeroDigit = false
+    val literalStart = getPosition()
+    var position = literalStart
 
     while (position < limit) {
         // Only past the leading-zero case below (digitCount > 0), and only when a full 8-digit
@@ -197,6 +240,7 @@ internal inline fun <R> parseJsonFloatingBodyCore(
             digitCount++
         } else {
             exponent++
+            droppedNonZeroDigit = droppedNonZeroDigit || digit != 0
         }
         position++
     }
@@ -210,7 +254,9 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         position++
         val fractionStart = position
         while (position < limit) {
-            if (allowBulkDigitRead && digitCount + 8 <= precisionLimit) {
+            // Leading fraction zeros ("0.000123") carry no precision either, so the bulk read
+            // waits for the first significant digit, like the integer part.
+            if (allowBulkDigitRead && digitCount > 0 && digitCount + 8 <= precisionLimit) {
                 val eight = tryParseEightDigitsAt(
                     position = position,
                     limit = limit,
@@ -227,10 +273,14 @@ internal inline fun <R> parseJsonFloatingBodyCore(
             val byte = getByte(position)
             if (!isDigit(byteCode = byte)) break
             val digit = byte - TOK.ZERO_INT
-            if (digitCount < precisionLimit) {
+            if (digitCount == 0 && digit == 0) {
+                exponent--
+            } else if (digitCount < precisionLimit) {
                 mantissa = mantissa * WR.BASE_TEN + digit
                 digitCount++
                 exponent--
+            } else {
+                droppedNonZeroDigit = droppedNonZeroDigit || digit != 0
             }
             position++
         }
@@ -245,7 +295,16 @@ internal inline fun <R> parseJsonFloatingBodyCore(
         exponent += parseExponentValue()
     }
 
-    return finish(mantissa, exponent)
+    val truncatedLiteral = if (droppedNonZeroDigit) {
+        buildString {
+            for (index in literalStart until getPosition()) {
+                append(getByte(index).toChar())
+            }
+        }
+    } else {
+        null
+    }
+    return finish(mantissa, exponent, truncatedLiteral)
 }
 
 /**

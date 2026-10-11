@@ -81,6 +81,7 @@ object GhostJsonTokens {
     const val ONE_INT = '1'.code
     const val NINE_INT = '9'.code
     const val BACKSLASH_INT = '\\'.code
+    const val SLASH_INT = '/'.code
     const val UNICODE_PREFIX_U_INT = 'u'.code
     const val EXP_LOWER_INT = 'e'.code
     const val EXP_UPPER_INT = 'E'.code

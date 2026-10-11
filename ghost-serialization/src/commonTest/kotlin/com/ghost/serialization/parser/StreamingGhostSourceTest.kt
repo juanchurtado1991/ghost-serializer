@@ -1,6 +1,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.StreamingGhostSource
@@ -68,9 +69,9 @@ class StreamingGhostSourceTest {
     }
 
     @Test
-    fun get_throwsForIndexBeyondAvailableData() {
+    fun get_throwsUnexpectedEndOfInputBeyondAvailableData() {
         val source = sourceOf(json = "short")
-        assertFailsWith<IndexOutOfBoundsException> { source[100] }
+        assertFailsWith<GhostJsonException> { source[100] }
     }
 
     @Test

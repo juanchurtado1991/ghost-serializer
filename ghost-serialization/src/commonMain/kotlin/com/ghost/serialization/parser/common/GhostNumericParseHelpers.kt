@@ -2,7 +2,6 @@
 
 package com.ghost.serialization.parser.common
 
-import kotlin.math.pow
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
@@ -74,25 +73,6 @@ internal inline fun narrowToShort(
         throwError(EM.ERR_SHORT_OVERFLOW)
     }
     return value.toShort()
-}
-
-internal inline fun getFloatPowerOfTen(
-    exponent: Int
-): Float {
-    return if (exponent > 0) {
-        if (exponent < NUM.POWERS_OF_TEN_FLOAT.size) {
-            NUM.POWERS_OF_TEN_FLOAT[exponent]
-        } else {
-            10.0f.pow(x = exponent.toFloat())
-        }
-    } else {
-        val absExp = -exponent
-        if (absExp < NUM.INVERSE_POWERS_OF_TEN_FLOAT.size) {
-            NUM.INVERSE_POWERS_OF_TEN_FLOAT[absExp]
-        } else {
-            10.0f.pow(x = exponent.toFloat())
-        }
-    }
 }
 
 internal inline fun isDigit(

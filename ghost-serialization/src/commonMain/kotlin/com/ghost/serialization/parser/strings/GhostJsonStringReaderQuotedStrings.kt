@@ -153,6 +153,10 @@ private fun GhostJsonStringReader.readQuotedStringSlow(start: Int): String {
                     val code = parseUnicodeHex(startPosition)
                     startPosition += localUnicodeHexLength
 
+                    if (code in localLowSurrogateStart..localLowSurrogateEnd) {
+                        position = startPosition
+                        throwError(EM.ERR_LOW_SURROGATE)
+                    }
                     if (code in localHighSurrogateStart..localHighSurrogateEnd) {
                         val hasUnicodeEscapeAt = startPosition + localSurrogateOffset <= limit &&
                             chars[startPosition].code == localBackslashInt &&
@@ -184,9 +188,14 @@ private fun GhostJsonStringReader.readQuotedStringSlow(start: Int): String {
                     outChars[outPos++] = simpleEscapeChar(escaped = escaped)
                 }
 
-                else -> {
+                TOK.QUOTE_INT, TOK.BACKSLASH_INT, TOK.SLASH_INT -> {
                     outChars = ensureSlowPathCapacity(outChars = outChars, outPos = outPos, additional = 1)
                     outChars[outPos++] = escaped.toChar()
+                }
+
+                else -> {
+                    position = startPosition - 1
+                    throwError(EM.ERR_INVALID_ESCAPE)
                 }
             }
         } else {

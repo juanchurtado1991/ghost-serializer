@@ -3,6 +3,7 @@
 package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ghostReadLong8
 import com.ghost.serialization.parser.common.AbstractGhostSource
 import com.ghost.serialization.parser.common.GhostHeuristics
@@ -37,6 +38,11 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * decode rollback or raw-JSON capture materialization on [GhostJsonReader] /
  * [com.ghost.serialization.parser.bytes.GhostJsonFlatReader]; [releaseBefore] never discards
  * past an active pin.
+ *
+ * A read past the end of the stream throws [GhostJsonException] ("Unexpected end of input"), the
+ * same error the in-memory sources give for truncated JSON, since a stream's length is unknown
+ * until it is reached; an index below [discarded] is a reader bug and stays an
+ * [IndexOutOfBoundsException].
  *
  * [bufferStart]/[bufferEnd] bound the currently cached [bufferBytes] window as absolute indices;
  * [tempBuffer] is reused across every [getSlow] and [decodeToString] call to avoid
@@ -125,10 +131,7 @@ class StreamingGhostSource(val okioSource: BufferedSource) : AbstractGhostSource
         okioSource.request(relativeIndex + 1L)
         val available = buffer.size
         if (relativeIndex >= available) {
-            throw IndexOutOfBoundsException(
-                "${EM.ERR_INDEX_OOB_PREFIX}$index${EM.ERR_INDEX_OOB_MID}" +
-                    "${discarded + available}${EM.ERR_INDEX_OOB_SUFFIX}"
-            )
+            throw GhostJsonException(message = "${EM.ERR_UNEXPECTED_EOF}${EM.ERR_AT_POSITION_PREFIX}$index")
         }
 
         val alignedStart =

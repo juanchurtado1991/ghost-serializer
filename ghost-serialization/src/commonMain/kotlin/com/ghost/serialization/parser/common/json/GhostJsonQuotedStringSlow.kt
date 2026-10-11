@@ -85,7 +85,7 @@ internal inline fun readQuotedStringSlowCore(
                         outBuffer[outPos++] = simpleEscapeByte(escaped = escaped).toByte()
                     }
 
-                    else -> {
+                    TOK.QUOTE_INT, TOK.BACKSLASH_INT, TOK.SLASH_INT -> {
                         outBuffer = growIfNeeded(
                             outBuffer = outBuffer,
                             outPos = outPos,
@@ -93,6 +93,11 @@ internal inline fun readQuotedStringSlowCore(
                             grow = grow
                         )
                         outBuffer[outPos++] = escaped.toByte()
+                    }
+
+                    else -> {
+                        setPosition(pos - 1)
+                        throwError(EM.ERR_INVALID_ESCAPE)
                     }
                 }
             } else if (byteValue < TOK.SPACE_INT) {
@@ -178,6 +183,10 @@ private inline fun resolveUnicodeEscape(
     var code = parseUnicodeHex(pos)
     pos += TOK.UNICODE_HEX_LENGTH
 
+    if (code in TOK.LOW_SURROGATE_START..TOK.LOW_SURROGATE_END) {
+        setPosition(pos)
+        throwError(EM.ERR_LOW_SURROGATE)
+    }
     if (code in TOK.HIGH_SURROGATE_START..TOK.HIGH_SURROGATE_END) {
         val hasLowSurrogateEscape = pos + TOK.SURROGATE_OFFSET <= limit &&
             getByte(pos) == TOK.BACKSLASH_INT &&

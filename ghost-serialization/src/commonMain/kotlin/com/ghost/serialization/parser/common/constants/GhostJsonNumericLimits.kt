@@ -62,10 +62,4 @@ object GhostJsonNumericLimits {
     val POWERS_OF_TEN = DoubleArray(size = 309).apply {
         for (i in indices) this[i] = 10.0.pow(x = i.toDouble())
     }
-    val POWERS_OF_TEN_FLOAT = FloatArray(size = 39).apply {
-        for (i in indices) this[i] = 10.0f.pow(x = i.toDouble().toFloat())
-    }
-    val INVERSE_POWERS_OF_TEN_FLOAT = FloatArray(size = 39).apply {
-        for (i in indices) this[i] = 1.0f / 10.0f.pow(x = i.toDouble().toFloat())
-    }
 }
