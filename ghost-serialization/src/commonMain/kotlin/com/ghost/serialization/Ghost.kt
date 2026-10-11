@@ -19,6 +19,7 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.NullableSerializer
 import com.ghost.serialization.serializers.SetSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
@@ -26,6 +27,7 @@ import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
+import com.ghost.serialization.yaml.serializer.NullableYamlSerializer
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -265,6 +267,17 @@ object Ghost : GhostRegistry {
      * parameterized classes like lists and maps.
      */
     fun getSerializer(type: KType): GhostSerializer<Any>? {
+        val serializer = getNonNullSerializer(type = type) ?: return null
+        if (!type.isMarkedNullable) return serializer
+        val nullable = if (serializer is GhostYamlSerializer<*>) {
+            NullableYamlSerializer(delegate = asYamlCapableSerializer(serializer = serializer))
+        } else {
+            NullableSerializer(delegate = serializer)
+        }
+        return nullable as GhostSerializer<Any>
+    }
+
+    private fun getNonNullSerializer(type: KType): GhostSerializer<Any>? {
         val classifier = type.classifier
 
         val isBuiltInCollection = classifier == List::class || classifier == Map::class || classifier == Set::class

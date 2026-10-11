@@ -204,4 +204,5 @@ object GhostJsonTokens {
     const val TYPE_NAME_SET_PREFIX = "Set<"
     const val TYPE_NAME_MAP_STRING_PREFIX = "Map<String, "
     const val TYPE_NAME_GENERIC_SUFFIX = ">"
+    const val TYPE_NAME_NULLABLE_SUFFIX = "?"
 }
