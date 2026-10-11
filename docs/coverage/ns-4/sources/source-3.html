@@ -49,18 +49,18 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">DefaultExpressionQualifier</td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    71.4%
   </span>
   <span class="absValue">
-    (3/4)
+    (5/7)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    70.8%
   </span>
   <span class="absValue">
-    (8/12)
+    (17/24)
   </span>
 </td>
 <td class="coverageStat">
@@ -68,15 +68,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (10/10)
+    (25/25)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.5%
+    94.2%
   </span>
   <span class="absValue">
-    (65/71)
+    (145/154)
   </span>
 </td>
 </tr>
@@ -92,22 +92,46 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
     <td class="coverageStat"/>
   </tr>
+  <tr>
+    <td class="name">DefaultExpressionQualifier$qualifyCompanionConstant$lambda$1$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
+  <tr>
+    <td class="name">DefaultExpressionQualifier$qualifyCompanionConstant$lambda$3$$inlined$filterIsInstance$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+  </tr>
 <tr>
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    60%
+    50%
   </span>
   <span class="absValue">
-    (3/5)
+    (5/10)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    66.7%
+    70.8%
   </span>
   <span class="absValue">
-    (8/12)
+    (17/24)
   </span>
 </td>
 <td class="coverageStat">
@@ -115,15 +139,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (10/10)
+    (25/25)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    91.5%
+    94.2%
   </span>
   <span class="absValue">
-    (65/71)
+    (145/154)
   </span>
 </td>
 </tr>
@@ -137,6 +161,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.compiler.analysis
 &nbsp;
 &nbsp;import com.google.devtools.ksp.symbol.KSClassDeclaration
+&nbsp;import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 &nbsp;
 &nbsp;/**
 &nbsp; * Makes a whitelisted `Qualifier.MEMBER` default (see [DefaultExpressionExtractor]) resolvable from
@@ -144,7 +169,9 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp; * imports KotlinPoet adds for referenced types. A qualifier that starts with a class nested in the
 &nbsp; * model (or in one of its enclosing classes), e.g. `Lifecycle.Type.UNKNOWN` written inside
 &nbsp; * `DeviceLifecycleEventData`, is not visible there, so it is rewritten to that class&#39;s
-&nbsp; * fully-qualified name. Any other expression is returned unchanged.
+&nbsp; * fully-qualified name. A bare constant declared in the companion object of the model (or of an
+&nbsp; * enclosing class), e.g. `DEFAULT_TIER`, is rewritten to the companion&#39;s qualified name the same way.
+&nbsp; * Any other expression is returned unchanged.
 &nbsp; */
 &nbsp;internal object DefaultExpressionQualifier {
 &nbsp;
@@ -152,7 +179,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        expression: String,
 &nbsp;        model: KSClassDeclaration?
 &nbsp;    ): String {
-<b class="pc">&nbsp;        if (model == null || !QUALIFIED_REFERENCE.matches(input = expression)) return expression</b>
+<b class="pc">&nbsp;        if (model == null) return expression</b>
+<b class="fc">&nbsp;        if (SIMPLE_REFERENCE.matches(input = expression)) {</b>
+<b class="fc">&nbsp;            return qualifyCompanionConstant(name = expression, model = model) ?: expression</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (!QUALIFIED_REFERENCE.matches(input = expression)) return expression</b>
 <b class="fc">&nbsp;        val firstSegment = expression.substringBefore(delimiter = DOT)</b>
 <b class="fc">&nbsp;        val nestedClass = generateSequence(seed = model) { declaration -&gt;</b>
 <b class="pc">&nbsp;            declaration.parentDeclaration as? KSClassDeclaration</b>
@@ -164,7 +195,25 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;        return qualifiedName + expression.removePrefix(prefix = firstSegment)</b>
 &nbsp;    }
 &nbsp;
+&nbsp;    private fun qualifyCompanionConstant(
+&nbsp;        name: String,
+&nbsp;        model: KSClassDeclaration
+<b class="fc">&nbsp;    ): String? = generateSequence(seed = model) { declaration -&gt;</b>
+<b class="pc">&nbsp;        declaration.parentDeclaration as? KSClassDeclaration</b>
+&nbsp;    }
+<b class="fc">&nbsp;        .flatMap { declaration -&gt; declaration.declarations.filterIsInstance&lt;KSClassDeclaration&gt;() }</b>
+<b class="fc">&nbsp;        .filter { declaration -&gt; declaration.isCompanionObject }</b>
+<b class="fc">&nbsp;        .firstOrNull { companion -&gt;</b>
+<b class="fc">&nbsp;            companion.declarations</b>
+<b class="fc">&nbsp;                .filterIsInstance&lt;KSPropertyDeclaration&gt;()</b>
+<b class="fc">&nbsp;                .any { property -&gt; property.simpleName.asString() == name }</b>
+&nbsp;        }
+<b class="fc">&nbsp;        ?.qualifiedName</b>
+<b class="pc">&nbsp;        ?.asString()</b>
+<b class="pc">&nbsp;        ?.let { companionName -&gt; companionName + DOT + name }</b>
+&nbsp;
 &nbsp;    private const val DOT = &quot;.&quot;
+<b class="fc">&nbsp;    private val SIMPLE_REFERENCE = Regex(pattern = &quot;[A-Za-z_][A-Za-z0-9_]*&quot;)</b>
 <b class="fc">&nbsp;    private val QUALIFIED_REFERENCE = Regex(pattern = &quot;[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+&quot;)</b>
 &nbsp;}
 </code>
@@ -190,7 +239,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

@@ -49,34 +49,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name">DeserializeCodeEmitter</td>
 <td class="coverageStat">
   <span class="percent">
-    83.3%
+    88.9%
   </span>
   <span class="absValue">
-    (15/18)
+    (16/18)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.7%
+    63.6%
   </span>
   <span class="absValue">
-    (69/110)
+    (70/110)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.9%
+    86.2%
   </span>
   <span class="absValue">
-    (250/298)
+    (257/298)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.4%
+    84.9%
   </span>
   <span class="absValue">
-    (1279/1534)
+    (1302/1534)
   </span>
 </td>
 </tr>
@@ -112,34 +112,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    84.2%
+    89.5%
   </span>
   <span class="absValue">
-    (16/19)
+    (17/19)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    62.7%
+    63.6%
   </span>
   <span class="absValue">
-    (69/110)
+    (70/110)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.2%
+    86.5%
   </span>
   <span class="absValue">
-    (256/304)
+    (263/304)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    83.7%
+    85.1%
   </span>
   <span class="absValue">
-    (1306/1561)
+    (1329/1561)
   </span>
 </td>
 </tr>
@@ -220,8 +220,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                emitEnum(body = body)</b>
 &nbsp;            }
 &nbsp;
-<b class="pc">&nbsp;            properties.size &gt; C.PROPERTY_MAX_SIZE -&gt; {</b>
-<b class="nc">&nbsp;                emitFragmented(body = body, typeSpecBuilder = typeSpecBuilder, isFlatPath = isFlatPath)</b>
+<b class="fc">&nbsp;            properties.size &gt; C.PROPERTY_MAX_SIZE -&gt; {</b>
+<b class="fc">&nbsp;                emitFragmented(body = body, typeSpecBuilder = typeSpecBuilder, isFlatPath = isFlatPath)</b>
 &nbsp;            }
 &nbsp;
 &nbsp;            else -&gt; {
@@ -316,13 +316,13 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
 &nbsp;        isFlatPath: Boolean
 &nbsp;    ) {
-<b class="nc">&nbsp;        val emitter = FragmentedEmitter(</b>
-<b class="nc">&nbsp;            properties = properties,</b>
-<b class="nc">&nbsp;            originalClassName = originalClassName,</b>
-<b class="nc">&nbsp;            readerClass = readerClass,</b>
-<b class="nc">&nbsp;            supportsResilience = supportsResilience,</b>
+<b class="fc">&nbsp;        val emitter = FragmentedEmitter(</b>
+<b class="fc">&nbsp;            properties = properties,</b>
+<b class="fc">&nbsp;            originalClassName = originalClassName,</b>
+<b class="fc">&nbsp;            readerClass = readerClass,</b>
+<b class="fc">&nbsp;            supportsResilience = supportsResilience,</b>
 &nbsp;        )
-<b class="nc">&nbsp;        emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)</b>
+<b class="fc">&nbsp;        emitter.emit(body, typeSpecBuilder, isFlatPath = isFlatPath)</b>
 <b class="nc">&nbsp;        if (!isFlatPath) {</b>
 <b class="nc">&nbsp;            emitter.injectContextualSerializers(typeSpecBuilder = typeSpecBuilder)</b>
 &nbsp;        }
@@ -698,7 +698,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

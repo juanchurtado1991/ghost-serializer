@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > DecimalStress</title>
+  <title>GhostSerialization Coverage Report > CustomEncoderMiddleModel</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: DecimalStress (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: CustomEncoderMiddleModel (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">DecimalStress</td>
+  <td class="name">CustomEncoderMiddleModel</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -63,7 +63,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (1/1)
+    (2/2)
   </span>
 </td>
     <td class="coverageStat"/>
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
@@ -92,15 +92,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
+<code class="sourceCode" id="sourceCode">&nbsp;@file:OptIn(InternalGhostApi::class)
 &nbsp;
+&nbsp;package com.ghost.serialization.integration.model
+&nbsp;
+&nbsp;import com.ghost.serialization.InternalGhostApi
+&nbsp;import com.ghost.serialization.annotations.GhostDecoder
+&nbsp;import com.ghost.serialization.annotations.GhostEncoder
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
+&nbsp;import com.ghost.serialization.integration.model.EncoderDateUtils.DECODE_DATE_FUNCTION_NAME
+&nbsp;import com.ghost.serialization.integration.model.EncoderDateUtils.ENCODE_DATE_FUNCTION_NAME
 &nbsp;
+&nbsp;/**
+&nbsp; * A custom-encoded property followed by other fields: before 1.3.4 `Ghost.encodeToString` wrote no comma
+&nbsp; * after the custom value (`&quot;createdAt&quot;:&quot;2023-10-15&quot;&quot;name&quot;:…`).
+&nbsp; */
 <b class="fc">&nbsp;@GhostSerialization</b>
-&nbsp;data class DecimalStress(
-<b class="fc">&nbsp;    val big: Double,</b>
-<b class="fc">&nbsp;    val small: Float,</b>
-<b class="fc">&nbsp;    val precise: Double</b>
+&nbsp;data class CustomEncoderMiddleModel(
+<b class="fc">&nbsp;    val id: Long,</b>
+<b class="fc">&nbsp;    @GhostDecoder(</b>
+&nbsp;        provider = EncoderDateUtils::class,
+&nbsp;        functionName = DECODE_DATE_FUNCTION_NAME
+&nbsp;    )
+&nbsp;    @GhostEncoder(
+&nbsp;        provider = EncoderDateUtils::class,
+&nbsp;        functionName = ENCODE_DATE_FUNCTION_NAME
+&nbsp;    )
+<b class="fc">&nbsp;    val createdAt: Long,</b>
+<b class="fc">&nbsp;    val name: String</b>
 &nbsp;)
 </code>
 </pre>
@@ -125,7 +144,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

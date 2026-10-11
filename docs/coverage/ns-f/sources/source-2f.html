@@ -84,10 +84,10 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    45.5%
+    45.9%
   </span>
   <span class="absValue">
-    (183/402)
+    (186/405)
   </span>
 </td>
 </tr>
@@ -310,7 +310,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;    val bridgeFlatBuffer = FlatByteArrayWriter()</b>
 <b class="fc">&nbsp;    val bridgeFlatWriter = GhostJsonWriter(bridgeFlatBuffer)</b>
 <b class="fc">&nbsp;    EncoderDateUtils.encodeLegacyDate(bridgeFlatWriter, value.createdAt)</b>
-<b class="fc">&nbsp;    writer.buffer.writeString(bridgeFlatBuffer.toStringUtf8())</b>
+<b class="fc">&nbsp;    writer.rawValue(bytes = bridgeFlatBuffer.array, offset = 0, length = bridgeFlatBuffer.size)</b>
 <b class="fc">&nbsp;    writer.endObject()</b>
 &nbsp;  }
 &nbsp;
@@ -354,7 +354,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

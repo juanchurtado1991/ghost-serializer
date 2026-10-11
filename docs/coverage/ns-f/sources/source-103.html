@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > SymbolItem</title>
+  <title>GhostSerialization Coverage Report > StripeObject</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: SymbolItem (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: StripeObject (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 
@@ -46,42 +46,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">SymbolItem</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (1/1)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    0%
-  </span>
-  <span class="absValue">
-    (0/14)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    100%
-  </span>
-  <span class="absValue">
-    (3/3)
-  </span>
-</td>
-<td class="coverageStat">
-  <span class="percent">
-    55%
-  </span>
-  <span class="absValue">
-    (60/109)
-  </span>
-</td>
-</tr>
-  <tr>
-    <td class="name">SymbolItem$Companion</td>
+  <td class="name">StripeObject</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -104,12 +69,21 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (2/2)
   </span>
 </td>
-  </tr>
-<tr>
-  <td class="name"><strong>Total</strong></td>
+</tr>
+  <tr>
+    <td class="name">StripeObject$Charge</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -120,10 +94,30 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    100%
   </span>
   <span class="absValue">
-    (0/14)
+    (13/13)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">StripeObject$Refund</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/2)
   </span>
 </td>
 <td class="coverageStat">
@@ -131,15 +125,35 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (4/4)
+    (13/13)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>Total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/3)
+  </span>
+</td>
+    <td class="coverageStat"/>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    56.6%
+    100%
   </span>
   <span class="absValue">
-    (64/113)
+    (28/28)
   </span>
 </td>
 </tr>
@@ -153,16 +167,15 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.integration.model
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
-&nbsp;import com.squareup.moshi.JsonClass
-&nbsp;import kotlinx.serialization.Serializable
 &nbsp;
-<b class="pc">&nbsp;@JsonClass(generateAdapter = true)</b>
-&nbsp;@Serializable
-&nbsp;@GhostSerialization
-&nbsp;data class SymbolItem(
-<b class="fc">&nbsp;    val text: String = &quot;&quot;,</b>
-<b class="fc">&nbsp;    val indices: List&lt;Int&gt; = emptyList()</b>
-&nbsp;)
+<b class="fc">&nbsp;@GhostSerialization(discriminator = &quot;object&quot;)</b>
+&nbsp;sealed class StripeObject {
+<b class="fc">&nbsp;    @GhostSerialization</b>
+<b class="fc">&nbsp;    data class Charge(val amount: Long, val currency: String) : StripeObject()</b>
+&nbsp;
+<b class="fc">&nbsp;    @GhostSerialization</b>
+<b class="fc">&nbsp;    data class Refund(val chargeId: String, val amount: Long) : StripeObject()</b>
+&nbsp;}
 </code>
 </pre>
 </div>
@@ -186,7 +199,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

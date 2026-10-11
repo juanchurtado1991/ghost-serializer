@@ -60,34 +60,34 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    75%
+    73.9%
   </span>
   <span class="absValue">
-    (15/20)
+    (17/23)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    72.5%
+    70%
   </span>
   <span class="absValue">
-    (140/193)
+    (149/213)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    86.6%
+    85.1%
   </span>
   <span class="absValue">
-    (240/277)
+    (258/303)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    84.1%
+    82.9%
   </span>
   <span class="absValue">
-    (1603/1906)
+    (1693/2043)
   </span>
 </td>
 </tr>
@@ -209,6 +209,64 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;            AC.K_BYTE_ARRAY -&gt; CodeBlock.of(C.TEMPLATE_IS_NOT_EMPTY, targetAccessor)</b>
 <b class="nc">&nbsp;            else -&gt; null</b>
 &nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Closes the objects of [currentPath] that [prop]&#39;s path doesn&#39;t share and opens the ones it adds,
+&nbsp;     * so `@GhostFlatten`/`@GhostWrap` properties land inside their nested JSON objects. [currentPath]
+&nbsp;     * carries the open objects from one property to the next (across chunk functions too).
+&nbsp;     */
+&nbsp;    fun emitPathTransition(
+&nbsp;        code: CodeBlock.Builder,
+&nbsp;        currentPath: MutableList&lt;String&gt;,
+&nbsp;        prop: GhostPropertyModel
+&nbsp;    ) {
+<b class="pc">&nbsp;        val targetPath = prop.flattenPath?.dropLast(1)</b>
+<b class="fc">&nbsp;            ?: prop.wrapPath</b>
+<b class="fc">&nbsp;            ?: emptyList()</b>
+&nbsp;
+<b class="pc">&nbsp;        while (currentPath.isNotEmpty() &amp;&amp; !isPrefix(prefix = currentPath, full = targetPath)) {</b>
+<b class="nc">&nbsp;            code.addStatement(C.STR_WRITER_END_OBJ)</b>
+<b class="nc">&nbsp;            currentPath.removeAt(currentPath.size - 1)</b>
+&nbsp;        }
+&nbsp;
+<b class="fc">&nbsp;        val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER</b>
+<b class="fc">&nbsp;        val prefix = if (isStringWriter) {</b>
+<b class="fc">&nbsp;            CG.STR_HS_PREFIX</b>
+&nbsp;        } else {
+<b class="fc">&nbsp;            CG.STR_H_VAL_PREFIX</b>
+&nbsp;        }
+<b class="fc">&nbsp;        targetPath.drop(currentPath.size).forEach { segment -&gt;</b>
+<b class="fc">&nbsp;            code.addStatement(</b>
+<b class="fc">&nbsp;                C.STR_WRITE_NAME_RAW,</b>
+<b class="fc">&nbsp;                prefix + segment.uppercase()</b>
+&nbsp;            )
+<b class="fc">&nbsp;            code.addStatement(C.STR_WRITER_BEGIN_OBJ)</b>
+<b class="fc">&nbsp;            currentPath.add(segment)</b>
+<b class="fc">&nbsp;        }</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /** Closes every object still open in [currentPath]. */
+&nbsp;    fun emitClosePath(
+&nbsp;        code: CodeBlock.Builder,
+&nbsp;        currentPath: MutableList&lt;String&gt;
+&nbsp;    ) {
+<b class="fc">&nbsp;        while (currentPath.isNotEmpty()) {</b>
+<b class="fc">&nbsp;            code.addStatement(C.STR_WRITER_END_OBJ)</b>
+<b class="fc">&nbsp;            currentPath.removeAt(currentPath.size - 1)</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    private fun isPrefix(prefix: List&lt;String&gt;, full: List&lt;String&gt;): Boolean {
+<b class="nc">&nbsp;        if (prefix.size &gt; full.size) {</b>
+<b class="nc">&nbsp;            return false</b>
+&nbsp;        }
+<b class="nc">&nbsp;        for (i in prefix.indices) {</b>
+<b class="nc">&nbsp;            if (prefix[i] != full[i]) {</b>
+<b class="nc">&nbsp;                return false</b>
+&nbsp;            }
+&nbsp;        }
+<b class="nc">&nbsp;        return true</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    /** Writes a property&#39;s key, applies nullable/proto3-omission checks, then delegates to [emitValue]. */
@@ -663,7 +721,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

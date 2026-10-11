@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostDecoder</title>
+  <title>GhostSerialization Coverage Report > GhostCoerce</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.annotations</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostDecoder (com.ghost.serialization.annotations)</h1>
+<h1>Coverage Summary for Class: GhostCoerce (com.ghost.serialization.annotations)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostDecoder</td>
+  <td class="name">GhostCoerce</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -46,25 +46,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <pre>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.annotations
 &nbsp;
-&nbsp;import kotlin.reflect.KClass
-&nbsp;
 &nbsp;/**
-&nbsp; * Delegates deserialization of the annotated property to a static function in [provider].
-&nbsp; *
-&nbsp; * Use for custom wire formats without writing a full serializer. JSON-only — incompatible with
-&nbsp; * [GhostYamlSerialization].
-&nbsp; *
-&nbsp; * @param provider Class or object that declares the decoding function.
-&nbsp; * @param functionName Name of the static decoding function. First parameter must be a
-&nbsp; *   `GhostJsonReader`, `GhostJsonFlatReader`, or `GhostJsonStringReader`; provide an overload for
-&nbsp; *   each channel you use, or KSP bridges through a temporary reader.
+&nbsp; * Enables loose type coercion (stringified numbers/booleans converted to primitives) during
+&nbsp; * deserialization, on the annotated endpoint, parameter, or controller.
 &nbsp; */
-&nbsp;@Target(AnnotationTarget.PROPERTY)
-&nbsp;@Retention(AnnotationRetention.BINARY)
-&nbsp;annotation class GhostDecoder(
-&nbsp;    val provider: KClass&lt;*&gt;,
-&nbsp;    val functionName: String
+&nbsp;@Target(
+&nbsp;    AnnotationTarget.FUNCTION,
+&nbsp;    AnnotationTarget.VALUE_PARAMETER,
+&nbsp;    AnnotationTarget.CLASS
 &nbsp;)
+&nbsp;@Retention(AnnotationRetention.RUNTIME)
+&nbsp;annotation class GhostCoerce
 </code>
 </pre>
 </div>
@@ -88,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

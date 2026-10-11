@@ -79,7 +79,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/33)
+    (0/36)
   </span>
 </td>
 <td class="coverageStat">
@@ -87,7 +87,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     0%
   </span>
   <span class="absValue">
-    (0/190)
+    (0/205)
   </span>
 </td>
 </tr>
@@ -110,7 +110,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 &nbsp;
 &nbsp;
-&nbsp;/** Serializes large classes as multiple private &quot;chunk&quot; functions to avoid JVM method size limits. */
+&nbsp;/**
+&nbsp; * Serializes large classes as multiple private &quot;chunk&quot; functions to avoid JVM method size limits.
+&nbsp; * Nested objects of `@GhostFlatten`/`@GhostWrap` paths may open in one chunk and close in a later one:
+&nbsp; * chunks run in order, so the open-object path is tracked across them at generation time.
+&nbsp; */
 <b class="nc">&nbsp;internal class FragmentedSerializeEmitter(</b>
 &nbsp;    properties: List&lt;GhostPropertyModel&gt;,
 &nbsp;    originalClassName: ClassName,
@@ -137,14 +141,17 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="nc">&nbsp;        val chunks = properties.chunked(C.DEFAULT_CHUNK_SIZE)</b>
 <b class="nc">&nbsp;        val writerSuffix = writerClass.simpleName</b>
 &nbsp;
+<b class="nc">&nbsp;        val currentPath = mutableListOf&lt;String&gt;()</b>
+&nbsp;
 <b class="nc">&nbsp;        chunks.forEachIndexed { index, chunkProps -&gt;</b>
 <b class="nc">&nbsp;            val chunkFunName = C.TEMPLATE_CHUNK_FUN_NAME</b>
 <b class="nc">&nbsp;                .format(C.STR_SERIALIZE_CHUNK_PREFIX, index, writerSuffix)</b>
 &nbsp;
-<b class="nc">&nbsp;            emitChunkFunction(index, chunkProps, typeSpecBuilder, writerSuffix)</b>
+<b class="nc">&nbsp;            emitChunkFunction(index, chunkProps, typeSpecBuilder, writerSuffix, currentPath)</b>
 <b class="nc">&nbsp;            code.addStatement(C.TEMPLATE_CHUNK_CALL_WRITER, chunkFunName)</b>
 <b class="nc">&nbsp;        }</b>
 &nbsp;
+<b class="nc">&nbsp;        emitClosePath(code = code, currentPath = currentPath)</b>
 <b class="nc">&nbsp;        code.addStatement(C.STR_WRITER_END_OBJ)</b>
 &nbsp;    }
 &nbsp;
@@ -152,7 +159,8 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;        index: Int,
 &nbsp;        chunkProps: List&lt;GhostPropertyModel&gt;,
 &nbsp;        typeSpecBuilder: TypeSpec.Builder,
-&nbsp;        writerSuffix: String
+&nbsp;        writerSuffix: String,
+&nbsp;        currentPath: MutableList&lt;String&gt;
 &nbsp;    ) {
 <b class="nc">&nbsp;        val chunkFun = FunSpec</b>
 <b class="nc">&nbsp;            .builder(</b>
@@ -168,6 +176,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 <b class="nc">&nbsp;        val chunkCode = CodeBlock.builder()</b>
 <b class="nc">&nbsp;        chunkProps.forEach { prop -&gt;</b>
+<b class="nc">&nbsp;            emitPathTransition(code = chunkCode, currentPath = currentPath, prop = prop)</b>
 <b class="nc">&nbsp;            emitProperty(code = chunkCode, prop = prop)</b>
 <b class="nc">&nbsp;        }</b>
 &nbsp;
@@ -198,7 +207,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

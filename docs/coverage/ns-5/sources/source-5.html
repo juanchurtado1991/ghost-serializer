@@ -57,26 +57,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80.2%
+    80.4%
   </span>
   <span class="absValue">
-    (194/242)
+    (201/250)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    95.4%
+    95.6%
   </span>
   <span class="absValue">
-    (249/261)
+    (260/272)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93%
+    93.2%
   </span>
   <span class="absValue">
-    (1568/1686)
+    (1625/1743)
   </span>
 </td>
 </tr>
@@ -120,26 +120,26 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </td>
 <td class="coverageStat">
   <span class="percent">
-    80.2%
+    80.4%
   </span>
   <span class="absValue">
-    (194/242)
+    (201/250)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    95.4%
+    95.6%
   </span>
   <span class="absValue">
-    (250/262)
+    (261/273)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    93.1%
+    93.3%
   </span>
   <span class="absValue">
-    (1586/1704)
+    (1643/1761)
   </span>
 </td>
 </tr>
@@ -192,6 +192,23 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 <b class="fc">&nbsp;                CG.STR_END_OBJECT_NAME,</b>
 <b class="fc">&nbsp;                CG.STR_SELECT_NAME_AND_CONSUME_NAME,</b>
 <b class="fc">&nbsp;                CG.STR_SKIP_VALUE_NAME</b>
+&nbsp;            )
+&nbsp;        }
+&nbsp;
+&nbsp;        // Each @GhostFlatten group checks for a null object before opening it (a null parent counts as absent).
+<b class="fc">&nbsp;        val hasFlattenedGroup = ctx.properties.any { prop -&gt;</b>
+<b class="pc">&nbsp;            (prop.flattenPath?.size ?: CC.VAL_ONE) &gt; CC.VAL_ONE || prop.wrapPath != null</b>
+&nbsp;        }
+<b class="fc">&nbsp;        if (hasFlattenedGroup) {</b>
+<b class="fc">&nbsp;            fileBuilder.addImport(</b>
+<b class="fc">&nbsp;                CC.PKG_PARSER_STREAMING,</b>
+<b class="fc">&nbsp;                CG.STR_CONSUME_NULL_NAME,</b>
+<b class="fc">&nbsp;                CG.STR_IS_NEXT_NULL_VALUE_NAME,</b>
+&nbsp;            )
+<b class="fc">&nbsp;            mirrorStringChannelImports(</b>
+<b class="fc">&nbsp;                fileBuilder,</b>
+<b class="fc">&nbsp;                CG.STR_CONSUME_NULL_NAME,</b>
+<b class="fc">&nbsp;                CG.STR_IS_NEXT_NULL_VALUE_NAME,</b>
 &nbsp;            )
 &nbsp;        }
 &nbsp;
@@ -637,7 +654,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > HomeStatus</title>
+  <title>GhostSerialization Coverage Report > HomeConfig</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.integration.model</a>
 </div>
 
-<h1>Coverage Summary for Class: HomeStatus (com.ghost.serialization.integration.model)</h1>
+<h1>Coverage Summary for Class: HomeConfig (com.ghost.serialization.integration.model)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -49,7 +49,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">HomeStatus</td>
+  <td class="name">HomeConfig</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -72,7 +72,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (3/3)
   </span>
 </td>
 <td class="coverageStat">
@@ -80,7 +80,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     100%
   </span>
   <span class="absValue">
-    (18/18)
+    (12/12)
   </span>
 </td>
 </tr>
@@ -96,11 +96,11 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 &nbsp;
 &nbsp;import com.ghost.serialization.annotations.GhostSerialization
 &nbsp;
-&nbsp;@GhostSerialization
-&nbsp;enum class HomeStatus {
-<b class="fc">&nbsp;    ONLINE,</b>
-<b class="fc">&nbsp;    OFFLINE</b>
-&nbsp;}
+<b class="fc">&nbsp;@GhostSerialization</b>
+&nbsp;data class HomeConfig(
+<b class="fc">&nbsp;    val wifiSsid: String,</b>
+<b class="fc">&nbsp;    val autoLock: Boolean</b>
+&nbsp;)
 </code>
 </pre>
 </div>
@@ -124,7 +124,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-02 07:30</div>
+    <div style="float:right;">generated on 2026-10-11 05:44</div>
 </div>
 </body>
 </html>
