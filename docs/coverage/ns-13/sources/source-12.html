@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>GhostSerialization Coverage Report > GhostHeuristics_androidKt</title>
+  <title>GhostSerialization Coverage Report > GhostHeuristicDefaults</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -22,7 +22,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
     <a href="../index.html">com.ghost.serialization.parser.common</a>
 </div>
 
-<h1>Coverage Summary for Class: GhostHeuristics_androidKt (com.ghost.serialization.parser.common)</h1>
+<h1>Coverage Summary for Class: GhostHeuristicDefaults (com.ghost.serialization.parser.common)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -33,7 +33,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 </th>
 </tr>
 <tr>
-  <td class="name">GhostHeuristics_androidKt</td>
+  <td class="name">GhostHeuristicDefaults</td>
     <td class="coverageStat"/>
 </tr>
 
@@ -44,21 +44,22 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;@file:Suppress(&quot;EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING&quot;)
+<code class="sourceCode" id="sourceCode">&nbsp;package com.ghost.serialization.parser.common
 &nbsp;
-&nbsp;package com.ghost.serialization.parser.common
+&nbsp;/**
+&nbsp; * Baseline values behind [GhostHeuristics]&#39;s per-platform `actual`s. Platforms that need no special
+&nbsp; * tuning (Native, Wasm) use these directly; JVM and Android name only the values they deviate on.
+&nbsp; */
+&nbsp;internal object GhostHeuristicDefaults {
+&nbsp;    const val BYTES_PER_KIB = 1024
+&nbsp;    const val BYTES_PER_MIB = 1024 * BYTES_PER_KIB
 &nbsp;
-&nbsp;/** Android caps collections tighter than the shared default (memory-constrained devices). */
-&nbsp;private const val ANDROID_MAX_COLLECTION_SIZE = 50_000
-&nbsp;
-&nbsp;actual object GhostHeuristics {
-&nbsp;    actual val initialCollectionCapacity: Int = GhostHeuristicDefaults.INITIAL_COLLECTION_CAPACITY
-&nbsp;    actual val maxStringPoolLength: Int = GhostHeuristicDefaults.MAX_STRING_POOL_LENGTH
-&nbsp;    actual val maxCollectionSize: Int = ANDROID_MAX_COLLECTION_SIZE
-&nbsp;    actual val maxDiscriminatorPeekDistance: Int = GhostHeuristicDefaults.MAX_DISCRIMINATOR_PEEK_DISTANCE
-&nbsp;    actual val maxWarmWriteBufferCapacity: Int = GhostHeuristicDefaults.MAX_WARM_WRITE_BUFFER_CAPACITY
-&nbsp;    actual val maxWarmCharWriteBufferCapacity: Int = GhostHeuristicDefaults.MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY
-&nbsp;    actual val encodeToStringViaUtf8Bytes: Boolean = false
+&nbsp;    const val INITIAL_COLLECTION_CAPACITY = 10
+&nbsp;    const val MAX_STRING_POOL_LENGTH = 64
+&nbsp;    const val MAX_COLLECTION_SIZE = 500_000
+&nbsp;    const val MAX_DISCRIMINATOR_PEEK_DISTANCE = 1024
+&nbsp;    const val MAX_WARM_WRITE_BUFFER_CAPACITY = BYTES_PER_MIB
+&nbsp;    const val MAX_WARM_CHAR_WRITE_BUFFER_CAPACITY = 512 * BYTES_PER_KIB
 &nbsp;}
 </code>
 </pre>
@@ -83,7 +84,7 @@ Current scope: GhostSerialization<span class="separator">|</span>    <a href="..
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2026-10-11 05:44</div>
+    <div style="float:right;">generated on 2026-10-11 06:10</div>
 </div>
 </body>
 </html>
