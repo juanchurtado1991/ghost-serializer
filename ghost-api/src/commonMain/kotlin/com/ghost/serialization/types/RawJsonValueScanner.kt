@@ -39,6 +39,7 @@ internal object RawJsonValueScanner {
     private const val HIGH_SURROGATE_START = 0xD800
     private const val HIGH_SURROGATE_END = 0xDBFF
     private const val LOW_SURROGATE_START = 0xDC00
+    private const val LOW_SURROGATE_END = 0xDFFF
     private const val UNICODE_BASE = 0x10000
     private const val SURROGATE_PAIR_SHIFT = 10
     private const val SURROGATE_PAIR_MASK = 0x3FF
@@ -83,7 +84,7 @@ internal object RawJsonValueScanner {
     fun asDoubleOrNull(
         raw: RawJson
     ): Double? {
-        raw.parseIntegerOrNull()?.let { return it.toDouble() }
+        raw.parseIntegerOrNull()?.takeIf { it != 0L }?.let { return it.toDouble() }
         if (!raw.isJsonNumberToken()) return null
         return raw.decodeToString().toDoubleOrNull()
     }
@@ -181,12 +182,12 @@ internal object RawJsonValueScanner {
                         if (index + 3 >= contentEnd) return builder.toString()
                         val hex = readHex4(start = index)
                         index += UNICODE_HEX_LENGTH
-                        val hasLowSurrogateEscapeAhead = hex in HIGH_SURROGATE_START..HIGH_SURROGATE_END &&
+                        val hasUnicodeEscapeAhead = hex in HIGH_SURROGATE_START..HIGH_SURROGATE_END &&
                             index + 5 < contentEnd &&
                             storage[index] == BACKSLASH.toByte() &&
                             storage[index + 1] == ESCAPE_U.toByte()
-                        if (hasLowSurrogateEscapeAhead) {
-                            val lowSurrogate = readHex4(start = index + 2)
+                        val lowSurrogate = if (hasUnicodeEscapeAhead) readHex4(start = index + 2) else -1
+                        if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {
                             index += 6
                             val codePoint = UNICODE_BASE +
                                     ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +
@@ -222,6 +223,7 @@ internal object RawJsonValueScanner {
     }
 
     private fun RawJson.isJsonNumberToken(): Boolean {
+        if (storageLength <= 0) return false
         var index = 0
         if (byteAt(relativeIndex = index) == MINUS) {
             index++
@@ -299,14 +301,7 @@ internal object RawJsonValueScanner {
         val limit = if (negative) Long.MIN_VALUE else -Long.MAX_VALUE
 
         if (byteAt(relativeIndex = index) == ZERO) {
-            index++
-            if (index < storageLength) {
-                when (byteAt(relativeIndex = index)) {
-                    DOT, EXP_LOWER, EXP_UPPER -> return null
-                    in ZERO..NINE -> return null
-                }
-            }
-            return 0L
+            return if (index + 1 == storageLength) 0L else null
         }
 
         while (index < storageLength) {
