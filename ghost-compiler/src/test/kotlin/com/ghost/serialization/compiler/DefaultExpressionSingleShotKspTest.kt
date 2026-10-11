@@ -171,6 +171,43 @@ class DefaultExpressionSingleShotKspTest {
         )
     }
 
+    @Test
+    fun defaultsReferencingCompanionConstantsCompileInTheGeneratedSerializer() {
+        val generated = compileAndReadSerializer(
+            source = SourceFile.kotlin(
+                name = "Plan.kt",
+                contents = """
+                package test
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class Plan(
+                    val id: String,
+                    val tier: String = DEFAULT_TIER,
+                    val seats: Int = DEFAULT_SEATS,
+                    val a: Int = 1,
+                    val b: Int = 2,
+                    val c: Int = 3,
+                ) {
+                    companion object {
+                        const val DEFAULT_TIER = "free"
+                        const val DEFAULT_SEATS = 5
+                    }
+                }
+                """.trimIndent()
+            ),
+            serializerFileName = "PlanSerializer.kt"
+        )
+        assertTrue(
+            actual = "test.Plan.Companion.DEFAULT_TIER" in generated,
+            message = generated
+        )
+        assertTrue(
+            actual = "test.Plan.Companion.DEFAULT_SEATS" in generated,
+            message = generated
+        )
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
