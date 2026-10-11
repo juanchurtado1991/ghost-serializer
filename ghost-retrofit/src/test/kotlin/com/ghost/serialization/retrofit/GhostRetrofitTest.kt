@@ -117,14 +117,14 @@ class GhostRetrofitTest {
     }
 
     @Test
-    fun `throws robust exception on malformed json body`() = runTest {
+    fun `throws GhostJsonException on truncated json body`() = runTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(200)
                 .setBody("""{"id": 42, "name": "John Doe", "isActive": """)
         )
 
-        assertFailsWith<Exception> {
+        assertFailsWith<GhostJsonException> {
             apiService.getUser()
         }
     }

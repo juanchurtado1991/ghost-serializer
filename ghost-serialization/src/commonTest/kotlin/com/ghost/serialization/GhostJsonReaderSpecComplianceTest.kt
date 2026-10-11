@@ -3,6 +3,7 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
@@ -10,14 +11,15 @@ import com.ghost.serialization.parser.streaming.nextDouble
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextString
+import com.ghost.serialization.parser.streaming.skipValue
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 
 /**
- * RFC 8259 compliance and spec-integrity hardening tests.
+ * RFC 8259 compliance: inputs the streaming reader must reject.
  */
-class GhostHardeningTest {
+class GhostJsonReaderSpecComplianceTest {
 
     private fun readerOf(json: String): GhostJsonReader {
         return GhostJsonReader(json.encodeToByteArray())
@@ -70,6 +72,48 @@ class GhostHardeningTest {
         }
         assertFailsWith<GhostJsonException> {
             readerOf("-Infinity").nextDouble()
+        }
+    }
+
+    @Test
+    fun loneHighSurrogateEscapeThrows() {
+        val json = "{\"v\": \"\\uD83D\\u0020\"}"
+        val reader = readerOf(json)
+        reader.beginObject()
+        reader.nextKey()
+        reader.consumeKeySeparator()
+        assertFailsWith<GhostJsonException> {
+            reader.nextString()
+        }
+    }
+    @Test
+    fun exponentOverflowingDoubleThrows() {
+        val json = "{\"v\": 1e999}"
+        val reader = readerOf(json)
+        reader.beginObject()
+        reader.nextKey()
+        reader.consumeKeySeparator()
+        assertFailsWith<GhostJsonException> {
+            reader.nextDouble()
+        }
+    }
+    @Test
+    fun skipValueRejectsMalformedValues() {
+        val malformedInputs = listOf(
+            "{ \"k\": }",
+            "[1, 2, ]",
+            "{\"k\": \"v\"",
+            "\"escaped\\u123z\""
+        )
+
+        malformedInputs.forEach { input ->
+            val reader = GhostJsonReader(
+                source = createByteArraySource(data = input.encodeToByteArray()),
+                strictMode = true
+            )
+            assertFailsWith<GhostJsonException>(message = "Failed to reject malformed input: $input") {
+                reader.skipValue()
+            }
         }
     }
 }

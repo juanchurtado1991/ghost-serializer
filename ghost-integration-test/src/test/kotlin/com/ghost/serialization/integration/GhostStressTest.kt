@@ -115,17 +115,6 @@ class GhostStressTest {
     }
 
     @Test
-    fun deserializeBeyondMaxDepthThrows() {
-        val json = NESTED_NODE_OPEN.repeat(n = DEPTH_BEYOND_DEFAULT_LIMIT) +
-            NESTED_NODE_LEAF +
-            NESTED_NODE_CLOSE.repeat(n = DEPTH_BEYOND_DEFAULT_LIMIT)
-
-        assertFailsWith<GhostJsonException> {
-            Ghost.deserialize<RecursiveNode>(json)
-        }
-    }
-
-    @Test
     fun testLargeArrayStress() {
         val largeList = List(10000) { RecursiveNode(id = it, name = "name_$it") }
         val json = Ghost.serialize(largeList)
@@ -136,8 +125,5 @@ class GhostStressTest {
 
     companion object {
         private const val DEPTH_BEYOND_DEFAULT_LIMIT = 300
-        private const val NESTED_NODE_CLOSE = "]}"
-        private const val NESTED_NODE_LEAF = """{"id":1,"name":"leaf"}"""
-        private const val NESTED_NODE_OPEN = """{"id":0,"name":"node","children":["""
     }
 }

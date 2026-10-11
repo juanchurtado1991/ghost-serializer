@@ -2,10 +2,13 @@
 
 package com.ghost.serialization.integration
 
+import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.Address
 import com.ghost.serialization.integration.model.ComplexObject
 import com.ghost.serialization.integration.model.ComplexObjectSerializer
+import com.ghost.serialization.integration.model.LargeStringModel
+import com.ghost.serialization.integration.model.MapEdgeCaseModel
 import com.ghost.serialization.integration.model.NestedContainer
 import com.ghost.serialization.integration.model.Priority
 import com.ghost.serialization.integration.model.Tag
@@ -15,6 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 
 class GhostRobustnessTest {
@@ -267,5 +271,37 @@ class GhostRobustnessTest {
             "nestedTree": {"label": "root", "children": [{"label": "child1", "children": [{"label": "leaf"}]}, {"label": "child2"}]}
         }
         """
+    }
+
+    @Test
+    fun mapKeysWithQuotesAndNewlinesAreEscaped() {
+        val model = MapEdgeCaseModel(
+            complexKeys = mapOf("key with \"quotes\"" to "val1", "key\nnewline" to "val2")
+        )
+
+        val json = Ghost.serialize(model)
+
+        assertTrue(actual = json.contains("\"key with \\\"quotes\\\"\":\"val1\""))
+        assertTrue(actual = json.contains("\"key\\nnewline\":\"val2\""))
+
+        val decoded = Ghost.deserialize<MapEdgeCaseModel>(json.encodeToByteArray())
+        assertEquals(expected = model, actual = decoded)
+    }
+    @Test
+    fun largeEscapedStringRoundtripsAcrossBufferFlushes() {
+        val largeString = buildString {
+            append("start-")
+            for (i in 1..1000) {
+                append("escaped\"quote\"-")
+                append("unicode🧛-")
+            }
+            append("-end")
+        }
+
+        val model = LargeStringModel(large = largeString)
+        val json = Ghost.serialize(model)
+
+        val decoded = Ghost.deserialize<LargeStringModel>(json.encodeToByteArray())
+        assertEquals(expected = largeString, actual = decoded.large)
     }
 }

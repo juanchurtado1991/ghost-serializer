@@ -3,14 +3,16 @@ package com.ghost.serialization.parser.common
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.StreamingGhostSource
+import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.beginObject
 import com.ghost.serialization.parser.streaming.captureRawJson
 import com.ghost.serialization.parser.streaming.consumeArraySeparator
 import com.ghost.serialization.parser.streaming.consumeKeySeparator
 import com.ghost.serialization.parser.streaming.endObject
+import com.ghost.serialization.parser.streaming.nextBoolean
 import com.ghost.serialization.parser.streaming.nextInt
 import com.ghost.serialization.parser.streaming.nextString
-import com.ghost.serialization.parser.streaming.StreamingGhostSource
 import okio.Buffer
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.test.Test
@@ -214,6 +216,43 @@ class StreamingGhostSourceTest {
         reader.endObject()
     }
 
+    @Test
+    fun readsTokensSplitAtEverySegmentBoundaryOffset() {
+        for (bytesBeforeBoundary in 1..STRADDLE_MAX_BYTES_BEFORE_BOUNDARY) {
+            assertEquals(
+                expected = STRADDLE_NUMBER,
+                actual = arrayReaderWithTokenBeforeBoundary(
+                    token = STRADDLE_NUMBER.toString(),
+                    bytesBeforeBoundary = bytesBeforeBoundary
+                ).nextInt()
+            )
+            assertTrue(
+                actual = arrayReaderWithTokenBeforeBoundary(
+                    token = STRADDLE_BOOLEAN,
+                    bytesBeforeBoundary = bytesBeforeBoundary
+                ).nextBoolean()
+            )
+            assertEquals(
+                expected = STRADDLE_EMOJI,
+                actual = arrayReaderWithTokenBeforeBoundary(
+                    token = "\"$STRADDLE_EMOJI\"",
+                    bytesBeforeBoundary = bytesBeforeBoundary
+                ).nextString()
+            )
+        }
+    }
+
+    /** Streaming reader positioned inside `[...]` with [token] starting [bytesBeforeBoundary] bytes before the first window ends. */
+    private fun arrayReaderWithTokenBeforeBoundary(
+        token: String,
+        bytesBeforeBoundary: Int
+    ): GhostJsonReader {
+        val padding = " ".repeat(n = GhostJsonWriterConstants.STREAMING_BUFFER_SIZE - 1 - bytesBeforeBoundary)
+        val reader = GhostJsonReader(Buffer().writeUtf8(string = "[$padding$token]"))
+        reader.beginArray()
+        return reader
+    }
+
     // ── Sliding consume (Okio prefix skip) ─────────────────────────────────────────────
 
     @Test
@@ -322,5 +361,12 @@ class StreamingGhostSourceTest {
             actual = reader.nextInt()
         )
         reader.endObject()
+    }
+
+    companion object {
+        private const val STRADDLE_BOOLEAN = "true"
+        private const val STRADDLE_EMOJI = "😀"
+        private const val STRADDLE_MAX_BYTES_BEFORE_BOUNDARY = 6
+        private const val STRADDLE_NUMBER = 12345
     }
 }

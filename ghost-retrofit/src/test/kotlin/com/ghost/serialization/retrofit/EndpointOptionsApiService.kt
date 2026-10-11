@@ -1,19 +1,22 @@
 package com.ghost.serialization.retrofit
 
+import com.ghost.serialization.annotations.GhostCoerce
+import com.ghost.serialization.annotations.GhostStrict
+import retrofit2.Response
 import retrofit2.http.GET
 
-interface ExpandedApiService {
+interface EndpointOptionsApiService {
     @GET("/empty")
-    suspend fun getEmpty(): retrofit2.Response<RetrofitUser?>
+    suspend fun getEmpty(): Response<RetrofitUser?>
 
     @GET("/no_content")
     suspend fun getNoContent(): Unit
 
-    @com.ghost.serialization.annotations.GhostStrict
+    @GhostStrict
     @GET("/strict")
     suspend fun getStrictUser(): RetrofitUser
 
-    @com.ghost.serialization.annotations.GhostCoerce
+    @GhostCoerce
     @GET("/coerce")
     suspend fun getCoercedUser(): RetrofitUser
 

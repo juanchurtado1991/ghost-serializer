@@ -95,4 +95,16 @@ class GhostInferredPolymorphismTest {
             Ghost.deserialize<SmartEvent>(json)
         }
     }
+
+    @Test
+    fun testInferredPolymorphismWithManySubtypes() {
+        val jsonA = """{"a": 1}"""
+        val jsonG = """{"g": 7, "extra": "ghost"}"""
+
+        val resA = Ghost.deserialize<MassiveInferredRoot>(jsonA)
+        val resG = Ghost.deserialize<MassiveInferredRoot>(jsonG)
+
+        assertEquals(expected = MassiveInferredRoot.A(a = 1), actual = resA)
+        assertEquals(expected = MassiveInferredRoot.G(g = 7, extra = "ghost"), actual = resG)
+    }
 }

@@ -15,7 +15,7 @@ import kotlin.test.assertFailsWith
 import okio.Buffer
 
 /**
- * Mirrors the failure modes covered by `GhostChaosTest` and `GhostStressAuditTest`, for YAML.
+ * Mirrors the JSON reader failure modes of `GhostJsonReaderSpecComplianceTest` and `GhostReaderEdgeCaseTest`, for YAML.
  */
 class GhostYamlChaosTest {
 

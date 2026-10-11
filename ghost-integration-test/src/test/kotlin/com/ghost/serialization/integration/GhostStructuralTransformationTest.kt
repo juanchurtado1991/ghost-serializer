@@ -2,12 +2,15 @@
 
 package com.ghost.serialization.integration
 
+import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.integration.model.DeepFlattenedModelSerializer
 import com.ghost.serialization.integration.model.FlattenedModel
 import com.ghost.serialization.integration.model.FlattenedModelSerializer
 import com.ghost.serialization.integration.model.MixedStructuralModel
 import com.ghost.serialization.integration.model.MixedStructuralModelSerializer
+import com.ghost.serialization.integration.model.StructuralCollisionModel
+import com.ghost.serialization.integration.model.WrapSharedPathModel
 import com.ghost.serialization.integration.model.WrappedModel
 import com.ghost.serialization.integration.model.WrappedModelSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
@@ -15,6 +18,7 @@ import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 
 class GhostStructuralTransformationTest {
@@ -111,5 +115,42 @@ class GhostStructuralTransformationTest {
         assertEquals(expected = 1, actual = result.id)
         assertEquals(expected = 10, actual = result.level)
         assertNull(actual = result.author)
+    }
+
+    @Test
+    fun testFlattenedPathDoesNotCollideWithSameNamedField() {
+        // 'name' and child.name both flatten toward 'meta' — Ghost must nest by path, not collide
+        val json = """
+        {
+            "name": "parent",
+            "meta": {
+                "name": "child",
+                "value": 123
+            }
+        }
+        """.trimIndent()
+
+        val model = Ghost.deserialize<StructuralCollisionModel>(json)
+        assertEquals(expected = "parent", actual = model.name)
+        assertEquals(expected = "child", actual = model.child.name)
+        assertEquals(expected = 123, actual = model.child.value)
+
+        val serialized = Ghost.serialize(model)
+        assertTrue(actual = serialized.contains("\"name\":\"parent\""))
+        assertTrue(actual = serialized.contains("\"meta\":{"))
+        assertTrue(actual = serialized.contains("\"name\":\"child\""))
+    }
+    @Test
+    fun testWrappedFieldsShareParentPaths() {
+        val model = WrapSharedPathModel(name = "Ghost", token = "SECRET", active = true)
+        val json = Ghost.serialize(model)
+
+        // Expected: {"metadata":{"info":{"name":"Ghost"},"auth":{"token":"SECRET"}},"system":{"flags":{"active":true}}}
+        assertTrue(actual = json.contains("\"metadata\":{"))
+        assertTrue(actual = json.contains("\"info\":{"))
+        assertTrue(actual = json.contains("\"auth\":{"))
+
+        val roundtrip = Ghost.deserialize<WrapSharedPathModel>(json)
+        assertEquals(expected = model, actual = roundtrip)
     }
 }

@@ -1857,7 +1857,7 @@ Module `:ghost-integration-test` is the compiler and runtime regression lab. Aft
 | SmartEvent, TempEvent, HumidityEvent, MixedEvent, MotionEvent | GhostInferredPolymorphismTest |
 | DeviceCommand → Reboot, SetBrightness, UpdateFirmware | GhostInferredPolymorphismTest |
 | InferredNestedContainer | nested inferred |
-| HugeModel, DeepNestedModel, MassiveInferredRoot | GhostProductionHardeningTest |
+| HugeModel, DeepNestedModel, MassiveInferredRoot | GhostBoundaryFragmentationTest, GhostTypeSystemTest, GhostInferredPolymorphismTest |
 
 Generated under: `build/generated/ksp/test/kotlin/`
 
@@ -1909,7 +1909,7 @@ Generated under: `build/generated/ksp/test/kotlin/`
 | EvolutionModel | new/old fields |
 | IgnoreModel | @GhostIgnore |
 
-**Test:** `GhostNullabilityStressTest`, `GhostHardeningTest`, `GhostFinalHardeningTest`
+**Test:** `GhostNullabilityStressTest`, `GhostTypeSystemTest`, `GhostJsonSpecComplianceTest`
 
 ### K. Naming, Unicode, reserved words
 
@@ -1920,7 +1920,7 @@ Generated under: `build/generated/ksp/test/kotlin/`
 | UniCodeModel | complex UTF-8 |
 | EmojiKeyModel | emoji keys |
 
-**Test:** `GhostFeatureTest`, `GhostEliteHardeningTest`
+**Test:** `GhostFeatureTest`, `GhostRobustnessTest`
 
 ### L. Malice, DoS, and large strings
 
@@ -1931,16 +1931,16 @@ Generated under: `build/generated/ksp/test/kotlin/`
 | StressMetrics | stress metrics |
 | DecimalStress | decimal precision |
 
-**Test:** `GhostMaliceTest`, `GhostProductionHardeningTest`
+**Test:** `GhostMaliceTest`, `GhostRobustnessTest`
 
 ### M. Concurrency and multi-branch
 
 | Topic | Detail |
 |:---|:---|
 | BenchUser | 3 parameters with default → 8 constructor branches |
-| GhostConcurrencyExpansionTest | pools + threads |
+| GhostConcurrencyTest | pools + threads |
 
-**Test:** `GhostMultiBranchConstructorTest`, `GhostConcurrencyExpansionTest`
+**Test:** `GhostMultiBranchConstructorTest`, `GhostConcurrencyTest`
 
 ### Test class → responsibility map
 
@@ -1960,15 +1960,13 @@ Generated under: `build/generated/ksp/test/kotlin/`
 | GhostValueClassTest | inline classes |
 | GhostNullabilityStressTest | nulls |
 | GhostMaliceTest | parser security |
-| GhostProductionHardeningTest | massive inferred |
 | GhostMultiBranchConstructorTest | bitmask branches |
-| GhostConcurrencyExpansionTest | threads |
+| GhostConcurrencyTest | threads |
 | GhostLibraryMethodTest | API parity |
 | GhostTypeSystemTest | Map/List edge |
 | GhostAdvancedTypesTest | generics |
 | GhostFeatureTest | naming |
-| GhostEliteHardeningTest | unicode |
-| GhostHardeningTest / GhostFinalHardeningTest | evolution |
+| GhostJsonSpecComplianceTest | RFC 8259 rejections |
 | GhostEnumResilienceTest / GhostEnumStandardsTest | enums |
 
 ---

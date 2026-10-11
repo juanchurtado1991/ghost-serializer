@@ -32,22 +32,20 @@ class GhostTypeSystemTest {
     fun testCollectionOfNullsRoundTrip() {
         val model = CollectionOfNulls(items = listOf("a", null, "b", null))
         val json = Ghost.serialize(model)
+        assertEquals(expected = """{"items":["a",null,"b",null]}""", actual = json)
         val decoded = Ghost.deserialize<CollectionOfNulls>(json)
         assertEquals(expected = model, actual = decoded)
     }
 
     @Test
     fun testRecursiveGraphDeep() {
-        val root = RecursiveGraphNode(
-            name = "1",
-            next = RecursiveGraphNode(
-                name = "2",
-                next = RecursiveGraphNode(
-                    name = "3",
-                    next = RecursiveGraphNode(name = "4")
-                )
+        var root = RecursiveGraphNode(name = "bottom")
+        repeat(times = RECURSIVE_CHAIN_LENGTH) { level ->
+            root = RecursiveGraphNode(
+                name = "node-$level",
+                next = root
             )
-        )
+        }
         val json = Ghost.serialize(root)
         val decoded = Ghost.deserialize<RecursiveGraphNode>(json)
         assertEquals(expected = root, actual = decoded)
@@ -91,5 +89,16 @@ class GhostTypeSystemTest {
         // Ghost should ignore unknown fields by default (unless strict mode is on)
         val decoded = Ghost.deserialize<EvolutionModel>(json)
         assertEquals(expected = "val", actual = decoded.required)
+    }
+
+    @Test
+    fun testDeepNestedMapOfLists() {
+        val json = """{"mapOfLists": {"key1": [{"innerKey": [1, 2, 3]}]}}"""
+        val model = Ghost.deserialize<DeepNestedModel>(json)
+        assertEquals(expected = 1, actual = model.mapOfLists["key1"]!![0]["innerKey"]!![0])
+    }
+
+    companion object {
+        private const val RECURSIVE_CHAIN_LENGTH = 50
     }
 }

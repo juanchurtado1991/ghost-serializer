@@ -3,11 +3,12 @@ package com.ghost.serialization.integration
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.IgnoreModel
+import com.ghost.serialization.integration.model.OverlappingKeyModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class GhostHardeningTest {
+class GhostJsonSpecComplianceTest {
 
     @Test
     fun testDuplicateKeys() {
@@ -78,5 +79,14 @@ class GhostHardeningTest {
         assertFailsWith<GhostJsonException> {
             Ghost.deserialize<IgnoreModel>("{\"id\":1")
         }
+    }
+
+    @Test
+    fun testDuplicateKeysWithSharedPrefixes() {
+        val json = """{"id": 1, "id": 2, "id_internal": 100, "identity": "ghost"}"""
+        val model = Ghost.deserialize<OverlappingKeyModel>(json.encodeToByteArray())
+
+        assertEquals(expected = 2, actual = model.id, message = "Last key 'id' should win")
+        assertEquals(expected = 100, actual = model.id_internal)
     }
 }

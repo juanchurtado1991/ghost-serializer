@@ -14,9 +14,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 @OptIn(InternalGhostApi::class)
-class GhostRetrofitExpansionTest {
+class GhostRetrofitEndpointOptionsTest {
     private lateinit var mockWebServer: MockWebServer
-    private lateinit var apiService: ExpandedApiService
+    private lateinit var apiService: EndpointOptionsApiService
 
     @BeforeEach
     fun setup() {
@@ -30,7 +30,7 @@ class GhostRetrofitExpansionTest {
             .addConverterFactory(GhostConverterFactory.create())
             .build()
 
-        apiService = retrofit.create(ExpandedApiService::class.java)
+        apiService = retrofit.create(EndpointOptionsApiService::class.java)
     }
 
     @AfterEach

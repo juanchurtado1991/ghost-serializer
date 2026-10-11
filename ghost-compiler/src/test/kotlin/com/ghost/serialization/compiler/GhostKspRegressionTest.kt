@@ -19,9 +19,8 @@ import kotlin.test.assertTrue
  * Each test represents a pattern that previously either failed to compile,
  * generated broken code, or crashed at class-initialization time.
  */
-class GhostBugFixKspTest {
+class GhostKspRegressionTest {
 
-    // Fix 1 + Fix 2: classDeclaration private val + @GhostFallback on sealed subclass
     @Test
     fun compilesGhostFallbackOnSealedSubclass() {
         val (compilation, result) = compile(
@@ -53,7 +52,6 @@ class GhostBugFixKspTest {
         )
     }
 
-    // Fix 3 (auto-UNKNOWN): enum with UNKNOWN constant auto-generates fallback
     @Test
     fun compilesEnumWithAutoUnknownFallback() {
         val (compilation, result) = compile(
@@ -81,7 +79,6 @@ class GhostBugFixKspTest {
         )
     }
 
-    // Fix 3: enum with lowercase 'unknown' also gets auto-fallback
     @Test
     fun compilesEnumWithLowercaseUnknownFallback() {
         val (compilation, result) = compile(
@@ -109,7 +106,6 @@ class GhostBugFixKspTest {
         )
     }
 
-    // Fix 5: enum wire values with overlapping prefixes use PerfectHashFinder for ENUM_OPTIONS
     @Test
     fun enumOptionsUsePerfectHashFinderForOverlappingWireValues() {
         val (compilation, result) = compile(
@@ -145,7 +141,6 @@ class GhostBugFixKspTest {
         )
     }
 
-    // Fix 4: ByteArray field compiles and generates isByteArray path
     @Test
     fun compilesModelWithByteArrayField() {
         val (compilation, result) = compile(

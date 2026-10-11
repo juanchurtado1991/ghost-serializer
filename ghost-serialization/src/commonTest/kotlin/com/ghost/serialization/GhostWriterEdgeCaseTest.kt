@@ -3,10 +3,13 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.streaming.beginArray
+import com.ghost.serialization.parser.streaming.endArray
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import okio.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 
 class GhostWriterEdgeCaseTest {
@@ -498,6 +501,23 @@ class GhostWriterEdgeCaseTest {
             block()
             throw AssertionError("Expected GhostJsonException to be thrown")
         } catch (e: GhostJsonException) {
+        }
+    }
+
+    @Test
+    fun writerRejectsNonFiniteNumbers() {
+        val writer = GhostJsonWriter(Buffer())
+
+        assertFailsWith<GhostJsonException> {
+            writer.beginArray().value(Double.NaN).endArray()
+        }
+
+        assertFailsWith<GhostJsonException> {
+            writer.beginArray().value(Double.POSITIVE_INFINITY).endArray()
+        }
+
+        assertFailsWith<GhostJsonException> {
+            writer.beginArray().value(Float.NEGATIVE_INFINITY).endArray()
         }
     }
 }
