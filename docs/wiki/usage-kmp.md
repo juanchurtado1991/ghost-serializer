@@ -15,13 +15,16 @@ For the minimal setup, see the [Ghost Serializer Quick Start](quick-start.md).
 plugins {
     kotlin("multiplatform")
     id("com.google.devtools.ksp") version "2.3.12"
-    id("com.ghostserializer.ghost") version "1.3.3"
+    id("com.ghostserializer.ghost") version "1.3.4"
 }
 
 kotlin {
     androidTarget()
     iosArm64()
     iosSimulatorArm64()
+    watchosArm64()           // Apple Watch up to Series 8 (arm64_32)
+    watchosDeviceArm64()     // Series 9 and later (arm64)
+    watchosSimulatorArm64()
     jvm()
     wasmJs {
         browser()

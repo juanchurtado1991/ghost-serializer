@@ -1,8 +1,8 @@
-# Ghost Serialization 1.3.3 {#titulo}
+# Ghost Serialization 1.3.4 {#titulo}
 
 ### Complete technical manual — study and reference (A5 / mobile)
 
-> Monorepo ghost-serializer · version 1.3.3 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
+> Monorepo ghost-serializer · version 1.3.4 · Maven `com.ghostserializer` · compile-time KSP + low-allocation runtime.
 
 ### How to read this manual
 
@@ -368,7 +368,7 @@ KSP (Kotlin Symbol Processing) runs **during compilation**, in rounds. Ghost reg
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.3"
+    id("com.ghostserializer.ghost") version "1.3.4"
 }
 
 // Optional but recommended with several modules containing models:
@@ -921,14 +921,14 @@ The compiler generates up to 2^N branches `if ((mask and X) == X) return BenchUs
 
 ```kotlin
 ghost {
-    version.set("1.3.3")
+    version.set("1.3.4")
     autoInjectKtor.set(true)
     autoInjectRetrofit.set(true)
     autoRegistration.set(true)
 }
 ```
 
-Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.3.
+Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.4.
 
 ---
 
@@ -938,7 +938,7 @@ Plugin id: `com.ghostserializer.ghost`. DEFAULT_VERSION in plugin = 1.3.3.
 
 ```kotlin
 dependencies {
-    implementation("com.ghostserializer:ghost-retrofit:1.3.3")
+    implementation("com.ghostserializer:ghost-retrofit:1.3.4")
 }
 
 interface ApiService {
@@ -994,10 +994,10 @@ Same pool + flat reader/writer pattern. Ktor 3 in consumer apps may need a custo
 
 ```kotlin
 plugins {
-    id("com.ghostserializer.ghost") version "1.3.3"
+    id("com.ghostserializer.ghost") version "1.3.4"
 }
 dependencies {
-    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.3")
+    implementation("com.ghostserializer:ghost-spring-boot-starter:1.3.4")
 }
 ```
 
@@ -1082,7 +1082,7 @@ Publishable (publish.gradle.kts): ghost-* except benchmark, integration-test, pl
 
 Uploads a deployment bundle to Central Portal in `USER_MANAGED` mode (staged, not released). Review and publish it manually at [central.sonatype.com](https://central.sonatype.com/publishing/deployments). To publish and release automatically instead, run `./gradlew publishAndReleaseToMavenCentral`.
 
-Coordinates: `com.ghostserializer:*:1.3.3`
+Coordinates: `com.ghostserializer:*:1.3.4`
 
 From Linux: iOS variants may be missing on Central.
 
@@ -1145,7 +1145,7 @@ Toolchain: JDK 17, Kotlin/KSP per `gradle/libs.versions.toml`.
 | ghost-spring-boot-test-app | Jackson vs Ghost WebFlux, benchmark.py |
 | ghost-ios-test-app | XCFramework + GhostBridge + Codable |
 
-All use **1.3.3 Maven Central** (no mavenLocal in final config).
+All use **1.3.4 Maven Central** (no mavenLocal in final config).
 
 ---
 
@@ -1154,7 +1154,7 @@ All use **1.3.3 Maven Central** (no mavenLocal in final config).
 ### Step by step (from scratch)
 
 1. **settings.gradle.kts** — `pluginManagement { gradlePluginPortal() }`
-2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.3"`
+2. **app/build.gradle.kts** — `id("com.ghostserializer.ghost") version "1.3.4"`
 3. Create `data class` with `@GhostSerialization` in the network package
 4. **Build → Make Project** — verify `UserSerializer.kt` exists in `app/build/generated/ksp/`
 5. **Application.onCreate:** `Ghost.prewarm()` (optional but recommended for high-traffic apps)
@@ -1251,7 +1251,7 @@ List or map in JSON exceeded platform limit (50k on Android). May be legitimate 
 
 ### Plugin com.ghostserializer.ghost not found
 
-Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.3 on Maven Central, and sync again.
+Gradle does not resolve the plugin. Check `pluginManagement` in `settings.gradle.kts` with `gradlePluginPortal()`, version 1.3.4 on Maven Central, and sync again.
 
 ### Compiler plugin warning: generated serializer not found
 
@@ -1297,7 +1297,7 @@ Ghost.getSerializer(MyClass::class)
 | Flat reader | ghost-serialization/src/commonMain/kotlin/com/ghost/serialization/parser/GhostJsonFlatReader.kt |
 | Flat writer | ghost-serialization/src/commonMain/kotlin/com/ghost/serialization/writer/FlatByteArrayWriter.kt |
 | JVM pools | ghost-serialization/src/jvmMain/kotlin/com/ghost/serialization/Ghost.jvm.kt |
-| iOS | ghost-serialization/src/iosMain/kotlin/com/ghost/serialization/Ghost.ios.kt |
+| iOS / watchOS | ghost-serialization/src/appleMain/kotlin/com/ghost/serialization/Ghost.apple.kt |
 | Retrofit | ghost-retrofit/src/main/kotlin/com/ghost/serialization/retrofit/GhostConverterFactory.kt |
 | Ktor | ghost-ktor/src/commonMain/kotlin/com/ghost/serialization/ktor/GhostContentConverter.kt |
 | Spring | ghost-spring-boot-starter/src/main/kotlin/com/ghost/serialization/spring/GhostHttpMessageConverter.kt |
@@ -1305,9 +1305,17 @@ Ghost.getSerializer(MyClass::class)
 
 ---
 
-## 31. Version 1.3.3 — relevant changes {#cap-31--version-1.3.1-cambios-relevantes}
+## 31. Version 1.3.4 — relevant changes {#cap-31--version-1.3.1-cambios-relevantes}
 
-1.3.3 is a consumer-compatibility fix release (see `CHANGELOG.md`):
+1.3.4 adds watchOS and fixes code generation bugs (see `CHANGELOG.md`):
+
+- **watchOS targets**: `ghost-api`, `ghost-serialization` and `ghost-ktor` publish `watchosArm64`, `watchosDeviceArm64` and `watchosSimulatorArm64`. The Apple actuals moved from `iosMain` to `appleMain`; CI runs the test suites on the watchOS simulator.
+- **`@GhostFlatten` with a `null` parent object**: `{"virtual": {"commandMappings": null}}` (or `{"virtual": null}`) no longer fails with `Expected '{'`; the properties under a null parent keep their defaults.
+- **`@GhostEncoder` on the string channel**: `Ghost.encodeToString` no longer drops the comma after a custom-encoded value.
+- **Classes with more than 40 properties**: the fragmented serializers now support `@GhostFlatten` and `@GhostWrap` (they misread every field after a flattened group and wrote flattened fields at the top level); `@GhostWrappedKeys` there is a compile-time error.
+- **Companion constants as defaults**: `tier: String = DEFAULT_TIER` compiles in the generated serializer when the constant lives in the model's companion object.
+
+### 1.3.3 highlights
 
 - **Defaults that reference a nested class compile again**: a constructor default such as `Lifecycle.Type.UNKNOWN`, where `Lifecycle` is nested in the model, is now emitted fully qualified in the generated serializer (it failed with `Unresolved reference` since 1.3.0 on models with more than four defaults).
 - **Android AARs no longer force `compileSdk 36` on consumers**: `minCompileSdk` in the AAR metadata is 21 (Ghost's `minSdk`) instead of following Ghost's own `compileSdk`.
@@ -1695,7 +1703,7 @@ inline fun <T> ghostInternalUseFlatReader(
 
 ```kotlin
 ghost {
-    version.set("1.3.3") // or omit if plugin brings DEFAULT_VERSION
+    version.set("1.3.4") // or omit if plugin brings DEFAULT_VERSION
 }
 ```
 
@@ -1740,7 +1748,7 @@ Without this (or with KSP disabled on a module): `NOT_FOUND` in release even if 
 .venv-pdf/bin/python scripts/build_ghost_manual_pdf.py
 ```
 
-PDF output: `docs/Ghost-Serialization-Manual-1.3.3.pdf` (A5 format).
+PDF output: `docs/Ghost-Serialization-Manual-1.3.4.pdf` (A5 format).
 
 ---
 
@@ -2177,7 +2185,7 @@ ls ghost-integration-test/build/generated/ksp/main/kotlin/com/ghost/serializatio
 
 ---
 
-## 51. Maven artifacts table 1.3.3 {#cap-51--tabla-de-artefactos-maven-1-1-17}
+## 51. Maven artifacts table 1.3.4 {#cap-51--tabla-de-artefactos-maven-1-1-17}
 
 ```
 com.ghostserializer:ghost-api
@@ -2194,7 +2202,7 @@ Plugin id: `com.ghostserializer.ghost` version aligned with libraries.
 
 ---
 
-## Factual verification (aligned with code 1.3.3) {#verificacion-factual}
+## Factual verification (aligned with code 1.3.4) {#verificacion-factual}
 
 This manual was cross-checked against the `ghost-serializer` repository on the local working branch:
 
@@ -2224,7 +2232,7 @@ If you upgrade the Ghost version, cross-check these files again before trusting 
 # Appendix: API Reference {#appendix-api}
 
 This section documents the public API of Ghost Serialization, derived from the
-KDoc comments in the source code (version 1.3.3).
+KDoc comments in the source code (version 1.3.4).
 
 ---
 
