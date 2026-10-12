@@ -11,8 +11,7 @@ jobs:
     name: Tests (JVM)
     runs-on: ubuntu-latest
     permissions:
-      # Only this job pushes the coverage report back to main; every other job stays read-only.
-      contents: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -34,31 +33,14 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./gradlew koverHtmlReport
 
-      - name: Publish coverage report to docs/coverage
+      # The report is published to GitHub Pages by the publish-site job; nothing is committed to main.
+      - name: Upload coverage report
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
-          rm -rf docs/coverage
-          mkdir -p docs/coverage
-          cp -r build/reports/kover/html/. docs/coverage/
-          touch docs/coverage/.nojekyll
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/coverage
-
-          if git diff --cached --quiet; then
-            echo "Coverage report unchanged, nothing to commit."
-          else
-            git commit -m "chore: update coverage report [skip ci]"
-            # docs/coverage is fully regenerated, not hand-authored — Kover's HTML isn't
-            # byte-stable across runs, so a plain rebase against a concurrent coverage-report
-            # commit conflicts on nearly every file even when both reflect the same underlying
-            # coverage. Let this run's freshly generated report win outright instead of trying
-            # to line-merge two generated-HTML trees.
-            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
-            git push origin HEAD:"${GITHUB_REF_NAME}"
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/reports/kover/html
+          retention-days: 7
 
   test-android:
     name: Tests (Android)
@@ -263,13 +245,23 @@ jobs:
           :ghost-ktor:wasmJsBrowserTest
           :ghost-playground:compileKotlinWasmJs
 
-  publish-playground:
-    name: Publish Ghost Playground (docs/)
+  publish-site:
+    name: Publish site (GitHub Pages)
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    needs: [test-wasm]
+    needs: [test-jvm, test-wasm]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # Pages source must be "GitHub Actions" (Settings > Pages). The site is assembled here and deployed as an
+    # artifact, so nothing generated is committed to main (the ruleset on main requires an approved PR).
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
@@ -284,25 +276,26 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build and publish playground to docs/
+      - name: Build the playground into docs/
         run: ./gradlew :ghost-playground:publishToDocs
 
-      - name: Commit playground site
+      - name: Add the coverage report to docs/coverage
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs
-          if git diff --cached --quiet; then
-            echo "Playground site unchanged, nothing to commit."
-          else
-            git commit -m "chore: update ghost playground [skip ci]"
-            # Same reasoning as the coverage-report publish step: docs/ here is a fully
-            # regenerated wasm build output, not hand-authored — prefer this run's fresh build
-            # outright on conflict instead of line-merging generated artifacts.
-            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"
-            git push origin HEAD:"${GITHUB_REF_NAME}"
-          fi
+          rm -rf docs/coverage
+          mkdir -p docs/coverage
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: docs/coverage
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   publish-check:
     name: Publish dry-run (Maven Local)
