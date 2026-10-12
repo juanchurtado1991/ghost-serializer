@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.parser.yaml
 
+import com.ghost.serialization.parser.common.parseDecimalLiteralToDouble
 import com.ghost.serialization.parser.common.parseDecimalLiteralToFloat
 import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
 import com.ghost.serialization.yaml.GhostYamlTokens as TOK
@@ -174,7 +175,12 @@ internal fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end
     }
 
     val stringRepresentation = data.decodeToString(start, end)
-    val parsedDouble = stringRepresentation.toDoubleOrNull() ?: return null
+    val approximateDouble = stringRepresentation.toDoubleOrNull() ?: return null
+    val parsedDouble = if (isPlainDecimalLiteral(text = stringRepresentation)) {
+        parseDecimalLiteralToDouble(literal = stringRepresentation)
+    } else {
+        approximateDouble
+    }
     return if (losesFloatPrecisionViaDouble(text = stringRepresentation, parsed = parsedDouble)) {
         stringRepresentation
     } else {
@@ -212,4 +218,38 @@ private fun adjacentFloatToward(
     val growsMagnitude = (from > 0f) == towardPositive
     val bits = from.toRawBits()
     return Float.fromBits(if (growsMagnitude) bits + 1 else bits - 1)
+}
+
+/**
+ * A `Float` parsed once from [text]. `toFloatOrNull` rounds twice on Kotlin/Wasm and Native, so plain decimal
+ * literals go through the exact cross-platform parse; anything else (`NaN`, hex, suffixes) keeps the platform one.
+ */
+internal fun exactFloatOrNull(
+    text: String
+): Float? {
+    val approximate = text.toFloatOrNull() ?: return null
+    return if (isPlainDecimalLiteral(text = text)) parseDecimalLiteralToFloat(literal = text) else approximate
+}
+
+/** True for `-?digits(.digits)?([eE][+-]?digits)?`, the only shape the exact literal parse accepts. */
+private fun isPlainDecimalLiteral(
+    text: String
+): Boolean {
+    var index = if (text.startsWith(prefix = "-")) 1 else 0
+    fun skipDigits(): Boolean {
+        val start = index
+        while (index < text.length && text[index] in '0'..'9') index++
+        return index > start
+    }
+    if (!skipDigits()) return false
+    if (index < text.length && text[index] == '.') {
+        index++
+        if (!skipDigits()) return false
+    }
+    if (index < text.length && (text[index] == 'e' || text[index] == 'E')) {
+        index++
+        if (index < text.length && (text[index] == '+' || text[index] == '-')) index++
+        if (!skipDigits()) return false
+    }
+    return index == text.length
 }

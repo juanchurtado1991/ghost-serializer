@@ -223,7 +223,7 @@ internal fun GhostYamlFlatReader.nextFloatImpl(): Float {
     val number = when (value) {
         is Long -> value.toFloat()
         is Number -> value.toDouble().toFloat().takeIf { it.isFinite() || !value.toDouble().isFinite() }
-        is String -> value.toFloatOrNull()
+        is String -> exactFloatOrNull(text = value)
         else -> null
     } ?: throwError("${EM.ERR_EXPECTED_FLOAT_PREFIX}$value")
     pathTracker.finishScalarValue()
