@@ -1,8 +1,12 @@
 # 👻 Ghost Serializer
 
-**Keep kotlinx.serialization (or Moshi / Gson / Jackson). Add one annotation on the DTO that hurts and keep the same Ktor, Retrofit, or Spring stack.**
+**The fastest JSON path for Kotlin Multiplatform: up to 2.7× faster than other serializers, with up to 86% less memory, and proven against the industry's conformance suite.**
 
-Ghost is not a rewrite. It is the fast, low-allocation path for the models you opt in, and a softer landing when the backend ships messy JSON.
+- **Built for speed.** Compile-time generated serializers, SWAR parsing and zero-allocation hot paths: 1.07 GB/s decoding bytes and 1.2 GB/s decoding strings on a real 631 KB payload, and faster than the alternatives on every channel we measure.
+- **Proven, not promised.** All 318 cases of [JSONTestSuite](https://github.com/nst/JSONTestSuite), the industry-standard JSON parser conformance suite, pass on the string, bytes and streaming channels. Coverage-guided fuzzing has executed more than **765 million** cases against the readers and writers with **0 crashes**.
+- **Resilient by design.** When the backend ships messy JSON, Ghost can keep parsing where you opt in, and tells you exactly where it went wrong.
+
+Keep the stack you have: kotlinx.serialization, Moshi, Gson or Jackson, with Ktor, Retrofit or Spring. Add one annotation to the DTOs that carry your traffic and Ghost takes over exactly that path. It is not a rewrite. It is an upgrade where it counts.
 
 [![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.3.5-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
@@ -98,9 +102,12 @@ Twitter macro (**631 KB**) decode:
 
 ## Tested against the spec, not just against itself
 
-- **Reader**: **96.06%** of [yaml-test-suite](https://github.com/yaml/yaml-test-suite)'s conformance cases decode exactly right (268/279). Every gap is tracked by case ID and reason in the repo; none is silently skipped.
-- **Writer**: **100%** round-trip (decode → encode → decode returns the same tree) across every case the reader accepts; **96.26%** of the re-encoded output is also accepted by an independent second parser ([kaml](https://github.com/charleskorn/kaml)) as a cross-check, not just by Ghost's own reader.
-- **Fuzzing**: every JSON/YAML reader and writer has coverage-guided fuzz testing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)). The accumulated crash corpus replays on every CI run, and there are no open crashes.
+- **JSON conformance**: all **318** cases of [JSONTestSuite](https://github.com/nst/JSONTestSuite) behave correctly on the string, bytes and streaming channels, in lenient and in strict mode. All 95 `y_` cases are accepted, all 188 `n_` cases are rejected, and the 35 implementation-defined `i_` cases are pinned so a change is always deliberate. The suite is vendored and runs on every CI build.
+- **Fuzzing**: coverage-guided fuzzing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)) of every JSON reader and writer has executed more than **765 million cases with 0 crashes**; the accumulated corpus replays on every CI run. `scripts/jazzer.sh` reproduces it on your machine.
+- **Differential testing**: the three JSON channels are checked against each other and against kotlinx.serialization, decimals are checked bit for bit against the JVM, and truncated or mutated input must always fail with a clean `GhostJsonException`. It runs on every build and every night with a fresh seed.
+- **Real-world data**: 8,934 JSON files from installed tools and packages decode to exactly the same tree as kotlinx.serialization.
+- **YAML reader**: **96.06%** of [yaml-test-suite](https://github.com/yaml/yaml-test-suite)'s conformance cases decode exactly right (268/279). Every gap is tracked by case ID and reason in the repo; none is silently skipped.
+- **YAML writer**: **100%** round-trip (decode → encode → decode returns the same tree) across every case the reader accepts; **96.26%** of the re-encoded output is also accepted by an independent second parser ([kaml](https://github.com/charleskorn/kaml)) as a cross-check, not just by Ghost's own reader.
 
 Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-compliance-ghost-only)
 
