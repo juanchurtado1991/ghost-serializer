@@ -101,7 +101,28 @@ val user: User = Ghost.deserializeStreaming(source)
 
 ## 4. Keep your current serializer
 
-Ghost can coexist with `kotlinx.serialization`, Jackson, Gson, or Moshi. Route only annotated hot-path DTOs through Ghost.
+Ghost can coexist with `kotlinx.serialization`, Jackson, Gson, or Moshi. Annotate the DTOs you want on the Ghost path and leave the rest on your current serializer.
+
+### On a KotlinX model
+
+Ghost generates **only** for `@GhostSerialization`, not for every `@Serializable` in the module. Keep both annotations on a class and its KotlinX call sites keep working:
+
+```kotlin
+@Serializable                 // keep: KotlinX call sites still work
+@GhostSerialization           // add: Ghost codegen for this class only
+data class User(
+    @SerialName("user_id")    // keep: Ghost uses this as the wire name
+    val id: Long,
+    val name: String,
+)
+
+Ghost.deserialize<User>(responseBytes)     // Ghost (bytes / adapters)
+// Json.decodeFromString<User>(...)        // still fine on KotlinX
+```
+
+- `@GhostName` is optional if `@SerialName` is already set (`@GhostName` wins only if both differ).
+- `@GhostResilient`, `@GhostFallback` and `RawJson` are Ghost-only; omit them if you do not need them.
+- Nested types on the Ghost path need `@GhostSerialization` too.
 
 ### Retrofit beside Gson, Moshi, or KotlinX
 

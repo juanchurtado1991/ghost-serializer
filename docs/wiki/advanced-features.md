@@ -90,6 +90,22 @@ data class UserConfig(
 )
 ```
 
+Strict JSON fails the whole request when one field has the wrong shape. With `@GhostResilient` Ghost keeps going:
+
+```json
+{ "id": "u1", "name": "Ada", "age": { "years": 36 } }
+```
+
+```kotlin
+@Serializable
+@GhostSerialization
+data class User(
+    val id: String,
+    val name: String,
+    @GhostResilient val age: Int = 0,  // object instead of number → 0, parse continues
+)
+```
+
 ### Boolean Coercion
 Interpret `0` / `1` as `false` / `true` (useful for legacy APIs):
 

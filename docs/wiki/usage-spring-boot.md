@@ -2,7 +2,7 @@
 
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](usage-spring-boot.md)
 
-Ghost integrates with Spring Boot via the `ghost-spring-boot-starter`. It adds generated JSON serialization for annotated hot-path DTOs in **Spring MVC** and **Spring WebFlux** without replacing Jackson: unsupported and unannotated controller types continue through the existing Spring codecs. No manual bean wiring is needed.
+Ghost integrates with Spring Boot via the `ghost-spring-boot-starter`. It adds generated JSON serialization for annotated DTOs in **Spring MVC** and **Spring WebFlux** without replacing Jackson: unsupported and unannotated controller types continue through the existing Spring codecs. No manual bean wiring is needed.
 
 For the cross-platform setup flow, see the [Ghost Serializer Quick Start](quick-start.md).
 
