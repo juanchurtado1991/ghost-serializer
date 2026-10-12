@@ -65,6 +65,13 @@ internal object GhostYamlScanConstants {
     const val CODE_NBSP = 160
     const val CODE_LINE_SEP = 8232
     const val CODE_PARA_SEP = 8233
+    const val CODE_REPLACEMENT_CHAR = 0xFFFD
+    const val HIGH_SURROGATE_START = 0xD800
+    const val HIGH_SURROGATE_END = 0xDBFF
+    const val LOW_SURROGATE_START = 0xDC00
+    const val LOW_SURROGATE_END = 0xDFFF
+    const val SUPPLEMENTARY_PLANE_START = 0x10000
+    const val SURROGATE_PAYLOAD_BITS = 10
 
     // ── Sizes ────────────────────────────────────────────────────────────────
 
@@ -72,5 +79,6 @@ internal object GhostYamlScanConstants {
     const val SCRATCH_BUFFER_SIZE = 256
     const val HEX_ESCAPE_X_LEN = 2
     const val HEX_ESCAPE_U_LEN = 4
+    const val U_ESCAPE_PREFIX_LEN = 2
     const val HEX_ESCAPE_U32_LEN = 8
 }

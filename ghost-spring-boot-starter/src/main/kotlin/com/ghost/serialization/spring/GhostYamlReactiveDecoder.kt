@@ -11,6 +11,7 @@ import org.springframework.core.codec.AbstractDecoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.util.MimeType
+import java.nio.charset.Charset
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -37,20 +38,26 @@ class GhostYamlReactiveDecoder(
         elementType: ResolvableType,
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
-    ): Flux<Any> = decodeJoined(inputStream = inputStream, elementType = elementType)
+    ): Flux<Any> = decodeJoined(inputStream = inputStream, elementType = elementType, charset = mimeType?.charset)
 
     override fun decodeToMono(
         inputStream: Publisher<DataBuffer>,
         elementType: ResolvableType,
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
-    ): Mono<Any> = decodeJoined(inputStream = inputStream, elementType = elementType).next()
+    ): Mono<Any> = decodeJoined(inputStream = inputStream, elementType = elementType, charset = mimeType?.charset).next()
 
     private fun decodeJoined(
         inputStream: Publisher<DataBuffer>,
-        elementType: ResolvableType
+        elementType: ResolvableType,
+        charset: Charset?
     ): Flux<Any> = DataBufferUtils.join(inputStream).flatMapMany { buffer ->
-        Flux.just(deserializeBytes(bytes = buffer.consumeToByteArray(), elementType = elementType))
+        Flux.just(
+            deserializeBytes(
+                bytes = buffer.consumeToByteArray().asUtf8From(charset = charset),
+                elementType = elementType
+            )
+        )
     }
 
     private fun deserializeBytes(

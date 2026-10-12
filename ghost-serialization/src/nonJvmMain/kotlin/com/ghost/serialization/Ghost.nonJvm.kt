@@ -121,7 +121,7 @@ actual fun <T> ghostInternalUseFlatReader(
                 .also { cachedFlatReader = it }
 
         reader.resetSlice(buffer = data, offset = offset, length = length)
-        block(reader)
+        block(reader).also { reader.requireEndOfInput() }
     }
 }
 
@@ -134,7 +134,7 @@ actual fun <T> ghostInternalUseSource(
             .also { cachedSourceReader = it }
 
     reader.reset(okioSource = prepareUtf8JsonSource(source = source))
-    return block(reader)
+    return block(reader).also { reader.requireEndOfInput() }
 }
 
 actual fun <T> ghostInternalUseStringReader(
@@ -146,5 +146,5 @@ actual fun <T> ghostInternalUseStringReader(
             .also { cachedStringReader = it }
 
     reader.reset(newData = json)
-    return block(reader)
+    return block(reader).also { reader.requireEndOfInput() }
 }

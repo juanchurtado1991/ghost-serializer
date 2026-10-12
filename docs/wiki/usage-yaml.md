@@ -49,6 +49,8 @@ Without `@GhostYamlSerialization`, the model still gets JSON codegen; `Ghost.dec
 | `@GhostFlatten` / `@GhostWrap` / `@GhostWrappedKeys` | ❌ JSON-only |
 | Sealed / `@GhostFallback` / `inferred` | ❌ JSON-only |
 | `@GhostDecoder` / `@GhostEncoder` | ❌ JSON-only |
+| Nested `@GhostSerialization` data classes | ❌ JSON-only — YAML models are flat DTOs |
+| Enum properties | ✅ when the enum is also annotated with `@GhostYamlSerialization` |
 
 Full matrix → **[Advanced Features — Format compatibility](advanced-features.md#format-compatibility)**
 
@@ -128,7 +130,7 @@ Ghost-only YAML round-trip numbers (`GhostYamlFlatReader` / `GhostYamlWriter` on
 ./gradlew :ghost-benchmark:benchmarkYaml -PskipTests
 ```
 
-→ **[Benchmarks — YAML round-trip](benchmarks.md#-yaml-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
+→ **[Benchmarks — YAML round-trip](benchmarks.md#yaml-round-trip-ghost-only)** (µs/op primary, allocation, GB/s secondary).
 
 ---
 

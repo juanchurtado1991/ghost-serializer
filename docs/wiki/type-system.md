@@ -14,8 +14,8 @@ These work on `@GhostSerialization` fields and as nested generic arguments (`Lis
 
 | Category | Types | Notes |
 |:---|:---|:---|
-| **JSON scalars** | `String`, `Int`, `Long`, `Boolean`, `Double`, `Float`, `Byte`, `Short`, `Char` | `Byte`/`Short` wire as JSON numbers; `Char` as a one-character JSON string. Top-level `Ghost.deserialize<Float>()`, `Byte`, `Short`, `Char` supported via built-in serializers. |
-| **Collections** | `List<T>`, `Set<T>`, `Map<String, V>` | `Set` wire format is a JSON array; decode builds `HashSet` directly (no intermediate `List`). Map keys **must** be `String`. |
+| **JSON scalars** | `String`, `Int`, `Long`, `Boolean`, `Double`, `Float`, `Byte`, `Short`, `Char`, `UByte`, `UShort`, `UInt`, `ULong` | `Byte`/`Short` and the unsigned types wire as JSON numbers (range-checked on decode); `Char` as a one-character JSON string. Top-level `Ghost.deserialize<Float>()`, `Byte`, `Short`, `Char` and the unsigned types are supported via built-in serializers. |
+| **Collections** | `List<T>`, `Set<T>`, `Map<String, V>`, `IntArray`, `LongArray`, `FloatArray`, `DoubleArray`, `BooleanArray` | `Set` and the primitive arrays wire as JSON arrays; decode builds `HashSet` directly (no intermediate `List`). Map keys **must** be `String`. |
 | **Your models** | `data class`, `enum class`, `sealed class` / `sealed interface` | Class must be annotated with `@GhostSerialization`. Sealed subclasses must also be annotated. Optional [`@GhostJsonEnvelope`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/annotations/GhostJsonEnvelope.kt) generates payload routing (`routePayload`, `parsePayload`, …). |
 | **Inline types** | `@JvmInline value class` | Serialized as the underlying property type (e.g. `UserId(Int)` → JSON number). |
 | **Opaque JSON** | [`RawJson`](../../ghost-api/src/commonMain/kotlin/com/ghost/serialization/types/RawJson.kt), `ByteArray` | Inline JSON passthrough — object, array, string, number, boolean, or null. Prefer **`RawJson`**. Scalar accessors: `kind()`, `asBooleanOrNull()`, `asStringOrNull()`, `asDisplayString()`, … (`ghost-api`); typed re-parse: `decodeAs<T>()` (`ghost-serialization`). |
@@ -26,7 +26,7 @@ Built-in resolvers (no `@GhostSerialization` on `T` required):
 
 | `T` | Supported |
 |:---|:---:|
-| `String`, `Int`, `Long`, `Boolean`, `Double`, `Float`, `Byte`, `Short`, `Char` | ✅ |
+| `String`, `Int`, `Long`, `Boolean`, `Double`, `Float`, `Byte`, `Short`, `Char`, `UByte`, `UShort`, `UInt`, `ULong` | ✅ |
 | `RawJson` | ✅ |
 | `List<E>`, `Set<E>`, `Map<String, V>` | ✅ when element/value type resolves |
 | `@GhostSerialization` class / enum / sealed root | ✅ via generated `*_Serializer` |
@@ -52,14 +52,13 @@ At compile time, Ghost emits calls to the registered serializer. If no serialize
 | Type / pattern | Why | Alternative |
 |:---|:---|:---|
 | `MutableSet<T>` (as declared field type) | Codegen targets `kotlin.collections.Set` | Declare `Set<T>` |
-| `Array<T>`, primitive arrays (`IntArray`, `LongArray`, `FloatArray`, `DoubleArray`, `BooleanArray`) | Supported via built-in JSON/YAML serializers | `List<T>` for generic element types |
+| `Array<T>`, `ShortArray`, `CharArray` | No built-in serializer: the field resolves contextually and fails at runtime unless a serializer is registered | `List<T>` |
 | `Map<K, V>` with `K != String` | Compile error | `Map<String, V>` or a `List` of key/value models |
 | `Map<String, Any>`, dynamic JSON tree | No untyped object model | `RawJson` or typed `@GhostSerialization` models |
 | Gson `JsonElement`, Moshi `JsonValue`, Jackson `JsonNode` | Foreign tree types | **`RawJson`** |
 | `String` as opaque JSON blob | Parsed/re-encoded as JSON string, not passthrough | **`RawJson`** |
 | `Flow<T>`, coroutine / reactive types | Not serializable | Separate stream handling |
 | Bare `interface` / plain `class` without `@GhostSerialization` | KSP does not generate serializers | Annotate or use a registry |
-| Unsigned types (`UInt`, …) | Not built-in | `@GhostEncoder` or wrapper |
 
 ---
 

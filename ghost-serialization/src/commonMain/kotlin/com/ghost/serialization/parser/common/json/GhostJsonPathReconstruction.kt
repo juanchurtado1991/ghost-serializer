@@ -108,7 +108,7 @@ internal object GhostJsonPathReconstruction {
         return tracker
     }
 
-    /** Resolves `\\x` and `\\uXXXX` escapes in a raw key; keys without a backslash are returned as-is. */
+    /** Resolves the escapes of a raw JSON string body; text without a backslash is returned as is. */
     @PublishedApi
     internal fun unescapeKey(
         raw: String
@@ -118,17 +118,14 @@ internal object GhostJsonPathReconstruction {
         var index = 0
         while (index < raw.length) {
             val char = raw[index]
-            val hasUnicodeEscape = char == BACKSLASH_CHAR &&
-                index + UNICODE_ESCAPE_LENGTH < raw.length &&
-                raw[index + 1] == UNICODE_ESCAPE_MARKER
+            val unicodeCode = if (char == BACKSLASH_CHAR) unicodeEscapeCodeAt(raw = raw, index = index) else null
             when {
-                hasUnicodeEscape -> {
-                    val hex = raw.substring(index + 2, index + 2 + UNICODE_HEX_DIGITS)
-                    builder.append(hex.toInt(radix = HEX_RADIX).toChar())
+                unicodeCode != null -> {
+                    builder.append(unicodeCode.toChar())
                     index += UNICODE_ESCAPE_LENGTH + 1
                 }
                 char == BACKSLASH_CHAR && index + 1 < raw.length -> {
-                    builder.append(raw[index + 1])
+                    builder.append(simpleEscapedChar(escaped = raw[index + 1]))
                     index += ESCAPE_PAIR_LENGTH
                 }
                 else -> {
@@ -138,6 +135,28 @@ internal object GhostJsonPathReconstruction {
             }
         }
         return builder.toString()
+    }
+
+    private fun unicodeEscapeCodeAt(
+        raw: String,
+        index: Int
+    ): Int? {
+        val isUnicodeEscape = index + UNICODE_ESCAPE_LENGTH < raw.length && raw[index + 1] == UNICODE_ESCAPE_MARKER
+        if (!isUnicodeEscape) return null
+        val hex = raw.substring(index + 2, index + 2 + UNICODE_HEX_DIGITS)
+        val isHex = hex.all { it.digitToIntOrNull(radix = HEX_RADIX) != null }
+        return if (isHex) hex.toInt(radix = HEX_RADIX) else null
+    }
+
+    private fun simpleEscapedChar(
+        escaped: Char
+    ): Char = when (escaped.code) {
+        TOK.B_BYTE_INT -> TOK.BS_INT.toChar()
+        TOK.F_BYTE_INT -> TOK.FF_INT.toChar()
+        TOK.N_BYTE_INT -> TOK.LF_INT.toChar()
+        TOK.R_BYTE_INT -> TOK.CR_INT.toChar()
+        TOK.T_BYTE_INT -> TOK.TAB_INT.toChar()
+        else -> escaped
     }
 
     /** Index of the unescaped closing quote at or after [from], or `-1` if [end] comes first. */

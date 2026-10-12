@@ -15,7 +15,7 @@ import kotlin.test.assertFailsWith
 import okio.Buffer
 
 /**
- * Mirrors the failure modes covered by `GhostChaosTest` and `GhostStressAuditTest`, for YAML.
+ * Mirrors the JSON reader failure modes of `GhostJsonReaderSpecComplianceTest` and `GhostReaderEdgeCaseTest`, for YAML.
  */
 class GhostYamlChaosTest {
 
@@ -58,14 +58,39 @@ class GhostYamlChaosTest {
     }
 
     @Test
-    fun malformedSurrogateInEscapeSequenceIsAcceptedOrThrows() {
+    fun escapedSurrogatePairDecodesToOneCodePoint() {
+        val yaml = """v: "\uD83D\uDE00""""
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        reader.beginObject()
+        reader.nextKey()
+        assertEquals(
+            expected = "😀",
+            actual = reader.nextString()
+        )
+    }
+
+    @Test
+    fun loneLowSurrogateEscapeDecodesToReplacementCharacter() {
+        val yaml = """v: "a\uDE00b""""
+        val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
+        reader.beginObject()
+        reader.nextKey()
+        assertEquals(
+            expected = "a\uFFFDb",
+            actual = reader.nextString()
+        )
+    }
+
+    @Test
+    fun loneHighSurrogateEscapeDecodesToReplacementCharacter() {
         val yaml = """v: "\uD83D\u0020""""
         val reader = GhostYamlFlatReader(yaml.encodeToByteArray())
         reader.beginObject()
         reader.nextKey()
-        runCatching { reader.nextString() }.onFailure {
-            assertFailsWith<GhostYamlException> { throw it }
-        }
+        assertEquals(
+            expected = "\uFFFD ",
+            actual = reader.nextString()
+        )
     }
 
     @Test

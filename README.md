@@ -10,7 +10,7 @@ Ghost is not a rewrite. It is the fast, low-allocation path for the models you o
 [![Android](https://img.shields.io/badge/Android-3DDC84.png?style=flat&logo=android&logoColor=white)](docs/wiki/usage-android.md)
 [![KMP](https://img.shields.io/badge/KMP-7F52FF.png?style=flat&logo=kotlin&logoColor=white)](docs/wiki/usage-kmp.md)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
-[![Downloads](https://img.shields.io/badge/downloads-70K%2B%2F3mo-blue)](https://central.sonatype.com)
+[![Tests](https://img.shields.io/badge/tests-11K%2B%20passing-brightgreen)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
 
 **[Quick Start — first DTO in minutes →](docs/wiki/quick-start.md)** ·
 **[Try it in the browser →](https://juanchurtado1991.github.io/ghost-serializer/)** ·
@@ -102,7 +102,7 @@ Twitter macro (**631 KB**) decode:
 - **Writer**: **100%** round-trip (decode → encode → decode returns the same tree) across every case the reader accepts; **96.26%** of the re-encoded output is also accepted by an independent second parser ([kaml](https://github.com/charleskorn/kaml)) as a cross-check, not just by Ghost's own reader.
 - **Fuzzing**: every JSON/YAML reader and writer has coverage-guided fuzz testing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)) — the accumulated crash corpus replays on every CI run, no open crashes.
 
-Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-conformance)
+Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-compliance-ghost-only)
 
 ---
 

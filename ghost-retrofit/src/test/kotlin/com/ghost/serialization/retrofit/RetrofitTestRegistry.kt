@@ -10,9 +10,12 @@ import kotlin.reflect.KClass
 @InternalGhostApi
 object RetrofitTestRegistry : AbstractGhostRegistry() {
     override fun getAllSerializers(): Map<KClass<*>, GhostSerializer<*>> =
-        mapOf(RetrofitUser::class to RetrofitUserSerializer)
+        mapOf(
+            RetrofitUser::class to RetrofitUserSerializer,
+            RetrofitAnimal::class to RetrofitAnimalSerializer
+        )
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> getSerializer(clazz: KClass<T>): GhostSerializer<T>? =
-        if (clazz == RetrofitUser::class) RetrofitUserSerializer as GhostSerializer<T> else null
+        getAllSerializers()[clazz] as GhostSerializer<T>?
 }

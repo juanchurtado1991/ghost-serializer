@@ -20,6 +20,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.http.headersOf
+import io.ktor.serialization.ContentConvertException
 import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
 import io.ktor.utils.io.ByteReadChannel
@@ -33,6 +34,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class GhostKtorTest {
 
@@ -155,25 +157,26 @@ class GhostKtorTest {
     }
 
     @Test
-    fun test204NoContentReturnsNullOrFails() = runTest {
-        val mockEngine = MockEngine {
-            respond(
-                content = "",
-                status = HttpStatusCode.NoContent,
-                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
-            )
-        }
+    fun test204NoContentForNonNullableBodyThrows() = runTest {
+        val client = emptyBodyClient(status = HttpStatusCode.NoContent)
 
-        val client = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                register(ContentType.Application.Json, GhostContentConverter())
-            }
-        }
-
-        assertFailsWith<Exception> {
-            // Body is empty but KtorUser is not nullable
+        assertFailsWith<ContentConvertException> {
             client.get("/empty").body<KtorUser>()
         }
+    }
+
+    @Test
+    fun test204NoContentForNullableBodyReturnsNull() = runTest {
+        val client = emptyBodyClient(status = HttpStatusCode.NoContent)
+
+        assertNull(actual = client.get("/empty").body<KtorUser?>())
+    }
+
+    @Test
+    fun testEmptyOkBodyForNullableBodyReturnsNull() = runTest {
+        val client = emptyBodyClient(status = HttpStatusCode.OK)
+
+        assertNull(actual = client.get("/empty").body<KtorUser?>())
     }
 
     @Test
@@ -262,5 +265,22 @@ class GhostKtorTest {
         val user: UnregisteredUser = client.get("/user").body()
         assertEquals(expected = 999, actual = user.id)
         assertEquals(expected = "Fallback", actual = user.name)
+    }
+
+    private fun emptyBodyClient(
+        status: HttpStatusCode
+    ): HttpClient {
+        val mockEngine = MockEngine {
+            respond(
+                content = "",
+                status = status,
+                headers = headersOf(HttpHeaders.ContentType, GhostKtorMediaTypes.JSON_CONTENT_TYPE)
+            )
+        }
+        return HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                register(ContentType.Application.Json, GhostContentConverter())
+            }
+        }
     }
 }

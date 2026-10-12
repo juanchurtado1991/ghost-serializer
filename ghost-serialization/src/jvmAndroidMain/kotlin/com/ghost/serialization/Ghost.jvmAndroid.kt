@@ -110,7 +110,7 @@ actual fun <T> ghostInternalUseFlatReader(
                 .also { flatReaderPool.set(it) }
 
         reader.resetSlice(buffer = data, offset = offset, length = length)
-        block(reader)
+        block(reader).also { reader.requireEndOfInput() }
     }
 }
 
@@ -123,7 +123,7 @@ actual fun <T> ghostInternalUseSource(
             .also { sourceReaderPool.set(it) }
 
     reader.reset(prepareUtf8JsonSource(source = source))
-    return block(reader)
+    return block(reader).also { reader.requireEndOfInput() }
 }
 
 actual fun <T> ghostInternalUseStringReader(
@@ -135,5 +135,5 @@ actual fun <T> ghostInternalUseStringReader(
             .also { stringReaderPool.set(it) }
 
     reader.reset(json)
-    return block(reader)
+    return block(reader).also { reader.requireEndOfInput() }
 }

@@ -19,6 +19,7 @@ import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.serializers.ListSerializer
 import com.ghost.serialization.serializers.MapSerializer
+import com.ghost.serialization.serializers.NullableSerializer
 import com.ghost.serialization.serializers.SetSerializer
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import com.ghost.serialization.writer.strings.GhostJsonStringWriter
@@ -26,6 +27,7 @@ import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlListSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlMapSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlSetSerializer
+import com.ghost.serialization.yaml.serializer.NullableYamlSerializer
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -265,6 +267,17 @@ object Ghost : GhostRegistry {
      * parameterized classes like lists and maps.
      */
     fun getSerializer(type: KType): GhostSerializer<Any>? {
+        val serializer = getNonNullSerializer(type = type) ?: return null
+        if (!type.isMarkedNullable) return serializer
+        val nullable = if (serializer is GhostYamlSerializer<*>) {
+            NullableYamlSerializer(delegate = asYamlCapableSerializer(serializer = serializer))
+        } else {
+            NullableSerializer(delegate = serializer)
+        }
+        return nullable as GhostSerializer<Any>
+    }
+
+    private fun getNonNullSerializer(type: KType): GhostSerializer<Any>? {
         val classifier = type.classifier
 
         val isBuiltInCollection = classifier == List::class || classifier == Map::class || classifier == Set::class
@@ -314,6 +327,9 @@ object Ghost : GhostRegistry {
                     }
 
                     Map::class -> {
+                        val hasStringKey = type.arguments.getOrNull(index = 0)?.type?.classifier == String::class
+                        if (!hasStringKey) return@runSynchronized null
+
                         val valueType = type.arguments.getOrNull(index = 1)?.type
                             ?: return@runSynchronized null
 
@@ -352,6 +368,13 @@ object Ghost : GhostRegistry {
     /** Used by compiler-generated code to verify registered serializers. */
     @Suppress("unused")
     fun getSerializerNames(): List<String> = serializerByName.keys.toList()
+
+    /** Used by compiler-generated code and the [KClass] overloads: the serializer for [clazz], or an error. */
+    @InternalGhostApi
+    fun <T : Any> requireSerializer(
+        clazz: KClass<T>
+    ): GhostSerializer<T> = getSerializer(clazz = clazz)
+        ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
 
     inline fun <reified T : Any> resolveSerializer(): GhostSerializer<T> {
         val cached = serializerCache[T::class]
@@ -479,18 +502,14 @@ object Ghost : GhostRegistry {
         clazz: KClass<T>,
         limit: Int = bytes.size
     ): T = ghostInternalUseFlatReader(bytes = bytes, limit = limit) { reader ->
-        val serializer = getSerializer(clazz = clazz)
-            ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
-
+        val serializer = requireSerializer(clazz = clazz)
         serializer.deserialize(reader = reader)
     }
 
     /** Non-inline variant of [deserialize] for reflection/framework contexts where reified types are unavailable. */
     fun <T : Any> decodeFromSource(source: BufferedSource, clazz: KClass<T>): T =
         readSourceIntoFlatReader(source = source) { reader ->
-            val serializer = getSerializer(clazz = clazz)
-                ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
-
+            val serializer = requireSerializer(clazz = clazz)
             serializer.deserialize(reader = reader)
         }
 
@@ -558,9 +577,7 @@ object Ghost : GhostRegistry {
      */
     @Suppress("unused")
     fun <T : Any> encodeToSink(sink: BufferedSink, value: T, clazz: KClass<T>) {
-        val serializer = getSerializer(clazz = clazz)
-            ?: throwError(message = serializerNotFoundMessage(type = clazz.simpleName))
-
+        val serializer = requireSerializer(clazz = clazz)
         ghostInternalEncodeAndDrainTo(sink = sink) { writer ->
             serializer.serialize(writer = writer, value = value)
         }

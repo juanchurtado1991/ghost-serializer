@@ -175,12 +175,46 @@ class GhostProtoLeniencyTest {
     }
 
     @Test
-    fun plainFlatReaderTruncatesBareFractionalToInt() {
-        // Plain JSON reader truncates 1.5 → 1; proto reader rejects fractional int32 outright.
+    fun plainReaderRejectsBareFractionalInt() {
         val plainReader = GhostJsonReader("1.5".encodeToByteArray())
+        assertFailsWith<GhostJsonException> { plainReader.nextInt() }
+    }
+
+    @Test
+    fun ghostProtoDeserializeAcceptsTrailingWhitespace() {
+        val parsed = GhostProto.deserialize<ProtoEntryPointDevice>("{\"deviceId\":42,\"label\":\"x\"} \n")
         assertEquals(
-            expected = 1,
-            actual = plainReader.nextInt()
+            expected = 42L,
+            actual = parsed.deviceId
+        )
+    }
+
+    @Test
+    fun ghostProtoDeserializeRejectsTrailingContent() {
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"} extra""")
+        }
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42,"label":"x"} extra""".encodeToByteArray())
+        }
+    }
+
+    @Test
+    fun ghostProtoInt64AcceptsZeroFractionAndRejectsNonzeroFraction() {
+        assertEquals(
+            expected = 42L,
+            actual = GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42.0,"label":"x"}""").deviceId
+        )
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":42.5,"label":"x"}""")
+        }
+    }
+
+    @Test
+    fun ghostProtoInt64BareNumberIsExactBeyondDoublePrecision() {
+        assertEquals(
+            expected = 9007199254740993L,
+            actual = GhostProto.deserialize<ProtoEntryPointDevice>("""{"deviceId":9007199254740993,"label":"x"}""").deviceId
         )
     }
 }

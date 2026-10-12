@@ -1,11 +1,10 @@
-    @file:OptIn(InternalGhostApi::class)
+@file:OptIn(InternalGhostApi::class)
 
 package com.ghost.serialization.parser.proto
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.bytes.extensions.nextDoubleExtension
 import com.ghost.serialization.parser.bytes.extensions.nextFloatExtension
-import com.ghost.serialization.parser.bytes.extensions.nextLongExtension
 import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
@@ -26,15 +25,6 @@ internal fun GhostProtoJsonFlatReader.nextProtoFloat(): Float = readProtoFloatin
     parse = { nextFloatExtension() }
 )
 
-internal fun GhostProtoJsonFlatReader.nextProtoInt64(): Long {
-    val token = peekNextToken()
-    return if (token == TOK.QUOTE_INT) {
-        withStringCoercion { nextLongExtension() }
-    } else {
-        nextDoubleExtension().toLong()
-    }
-}
-
 internal fun GhostProtoJsonFlatReader.readProtoEnum(options: JsonReaderOptions): Int {
     val token = peekNextToken()
     if (token == TOK.QUOTE_INT) {
@@ -54,20 +44,6 @@ internal fun GhostProtoJsonFlatReader.readProtoUInt32(): Long {
         throwError(PC.ERR_PROTO_UINT32_OVERFLOW)
     }
     return value
-}
-
-/**
- * Full `uint64` range read. The canonical proto3 JSON form is always a quoted decimal string
- * (parsed directly as [ULong], no range limit); a bare JSON number falls back to the existing
- * int64 path, which is only safe for values within [Long.MAX_VALUE].
- */
-internal fun GhostProtoJsonFlatReader.readProtoUInt64(): ULong {
-    val token = peekNextToken()
-    return if (token == TOK.QUOTE_INT) {
-        nextString().toULong()
-    } else {
-        nextProtoInt64().toULong()
-    }
 }
 
 /**

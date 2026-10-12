@@ -95,9 +95,17 @@ internal fun GhostYamlFlatReader.resolveValueAfterColon(blockIndent: Int, allowM
             }
         }
 
+        isInlineSequenceAfterImplicitKey(isImplicitEntry = !allowMappingRedirect) ->
+            yamlError(message = EM.ERR_BLOCK_SEQUENCE_ON_KEY_LINE)
+
         else -> readValue(blockIndent, inFlow = false, strictDedent = true, allowMappingRedirect = allowMappingRedirect)
     }
 }
+
+/** `key: - item` has no valid reading: a block sequence must start on its own line (explicit `? k` / `: - v` may not). */
+private fun GhostYamlFlatReader.isInlineSequenceAfterImplicitKey(
+    isImplicitEntry: Boolean
+): Boolean = isImplicitEntry && isBlockSequenceEntry()
 
 /**
  * Reads a block sequence (list). Each item starts with '- '.

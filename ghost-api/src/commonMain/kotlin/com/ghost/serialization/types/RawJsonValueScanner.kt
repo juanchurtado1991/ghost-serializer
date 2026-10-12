@@ -39,6 +39,7 @@ internal object RawJsonValueScanner {
     private const val HIGH_SURROGATE_START = 0xD800
     private const val HIGH_SURROGATE_END = 0xDBFF
     private const val LOW_SURROGATE_START = 0xDC00
+    private const val LOW_SURROGATE_END = 0xDFFF
     private const val UNICODE_BASE = 0x10000
     private const val SURROGATE_PAIR_SHIFT = 10
     private const val SURROGATE_PAIR_MASK = 0x3FF
@@ -59,6 +60,7 @@ internal object RawJsonValueScanner {
     private const val HEX_A_UPPER = 'A'.code
     private const val HEX_F_UPPER = 'F'.code
 
+    private const val MAX_LONG_DIGITS = 19
     private const val BS_CHAR = '\b'
     private const val FF_CHAR = ''
     private const val LF_CHAR = '\n'
@@ -83,7 +85,7 @@ internal object RawJsonValueScanner {
     fun asDoubleOrNull(
         raw: RawJson
     ): Double? {
-        raw.parseIntegerOrNull()?.let { return it.toDouble() }
+        raw.parseIntegerOrNull()?.takeIf { it != 0L }?.let { return it.toDouble() }
         if (!raw.isJsonNumberToken()) return null
         return raw.decodeToString().toDoubleOrNull()
     }
@@ -91,14 +93,14 @@ internal object RawJsonValueScanner {
     fun asIntOrNull(
         raw: RawJson
     ): Int? {
-        val longValue = raw.parseIntegerOrNull() ?: return null
+        val longValue = raw.parseIntegralOrNull() ?: return null
         if (longValue < Int.MIN_VALUE || longValue > Int.MAX_VALUE) return null
         return longValue.toInt()
     }
 
     fun asLongOrNull(
         raw: RawJson
-    ): Long? = raw.parseIntegerOrNull()
+    ): Long? = raw.parseIntegralOrNull()
 
     fun asStringOrNull(
         raw: RawJson
@@ -181,12 +183,12 @@ internal object RawJsonValueScanner {
                         if (index + 3 >= contentEnd) return builder.toString()
                         val hex = readHex4(start = index)
                         index += UNICODE_HEX_LENGTH
-                        val hasLowSurrogateEscapeAhead = hex in HIGH_SURROGATE_START..HIGH_SURROGATE_END &&
+                        val hasUnicodeEscapeAhead = hex in HIGH_SURROGATE_START..HIGH_SURROGATE_END &&
                             index + 5 < contentEnd &&
                             storage[index] == BACKSLASH.toByte() &&
                             storage[index + 1] == ESCAPE_U.toByte()
-                        if (hasLowSurrogateEscapeAhead) {
-                            val lowSurrogate = readHex4(start = index + 2)
+                        val lowSurrogate = if (hasUnicodeEscapeAhead) readHex4(start = index + 2) else -1
+                        if (lowSurrogate in LOW_SURROGATE_START..LOW_SURROGATE_END) {
                             index += 6
                             val codePoint = UNICODE_BASE +
                                     ((hex - HIGH_SURROGATE_START) shl SURROGATE_PAIR_SHIFT) +
@@ -222,6 +224,7 @@ internal object RawJsonValueScanner {
     }
 
     private fun RawJson.isJsonNumberToken(): Boolean {
+        if (storageLength <= 0) return false
         var index = 0
         if (byteAt(relativeIndex = index) == MINUS) {
             index++
@@ -280,6 +283,33 @@ internal object RawJsonValueScanner {
             storage[storageOffset + 3].toInt() == CHAR_E
 
     /** Single-pass integer parse: rejects fraction/exponent without rescanning the token. */
+    /** Plain integers first; otherwise a number whose exponent makes it integral (`1e2`, `100e-2`), like typed decoding. */
+    private fun RawJson.parseIntegralOrNull(): Long? {
+        parseIntegerOrNull()?.let { return it }
+        if (!isJsonNumberToken()) return null
+        return decodeToString().exactIntegralOrNull()
+    }
+
+    private fun String.exactIntegralOrNull(): Long? {
+        val negative = startsWith(prefix = "-")
+        val unsigned = if (negative) substring(startIndex = 1) else this
+        val exponentAt = unsigned.indexOfFirst { it == 'e' || it == 'E' }
+        val mantissa = if (exponentAt < 0) unsigned else unsigned.substring(startIndex = 0, endIndex = exponentAt)
+        val exponent = if (exponentAt < 0) 0 else unsigned.substring(startIndex = exponentAt + 1).toIntOrNull()
+        val dot = mantissa.indexOf(char = '.')
+        val fraction = if (dot < 0) "" else mantissa.substring(startIndex = dot + 1)
+        val digits = (if (dot < 0) mantissa else mantissa.substring(startIndex = 0, endIndex = dot) + fraction)
+            .trimStart(chars = charArrayOf('0'))
+        if (digits.isEmpty()) return 0L
+        if (exponent == null) return null
+        val significant = digits.trimEnd(chars = charArrayOf('0'))
+        val trimmedZeros = digits.length - significant.length
+        val shift = exponent - fraction.length + trimmedZeros
+        if (shift < 0 || significant.length + shift > MAX_LONG_DIGITS) return null
+        val text = significant + "0".repeat(n = shift)
+        return (if (negative) "-$text" else text).toLongOrNull()
+    }
+
     private fun RawJson.parseIntegerOrNull(): Long? {
         if (storageLength <= 0) return null
         var index = 0
@@ -299,14 +329,7 @@ internal object RawJsonValueScanner {
         val limit = if (negative) Long.MIN_VALUE else -Long.MAX_VALUE
 
         if (byteAt(relativeIndex = index) == ZERO) {
-            index++
-            if (index < storageLength) {
-                when (byteAt(relativeIndex = index)) {
-                    DOT, EXP_LOWER, EXP_UPPER -> return null
-                    in ZERO..NINE -> return null
-                }
-            }
-            return 0L
+            return if (index + 1 == storageLength) 0L else null
         }
 
         while (index < storageLength) {

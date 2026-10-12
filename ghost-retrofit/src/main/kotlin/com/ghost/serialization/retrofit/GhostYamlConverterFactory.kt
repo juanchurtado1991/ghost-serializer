@@ -74,7 +74,10 @@ class GhostYamlConverterFactory private constructor(
 
         return Converter { body ->
             body.use {
-                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset ->
+                GhostRetrofitBuffers.readToScratch(
+                    stream = it.byteStream(),
+                    charset = it.contentType()?.charset()
+                ) { scratch, offset ->
                     val bytesToParse =
                         if (offset == scratch.size) scratch else scratch.copyOf(offset)
                     ghostYamlInternalUseFlatReader(bytes = bytesToParse) { reader ->

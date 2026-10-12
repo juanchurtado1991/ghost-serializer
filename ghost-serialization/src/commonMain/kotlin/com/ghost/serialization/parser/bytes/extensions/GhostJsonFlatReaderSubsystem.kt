@@ -11,6 +11,7 @@ import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.common.json.computeKeyHashCore
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.json.handleSelectNoMatchCore
+import com.ghost.serialization.parser.common.json.selectEscapedKeyCore
 import com.ghost.serialization.parser.common.json.selectValidateCommasCore
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
@@ -106,7 +107,14 @@ internal fun GhostJsonFlatReader.internalSelect(
     }
 
     if (end == -1) {
-        throwError(EM.UNTERMINATED_STRING_ERROR)
+        return selectEscapedKeyCore(
+            options = options,
+            consumeSeparator = consumeSeparator,
+            strictMode = strictMode,
+            readQuotedKey = { readQuotedString() },
+            consumeKeySeparator = { consumeKeySeparator() },
+            throwError = { throwError(it) },
+        )
     }
 
     val length = end - start

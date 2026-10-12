@@ -2,6 +2,7 @@ package com.ghost.serialization.compiler.ksp
 
 import com.ghost.serialization.compiler.analysis.containsYamlIncompatibleType
 import com.ghost.serialization.compiler.analysis.isByteArray
+import com.ghost.serialization.compiler.analysis.isEnumType
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.model.GhostEnvelopeModel
 import com.ghost.serialization.compiler.model.GhostPropertyModel
@@ -123,10 +124,7 @@ internal class GhostYamlEligibility(private val logger: KSPLogger) {
         if (prop.isSealedClass) {
             return true
         }
-        if (prop.isGhost) {
-            return true
-        }
-        if (prop.listInnerIsGhost || prop.mapValueIsGhost) {
+        if (prop.isNestedGhostObject() || prop.referencesEnumWithoutYaml()) {
             return true
         }
         if (prop.type.containsYamlIncompatibleType(isProto = prop.isProto)) {
@@ -156,9 +154,28 @@ internal class GhostYamlEligibility(private val logger: KSPLogger) {
         if (!prop.isProto && prop.type.isByteArray()) {
             return PC.STR_ERR_YAML_BYTE_ARRAY
         }
-        if (prop.isGhost) {
+        if (prop.isNestedGhostObject()) {
             return PC.STR_ERR_YAML_NESTED_GHOST
+        }
+        if (prop.referencesEnumWithoutYaml()) {
+            return PC.STR_ERR_YAML_ENUM_WITHOUT_YAML
         }
         return null
     }
+
+    /** A nested `@GhostSerialization` class (directly or as a collection element); enums are YAML scalars. */
+    private fun GhostPropertyModel.isNestedGhostObject(): Boolean {
+        val isNestedClass = isGhost && !isEnum
+        val isNestedListElement = listInnerIsGhost && !listInnerIsEnum
+        val isNestedMapValue = mapValueIsGhost && mapValueType?.let { isEnumType(type = it) } != true
+        return isNestedClass || isNestedListElement || isNestedMapValue
+    }
+
+    private fun GhostPropertyModel.referencesEnumWithoutYaml(): Boolean =
+        listOfNotNull(type, listInnerType, mapValueType).any { candidate ->
+            val hasYamlAnnotation = candidate.declaration.annotations.any {
+                it.shortName.asString() == CC.ANNOTATION_GHOST_YAML_SERIALIZATION
+            }
+            isEnumType(type = candidate) && !hasYamlAnnotation
+        }
 }

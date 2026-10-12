@@ -50,26 +50,12 @@ internal class GhostSerializerContext private constructor(
     val serializerName: String = baseClassName + CC.STR_SERIALIZER_SUFFIX
 
     fun getAllJsonNames(): List<String> {
-        val names = mutableSetOf<String>()
         val allProps = if (isSealed && isInferred) {
             properties.firstOrNull()?.inferredSubclasses?.flatMap { it.properties } ?: emptyList()
         } else {
             properties
         }
-        allProps.forEach { prop ->
-            val wrappedKeys = prop.wrappedKeys
-            if (wrappedKeys != null) {
-                names.addAll(wrappedKeys.sourceKeys)
-            } else if (prop.flattenPath != null) {
-                names.addAll(prop.flattenPath)
-            } else if (prop.wrapPath != null) {
-                names.addAll(prop.wrapPath)
-            }
-            if (prop.wrappedKeys == null) {
-                names.add(prop.jsonName)
-            }
-        }
-        return names.toList().sorted()
+        return collectJsonNames(properties = allProps)
     }
 
     fun needsCachedByteStringHeaders(): Boolean {
@@ -228,4 +214,25 @@ internal class GhostSerializerContext private constructor(
             return null
         }
     }
+}
+
+/** Every wire name [properties] read or write (keys, flatten/wrap path segments), sorted and distinct. */
+internal fun collectJsonNames(
+    properties: List<GhostPropertyModel>
+): List<String> {
+    val names = mutableSetOf<String>()
+    properties.forEach { prop ->
+        val wrappedKeys = prop.wrappedKeys
+        if (wrappedKeys != null) {
+            names.addAll(wrappedKeys.sourceKeys)
+        } else if (prop.flattenPath != null) {
+            names.addAll(prop.flattenPath)
+        } else if (prop.wrapPath != null) {
+            names.addAll(prop.wrapPath)
+        }
+        if (prop.wrappedKeys == null) {
+            names.add(prop.jsonName)
+        }
+    }
+    return names.toList().sorted()
 }

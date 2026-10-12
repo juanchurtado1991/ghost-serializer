@@ -17,7 +17,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * A fixed decimal count isn't inherently round-trip-safe (e.g. `0.1 + 0.2` prints as `"0.3"` at
  * 9 places, which reads back to a different Double). [writeDoubleDirect]/[writeFloatDirect] verify
  * the digits against [finalizeParsedDouble]/[finalizeParsedFloat] before committing, falling back
- * on mismatch.
+ * on mismatch. Whole values take their own fast path first, so a fraction that rounds to 0 or up
+ * to the next whole number at the fixed precision is lost precision and also falls back.
  */
 internal object GhostDoubleFormatter {
 
@@ -59,7 +60,8 @@ internal object GhostDoubleFormatter {
         val reconstructed = finalizeParsedDouble(
             mantissa = mantissa,
             exponent = -decimalsToPrint,
-            isNegative = false
+            isNegative = false,
+            truncatedLiteral = null
         ) { error(it) }
         return reconstructed.toRawBits() == expected.toRawBits()
     }
@@ -71,7 +73,8 @@ internal object GhostDoubleFormatter {
         val reconstructed = finalizeParsedFloat(
             mantissa = mantissa,
             exponent = -decimalsToPrint,
-            isNegative = false
+            isNegative = false,
+            truncatedLiteral = null
         ) { error(it) }
         return reconstructed.toRawBits() == expected.toRawBits()
     }
@@ -134,14 +137,9 @@ internal object GhostDoubleFormatter {
         // roundToInt avoids the Double intermediate that round() returns
         var fracInt = (fracPart * PRECISION_MULTIPLIER).roundToInt()
 
-        if (fracInt >= FRAC_LIMIT) {
-            return writeLongDirect(
-                value = intPart + 1,
-                scratch = scratch,
-                offset = position,
-                scratchEnd = position + LONG_DIRECT_SCRATCH_SPAN,
-                writeDecimalZero = true
-            ) - offset
+        val isFractionLostAtThisPrecision = fracInt == 0 || fracInt >= FRAC_LIMIT
+        if (isFractionLostAtThisPrecision) {
+            return FALLBACK_REQUIRED
         }
 
         position = writeLongDirect(
@@ -153,11 +151,6 @@ internal object GhostDoubleFormatter {
         )
 
         scratch[position++] = TOK.DOT
-
-        if (fracInt == 0) {
-            scratch[position++] = TOK.ZERO
-            return position - offset
-        }
 
         var decimalsToPrint = MAX_DECIMALS
         // Trim trailing zeros: % instead of multiply-subtract
@@ -240,14 +233,9 @@ internal object GhostDoubleFormatter {
 
         var fracInt = (fracPart * FLOAT_PRECISION_MULTIPLIER).roundToInt()
 
-        if (fracInt >= FLOAT_FRAC_LIMIT) {
-            return writeLongDirect(
-                value = intPart + 1,
-                scratch = scratch,
-                offset = pos,
-                scratchEnd = pos + LONG_DIRECT_SCRATCH_SPAN,
-                writeDecimalZero = true
-            ) - offset
+        val isFractionLostAtThisPrecision = fracInt == 0 || fracInt >= FLOAT_FRAC_LIMIT
+        if (isFractionLostAtThisPrecision) {
+            return FALLBACK_REQUIRED
         }
 
         pos = writeLongDirect(
@@ -259,11 +247,6 @@ internal object GhostDoubleFormatter {
         )
 
         scratch[pos++] = TOK.DOT
-
-        if (fracInt == 0) {
-            scratch[pos++] = TOK.ZERO
-            return pos - offset
-        }
 
         var decimalsToPrint = FLOAT_MAX_DECIMALS
         while (decimalsToPrint > 1 && fracInt % 10 == 0) {

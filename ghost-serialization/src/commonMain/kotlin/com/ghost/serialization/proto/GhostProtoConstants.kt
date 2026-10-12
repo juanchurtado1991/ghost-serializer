@@ -7,6 +7,9 @@ object GhostProtoConstants {
     const val PROTO_UINT32_MAX = 4294967295L
 
     // --- NaN/Infinity literal matching (proto3 canonical JSON quotes these) ---
+    const val STR_NAN = "NaN"
+    const val STR_INFINITY = "Infinity"
+    const val STR_NEGATIVE_INFINITY = "-Infinity"
     const val I_BYTE_INT = 73 // 'I'.code
     const val N_LOWER_BYTE_INT = 110 // 'n'.code
     const val F_LOWER_BYTE_INT = 102 // 'f'.code
@@ -40,6 +43,7 @@ object GhostProtoConstants {
     const val TS_BUFFER_SIZE = 35
     const val DUR_BUFFER_SIZE = 32
     const val DUR_MIN_LENGTH = 2
+    const val DUR_MAX_SECONDS = 315_576_000_000L
     const val LONG_BUFFER_SIZE = 22
 
     // --- Howard Hinnant's civil-from-days / days-from-civil calendar arithmetic ---
@@ -80,6 +84,9 @@ object GhostProtoConstants {
     // --- Error Messages ---
     const val ERR_DURATION_SIGN = "Coherence error: seconds and nanos signs must match"
     const val ERR_DURATION_SUFFIX = "Missing 's' suffix in Duration"
+    const val ERR_DURATION_FORMAT = "Malformed Duration: expected [-]<seconds>[.<up to 9 fraction digits>]s"
+    const val ERR_DURATION_RANGE = "Duration out of range: seconds must be within ±315576000000"
+    const val ERR_FRACTION_DIGITS = "Fractional seconds have more than 9 digits"
     const val ERR_TIMESTAMP_SHORT = "Malformed timestamp: too short"
     const val ERR_TIMESTAMP_YEAR_HYPHEN = "Malformed timestamp: missing year hyphen"
     const val ERR_TIMESTAMP_MONTH_HYPHEN = "Malformed timestamp: missing month hyphen"

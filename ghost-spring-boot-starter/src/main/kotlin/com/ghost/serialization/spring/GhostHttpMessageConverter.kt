@@ -56,7 +56,10 @@ class GhostHttpMessageConverter(
                 "${Ghost.NOT_FOUND} $type",
                 inputMessage
             )
-        return deserialize(serializer, inputMessage.body.readBytes())
+        return deserialize(
+            serializer,
+            inputMessage.body.readBytes().asUtf8From(charset = inputMessage.headers.contentType?.charset)
+        )
     }
 
     override fun readInternal(clazz: Class<out Any>, inputMessage: HttpInputMessage): Any {
@@ -65,7 +68,10 @@ class GhostHttpMessageConverter(
                 "${Ghost.NOT_FOUND} ${clazz.simpleName}",
                 inputMessage
             )
-        return deserialize(serializer, inputMessage.body.readBytes())
+        return deserialize(
+            serializer,
+            inputMessage.body.readBytes().asUtf8From(charset = inputMessage.headers.contentType?.charset)
+        )
     }
 
     override fun supports(clazz: Class<*>): Boolean =

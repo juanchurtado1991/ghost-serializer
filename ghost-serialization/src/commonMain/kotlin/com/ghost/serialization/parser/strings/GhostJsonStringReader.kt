@@ -7,6 +7,8 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.byteToCharPosition
@@ -35,7 +37,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * [throwError] builds an exception (nothing is tracked on the happy path). [predictedFieldIndex] is an optimistic hint for the field-select fast path: the
  * next expected field index when JSON objects list fields in declaration order; reset on
  * [beginObject], and a misprediction falls back to hashed dispatch, so it never affects
- * correctness. [stringPool]/[stringPoolHashes] are a cross-call string intern pool — same
+ * correctness. A leading U+FEFF byte-order mark is skipped ([documentStart]), as the byte and
+ * streaming channels skip a UTF-8 BOM. [stringPool]/[stringPoolHashes] are a cross-call string intern pool — same
  * design as the byte flat reader's `stringPool`. [slowPathChars] is reused across
  * [readQuotedString]'s escape-decoding slow path.
  */
@@ -49,6 +52,7 @@ class GhostJsonStringReader(
 ) {
     var limit: Int = rawData.length
     var position: Int = 0
+    private var documentStart: Int = 0
     var nextTokenByte: Int = SCN.RESET_TOKEN_BYTE
     var lastScanContentWas7BitOnly: Boolean = false
     var depth: Int = 0
@@ -70,6 +74,11 @@ class GhostJsonStringReader(
         val chars = CharArray(len)
         rawData.copyRangeToCharArray(dest = chars, destOffset = 0, startIndex = 0, endIndex = len)
         rawChars = chars
+        documentStart = byteOrderMarkLength(
+            data = rawData,
+            limit = limit
+        )
+        position = documentStart
     }
 
     @InternalGhostApi
@@ -101,6 +110,8 @@ class GhostJsonStringReader(
         nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
 
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
+
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
         if (nextToken == -1) {
@@ -109,6 +120,8 @@ class GhostJsonStringReader(
         internalSkip(1)
         return nextToken
     }
+
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
 
     fun peekByte(): Byte = peekNextToken().toByte()
 
@@ -138,11 +151,21 @@ class GhostJsonStringReader(
     }
 
     @Suppress("StringReferentialEquality")
+    fun requireEndOfInput() {
+        if (peekNextToken() != SCN.MATCH_END) {
+            throwError(message = EM.ERR_EXPECTED_EOF)
+        }
+    }
+
     fun reset(newData: String, newLimit: Int = newData.length) {
         val oldData = rawData
         rawData = newData
-        position = 0
         limit = newLimit
+        documentStart = byteOrderMarkLength(
+            data = newData,
+            limit = newLimit
+        )
+        position = documentStart
         nextTokenByte = SCN.RESET_TOKEN_BYTE
         depth = 0
         needsCommaMask = 0L
@@ -208,6 +231,14 @@ class GhostJsonStringReader(
         missingKey = jsonName
     )
 
+    private fun byteOrderMarkLength(
+        data: String,
+        limit: Int
+    ): Int {
+        val startsWithByteOrderMark = limit > 0 && data[0] == TOK.BYTE_ORDER_MARK_CHAR
+        return if (startsWithByteOrderMark) TOK.BYTE_ORDER_MARK_CHAR_COUNT else 0
+    }
+
     private fun throwErrorWithPath(
         message: String,
         missingKey: String?
@@ -217,7 +248,7 @@ class GhostJsonStringReader(
         val localData = rawData
         val tracker = GhostJsonPathReconstruction.reconstruct(
             tracker = pathTracker,
-            start = 0,
+            start = documentStart,
             end = errorEnd,
             limit = limit,
             getByte = { localData[it].code },

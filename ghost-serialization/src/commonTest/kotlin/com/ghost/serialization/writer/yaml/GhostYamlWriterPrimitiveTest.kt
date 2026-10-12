@@ -142,21 +142,21 @@ class GhostYamlWriterPrimitiveTest {
     }
 
     @Test
-    fun writesNaNAsStringLiteral() {
+    fun writesNaNWithYamlCoreSpelling() {
         val yaml = yamlWriterToString { w -> w.beginObject().name(key = "v").value(Double.NaN).endObject() }
         assertTrue(
-            actual = yaml.contains("NaN"),
+            actual = yaml.contains("v: .nan"),
             message = yaml
         )
     }
 
     @Test
-    fun writesInfinityAsStringLiteral() {
+    fun writesInfinityWithYamlCoreSpelling() {
         val yaml = yamlWriterToString { w ->
             w.beginObject().name(key = "v").value(Double.POSITIVE_INFINITY).endObject()
         }
         assertTrue(
-            actual = yaml.contains("Infinity"),
+            actual = yaml.contains("v: .inf"),
             message = yaml
         )
     }

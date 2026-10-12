@@ -218,13 +218,13 @@ class GhostYamlWriter private constructor(
 
     fun value(number: Double): GhostYamlWriter {
         prepareValue(isStructural = false)
-        sink.writeUtf8(number.toString())
+        sink.writeUtf8(yamlNonFiniteLiteral(number = number) ?: number.toString())
         return this
     }
 
     fun value(number: Float): GhostYamlWriter {
         prepareValue(isStructural = false)
-        sink.writeUtf8(number.toString())
+        sink.writeUtf8(yamlNonFiniteLiteral(number = number.toDouble()) ?: number.toString())
         return this
     }
 
@@ -238,13 +238,7 @@ class GhostYamlWriter private constructor(
         return this
     }
 
-    fun value(value: Char): GhostYamlWriter {
-        prepareValue(isStructural = false)
-        sink.writeByte(TOK.DOUBLE_QUOTE_INT)
-        sink.writeUtf8(value.toString())
-        sink.writeByte(TOK.DOUBLE_QUOTE_INT)
-        return this
-    }
+    fun value(value: Char): GhostYamlWriter = value(text = value.toString())
 
     @InternalGhostApi
     fun writeStringValueRaw(value: String) {
@@ -354,4 +348,14 @@ class GhostYamlWriter private constructor(
         name(key = key)
         return this
     }
+}
+
+/** YAML core-schema spelling of a non-finite float (`.nan`, `.inf`, `-.inf`), or `null` when finite. */
+private fun yamlNonFiniteLiteral(
+    number: Double
+): String? = when {
+    number.isNaN() -> TOK.STR_DOT_NAN
+    number == Double.POSITIVE_INFINITY -> TOK.STR_DOT_INF
+    number == Double.NEGATIVE_INFINITY -> TOK.STR_MINUS_DOT_INF
+    else -> null
 }

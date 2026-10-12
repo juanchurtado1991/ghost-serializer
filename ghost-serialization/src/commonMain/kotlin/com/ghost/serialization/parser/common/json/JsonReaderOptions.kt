@@ -76,6 +76,15 @@ class JsonReaderOptions(
             return table
         }
 
+    /**
+     * False when [stringDispatch] dropped a key because two keys hash to one slot. The table hashes UTF-16 chars
+     * while the compiler's perfect hash was found over UTF-8 bytes, so only ASCII keys are guaranteed collision
+     * free; the String channel scans [rawChars] after a miss when this is false.
+     */
+    @PublishedApi
+    internal var stringDispatchIsExact: Boolean = true
+        private set
+
     @PublishedApi
     internal val hasCollisions: Boolean
 
@@ -144,7 +153,7 @@ class JsonReaderOptions(
         if (index != -1 && rawStrings[index] == name) {
             return index
         }
-        return -1
+        return if (stringDispatchIsExact) -1 else rawStrings.indexOf(element = name)
     }
 
     private fun buildStringDispatchTable(table: IntArray) {
@@ -158,6 +167,8 @@ class JsonReaderOptions(
                 val perfectHashKey = ((key * multiplier + keyString.length) shr shift) and tableMask
                 if (table[perfectHashKey] == -1) {
                     table[perfectHashKey] = index
+                } else {
+                    stringDispatchIsExact = false
                 }
             }
         }

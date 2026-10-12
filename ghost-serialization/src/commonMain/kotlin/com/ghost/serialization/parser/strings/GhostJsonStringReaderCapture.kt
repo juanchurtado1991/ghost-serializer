@@ -33,5 +33,10 @@ private fun GhostJsonStringReader.captureStringReaderValueBytes() {
     position = captureJsonValueScan(
         startPosition = position,
         limit = limit,
-    ) { index -> chars[index].code }
+        getUnit = { index -> chars[index].code },
+        onError = { message, errorPosition ->
+            position = errorPosition
+            throwError(message = message)
+        }
+    )
 }

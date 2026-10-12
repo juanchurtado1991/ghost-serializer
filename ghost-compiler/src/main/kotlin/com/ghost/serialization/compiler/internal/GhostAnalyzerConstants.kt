@@ -13,6 +13,9 @@ internal object GhostAnalyzerConstants {
     const val STR_DOUBLE_QUOTE = "\""
     const val CHAR_UNDERSCORE = '_'
     const val STR_BANG_BANG = "!!"
+    const val TEMPLATE_ELVIS_PARENTHESIZED = "(%s ?: %s)"
+    const val STR_EMPTY_BYTE_ARRAY_CALL = "ByteArray(0)"
+    val NUMERIC_LITERAL_SUFFIXES = charArrayOf('L', 'f', 'F', 'u', 'U')
     const val TEMPLATE_VAR_NAME = "%sValue"
     const val TEMPLATE_RESULT_VAR = "result.%s"
     const val TEMPLATE_MASK_VAR = "mask%s"
@@ -40,6 +43,9 @@ internal object GhostAnalyzerConstants {
     const val K_RAW_JSON = "com.ghost.serialization.types.RawJson"
     const val STR_KOTLIN_PREFIX = "kotlin."
     const val STR_JAVA_PREFIX = "java."
+    const val STR_ERR_ENUM_NOT_ANNOTATED_1 = "Enum '"
+    const val STR_ERR_ENUM_NOT_ANNOTATED_2 = "' used by property '"
+    const val STR_ERR_ENUM_NOT_ANNOTATED_3 = "' must be annotated with @GhostSerialization."
     const val STR_ERR_CLASS_1 =
         "GhostSerialization: @GhostSerialization can only be applied to 'data class', 'sealed class', 'value class' or 'enum class'. "
 
@@ -54,6 +60,9 @@ internal object GhostAnalyzerConstants {
     const val STR_ERR_DUP_2 = "' found in class '"
     const val STR_ERR_DUP_3 = "'. "
     const val STR_ERR_DUP_4 = "Problematic properties: "
+    const val STR_ERR_EMPTY_NAME_1 = "GhostSerialization: Property '"
+    const val STR_ERR_EMPTY_NAME_2 = "' in class '"
+    const val STR_ERR_EMPTY_NAME_3 = "' has an empty JSON name. An empty key is never matched when decoding; use a non-empty @GhostName."
     const val STR_ERR_MAP_1 = "GhostSerialization: Map key must be a String in property '"
     const val STR_ERR_MAP_2 = "'. "
     const val STR_ERR_MAP_3 = "JSON only supports string-keyed objects."
@@ -130,6 +139,12 @@ internal object GhostAnalyzerConstants {
     const val STR_ERR_ENVELOPE_PAYLOAD_TYPE_2 = "' must be nullable RawJson."
     const val STR_ERR_ENVELOPE_PAYLOAD_VALUE =
         "GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value."
+
+    const val STR_ERR_DEFAULT_SOURCES_1 = "Ghost: "
+    const val STR_ERR_DEFAULT_SOURCES_2 = " has more than "
+    const val STR_ERR_DEFAULT_SOURCES_3 =
+        " constructor parameters with a default that another default reads (%s). Each combination needs its own " +
+            "constructor call, so Ghost cannot decode them; give some of them no default or stop reading them."
 
     const val STR_ERR_WRAPPED_DUP_KEY_1 = "GhostWrappedKeys: duplicate wire key '"
     const val STR_ERR_WRAPPED_DUP_KEY_2 = "' on "

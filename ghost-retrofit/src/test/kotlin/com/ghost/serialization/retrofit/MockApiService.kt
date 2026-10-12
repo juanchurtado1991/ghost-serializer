@@ -15,6 +15,9 @@ interface MockApiService {
     @GET("/users")
     suspend fun getUsers(): List<RetrofitUser>
 
+    @GET("/animals")
+    suspend fun getAnimals(): List<RetrofitAnimal>
+
     @GET("/metadata")
     suspend fun getMetadata(): Map<String, Int>
 

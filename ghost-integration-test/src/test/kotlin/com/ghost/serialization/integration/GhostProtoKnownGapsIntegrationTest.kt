@@ -1,13 +1,16 @@
 package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.integration.model.ProtoAccountIds
 import com.ghost.serialization.integration.model.ProtoAccountIdsMessage
+import com.ghost.serialization.integration.model.ProtoBenchUser
 import com.ghost.serialization.integration.model.ProtoDeviceEventListItem
 import com.ghost.serialization.integration.model.ProtoUInt64FieldMessage
 import com.ghost.serialization.proto.GhostProto
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -65,11 +68,17 @@ class GhostProtoKnownGapsIntegrationTest {
     }
 
     @Test
-    fun uLongBareNumberAboveLongMaxFallsBackToInt64Path() {
-        // Bare JSON numbers take the int64 fast path — full uint64 range requires a quoted string.
+    fun uLongBareNumberAboveLongMaxDecodesExactly() {
         val json = """{"shardId":18446744073709551615}"""
         val parsed = GhostProto.deserialize<ProtoUInt64FieldMessage>(json)
-        assertEquals(expected = Long.MAX_VALUE.toULong(), actual = parsed.shard_id)
+        assertEquals(expected = ULong.MAX_VALUE, actual = parsed.shard_id)
+    }
+
+    @Test
+    fun uLongBareNegativeNumberIsRejected() {
+        assertFailsWith<GhostJsonException> {
+            GhostProto.deserialize<ProtoUInt64FieldMessage>("""{"shardId":-1}""")
+        }
     }
 
     @Test
@@ -119,6 +128,81 @@ class GhostProtoKnownGapsIntegrationTest {
                 ProtoDeviceEventListItem(device_id = Long.MAX_VALUE, label = "max"),
             ),
             actual = parsed,
+        )
+    }
+
+    @Test
+    fun zeroValuedFieldsOmittedOnSerializeDecodeBackToTheSameMessage() {
+        val deviceItem = ProtoDeviceEventListItem(
+            device_id = 0L,
+            label = ""
+        )
+        val deviceJson = Ghost.encodeToString(value = deviceItem)
+        assertEquals(
+            expected = "{}",
+            actual = deviceJson
+        )
+        assertEquals(
+            expected = deviceItem,
+            actual = Ghost.deserialize<ProtoDeviceEventListItem>(json = deviceJson)
+        )
+        assertEquals(
+            expected = deviceItem,
+            actual = GhostProto.deserialize<ProtoDeviceEventListItem>(json = deviceJson)
+        )
+
+        val shard = ProtoUInt64FieldMessage(shard_id = 0uL)
+        val shardJson = Ghost.encodeToString(value = shard)
+        assertEquals(
+            expected = shard,
+            actual = Ghost.deserialize<ProtoUInt64FieldMessage>(bytes = shardJson.encodeToByteArray())
+        )
+        assertEquals(
+            expected = shard,
+            actual = GhostProto.deserialize<ProtoUInt64FieldMessage>(json = shardJson)
+        )
+
+        val accounts = ProtoAccountIdsMessage(account_ids = ProtoAccountIds(value = emptyList()))
+        val accountsJson = Ghost.encodeToString(value = accounts)
+        assertEquals(
+            expected = accounts,
+            actual = GhostProto.deserialize<ProtoAccountIdsMessage>(json = accountsJson)
+        )
+    }
+
+    @Test
+    fun zeroValueOverNonZeroDefaultIsWrittenSoItReadsBack() {
+        val user = ProtoBenchUser(
+            user_id = 1L,
+            name = "n",
+            email = "e",
+            score = 0.5,
+            is_active = false,
+            role = ""
+        )
+        val json = Ghost.encodeToString(value = user)
+
+        assertTrue(actual = json.contains("\"isActive\":false"), message = json)
+        assertEquals(
+            expected = user,
+            actual = GhostProto.deserialize<ProtoBenchUser>(json = json)
+        )
+    }
+
+    @Test
+    fun nonFiniteDoubleFieldIsWrittenAsQuotedName() {
+        val user = ProtoBenchUser(
+            user_id = 1L,
+            name = "n",
+            email = "e",
+            score = Double.NEGATIVE_INFINITY
+        )
+        val json = Ghost.encodeToString(value = user)
+
+        assertTrue(actual = json.contains("\"score\":\"-Infinity\""), message = json)
+        assertEquals(
+            expected = user,
+            actual = GhostProto.deserialize<ProtoBenchUser>(json = json)
         )
     }
 }

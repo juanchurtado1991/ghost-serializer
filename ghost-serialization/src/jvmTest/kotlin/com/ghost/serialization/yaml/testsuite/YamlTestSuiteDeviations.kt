@@ -59,7 +59,6 @@ internal val REASON_LABELS: Map<String, String> = mapOf(
 val deviationsInOutcome: Set<DeviationCase> = setOf(
     "35KP" because REASON_TAG, // Tags for Root Objects
     "4JVG" because REASON_ANCHOR_ALIAS, // Scalar value with two anchors
-    "5U3A" because REASON_MISC, // Sequence on same Line as Mapping Key
     "62EZ" because REASON_MISC, // Invalid block mapping key on same line as previous key
     "9C9N" because REASON_FLOW_COLLECTION, // Wrong indented flow sequence
     "CXX2" because REASON_ANCHOR_ALIAS, // Mapping with anchor on document start line

@@ -5,7 +5,6 @@ package com.ghost.serialization.compiler.internal
 internal object GhostEmitterConstants {
 
     const val STR_DESERIALIZE = "deserialize"
-    const val STR_KDOC_DESERIALIZE = "Robust deserialization for [%T].\n"
     const val PROPERTY_MAX_SIZE = 40
     const val DEFAULT_CHUNK_SIZE = PROPERTY_MAX_SIZE
     const val STR_READER = "reader"
@@ -70,8 +69,8 @@ internal object GhostEmitterConstants {
 
     const val STR_NEXT_DOUBLE = "reader.nextDouble()"
     const val STR_NEXT_FLOAT = "reader.nextFloat()"
-    const val STR_NEXT_BYTE = "reader.nextInt().toByte()"
-    const val STR_NEXT_SHORT = "reader.nextInt().toShort()"
+    const val STR_NEXT_BYTE = "reader.nextByte()"
+    const val STR_NEXT_SHORT = "reader.nextShort()"
     const val STR_NEXT_CHAR = "reader.nextChar()"
     const val STR_NEXT_STRING = "reader.nextString()"
     const val STR_NEXT_INT_OR_NULL = "reader.nextIntOrNull()"
@@ -90,6 +89,9 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_RETURN_T_PAREN = "return %T("
     const val STR_PAREN = ")"
     const val TEMPLATE_VAL_RESULT = "val result = %T("
+    const val STR_VAL_RESULT_WHEN = "val result = when"
+    const val TEMPLATE_WHEN_CONSTRUCTOR_BRANCH = "%L -> %T("
+    const val STR_AND = " && "
     const val STR_OR = " || "
     const val STR_RETURN_RESULT_COPY = "return result.copy("
     const val STR_ELSE = "else"
@@ -122,14 +124,14 @@ internal object GhostEmitterConstants {
     const val TEMPLATE_ELSE_IF_MASK_MISSING = "else if ((ctx.mask%L and %L) == 0L)"
     const val STR_READ_LIST_TEMPLATE = "reader.readList {\n  %L\n}"
     const val STR_READ_SET_TEMPLATE = "reader.readSet {\n  %L\n}"
-    const val STR_READ_MAP_TEMPLATE = "reader.readMap({ reader.nextKey()!! }) {\n  %L\n}"
+    const val STR_READ_MAP_TEMPLATE = "reader.readMap({ reader.nextKey() }) {\n  %L\n}"
     const val STR_MASK_BITWISE_OR = "mask%L = mask%L or %L"
     const val STR_IF_OPEN = "if ("
     const val TEMPLATE_IF_MASK_MATCH_BIT_F = "(ctx.mask%s and %s) != 0L"
     const val TEMPLATE_IF_MASK_NOT_MET = "if ((ctx.mask%L and %L) != %L)"
     const val TEMPLATE_MASK_CHECK_MATCH = "(mask%s and %s) != 0L"
     const val TEMPLATE_MASK_ALL_MET_SIMPLE = "(mask%s and %s) == %s"
-    const val TEMPLATE_RESOLVE_SERIALIZER = "%T.getSerializer(%T::class)!!"
+    const val TEMPLATE_LAZY_RESOLVE_SERIALIZER = "lazy { %T.requireSerializer(%T::class) }"
     const val STR_WRITER_BEGIN_OBJ = "writer.beginObject()"
     const val STR_WRITER_NAME_TYPE_VAL = "writer.name(%S).value(%S)"
     const val STR_WRITER_END_OBJ = "writer.endObject()"
@@ -159,8 +161,9 @@ internal object GhostEmitterConstants {
 
     /** proto3 JSON mapping: `bytes` fields are Base64 strings on the wire, not inline raw JSON. */
     const val STR_WRITER_VAL_BYTES_AS_BASE64 = "writer.value(encodeBase64String(%L))"
+    const val STR_WRITER_PROTO_FLOATING_VALUE = "writer.protoValue(number = %L)"
 
-    const val STR_DECODE_BASE64_STRING_CALL = "decodeBase64String(reader.nextString())"
+    const val STR_DECODE_BASE64_STRING_CALL = "decodeBase64String(reader.nextString()) { reader.throwError(it) }"
     const val STR_WRITE_FIELD = "writer.writeField(%L, %L)"
     const val STR_WRITE_NAME_RAW = "writer.writeNameRaw(%L)"
     const val STR_WRITE_NAME_RAW_NULL = "writer.writeNameRaw(%L).nullValue()"
@@ -317,7 +320,6 @@ internal object GhostEmitterConstants {
 
     const val STR_ENVELOPE_TARGET_SERIALIZER_SUFFIX = "TargetSerializer"
     const val TEMPLATE_ENVELOPE_FIELD_ACCESS = "envelope.%L"
-    const val TEMPLATE_ENVELOPE_CACHED_SERIALIZER = "%T.getSerializer(%T::class)!!"
     const val STR_KDOC_ROUTE_PAYLOAD =
         "Routes [%T] to its matching opaque JSON payload without re-parsing.\n"
 

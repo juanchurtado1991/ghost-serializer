@@ -136,4 +136,32 @@ class RawJsonNumberScanningTest {
         assertNull(actual = raw(json = "\"42\"").asIntOrNull())
         assertNull(actual = raw(json = "").asLongOrNull())
     }
+
+    @Test
+    fun scalarAccessorsRejectTrailingContentAfterZero() {
+        assertNull(actual = raw(json = "0x10").asLongOrNull())
+        assertNull(actual = raw(json = "0x10").asIntOrNull())
+        assertNull(actual = raw(json = "0x10").asDoubleOrNull())
+    }
+
+    @Test
+    fun asDoubleOrNullKeepsNegativeZeroAndToleratesEmptyStorage() {
+        assertEquals(
+            expected = (-0.0).toRawBits(),
+            actual = raw(json = "-0").asDoubleOrNull()?.toRawBits()
+        )
+        assertNull(actual = raw(json = "").asDoubleOrNull())
+    }
+
+    @Test
+    fun asStringOrNullDoesNotPairAHighSurrogateWithANonLowEscape() {
+        assertEquals(
+            expected = "\uD83DA",
+            actual = raw(json = "\"\\ud83d\\u0041\"").asStringOrNull()
+        )
+        assertEquals(
+            expected = "\uD83D\uDE00",
+            actual = raw(json = "\"\\ud83d\\ude00\"").asStringOrNull()
+        )
+    }
 }

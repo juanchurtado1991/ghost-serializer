@@ -22,6 +22,7 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_E
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.ESCAPE_MASKS
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.ESCAPE_REPLACEMENTS
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_REPLACEMENT_CHAR
 
 /**
  * Shared JSON string-escape helpers for byte and char writers.
@@ -48,6 +49,14 @@ internal object GhostJsonEscapeHelpers {
     inline fun isSafeUnescapedChar(code: Int): Boolean =
         code >= ASCII_LIMIT ||
                 (ESCAPE_MASKS[code shr BITMASK_SHIFT] shr (code and BITMASK_INDEX_MASK)) and BITMASK_UNIT == 0L
+
+    /**
+     * True when a single [char] value can be written between quotes as is: no escape needed and
+     * not a lone surrogate. Anything else goes through the string path, which escapes controls,
+     * `"` and `\`, and replaces a lone surrogate the same way it does inside a [String].
+     */
+    inline fun isVerbatimStringChar(char: Char): Boolean =
+        !char.isSurrogate() && isSafeUnescapedChar(code = char.code)
 
     /**
      * Escapes [text] from [start] into [scratchBuf], flushing through sink lambdas.
@@ -101,6 +110,8 @@ internal object GhostJsonEscapeHelpers {
                     if (isSurrogatePair) {
                         writeUtf8Range(text, index, index + 2)
                         index++
+                    } else if (c.isSurrogate()) {
+                        writeReplacement(UTF8_REPLACEMENT_CHAR)
                     } else {
                         writeUtf8Range(text, index, index + 1)
                     }
@@ -147,6 +158,8 @@ internal object GhostJsonEscapeHelpers {
                 if (isSurrogatePair) {
                     writeUtf8Range(text, index, index + 2)
                     index++
+                } else if (char.isSurrogate()) {
+                    writeReplacement(UTF8_REPLACEMENT_CHAR)
                 } else {
                     writeUtf8Range(text, index, index + 1)
                 }
@@ -256,6 +269,8 @@ internal object GhostJsonEscapeHelpers {
                 if (isSurrogatePair) {
                     writeUtf8Range(text, index, index + 2)
                     index++
+                } else if (c.isSurrogate()) {
+                    writeReplacement(UTF8_REPLACEMENT_CHAR)
                 } else {
                     writeUtf8Range(text, index, index + 1)
                 }

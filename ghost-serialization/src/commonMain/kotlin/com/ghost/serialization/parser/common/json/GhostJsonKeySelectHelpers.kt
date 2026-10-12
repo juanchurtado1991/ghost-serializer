@@ -11,7 +11,9 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
  * by flat, streaming, and string JSON readers.
  *
  * Reader-specific state is supplied via inlined adapters so each call site stays monomorphic
- * after inlining.
+ * after inlining. A key whose closing-quote scan stops at a backslash (an escape such as `\"` or
+ * `\u0041`) goes through [selectEscapedKeyCore], which decodes it like any string value and
+ * matches the decoded name.
  */
 
 /**
@@ -77,4 +79,22 @@ internal inline fun handleSelectNoMatchCore(
         throwError("${EM.STRICT_MODE_UNKNOWN_FIELD}$unknownKey")
     }
     return SCN.MATCH_NONE
+}
+
+internal inline fun selectEscapedKeyCore(
+    options: JsonReaderOptions,
+    consumeSeparator: Boolean,
+    strictMode: Boolean,
+    readQuotedKey: () -> String,
+    consumeKeySeparator: () -> Unit,
+    throwError: (String) -> Nothing,
+): Int {
+    val key = readQuotedKey()
+    val index = options.rawStrings.indexOf(element = key)
+    if (consumeSeparator) {
+        consumeKeySeparator()
+    } else if (index < 0 && strictMode) {
+        throwError("${EM.STRICT_MODE_UNKNOWN_FIELD}$key")
+    }
+    return if (index >= 0) index else SCN.MATCH_NONE
 }

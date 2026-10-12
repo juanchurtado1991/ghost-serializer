@@ -1,0 +1,68 @@
+package com.ghost.serialization.integration
+
+import com.ghost.serialization.annotations.GhostSerialization
+
+@GhostSerialization
+data class ManyDependencySourcesModel(
+    val a1: Int = 1,
+    val a2: Int = 2,
+    val a3: Int = 3,
+    val a4: Int = 4,
+    val a5: Int = 5,
+    val a6: Int = 6,
+    val total: Int = a1 + a2 + a3 + a4 + a5 + a6,
+)
+
+/** Same six sources, over the fragmented-emitter threshold. */
+@GhostSerialization
+data class ManyDependencySourcesFragmentedModel(
+    val a1: Int = 1,
+    val a2: Int = 2,
+    val a3: Int = 3,
+    val a4: Int = 4,
+    val a5: Int = 5,
+    val a6: Int = 6,
+    val total: Int = a1 + a2 + a3 + a4 + a5 + a6,
+    val f01: Int = 1,
+    val f02: Int = 2,
+    val f03: Int = 3,
+    val f04: Int = 4,
+    val f05: Int = 5,
+    val f06: Int = 6,
+    val f07: Int = 7,
+    val f08: Int = 8,
+    val f09: Int = 9,
+    val f10: Int = 10,
+    val f11: Int = 11,
+    val f12: Int = 12,
+    val f13: Int = 13,
+    val f14: Int = 14,
+    val f15: Int = 15,
+    val f16: Int = 16,
+    val f17: Int = 17,
+    val f18: Int = 18,
+    val f19: Int = 19,
+    val f20: Int = 20,
+    val f21: Int = 21,
+    val f22: Int = 22,
+    val f23: Int = 23,
+    val f24: Int = 24,
+    val f25: Int = 25,
+    val f26: Int = 26,
+    val f27: Int = 27,
+    val f28: Int = 28,
+    val f29: Int = 29,
+    val f30: Int = 30,
+    val f31: Int = 31,
+    val f32: Int = 32,
+    val f33: Int = 33,
+    val f34: Int = 34,
+    val f35: Int = 35,
+    val f36: Int = 36,
+    val f37: Int = 37,
+    val f38: Int = 38,
+    val f39: Int = 39,
+    val f40: Int = 40,
+    val f41: Int = 41,
+    val f42: Int = 42,
+)

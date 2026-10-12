@@ -3,12 +3,15 @@
 
 package com.ghost.serialization.parser.streaming
 
+import com.ghost.serialization.parser.common.json.isSimpleEscapeCode
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
 import com.ghost.serialization.parser.bytes.ByteArrayGhostSource
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
 import com.ghost.serialization.parser.common.contentEqualsStringImpl
@@ -30,7 +33,7 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
- * A high-performance, zero-allocation JSON parser for Kotlin Multiplatform.
+ * Streaming JSON parser for Kotlin Multiplatform.
  *
  * This reader is optimized for generated code and raw speed by:
  * - Using an [Int]-based (0-255) data access pattern to eliminate sign-extension overhead.
@@ -47,6 +50,9 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * field index when JSON objects list fields in declaration order; reset on `beginObject`, and a
  * misprediction falls back to hashed dispatch, so it never affects correctness.
  * [pathTracker] holds JSONPath breadcrumbs, formatted only when [throwError] builds an exception.
+ * A streaming [limit] is [Int.MAX_VALUE] (the length is unknown), so it cannot bound reads past
+ * the end: number parsing reads through [numberByteAt], which returns a NUL byte there to end the
+ * number, and [throwError] clamps the reported position to the bytes actually received.
  */
 class GhostJsonReader(
     @PublishedApi internal var source: GhostSource,
@@ -159,10 +165,20 @@ class GhostJsonReader(
         return rawData[index].toInt() and TOK.BYTE_MASK
     }
 
+    @PublishedApi
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun numberByteAt(index: Int): Int {
+        if (!isStreaming) return rawData[index].toInt() and TOK.BYTE_MASK
+        val byte = source.byteOrEof(index = index)
+        return if (byte == SCN.MATCH_END) TOK.NUL_BYTE else byte
+    }
+
     fun internalSkip(byteCount: Int) {
         position += byteCount
         nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
+
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
 
     fun nextNonWhitespace(): Int {
         val nextToken = peekNextToken()
@@ -172,6 +188,8 @@ class GhostJsonReader(
         internalSkip(1)
         return nextToken
     }
+
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
 
     fun peekByte(): Byte = peekNextToken().toByte()
 
@@ -284,6 +302,12 @@ class GhostJsonReader(
     }
 
     @InternalGhostApi
+    fun requireEndOfInput() {
+        if (peekNextToken() != SCN.MATCH_END) {
+            throwError(message = EM.ERR_EXPECTED_EOF)
+        }
+    }
+
     fun skipAndValidateLiteral(expected: ByteString) {
         val size = expected.size
         val isValid = if (isStreaming) {
@@ -320,31 +344,17 @@ class GhostJsonReader(
 
     /** Throws a [GhostJsonException] with exact position, line, column, and JSONPath. */
     fun throwError(message: String): Nothing {
-        val errorPosition = position
+        val errorPosition = errorPositionWithinData()
         val sourceRef = source
-        val errorEnd = if (errorPosition > sourceRef.size) {
-            sourceRef.size
-        } else {
-            errorPosition
-        }
         val errorPath = pathTracker.formatPath()
 
         throw GhostJsonException(
             baseMessage = "$message${EM.ERR_AT_POSITION_PREFIX}$errorPosition",
             computeLineCol = {
-                var columnNumber = 0
-                var lineNumber = 0
-                var byteIndex = 0
-                while (byteIndex < errorEnd) {
-                    if (sourceRef[byteIndex] == TOK.NEWLINE_INT) {
-                        lineNumber++
-                        columnNumber = 0
-                    } else {
-                        columnNumber++
-                    }
-                    byteIndex++
-                }
-                intArrayOf(lineNumber, columnNumber)
+                lineColumnBefore(
+                    source = sourceRef,
+                    end = errorPosition
+                )
             },
             path = errorPath,
             hint = message.hintForJsonError(),
@@ -363,6 +373,39 @@ class GhostJsonReader(
     private inline fun advancePastQuotedValue(end: Int) {
         position = end + 1
         nextTokenByte = SCN.RESET_TOKEN_BYTE
+    }
+
+    private fun errorPositionWithinData(): Int {
+        val streamingSource = source as? StreamingGhostSource
+        val isPastEndOfStream = streamingSource != null && position > streamingSource.availableEnd
+        return when {
+            isPastEndOfStream -> streamingSource.availableEnd
+            position > source.size -> source.size
+            else -> position
+        }
+    }
+
+    private fun lineColumnBefore(
+        source: GhostSource,
+        end: Int
+    ): IntArray {
+        var columnNumber = 0
+        var lineNumber = 0
+        var byteIndex = 0
+        while (byteIndex < end) {
+            val currentByte = source.byteOrEof(index = byteIndex)
+            if (currentByte == SCN.MATCH_END) {
+                return intArrayOf(SCN.UNKNOWN_LINE_COLUMN, SCN.UNKNOWN_LINE_COLUMN)
+            }
+            if (currentByte == TOK.NEWLINE_INT) {
+                lineNumber++
+                columnNumber = 0
+            } else {
+                columnNumber++
+            }
+            byteIndex++
+        }
+        return intArrayOf(lineNumber, columnNumber)
     }
 
     private fun GhostJsonReader.readQuotedStringSlow(start: Int): String =
@@ -417,6 +460,9 @@ class GhostJsonReader(
                     }
                     parseUnicodeHex(pos)
                     pos += TOK.UNICODE_HEX_LENGTH
+                } else if (!isSimpleEscapeCode(escaped)) {
+                    position = pos - 1
+                    throwError(EM.ERR_INVALID_ESCAPE)
                 }
             } else if (byteValue < TOK.SPACE_INT) {
                 position = pos

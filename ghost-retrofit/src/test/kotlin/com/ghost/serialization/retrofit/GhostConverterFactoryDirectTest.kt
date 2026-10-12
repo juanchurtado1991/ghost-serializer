@@ -15,7 +15,7 @@ import kotlin.test.assertNull
 /**
  * Direct unit tests for [GhostConverterFactory], bypassing MockWebServer. Covers the
  * null-return contract for unsupported types and scratch-buffer growth (payload > 512 KB),
- * which [GhostRetrofitTest]/[GhostRetrofitExpansionTest] don't exercise.
+ * which [GhostRetrofitTest]/[GhostRetrofitEndpointOptionsTest] don't exercise.
  */
 class GhostConverterFactoryDirectTest {
 

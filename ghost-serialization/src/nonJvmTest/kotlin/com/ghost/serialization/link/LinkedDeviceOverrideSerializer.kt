@@ -2,7 +2,9 @@ package com.ghost.serialization.link
 
 import com.ghost.serialization.contract.AbstractGhostSerializer
 import com.ghost.serialization.parser.streaming.GhostJsonReader
+import com.ghost.serialization.parser.streaming.skipValue
 import com.ghost.serialization.parser.strings.GhostJsonStringReader
+import com.ghost.serialization.parser.strings.skipValue
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 
 /** Registered explicitly through `Ghost.addRegistry` to prove a registry wins over the compiler-plugin link. */
@@ -13,11 +15,17 @@ object LinkedDeviceOverrideSerializer : AbstractGhostSerializer<LinkedDevice>() 
 
     override fun deserialize(
         reader: GhostJsonReader
-    ): LinkedDevice = LinkedDevice(id = DECODED_ID)
+    ): LinkedDevice {
+        reader.skipValue()
+        return LinkedDevice(id = DECODED_ID)
+    }
 
     override fun deserialize(
         reader: GhostJsonStringReader
-    ): LinkedDevice = LinkedDevice(id = DECODED_ID)
+    ): LinkedDevice {
+        reader.skipValue()
+        return LinkedDevice(id = DECODED_ID)
+    }
 
     override fun serialize(
         writer: GhostJsonWriter,

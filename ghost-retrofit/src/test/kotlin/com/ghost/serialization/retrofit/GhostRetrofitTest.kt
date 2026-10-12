@@ -4,6 +4,7 @@ package com.ghost.serialization.retrofit
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -116,14 +117,14 @@ class GhostRetrofitTest {
     }
 
     @Test
-    fun `throws robust exception on malformed json body`() = runTest {
+    fun `throws GhostJsonException on truncated json body`() = runTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(200)
                 .setBody("""{"id": 42, "name": "John Doe", "isActive": """)
         )
 
-        assertFailsWith<Exception> {
+        assertFailsWith<GhostJsonException> {
             apiService.getUser()
         }
     }
@@ -140,5 +141,33 @@ class GhostRetrofitTest {
         assertFailsWith<retrofit2.HttpException> {
             apiService.getUser()
         }
+    }
+
+    @Test
+    fun `rejects content after the json body`() = runTest {
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"id": 42, "name": "John Doe", "isActive": true} extra""")
+        )
+
+        assertFailsWith<GhostJsonException> {
+            apiService.getUser()
+        }
+    }
+
+    @Test
+    fun `suspend function returning a list of a non-final type resolves through the wildcard`() = runTest {
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""[{"name":"cat"},{"name":"dog"}]""")
+                .addHeader(GhostRetrofitMediaTypes.CONTENT_TYPE_HEADER, GhostRetrofitMediaTypes.APPLICATION_JSON)
+        )
+
+        assertEquals(
+            expected = listOf(RetrofitAnimal(name = "cat"), RetrofitAnimal(name = "dog")),
+            actual = apiService.getAnimals()
+        )
     }
 }

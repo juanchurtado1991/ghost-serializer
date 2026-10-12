@@ -340,6 +340,59 @@ class GhostYamlCodegenKspTest {
         )
     }
 
+    @Test
+    fun rejectsEnumPropertyWhoseEnumLacksGhostYamlSerialization() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "LampConfig.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                enum class Mode { ON, OFF }
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class LampConfig(val modes: List<Mode>)
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
+        assertTrue(
+            result.messages.contains("an enum used by a YAML-enabled model must also be annotated"),
+            result.messages
+        )
+    }
+
+    @Test
+    fun acceptsEnumPropertyWhoseEnumHasGhostYamlSerialization() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "LampConfig.kt",
+                """
+                package fixtures
+
+                import com.ghost.serialization.annotations.GhostSerialization
+                import com.ghost.serialization.annotations.GhostYamlSerialization
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                enum class Mode { ON, OFF }
+
+                @GhostSerialization
+                @GhostYamlSerialization
+                data class LampConfig(val mode: Mode, val modes: List<Mode>, val byRoom: Map<String, Mode>)
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(expected = KotlinCompilation.ExitCode.OK, actual = result.exitCode, message = result.messages)
+    }
+
     private fun compileAndReadSerializer(source: SourceFile, serializerFileName: String): String {
         val (compilation, result) = compile(source)
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)

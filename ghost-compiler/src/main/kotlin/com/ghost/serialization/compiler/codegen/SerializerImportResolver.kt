@@ -22,6 +22,7 @@ import com.ghost.serialization.compiler.model.GhostSerializerContext
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.FileSpec
 import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
+import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
 import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
@@ -272,6 +273,10 @@ internal class SerializerImportResolver(
             )
         }
 
+        if (hasProtoFloatingUsage()) {
+            fileBuilder.addImport(CC.PKG_PROTO, CG.STR_PROTO_VALUE_NAME)
+        }
+
         val needsCaptureRawJsonBytes = hasByteArray &&
                 byteArrayClassifications.contains(ByteArrayCoverage.UNCOVERED)
         if (needsCaptureRawJsonBytes) {
@@ -330,6 +335,24 @@ internal class SerializerImportResolver(
         val inferred = ctx.properties.flatMap { it.inferredSubclasses }.flatMap { it.properties }
             .mapNotNull { classify(type = it.type, isProto = it.isProto) }
         return direct + valueClass + inferred
+    }
+
+    private fun hasProtoFloatingUsage(): Boolean {
+        fun isFloating(type: KSType): Boolean {
+            val name = type.declaration.qualifiedName?.asString()
+            if (name == AC.K_DOUBLE || name == AC.K_FLOAT) return true
+            if (type.isValueClassType()) {
+                return type.resolveValueClassInnerType()?.let { isFloating(type = it) } == true
+            }
+            if (type.isList() || type.isSet()) {
+                return type.arguments.firstOrNull()?.type?.resolve()?.let { isFloating(type = it) } == true
+            }
+            if (type.isMap()) {
+                return type.arguments.getOrNull(1)?.type?.resolve()?.let { isFloating(type = it) } == true
+            }
+            return false
+        }
+        return ctx.properties.any { it.isProto && it.customEncoder == null && isFloating(type = it.type) }
     }
 
     private fun emitsPlainNextBoolean(type: KSType): Boolean = type.isPrimitiveBoolean() && !type.isMarkedNullable

@@ -67,4 +67,50 @@ class GhostYamlKnownGapsIntegrationTest {
     fun decodeAllFromYamlReturnsEmptyListForEmptyInput() {
         assertEquals(expected = emptyList(), actual = Ghost.decodeAllFromYaml<YamlBenchUser>(""))
     }
+
+    @Test
+    fun enumPropertiesRoundTripAndDecodeFromJson() {
+        val value = YamlLightLevelHolder(
+            level = YamlLightLevel.BRIGHT_WHITE,
+            history = listOf(YamlLightLevel.DIM, YamlLightLevel.BRIGHT_WHITE),
+            byRoom = mapOf("hall" to YamlLightLevel.DIM),
+        )
+        val yaml = Ghost.encodeToYaml(value = value)
+
+        assertEquals(
+            expected = value,
+            actual = Ghost.decodeFromYaml<YamlLightLevelHolder>(yaml = yaml)
+        )
+        assertEquals(
+            expected = value,
+            actual = Ghost.decodeFromYaml<YamlLightLevelHolder>(yaml = Ghost.encodeToString(value = value))
+        )
+    }
+
+    @Test
+    fun nonFiniteDoubleIsWrittenWithYamlCoreSpelling() {
+        NON_FINITE_SCORES.forEach { (score, literal) ->
+            val user = YamlBenchUser(
+                id = 1,
+                name = "n",
+                email = "e",
+                score = score
+            )
+            val yaml = Ghost.encodeToYaml(value = user)
+
+            assertTrue(actual = yaml.contains("score: $literal"), message = yaml)
+            assertEquals(
+                expected = user,
+                actual = Ghost.decodeFromYaml<YamlBenchUser>(yaml = yaml)
+            )
+        }
+    }
+
+    companion object {
+        private val NON_FINITE_SCORES = listOf(
+            Double.NaN to ".nan",
+            Double.POSITIVE_INFINITY to ".inf",
+            Double.NEGATIVE_INFINITY to "-.inf"
+        )
+    }
 }

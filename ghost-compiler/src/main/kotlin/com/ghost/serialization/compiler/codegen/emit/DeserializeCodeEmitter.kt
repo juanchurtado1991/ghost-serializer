@@ -87,7 +87,6 @@ internal class DeserializeCodeEmitter(
     ) {
         typeSpecBuilder.addFunction(
             FunSpec.builder(C.STR_DESERIALIZE)
-                .addKdoc(C.STR_KDOC_DESERIALIZE, originalClassName)
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter(C.STR_READER, readerClass)
                 .returns(originalClassName)

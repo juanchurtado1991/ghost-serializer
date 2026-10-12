@@ -52,7 +52,10 @@ class GhostYamlContentConverter(
         }
 
         val yamlSerializer = serializer as GhostYamlSerializer<Any>
-        return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
+        return GhostKtorBuffers.readToScratch(
+            content = content,
+            charset = charset
+        ) { scratch, offset ->
             val bytesToParse = if (offset == scratch.size) scratch else scratch.copyOf(offset)
             ghostYamlInternalUseFlatReader(bytes = bytesToParse) { reader ->
                 configurer?.invoke(reader)
@@ -85,6 +88,10 @@ class GhostYamlContentConverter(
             serializer = yamlSerializer,
             value = value
         )
-        return ByteArrayContent(bytes, contentType)
+        return ghostKtorBytesContent(
+            utf8Bytes = bytes,
+            contentType = contentType,
+            charset = charset
+        )
     }
 }

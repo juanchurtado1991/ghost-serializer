@@ -60,18 +60,22 @@ internal fun GhostProtoJsonFlatReader.readProtoBytes(): ByteArray {
         }
 
         if (chunkIndex > 0) {
+            if (chunkIndex == 1) {
+                throwError(PC.ERR_INVALID_BASE64)
+            }
             while (chunkIndex < PC.B64_PAD_MULTIPLIER) {
                 chunk[chunkIndex++] = TOK.EQUALS_INT
             }
             val value0 = lookupBase64Code(lut = lut, code = chunk[0])
             val value1 = lookupBase64Code(lut = lut, code = chunk[1])
             val value2 = lookupBase64Code(lut = lut, code = chunk[2])
-
-            if (value0 >= 0 && value1 >= 0) {
-                outputBuffer[outputPosition++] = combineFirstByte(value0 = value0, value1 = value1)
-                if (value2 != PC.B64_PADDING_CODE && value2 >= 0) {
-                    outputBuffer[outputPosition++] = combineSecondByte(value1 = value1, value2 = value2)
-                }
+            val isValidFinalGroup = value0 >= 0 && value1 >= 0 && value2 != PC.B64_INVALID_CODE
+            if (!isValidFinalGroup) {
+                throwError(PC.ERR_INVALID_BASE64)
+            }
+            outputBuffer[outputPosition++] = combineFirstByte(value0 = value0, value1 = value1)
+            if (value2 != PC.B64_PADDING_CODE) {
+                outputBuffer[outputPosition++] = combineSecondByte(value1 = value1, value2 = value2)
             }
         }
 

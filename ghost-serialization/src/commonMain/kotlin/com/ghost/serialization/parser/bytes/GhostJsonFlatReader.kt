@@ -11,11 +11,14 @@ import com.ghost.serialization.parser.bytes.extensions.nextDoubleExtension
 import com.ghost.serialization.parser.bytes.extensions.nextFloatExtension
 import com.ghost.serialization.parser.bytes.extensions.nextIntExtension
 import com.ghost.serialization.parser.bytes.extensions.nextLongExtension
+import com.ghost.serialization.parser.bytes.extensions.nextULongExtension
 import com.ghost.serialization.parser.bytes.extensions.readQuotedString
 import com.ghost.serialization.parser.bytes.extensions.skipNumber
 import com.ghost.serialization.parser.bytes.extensions.skipQuotedString
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.GhostSource
@@ -36,8 +39,8 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
 
 /**
- * Ultra-fast, specialized JSON parser for Kotlin Multiplatform that operates directly
- * on a flat [ByteArray] without any interface dispatch or hasFastPath boundaries.
+ * JSON parser that operates directly on a flat [ByteArray], with no interface dispatch
+ * or hasFastPath boundaries.
  *
  * @property strictMode When true, rejects unknown/unmapped fields and enforces strict comma
  * validation; `false` favors lenient parsing performance.
@@ -171,6 +174,8 @@ open class GhostJsonFlatReader(
         nextTokenByte = SCN.RESET_TOKEN_BYTE
     }
 
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
+
     open fun nextDouble(): Double = nextDoubleExtension()
 
     open fun nextFloat(): Float = nextFloatExtension()
@@ -187,19 +192,9 @@ open class GhostJsonFlatReader(
         return nextToken
     }
 
-    open fun nextProtoUInt64(): ULong {
-        val saved = coerceStringsToNumbers
-        coerceStringsToNumbers = true
-        return try {
-            if (peekNextToken() == TOK.QUOTE_INT) {
-                nextString().toULong()
-            } else {
-                nextLong().toULong()
-            }
-        } finally {
-            coerceStringsToNumbers = saved
-        }
-    }
+    open fun nextProtoUInt64(): ULong = nextULongExtension()
+
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
 
     open fun nextULong(): ULong = nextProtoUInt64()
 
@@ -251,6 +246,12 @@ open class GhostJsonFlatReader(
         }
         skipWhitespace()
         return nextTokenByte
+    }
+
+    fun requireEndOfInput() {
+        if (peekNextToken() != SCN.MATCH_END) {
+            throwError(message = EM.ERR_EXPECTED_EOF)
+        }
     }
 
     fun reset(newData: ByteArray, newLimit: Int = newData.size) {

@@ -2,6 +2,8 @@
 
 package com.ghost.serialization.parser.yaml
 
+import com.ghost.serialization.parser.common.parseDecimalLiteralToDouble
+import com.ghost.serialization.parser.common.parseDecimalLiteralToFloat
 import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
 import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
@@ -173,5 +175,81 @@ internal fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end
     }
 
     val stringRepresentation = data.decodeToString(start, end)
-    return stringRepresentation.toDoubleOrNull()
+    val approximateDouble = stringRepresentation.toDoubleOrNull() ?: return null
+    val parsedDouble = if (isPlainDecimalLiteral(text = stringRepresentation)) {
+        parseDecimalLiteralToDouble(literal = stringRepresentation)
+    } else {
+        approximateDouble
+    }
+    return if (losesFloatPrecisionViaDouble(text = stringRepresentation, parsed = parsedDouble)) {
+        stringRepresentation
+    } else {
+        parsedDouble
+    }
+}
+
+/**
+ * True when narrowing [parsed] to `Float` rounds differently from parsing [text] as a `Float` (the double
+ * rounding case: [parsed] lands exactly on a float midpoint). The tree keeps the text then, so `nextFloat`
+ * parses it once; `nextDouble` still reads the same value from it. Only midpoints are checked, so ordinary
+ * floats pay no second parse.
+ */
+private fun losesFloatPrecisionViaDouble(
+    text: String,
+    parsed: Double
+): Boolean {
+    val narrowed = parsed.toFloat()
+    if (!narrowed.isFinite()) return false
+    val neighbour = adjacentFloatToward(from = narrowed, target = parsed)
+    val isFloatMidpoint = (narrowed.toDouble() + neighbour.toDouble()) / 2.0 == parsed
+    return isFloatMidpoint && parseDecimalLiteralToFloat(literal = text) != narrowed
+}
+
+/** The float next to [from] on the side of [target]; `nextUp`/`nextDown` are not available in common Kotlin. */
+private fun adjacentFloatToward(
+    from: Float,
+    target: Double
+): Float {
+    val towardPositive = target > from.toDouble()
+    if (from == 0f) {
+        val smallest = Float.fromBits(1)
+        return if (towardPositive) smallest else -smallest
+    }
+    val growsMagnitude = (from > 0f) == towardPositive
+    val bits = from.toRawBits()
+    return Float.fromBits(if (growsMagnitude) bits + 1 else bits - 1)
+}
+
+/**
+ * A `Float` parsed once from [text]. `toFloatOrNull` rounds twice on Kotlin/Wasm and Native, so plain decimal
+ * literals go through the exact cross-platform parse; anything else (`NaN`, hex, suffixes) keeps the platform one.
+ */
+internal fun exactFloatOrNull(
+    text: String
+): Float? {
+    val approximate = text.toFloatOrNull() ?: return null
+    return if (isPlainDecimalLiteral(text = text)) parseDecimalLiteralToFloat(literal = text) else approximate
+}
+
+/** True for `-?digits(.digits)?([eE][+-]?digits)?`, the only shape the exact literal parse accepts. */
+private fun isPlainDecimalLiteral(
+    text: String
+): Boolean {
+    var index = if (text.startsWith(prefix = "-")) 1 else 0
+    fun skipDigits(): Boolean {
+        val start = index
+        while (index < text.length && text[index] in '0'..'9') index++
+        return index > start
+    }
+    if (!skipDigits()) return false
+    if (index < text.length && text[index] == '.') {
+        index++
+        if (!skipDigits()) return false
+    }
+    if (index < text.length && (text[index] == 'e' || text[index] == 'E')) {
+        index++
+        if (index < text.length && (text[index] == '+' || text[index] == '-')) index++
+        if (!skipDigits()) return false
+    }
+    return index == text.length
 }

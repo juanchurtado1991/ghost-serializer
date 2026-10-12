@@ -3,13 +3,17 @@ package com.ghost.serialization.proto.wkt
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.contract.AbstractGhostRegistry
 import com.ghost.serialization.contract.GhostSerializer
+import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.common.decodeBase64String
 import com.ghost.serialization.parser.proto.GhostProtoJsonFlatReader
+import com.ghost.serialization.parser.strings.GhostJsonStringReader
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.proto.GhostProto
 import com.ghost.serialization.writer.bytes.FlatByteArrayWriter
 import com.ghost.serialization.writer.bytes.GhostJsonWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class ProtoWrappersTest {
@@ -107,6 +111,25 @@ class ProtoWrappersTest {
     }
 
     @Test
+    fun testBytesValueRejectsInvalidBase64OnEveryReader() {
+        INVALID_BASE64_LITERALS.forEach { literal ->
+            val json = "\"$literal\""
+            assertFailsWith<GhostJsonException>(message = "proto flat: $literal") {
+                ProtoBytesValueSerializer.deserialize(reader = GhostProtoJsonFlatReader(rawData = json.encodeToByteArray()))
+            }
+            assertFailsWith<GhostJsonException>(message = "streaming: $literal") {
+                ProtoBytesValueSerializer.deserialize(reader = GhostJsonReader(json.encodeToByteArray()))
+            }
+            assertFailsWith<GhostJsonException>(message = "string: $literal") {
+                ProtoBytesValueSerializer.deserialize(reader = GhostJsonStringReader(rawData = json))
+            }
+            assertFailsWith<IllegalArgumentException>(message = "decodeBase64String: $literal") {
+                decodeBase64String(value = literal)
+            }
+        }
+    }
+
+    @Test
     fun testDoubleValueRoundtrip() {
         val parsed = GhostProto.deserialize<ProtoDoubleValue>("42.5")
         assertEquals(
@@ -185,5 +208,9 @@ class ProtoWrappersTest {
             expected = maxUInt64Json,
             actual = flatBuffer.toStringUtf8()
         )
+    }
+
+    companion object {
+        private val INVALID_BASE64_LITERALS = listOf("YW!j", "A", "YWJjZ", "QQ!", "Y\u00e9Jj")
     }
 }

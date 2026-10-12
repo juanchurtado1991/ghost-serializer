@@ -8,17 +8,45 @@ import com.ghost.serialization.parser.bytes.GhostJsonFlatReader
 import com.ghost.serialization.parser.common.json.consumeNumericCoercionFooterCore
 import com.ghost.serialization.parser.common.json.finalizeParsedDouble
 import com.ghost.serialization.parser.common.json.finalizeParsedFloat
-import com.ghost.serialization.parser.common.json.handleLeadingZeroCore
 import com.ghost.serialization.parser.common.json.parseExponentValueCore
 import com.ghost.serialization.parser.common.json.parseIntDigitsCore
+import com.ghost.serialization.parser.common.json.parseIntegralMagnitudeCore
 import com.ghost.serialization.parser.common.json.parseJsonFloatingBodyCore
 import com.ghost.serialization.parser.common.json.parseLongDigitsCore
 import com.ghost.serialization.parser.common.json.prepareNumericHeaderCore
 import com.ghost.serialization.parser.common.json.skipNumberBodyCore
 import com.ghost.serialization.parser.common.json.validateLeadingZeroCore
+import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
+
+/** Reads a [ULong]: a quoted decimal string or a bare number, exact over the full range. */
+fun GhostJsonFlatReader.nextULongExtension(): ULong {
+    peekNextToken()
+    val isQuoted = position < limit && getByte(position) == TOK.QUOTE_INT
+    if (isQuoted) {
+        return nextString().toULongOrNull() ?: throwError(EM.ERR_INVALID_ULONG)
+    }
+    val header = prepareNumericHeader()
+    val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
+
+    validateLeadingZero()
+    nextTokenByte = SCN.RESET_TOKEN_BYTE
+    val magnitude = parseIntegralMagnitudeCore(
+        startPosition = position,
+        limit = limit,
+        getByte = { getByte(it) },
+        setPosition = { position = it },
+        overflowMessage = EM.ERR_ULONG_OVERFLOW,
+        throwError = { throwError(it) },
+    )
+    val isNegativeNonZero = isNegativeValue && magnitude != 0uL
+    if (isNegativeNonZero) {
+        throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    }
+    return magnitude
+}
 
 /** Parses the next [Float], supporting string coercion, exponents, and decimal fractions. */
 fun GhostJsonFlatReader.nextFloatExtension(): Float {
@@ -30,7 +58,7 @@ fun GhostJsonFlatReader.nextFloatExtension(): Float {
 
     nextTokenByte = SCN.RESET_TOKEN_BYTE
     val result = parseJsonFloatingBodyCore(
-        precisionLimit = NUM.FLOAT_PRECISION_LIMIT,
+        precisionLimit = NUM.DOUBLE_PRECISION_LIMIT,
         allowBulkDigitRead = true,
         getPosition = { position },
         setPosition = { position = it },
@@ -38,8 +66,13 @@ fun GhostJsonFlatReader.nextFloatExtension(): Float {
         getByte = { getByte(it) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
-    ) { mantissa, exponent ->
-        finalizeParsedFloat(mantissa = mantissa, exponent = exponent, isNegative = isNegativeValue) { throwError(it) }
+    ) { mantissa, exponent, truncatedLiteral ->
+        finalizeParsedFloat(
+            mantissa = mantissa,
+            exponent = exponent,
+            isNegative = isNegativeValue,
+            truncatedLiteral = truncatedLiteral
+        ) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -67,8 +100,13 @@ fun GhostJsonFlatReader.nextDoubleExtension(): Double {
         getByte = { getByte(it) },
         parseExponentValue = { parseExponentValue() },
         throwError = { throwError(it) },
-    ) { mantissa, exponent ->
-        finalizeParsedDouble(mantissa = mantissa, exponent = exponent, isNegative = isNegativeValue) { throwError(it) }
+    ) { mantissa, exponent, truncatedLiteral ->
+        finalizeParsedDouble(
+            mantissa = mantissa,
+            exponent = exponent,
+            isNegative = isNegativeValue,
+            truncatedLiteral = truncatedLiteral
+        ) { throwError(it) }
     }
 
     if (isQuoted) {
@@ -94,14 +132,8 @@ fun GhostJsonFlatReader.nextIntExtension(): Int {
     val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
 
-    val startOfNumber = position
-
-    val absoluteValue = if (startOfNumber < limit && getByte(startOfNumber) == TOK.ZERO_INT) {
-        handleLeadingZero()
-        0
-    } else {
-        parseIntDigits(isNegative = isNegativeValue, startOfNumber = startOfNumber)
-    }
+    validateLeadingZero()
+    val absoluteValue = parseIntDigits(isNegative = isNegativeValue)
 
     val finalIntResult = if (isNegativeValue) {
         -absoluteValue
@@ -121,14 +153,8 @@ fun GhostJsonFlatReader.nextLongExtension(): Long {
     val isQuoted = (header and NUM.NUMERIC_HEADER_QUOTED) != 0
     val isNegativeValue = (header and NUM.NUMERIC_HEADER_NEGATIVE) != 0
 
-    val startOfNumber = position
-
-    val absoluteValue = if (startOfNumber < limit && getByte(startOfNumber) == TOK.ZERO_INT) {
-        handleLeadingZero()
-        0L
-    } else {
-        parseLongDigits(isNegative = isNegativeValue, startOfNumber = startOfNumber)
-    }
+    validateLeadingZero()
+    val absoluteValue = parseLongDigits(isNegative = isNegativeValue)
 
     val finalLongResult = if (absoluteValue == Long.MIN_VALUE) {
         absoluteValue
@@ -154,17 +180,8 @@ private fun GhostJsonFlatReader.prepareNumericHeader(): Int = prepareNumericHead
     throwError = { throwError(it) },
 )
 
-private fun GhostJsonFlatReader.handleLeadingZero() = handleLeadingZeroCore(
-    position = position,
-    limit = limit,
-    getByte = { getByte(it) },
-    throwError = { throwError(it) },
-    consumeOne = { internalSkip(1) },
-)
-
 private fun GhostJsonFlatReader.parseIntDigits(
-    isNegative: Boolean,
-    startOfNumber: Int
+    isNegative: Boolean
 ): Int = parseIntDigitsCore(
     isNegative = isNegative,
     resetNextTokenByte = { nextTokenByte = SCN.RESET_TOKEN_BYTE },
@@ -172,16 +189,11 @@ private fun GhostJsonFlatReader.parseIntDigits(
     setPosition = { position = it },
     limit = limit,
     getByte = { getByte(it) },
-    onNumericSeparator = {
-        position = startOfNumber
-        nextDouble().toInt()
-    },
     throwError = { throwError(it) },
 )
 
 private fun GhostJsonFlatReader.parseLongDigits(
-    isNegative: Boolean,
-    startOfNumber: Int
+    isNegative: Boolean
 ): Long = parseLongDigitsCore(
     isNegative = isNegative,
     resetNextTokenByte = { nextTokenByte = SCN.RESET_TOKEN_BYTE },
@@ -189,10 +201,6 @@ private fun GhostJsonFlatReader.parseLongDigits(
     setPosition = { position = it },
     limit = limit,
     getByte = { getByte(it) },
-    onNumericSeparator = {
-        position = startOfNumber
-        nextDouble().toLong()
-    },
     throwError = { throwError(it) },
 )
 

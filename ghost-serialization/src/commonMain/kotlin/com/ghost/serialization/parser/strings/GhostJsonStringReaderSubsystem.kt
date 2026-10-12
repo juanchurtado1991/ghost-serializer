@@ -24,6 +24,7 @@ import com.ghost.serialization.parser.common.json.hasNextCore
 import com.ghost.serialization.parser.common.json.nextBooleanCore
 import com.ghost.serialization.parser.common.json.nextKeyCommaPreambleCore
 import com.ghost.serialization.parser.common.json.nextOrNullCore
+import com.ghost.serialization.parser.common.json.selectEscapedKeyCore
 import com.ghost.serialization.parser.common.json.selectValidateCommasCore
 import com.ghost.serialization.parser.common.json.skipValueCore
 import com.ghost.serialization.parser.common.matchCoerceBooleanBytes
@@ -343,7 +344,14 @@ private fun GhostJsonStringReader.internalSelect(
     val end = findClosingQuote(start, charLimit)
 
     if (end == -1) {
-        throwUnterminatedStringError()
+        return selectEscapedKeyCore(
+            options = options,
+            consumeSeparator = consumeSeparator,
+            strictMode = strictMode,
+            readQuotedKey = { readQuotedString() },
+            consumeKeySeparator = { consumeKeySeparator() },
+            throwError = { throwError(it) },
+        )
     }
 
     val length = end - start
@@ -363,6 +371,21 @@ private fun GhostJsonStringReader.internalSelect(
         )) {
             predictedFieldIndex = index + 1
             return index
+        }
+    }
+
+    if (!options.stringDispatchIsExact) {
+        val candidatesByScan = options.rawChars
+        for (candidateIndex in candidatesByScan.indices) {
+            if (verifyKeyMatch(
+                start = start,
+                length = length,
+                expected = candidatesByScan[candidateIndex],
+                consumeSeparator = consumeSeparator
+            )) {
+                predictedFieldIndex = candidateIndex + 1
+                return candidateIndex
+            }
         }
     }
 
@@ -405,10 +428,6 @@ private fun GhostJsonStringReader.handleSelectNoMatch(
 
 private fun GhostJsonStringReader.throwExpectedKeyOrStringError(consumeSeparator: Boolean) {
     throwError(if (consumeSeparator) EM.ERR_EXPECTED_KEY else EM.ERR_EXPECTED_STRING)
-}
-
-private fun GhostJsonStringReader.throwUnterminatedStringError() {
-    throwError(EM.UNTERMINATED_STRING_ERROR)
 }
 
 private fun GhostJsonStringReader.computeKeyHash(
@@ -520,7 +539,7 @@ inline fun <T> GhostJsonStringReader.readSet(crossinline itemParser: () -> T): S
         endArray()
         return emptySet()
     }
-    val set = HashSet<T>(initialCollectionCapacity)
+    val set = LinkedHashSet<T>(initialCollectionCapacity)
     val maxSize = maxCollectionSize
 
     while (true) {
@@ -543,7 +562,7 @@ inline fun <T> GhostJsonStringReader.readSet(crossinline itemParser: () -> T): S
 }
 
 inline fun <K, V> GhostJsonStringReader.readMap(
-    crossinline keyParser: () -> K,
+    crossinline keyParser: () -> K?,
     crossinline valueParser: () -> V
 ): Map<K, V> {
     beginObject()
@@ -556,7 +575,7 @@ inline fun <K, V> GhostJsonStringReader.readMap(
     val maxSize = maxCollectionSize
 
     while (true) {
-        val key = keyParser()
+        val key = keyParser() ?: throwError(EM.ERR_TRAILING_COMMA)
         consumeKeySeparator()
         val value = valueParser()
         map[key] = value

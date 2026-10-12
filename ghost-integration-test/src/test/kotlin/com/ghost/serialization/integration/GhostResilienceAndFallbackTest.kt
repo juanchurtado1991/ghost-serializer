@@ -2,7 +2,9 @@ package com.ghost.serialization.integration
 
 import com.ghost.serialization.Ghost
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.integration.model.DeepResilientModel
 import com.ghost.serialization.integration.model.HomeStatus
+import com.ghost.serialization.integration.model.ResilientItem
 import com.ghost.serialization.integration.model.SmartDevice
 import com.ghost.serialization.integration.model.SmartHome
 import kotlin.test.Test
@@ -134,5 +136,55 @@ class GhostResilienceAndFallbackTest {
 
         // config is malformed but @GhostResilient, should be null instead of crashing
         assertEquals(expected = null, actual = home.config)
+    }
+
+    @Test
+    fun testGhostResilientListElementTypeMismatch() {
+        // Second item's value has a type mismatch but the field is resilient
+        val json = """
+        {
+            "id": "deep_1",
+            "list": [
+                { "id": "good", "value": 10 },
+                { "id": "bad", "value": "NOT_AN_INT" }
+            ]
+        }
+        """.trimIndent()
+
+        val model = Ghost.deserialize<DeepResilientModel>(json)
+        assertEquals(expected = 2, actual = model.list.size)
+        assertEquals(expected = 10, actual = model.list[0].value)
+        assertEquals(expected = null, actual = model.list[1].value)
+    }
+    @Test
+    fun testGhostResilientListSkipsNonObjectElements() {
+        // ResilientItem is @GhostResilient: a non-object array element should be skipped, not thrown
+        val json = """
+        [
+            {"id": "v1", "value": 10},
+            "TOTALLY_MALFORMED_ITEM",
+            {"id": "v3", "value": 30}
+        ]
+        """.trimIndent()
+
+        val list = Ghost.deserialize<List<ResilientItem>>(json)
+        assertEquals(expected = 2, actual = list.size)
+        assertEquals(expected = "v1", actual = list[0].id)
+        assertEquals(expected = "v3", actual = list[1].id)
+    }
+    @Test
+    fun testGhostFallbackWithMissingDiscriminator() {
+        // No "type" key at all — should route to SmartDevice's UnknownDevice fallback
+        val json = """
+        {
+            "id": "h_missing",
+            "devices": [
+                { "brightness": 10 }
+            ]
+        }
+        """.trimIndent()
+
+        val home = Ghost.deserialize<SmartHome>(json)
+        assertTrue(actual = home.devices[0] is SmartDevice.UnknownDevice)
     }
 }

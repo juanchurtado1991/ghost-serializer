@@ -1,6 +1,7 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.common.createByteArraySource
 import com.ghost.serialization.parser.streaming.GhostJsonReader
 import com.ghost.serialization.parser.streaming.beginArray
 import com.ghost.serialization.parser.streaming.beginObject
@@ -18,6 +19,7 @@ import com.ghost.serialization.parser.streaming.nextKey
 import com.ghost.serialization.parser.streaming.nextLong
 import com.ghost.serialization.parser.streaming.nextString
 import com.ghost.serialization.parser.streaming.readList
+import com.ghost.serialization.parser.streaming.skipValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -553,5 +555,19 @@ class GhostReaderEdgeCaseTest {
             expected = 0,
             actual = reader.nextInt()
         )
+    }
+
+    @Test
+    fun skipValueRespectsMaxDepth() {
+        // DoS protection: nesting depth is checked even for an unknown/skipped field.
+        val deepJson = "{\"unknown\": " + "[".repeat(120) + "]" + "}".repeat(120)
+        val reader =
+            GhostJsonReader(createByteArraySource(data = deepJson.encodeToByteArray()), maxDepth = 100)
+        reader.beginObject()
+        reader.nextKey()
+        reader.consumeKeySeparator()
+        assertFailsWith<GhostJsonException> {
+            reader.skipValue()
+        }
     }
 }

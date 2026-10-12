@@ -82,26 +82,6 @@ internal inline fun consumeNumericCoercionFooterCore(
 }
 
 /**
- * Consumes a lone leading `0` (used by int/long fast paths) and rejects `0` + digit.
- */
-internal inline fun handleLeadingZeroCore(
-    position: Int,
-    limit: Int,
-    getByte: (Int) -> Int,
-    throwError: (String) -> Nothing,
-    consumeOne: () -> Unit,
-) {
-    val nextCursor = position + 1
-    if (nextCursor < limit) {
-        val nextDigitByte = getByte(nextCursor)
-        if (nextDigitByte in TOK.ZERO_INT..TOK.NINE_INT) {
-            throwError(EM.ERR_LEADING_ZEROS)
-        }
-    }
-    consumeOne()
-}
-
-/**
  * Asserts that a leading `0` is not followed by another digit.
  */
 internal inline fun validateLeadingZeroCore(

@@ -174,6 +174,6 @@ internal class SerializeCodeEmitter(
             writerClass = writerClass
         )
         activeEmitter = valueEmitter
-        valueEmitter.emitValue(code = code, prop = prop, accessor = accessor)
+        valueEmitter.emitValueOrNull(code = code, prop = prop, accessor = accessor)
     }
 }

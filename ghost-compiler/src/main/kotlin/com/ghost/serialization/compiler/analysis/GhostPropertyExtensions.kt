@@ -4,6 +4,7 @@ import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.TypeName
 import com.ghost.serialization.compiler.internal.GhostCommonConstants as CC
 import com.ghost.serialization.compiler.internal.GhostAnalyzerConstants as AC
+import com.ghost.serialization.compiler.internal.GhostCodegenConstants as CG
 
 
 /**
@@ -51,7 +52,7 @@ internal fun GhostPropertyModel.getDefaultValueReturnExpression(
             AC.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, varName, resultVar)
 
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+            val bang = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
                 CC.STR_EMPTY
             } else {
                 AC.STR_BANG_BANG
@@ -99,7 +100,7 @@ internal fun GhostPropertyModel.getFragmentedDefaultValueReturnExpression(
             AC.TEMPLATE_IF_MASK_RETURN.format(maskName, bitMaskStr, ctxVar, resultVar)
 
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
+            val bang = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
                 CC.STR_EMPTY
             } else {
                 AC.STR_BANG_BANG
@@ -139,20 +140,20 @@ internal fun GhostPropertyModel.getFragmentedReturnExpression(): String {
     return when {
         isPrimitive -> ctxVar
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
-                CC.STR_EMPTY
+            val unwrapped = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
+                ctxVar
             } else {
-                AC.STR_BANG_BANG
+                requireLocalValue(local = ctxVar)
             }
 
-            AC.TEMPLATE_WRAP_TYPE.format(typeName, "$ctxVar$bang")
+            AC.TEMPLATE_WRAP_TYPE.format(typeName, unwrapped)
         }
 
         else -> {
             if (isNullable) {
                 ctxVar
             } else {
-                "$ctxVar${AC.STR_BANG_BANG}"
+                requireLocalValue(local = ctxVar)
             }
         }
     }
@@ -214,19 +215,19 @@ internal fun GhostPropertyModel.getReturnExpression(): String {
     return when {
         isPrimitive -> varName
         isUnboxedValueClass -> {
-            val bang = if (valueClassProperty!!.type.isPrimitive()) {
-                CC.STR_EMPTY
+            val unwrapped = if (valueClassProperty!!.holdsNullableOrPrimitive()) {
+                varName
             } else {
-                AC.STR_BANG_BANG
+                requireLocalValue(local = varName)
             }
-            AC.TEMPLATE_WRAP_TYPE.format(typeName, "$varName$bang")
+            AC.TEMPLATE_WRAP_TYPE.format(typeName, unwrapped)
         }
 
         else -> {
             if (isNullable) {
                 varName
             } else {
-                "$varName${AC.STR_BANG_BANG}"
+                requireLocalValue(local = varName)
             }
         }
     }
@@ -277,3 +278,87 @@ internal fun GhostPropertyModel.getVariableType(): TypeName {
         else -> typeName.copy(nullable = true)
     }
 }
+
+/**
+ * True when a missing JSON field must fail decoding: the property is a constructor parameter (a
+ * property declared in the class body is written but cannot be set, so it is never required), is
+ * non-nullable, has no constructor default, and is not a proto3 field whose zero value the
+ * encoder omits.
+ */
+internal fun GhostPropertyModel.isRequiredOnWire(): Boolean =
+    isInConstructor && !isNullable && !hasDefaultValue && protoOmittedZeroLiteral() == null
+
+/**
+ * True when the encoder may omit a proto3 field holding its zero value: the field has a
+ * [protoZeroLiteral] and either no constructor default (a missing field decodes as the zero
+ * value) or a default that is that same zero. A different default (`val active: Boolean = true`)
+ * would turn an omitted zero into the default on decode, so such a field is always written.
+ */
+internal fun GhostPropertyModel.omitsProtoZeroOnEncode(): Boolean {
+    val zeroLiteral = protoZeroLiteral() ?: return false
+    if (!hasDefaultValue) {
+        return true
+    }
+    val expression = defaultExpression ?: return false
+    return when (zeroLiteral) {
+        AC.STR_EMPTY_LIST_CALL, AC.STR_EMPTY_SET_CALL, AC.STR_EMPTY_MAP_CALL ->
+            expression in AC.DEFAULT_EXPR_EMPTY_COLLECTION_CALLS
+
+        CC.STR_FALSE, CG.STR_EMPTY_STRING, AC.STR_EMPTY_BYTE_ARRAY_CALL -> expression == zeroLiteral
+        else -> expression.trimEnd(*AC.NUMERIC_LITERAL_SUFFIXES).toDoubleOrNull() == 0.0
+    }
+}
+
+/**
+ * The proto3 zero value, as Kotlin source, of a field that has no constructor default and is
+ * omitted on encode when it holds that value; a missing field decodes as this value, so a
+ * message reads back what it wrote (proto3 JSON treats an absent field as its zero value).
+ */
+internal fun GhostPropertyModel.protoOmittedZeroLiteral(): String? = protoZeroLiteral()?.takeIf { !hasDefaultValue }
+
+/**
+ * The proto3 zero value, as Kotlin source, of a `@GhostProtoSerialization` field whose type
+ * has one (numbers, `Boolean`, `String`, `ByteArray`, collections, also inside a value class);
+ * `null` for nullable fields, custom coders and types without a zero value.
+ */
+internal fun GhostPropertyModel.protoZeroLiteral(): String? {
+    val hasZeroValueSemantics = isProto && !isNullable && customDecoder == null && customEncoder == null
+    if (!hasZeroValueSemantics) {
+        return null
+    }
+    val target = valueClassProperty?.takeIf { isValueClass } ?: this
+    return when {
+        target.isList -> AC.STR_EMPTY_LIST_CALL
+        target.isSet -> AC.STR_EMPTY_SET_CALL
+        target.isMap -> AC.STR_EMPTY_MAP_CALL
+        else -> when (target.type.declaration.qualifiedName?.asString()) {
+            AC.K_BYTE, AC.K_INT, AC.K_SHORT -> AC.STR_ZERO
+            AC.K_BOOLEAN -> CC.STR_FALSE
+            AC.K_BYTE_ARRAY -> AC.STR_EMPTY_BYTE_ARRAY_CALL
+            AC.K_DOUBLE -> AC.STR_ZERO_D
+            AC.K_FLOAT -> AC.STR_ZERO_F
+            AC.K_LONG -> AC.STR_ZERO_L
+            AC.K_STRING -> CG.STR_EMPTY_STRING
+            AC.K_ULONG -> AC.STR_ZERO_UL
+            else -> null
+        }
+    }
+}
+
+/** Non-null constructor argument for a non-nullable property tracked in a nullable [local]. */
+internal fun GhostPropertyModel.requireLocalValue(
+    local: String
+): String {
+    val zeroLiteral = protoOmittedZeroLiteral() ?: return local + AC.STR_BANG_BANG
+    return AC.TEMPLATE_ELVIS_PARENTHESIZED.format(local, zeroLiteral)
+}
+
+/**
+ * True when the encoder may skip a nullable property holding `null`: its constructor default is
+ * `null`, so the omitted field decodes back to `null`. Any other default (`val age: Int? = 42`)
+ * would turn the omitted `null` into that default, so `null` is written explicitly.
+ */
+internal fun GhostPropertyModel.omitsNullOnEncode(): Boolean = hasDefaultValue && defaultExpression == CC.STR_NULL
+
+/** Whether a value-class property's local can be passed to the wrapper as is (no `!!`/default needed). */
+internal fun GhostPropertyModel.holdsNullableOrPrimitive(): Boolean = isNullable || type.isPrimitive()

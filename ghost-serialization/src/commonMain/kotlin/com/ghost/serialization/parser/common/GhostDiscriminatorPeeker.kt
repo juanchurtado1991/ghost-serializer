@@ -4,12 +4,14 @@ import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker.peek
 import com.ghost.serialization.parser.common.GhostDiscriminatorPeeker.peekChars
 import com.ghost.serialization.parser.common.GhostHeuristics.maxDiscriminatorPeekDistance
+import com.ghost.serialization.parser.common.json.GhostJsonPathReconstruction
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.BACKSLASH_INT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.BYTE_MASK
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants.BYTE_SHIFT_UNIT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.CLOSE_ARR_INT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.CLOSE_OBJ_INT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.COLON_INT
+import com.ghost.serialization.parser.common.constants.GhostJsonTokens.COMMA_INT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.OPEN_ARR_INT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.OPEN_OBJ_INT
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.QUOTE_INT
@@ -21,52 +23,19 @@ import okio.ByteString
 
 /**
  * Peeks a JSON discriminator key's value without full parsing, for KSP-generated polymorphic
- * deserializers — returns `null` if key isn't found within [maxDiscriminatorPeekDistance]
- * bytes, or the value looks too complex to extract without a real parse. [peek] serves the
- * byte-backed channels (flat/streaming) and takes [peek]'s `isStreaming` flag to pick a direct
- * `rawData` array read over the [GhostSource] indirection whenever a raw array is actually
+ * deserializers — returns `null` if the key isn't found before the object closes or within
+ * [maxDiscriminatorPeekDistance] bytes, or its value is not a string. The scan walks the object's
+ * members (key, `:`, value) and skips each value whole, so a string value that happens to equal
+ * the key name is never mistaken for the key, and it stops at the object's closing brace, so a
+ * missing key never reads past the end of a stream (the streaming channel reads through
+ * `byteOrEof`). Keys and values containing escapes are decoded before comparing/returning.
+ * [peek] serves the byte-backed channels (flat/streaming) and takes `isStreaming` to pick a
+ * direct `rawData` array read over the [GhostSource] indirection whenever a raw array is
  * available; [peekChars] is the char-channel counterpart for [GhostJsonStringReader], same scan
  * logic, no UTF-8 bridge.
  */
 @InternalGhostApi
 object GhostDiscriminatorPeeker {
-
-    @PublishedApi
-    internal fun contentEqualsKey(
-        chars: CharArray,
-        keyStart: Int,
-        key: String,
-    ): Boolean {
-        val keySize = key.length
-        for (i in 0 until keySize) {
-            if (chars[keyStart + i] != key[i]) {
-                return false
-            }
-        }
-        return true
-    }
-
-    @PublishedApi
-    internal inline fun extractValue(
-        start: Int,
-        limit: Int,
-        crossinline getByte: (Int) -> Int,
-        crossinline decodeValue: (valueStart: Int, valueEnd: Int) -> String?,
-    ): String? {
-        var position = start
-        val valueStart = position
-        while (position < limit) {
-            val valueByte = getByte(position)
-            if (valueByte == QUOTE_INT) {
-                return decodeValue(valueStart, position)
-            }
-            if (valueByte == BACKSLASH_INT) {
-                return null
-            }
-            position++
-        }
-        return null
-    }
 
     fun peek(
         source: GhostSource,
@@ -77,7 +46,7 @@ object GhostDiscriminatorPeeker {
         key: ByteString,
     ): String? {
         val getByte = if (isStreaming) {
-            { pos: Int -> source[pos] }
+            { pos: Int -> source.byteOrEof(index = pos) }
         } else {
             { pos: Int -> rawData[pos].toInt() and BYTE_MASK }
         }
@@ -85,9 +54,10 @@ object GhostDiscriminatorPeeker {
             start = start,
             limit = limit,
             keySize = key.size,
+            keyName = key.utf8(),
             getByte = getByte,
             matchesKey = { keyStart -> source.contentEquals(start = keyStart, expected = key) },
-            decodeValue = { valueStart, valueEnd -> source.decodeToString(start = valueStart, end = valueEnd) },
+            decodeRange = { rangeStart, rangeEnd -> source.decodeToString(start = rangeStart, end = rangeEnd) },
         )
     }
 
@@ -102,20 +72,59 @@ object GhostDiscriminatorPeeker {
             start = start,
             limit = limit,
             keySize = key.length,
+            keyName = key,
             getByte = { pos -> chars[pos].code },
             matchesKey = { keyStart -> contentEqualsKey(chars = chars, keyStart = keyStart, key = key) },
-            decodeValue = { valueStart, valueEnd -> rawData.substring(valueStart, valueEnd) },
+            decodeRange = { rangeStart, rangeEnd -> rawData.substring(rangeStart, rangeEnd) },
         )
     }
 
-    @PublishedApi
-    internal inline fun peekInternal(
+    private fun contentEqualsKey(
+        chars: CharArray,
+        keyStart: Int,
+        key: String,
+    ): Boolean {
+        val keySize = key.length
+        for (i in 0 until keySize) {
+            if (chars[keyStart + i] != key[i]) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private inline fun containsBackslash(
+        start: Int,
+        end: Int,
+        getByte: (Int) -> Int,
+    ): Boolean {
+        for (index in start until end) {
+            if (getByte(index) == BACKSLASH_INT) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private inline fun decodeStringBody(
+        start: Int,
+        end: Int,
+        getByte: (Int) -> Int,
+        decodeRange: (rangeStart: Int, rangeEnd: Int) -> String,
+    ): String {
+        val raw = decodeRange(start, end)
+        val hasEscapes = containsBackslash(start = start, end = end, getByte = getByte)
+        return if (hasEscapes) GhostJsonPathReconstruction.unescapeKey(raw = raw) else raw
+    }
+
+    private inline fun peekInternal(
         start: Int,
         limit: Int,
         keySize: Int,
-        crossinline getByte: (Int) -> Int,
-        crossinline matchesKey: (keyStart: Int) -> Boolean,
-        crossinline decodeValue: (valueStart: Int, valueEnd: Int) -> String?,
+        keyName: String,
+        getByte: (Int) -> Int,
+        matchesKey: (keyStart: Int) -> Boolean,
+        decodeRange: (rangeStart: Int, rangeEnd: Int) -> String,
     ): String? {
         var position = skipLeadingWhitespace(start = start, limit = limit, getByte = getByte)
         if (position >= limit) {
@@ -133,47 +142,76 @@ object GhostDiscriminatorPeeker {
 
         val scanLimit = (position + maxDiscriminatorPeekDistance).coerceAtMost(limit)
 
-        while (position < scanLimit) {
-            val byte = getByte(position)
-
-            when (byte) {
-                QUOTE_INT -> {
-                    val keyStart = position + 1
-                    val isKeyMatch = keyStart + keySize < scanLimit &&
-                            getByte(keyStart + keySize) == QUOTE_INT &&
-                            matchesKey(keyStart)
-
-                    if (isKeyMatch) {
-                        return tryExtractValue(
-                            start = keyStart + keySize + 1,
-                            limit = scanLimit,
-                            getByte = getByte,
-                            decodeValue = decodeValue,
-                        )
-                    }
-
-                    position = skipString(start = keyStart, limit = scanLimit, getByte = getByte)
+        while (true) {
+            position = skipLeadingWhitespace(start = position, limit = scanLimit, getByte = getByte)
+            if (position >= scanLimit) {
+                return null
+            }
+            when (getByte(position)) {
+                COMMA_INT -> {
+                    position++
+                    continue
                 }
 
-                OPEN_OBJ_INT, OPEN_ARR_INT -> position = skipBalanced(
+                QUOTE_INT -> Unit
+                else -> return null
+            }
+            val keyStart = position + 1
+            val keyEnd = skipString(start = keyStart, limit = scanLimit, getByte = getByte)
+            if (keyEnd >= scanLimit) {
+                return null
+            }
+            val keyLength = keyEnd - 1 - keyStart
+            val isKeyMatch = if (keyLength == keySize) {
+                matchesKey(keyStart)
+            } else {
+                keyLength > keySize &&
+                    containsBackslash(start = keyStart, end = keyEnd - 1, getByte = getByte) &&
+                    GhostJsonPathReconstruction.unescapeKey(raw = decodeRange(keyStart, keyEnd - 1)) == keyName
+            }
+            position = skipLeadingWhitespace(start = keyEnd, limit = scanLimit, getByte = getByte)
+            if (position >= scanLimit || getByte(position) != COLON_INT) {
+                return null
+            }
+            position = skipLeadingWhitespace(start = position + 1, limit = scanLimit, getByte = getByte)
+            if (position >= scanLimit) {
+                return null
+            }
+            val valueByte = getByte(position)
+            if (isKeyMatch) {
+                if (valueByte != QUOTE_INT) {
+                    return null
+                }
+                val valueEnd = skipString(start = position + 1, limit = scanLimit, getByte = getByte)
+                if (valueEnd >= scanLimit) {
+                    return null
+                }
+                return decodeStringBody(
+                    start = position + 1,
+                    end = valueEnd - 1,
+                    getByte = getByte,
+                    decodeRange = decodeRange
+                )
+            }
+            position = when (valueByte) {
+                QUOTE_INT -> skipString(start = position + 1, limit = scanLimit, getByte = getByte)
+                OPEN_OBJ_INT, OPEN_ARR_INT -> skipBalanced(
                     start = position,
-                    open = byte,
+                    open = valueByte,
                     limit = scanLimit,
                     getByte = getByte,
                 )
 
-                else -> position++
+                else -> skipScalar(start = position, limit = scanLimit, getByte = getByte)
             }
         }
-        return null
     }
 
-    @PublishedApi
-    internal inline fun skipBalanced(
+    private inline fun skipBalanced(
         start: Int,
         open: Int,
         limit: Int,
-        crossinline getByte: (Int) -> Int,
+        getByte: (Int) -> Int,
     ): Int {
         if (getByte(start) != open) {
             return start + 1
@@ -201,28 +239,42 @@ object GhostDiscriminatorPeeker {
         return position
     }
 
-    @PublishedApi
-    internal inline fun skipLeadingWhitespace(
+    private inline fun skipLeadingWhitespace(
         start: Int,
         limit: Int,
-        crossinline getByte: (Int) -> Int,
+        getByte: (Int) -> Int,
     ): Int {
         var position = start
         while (position < limit) {
             val byte = getByte(position)
-            val isNonWhitespace = byte > SPACE_INT ||
-                    (WHITESPACE_MASK and (BYTE_SHIFT_UNIT shl byte)) == RESULT_NONE
+            val isNonWhitespace = byte > SPACE_INT || byte < 0 ||
+                (WHITESPACE_MASK and (BYTE_SHIFT_UNIT shl byte)) == RESULT_NONE
             if (isNonWhitespace) return position
             position++
         }
         return position
     }
 
-    @PublishedApi
-    internal inline fun skipString(
+    private inline fun skipScalar(
         start: Int,
         limit: Int,
-        crossinline getByte: (Int) -> Int,
+        getByte: (Int) -> Int,
+    ): Int {
+        var position = start
+        while (position < limit) {
+            val byte = getByte(position)
+            val isScalarEnd = byte == COMMA_INT || byte == CLOSE_OBJ_INT || byte == CLOSE_ARR_INT ||
+                byte <= SPACE_INT
+            if (isScalarEnd) return position
+            position++
+        }
+        return position
+    }
+
+    private inline fun skipString(
+        start: Int,
+        limit: Int,
+        getByte: (Int) -> Int,
     ): Int {
         var position = start
         while (position < limit) {
@@ -236,54 +288,5 @@ object GhostDiscriminatorPeeker {
             position++
         }
         return limit
-    }
-
-    @PublishedApi
-    internal inline fun skipWhitespaceAndExpect(
-        start: Int,
-        limit: Int,
-        expected: Int,
-        crossinline getByte: (Int) -> Int,
-    ): Int {
-        val position = skipLeadingWhitespace(start = start, limit = limit, getByte = getByte)
-        if (position >= limit) {
-            return -1
-        }
-        return if (getByte(position) == expected) {
-            position + 1
-        } else {
-            -1
-        }
-    }
-
-    @PublishedApi
-    internal inline fun tryExtractValue(
-        start: Int,
-        limit: Int,
-        crossinline getByte: (Int) -> Int,
-        crossinline decodeValue: (valueStart: Int, valueEnd: Int) -> String?,
-    ): String? {
-        val colonPosition = skipWhitespaceAndExpect(
-            start = start,
-            limit = limit,
-            expected = COLON_INT,
-            getByte = getByte,
-        )
-        if (colonPosition == -1) return null
-
-        val quotePosition = skipWhitespaceAndExpect(
-            start = colonPosition,
-            limit = limit,
-            expected = QUOTE_INT,
-            getByte = getByte,
-        )
-        if (quotePosition == -1) return null
-
-        return extractValue(
-            start = quotePosition,
-            limit = limit,
-            getByte = getByte,
-            decodeValue = decodeValue,
-        )
     }
 }

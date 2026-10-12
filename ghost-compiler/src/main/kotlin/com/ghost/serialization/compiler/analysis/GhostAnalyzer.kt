@@ -46,11 +46,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
 
         val parameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
 
+        val constructorParameterNames = parameters.mapNotNull { it.name?.asString() }.toSet()
         val allProps = classDeclaration.getAllProperties().toList()
         val overriddenProps = allProps.mapNotNull { it.findOverridee() }.toSet()
         val properties = allProps
             .filterNot { it in overriddenProps }
             .filterNot { it.hasAnnotation(name = AC.GHOST_IGNORE) }
+            .filter { it.hasBackingField || it.simpleName.asString() in constructorParameterNames }
             .toList()
 
         validatePropertyVisibility(classDeclaration = classDeclaration, properties = properties)
@@ -104,6 +106,7 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
 
         validateMapKey(prop = prop, isMap = isMap, mapKeyType = mapKeyType)
+        validateEnumsAnnotated(prop = prop, type = type)
 
         val param = parameters.find {
             it.name?.asString() == prop.simpleName.asString()
@@ -317,7 +320,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
                 )
             )
         } else {
-            properties.map { prop -> buildPropertyModel(prop = prop, parameters = parameters) }
+            val dependencySources = findDefaultDependencySources(parameters = parameters)
+            val models = properties.map { prop ->
+                val model = buildPropertyModel(prop = prop, parameters = parameters)
+                if (model.kotlinName in dependencySources) model.copy(isDefaultDependencySource = true) else model
+            }
+            reportTooManyDefaultSources(classDeclaration = classDeclaration, models = models)
+            models
         }
     }
 
@@ -384,6 +393,45 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         return buildPropertyModel(prop = prop, parameters = listOf(param)).copy(isProto = isProto)
     }
 
+    private fun reportTooManyDefaultSources(
+        classDeclaration: KSClassDeclaration,
+        models: List<GhostPropertyModel>
+    ) {
+        val sources = models.filter { it.isDefaultDependencySource && it.hasDefaultValue }
+        if (sources.size <= CC.MAX_DEPENDENCY_SOURCE_COUNT) return
+        logger.error(
+            AC.STR_ERR_DEFAULT_SOURCES_1 + classDeclaration.simpleName.asString() + AC.STR_ERR_DEFAULT_SOURCES_2 +
+                CC.MAX_DEPENDENCY_SOURCE_COUNT +
+                AC.STR_ERR_DEFAULT_SOURCES_3.format(sources.joinToString { it.kotlinName }),
+            classDeclaration
+        )
+    }
+
+    private fun findDefaultDependencySources(
+        parameters: List<KSValueParameter>
+    ): Set<String> {
+        val parameterNames = parameters.mapNotNull { it.name?.asString() }.toSet()
+        return parameters.flatMap { parameter ->
+            val ownName = parameter.name?.asString()
+            val raw = DefaultExpressionExtractor.extractRaw(param = parameter) ?: return@flatMap emptyList()
+            IDENTIFIER_REFERENCE.findAll(input = raw)
+                .map { it.groupValues[1] }
+                .filter { it in parameterNames && it != ownName }
+                .toList()
+        }.toSet()
+    }
+
+    private fun findUnannotatedEnum(
+        type: KSType
+    ): KSType? {
+        if (isEnumType(type = type) && !isGhostType(type = type)) {
+            return type
+        }
+        return type.arguments.firstNotNullOfOrNull { argument ->
+            argument.type?.resolve()?.let { argumentType -> findUnannotatedEnum(type = argumentType) }
+        }
+    }
+
     private fun validateClassKind(
         classDeclaration: KSClassDeclaration,
         isData: Boolean,
@@ -405,6 +453,18 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         }
     }
 
+    private fun validateEnumsAnnotated(
+        prop: KSPropertyDeclaration,
+        type: KSType
+    ) {
+        val unannotatedEnum = findUnannotatedEnum(type = type) ?: return
+        logger.error(
+            AC.STR_ERR_ENUM_NOT_ANNOTATED_1 + unannotatedEnum.declaration.simpleName.asString() +
+                AC.STR_ERR_ENUM_NOT_ANNOTATED_2 + prop.simpleName.asString() + AC.STR_ERR_ENUM_NOT_ANNOTATED_3,
+            prop
+        )
+    }
+
     private fun validateMapKey(
         prop: KSPropertyDeclaration,
         isMap: Boolean,
@@ -423,6 +483,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         properties: List<GhostPropertyModel>,
         clazz: KSClassDeclaration
     ) {
+        properties.filter { it.kotlinName.isNotEmpty() && it.jsonName.isEmpty() }.forEach { prop ->
+            logger.error(
+                AC.STR_ERR_EMPTY_NAME_1 + prop.kotlinName + AC.STR_ERR_EMPTY_NAME_2 +
+                    clazz.simpleName.asString() + AC.STR_ERR_EMPTY_NAME_3,
+                clazz
+            )
+        }
         val names = properties.groupBy { it.jsonName }
         names.forEach { (name, props) ->
             if (props.size > CC.VAL_ONE) {
@@ -461,6 +528,8 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
     }
 
     companion object {
+        /** An identifier not preceded by `.` (a member access), e.g. `base` in `base * 2`. */
+        private val IDENTIFIER_REFERENCE = Regex(pattern = "(?<![.\\w])([A-Za-z_][A-Za-z0-9_]*)")
         private val PRIMITIVE_ARRAYS = setOf(
             AC.STR_TYPE_INT_ARRAY,
             AC.STR_TYPE_LONG_ARRAY,

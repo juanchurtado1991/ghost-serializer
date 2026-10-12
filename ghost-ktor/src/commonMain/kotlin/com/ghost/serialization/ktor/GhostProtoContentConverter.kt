@@ -48,7 +48,10 @@ class GhostProtoContentConverter(
             registry = registry
         ) ?: return null
 
-        return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
+        return GhostKtorBuffers.readToScratch(
+            content = content,
+            charset = charset
+        ) { scratch, offset ->
             ghostProtoInternalUseFlatReader(bytes = scratch, length = offset) { reader ->
                 configurer?.invoke(reader)
                 serializer.deserialize(reader)
@@ -65,6 +68,7 @@ class GhostProtoContentConverter(
         value = value,
         contentType = contentType,
         typeInfo = typeInfo,
-        registry = registry
+        registry = registry,
+        charset = charset
     )
 }

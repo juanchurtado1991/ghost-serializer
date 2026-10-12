@@ -37,16 +37,16 @@ internal class SerializerSetupEmitter(
 ) {
 
     fun addCachedHeaderProperties(typeSpecBuilder: TypeSpec.Builder) {
-        for (name in ctx.getAllJsonNames()) {
-            val cleanName = name.replace(CC.STR_DOT, CC.STR_UNDERSCORE).uppercase()
-
+        val headerSuffixes = HeaderConstantNames.allocate(jsonNames = ctx.getAllJsonNames())
+        for ((name, cleanName) in headerSuffixes) {
+            val header = CG.FMT_JSON_FIELD.format(JsonStringEscaping.escape(text = name))
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     CG.STR_H_VAL_PREFIX + cleanName,
                     CG.BYTE_STRING_CLASS,
                     KModifier.PRIVATE
                 )
-                    .initializer(CG.TEMPLATE_ENCODE_UTF8, CG.FMT_JSON_FIELD.format(name))
+                    .initializer(CG.TEMPLATE_ENCODE_UTF8, header)
                     .build()
             )
 
@@ -57,7 +57,7 @@ internal class SerializerSetupEmitter(
                         String::class,
                         KModifier.PRIVATE
                     )
-                        .initializer(PC.STR_FORMAT_S, CG.FMT_JSON_FIELD.format(name))
+                        .initializer(PC.STR_FORMAT_S, header)
                         .build()
                 )
             }
@@ -169,7 +169,7 @@ internal class SerializerSetupEmitter(
         val entries = mutableListOf<String>()
         ctx.properties.forEach { prop ->
             if (!prop.isNullable && !prop.hasDefaultValue) {
-                val key = AC.STR_DOUBLE_QUOTE + prop.jsonName + AC.STR_DOUBLE_QUOTE
+                val key = AC.STR_DOUBLE_QUOTE + JsonStringEscaping.escape(text = prop.jsonName) + AC.STR_DOUBLE_QUOTE
                 val value = when {
                     prop.type.isPrimitiveInt() || prop.type.isPrimitiveLong() ||
                             prop.type.isPrimitiveByte() || prop.type.isPrimitiveShort() -> AC.STR_ZERO

@@ -44,8 +44,11 @@ private fun GhostJsonFlatReader.captureJsonValueBytes() {
     val data = rawData
     position = captureJsonValueScan(
         startPosition = position,
-        limit = limit
-    ) { index ->
-        data[index].toInt() and TOK.BYTE_MASK
-    }
+        limit = limit,
+        getUnit = { index -> data[index].toInt() and TOK.BYTE_MASK },
+        onError = { message, errorPosition ->
+            position = errorPosition
+            throwError(message = message)
+        }
+    )
 }

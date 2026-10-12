@@ -2,13 +2,15 @@ package com.ghost.serialization.parser.yaml
 
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics
+import com.ghost.serialization.parser.common.narrowToByte
+import com.ghost.serialization.parser.common.narrowToShort
 import com.ghost.serialization.parser.common.json.GhostJsonPathTracker
 import com.ghost.serialization.parser.common.json.JsonReaderOptions
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
 
 /**
- * High-performance YAML reader operating on a [ByteArray] with minimal intermediate allocations.
+ * YAML reader operating on a [ByteArray] with minimal intermediate allocations.
  *
  * Compares bytes directly (avoids `.toChar()` on hot paths); control bytes live in
  * `GhostYamlTokens`; digit/whitespace/alpha checks use bitwise ops; field matching operates
@@ -31,7 +33,9 @@ import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
  * real members here (public API consumed by KSP-generated code in other Gradle modules) instead
  * of becoming extension functions the way the block/flow/tag/anchor subsystems below do.
  * [isDigit] is a bitwise check (no `.toChar()`, no range object allocation), kept here since it's
- * already internal and shared with `GhostYamlBlockScalarSubsystem.kt`.
+ * already internal and shared with `GhostYamlBlockScalarSubsystem.kt`. Whitespace handling, scalar
+ * decoding, document/value reading and error reporting live as extension functions in the sibling
+ * `GhostYaml*.kt` files of this package.
  */
 @OptIn(InternalGhostApi::class)
 open class GhostYamlFlatReader(var rawData: ByteArray) {
@@ -82,34 +86,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     @PublishedApi
     internal val tokenUnknownName = -2
 
-    // Reset/document/value/key reading now live in GhostYamlDocumentReading.kt and
-    // GhostYamlValueReading.kt (extension functions: reset, readDocument, readAllDocuments,
-    // readValue, readPlainScalarOrMapping, readKey, etc.) — same package, same pattern as the
-    // anchor/tag/flow-style/block-scalar subsystems below.
-
-    // Scalar interpretation, quoted-string unescaping, and number parsing now live in
-    // GhostYamlScalarDecoding.kt (extension functions: interpretScalar, readDoubleQuotedString,
-    // readSingleQuotedString, readNumber, etc.) — same package, same pattern as the anchor/tag/
-    // flow-style/block-scalar subsystems below.
-
-    // ── Scalar subsystems (block, flow, tags, anchors) ─────────────────────────
-
-    // Whitespace/comment/indentation/document-marker handling now lives in
-    // GhostYamlWhitespace.kt (skipWhitespaceAndComments, advanceLine, isDocumentMarker, etc.) —
-    // same package, same extension-function pattern as the other subsystems.
-
     // ── Bitwise scalar type checks ─────────────────────────────────────────────
-    // isNullLiteral/isTrueLiteral/isFalseLiteral/tryParseNumber moved to
-    // GhostYamlScalarDecoding.kt alongside interpretScalar, their only caller. isDigit stays here
-    // — already internal and shared with GhostYamlBlockScalarSubsystem.kt.
-
     internal fun isDigit(currentByte: Byte): Boolean =
         (currentByte - SC.DIGIT_LOWER_BOUND).toUByte() <= (SC.DIGIT_UPPER_BOUND - SC.DIGIT_LOWER_BOUND).toUByte()
-
-    // Error reporting (yamlError) now lives in GhostYamlErrorReporting.kt; document-level error
-    // helpers (noProgressError, rejectTrailingGarbageAfterDocument,
-    // requireExplicitEndBeforeDirectives) moved alongside readDocument/readAllDocuments in
-    // GhostYamlDocumentReading.kt.
 
     fun beginObject() = beginObjectImpl()
     fun endObject() = endObjectImpl()
@@ -126,7 +105,9 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     open fun nextLongOrNull(): Long? = nextLongOrNullImpl()
     fun nextBooleanOrNull(): Boolean? = nextBooleanOrNullImpl()
 
+    fun nextByte(): Byte = narrowToByte(value = nextInt()) { throwError(message = it) }
     fun nextInt(): Int = nextIntImpl()
+    fun nextShort(): Short = narrowToShort(value = nextInt()) { throwError(message = it) }
     open fun nextLong(): Long = nextLongImpl()
     open fun nextProtoUInt64(): ULong = nextProtoUInt64Impl()
 
@@ -190,13 +171,13 @@ open class GhostYamlFlatReader(var rawData: ByteArray) {
     }
 
     inline fun <K, V> readMap(
-        crossinline keyParser: () -> K,
+        crossinline keyParser: () -> K?,
         crossinline valueParser: () -> V
     ): Map<K, V> {
         beginObject()
         val map = HashMap<K, V>()
         while (hasNext()) {
-            val key = keyParser()
+            val key = keyParser() ?: throwError(EM.ERR_EXPECTED_KEY_BEFORE_OBJECT_END)
             consumeKeySeparator()
             val value = valueParser()
             map[key] = value

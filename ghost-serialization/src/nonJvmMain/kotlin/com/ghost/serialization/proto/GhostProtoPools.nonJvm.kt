@@ -14,16 +14,15 @@ actual fun <T> ghostProtoInternalUseFlatReader(
     length: Int,
     block: (GhostProtoJsonFlatReader) -> T
 ): T {
-    var reader = cachedProtoReader
-    if (reader == null) {
-        reader = GhostProtoJsonFlatReader(rawData = bytes)
-        cachedProtoReader = reader
-    } else {
-        reader.resetSlice(
-            buffer = bytes,
-            offset = offset,
-            length = length
-        )
-    }
-    return block(reader)
+    val reader = cachedProtoReader
+        ?: GhostProtoJsonFlatReader(rawData = bytes)
+            .also { cachedProtoReader = it }
+
+    reader.resetSlice(
+        buffer = bytes,
+        offset = offset,
+        length = length
+    )
+
+    return block(reader).also { reader.requireEndOfInput() }
 }

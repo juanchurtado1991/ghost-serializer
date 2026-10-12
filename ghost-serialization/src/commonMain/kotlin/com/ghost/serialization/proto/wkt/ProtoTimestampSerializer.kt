@@ -17,15 +17,24 @@ object ProtoTimestampSerializer : AbstractGhostSerializer<ProtoTimestamp>() {
     override val typeName: String get() = PC.WKT_TIMESTAMP_TYPE
 
     override fun deserialize(reader: GhostJsonReader): ProtoTimestamp {
-        return parseTimestamp(timestampString = reader.nextString())
+        return parseWktString(
+            text = reader.nextString(),
+            throwError = { reader.throwError(message = it) }
+        ) { parseTimestamp(timestampString = it) }
     }
 
     override fun deserialize(reader: GhostJsonFlatReader): ProtoTimestamp {
-        return parseTimestamp(timestampString = reader.nextString())
+        return parseWktString(
+            text = reader.nextString(),
+            throwError = { reader.throwError(message = it) }
+        ) { parseTimestamp(timestampString = it) }
     }
 
     override fun deserialize(reader: GhostJsonStringReader): ProtoTimestamp {
-        return parseTimestamp(timestampString = reader.nextString())
+        return parseWktString(
+            text = reader.nextString(),
+            throwError = { reader.throwError(message = it) }
+        ) { parseTimestamp(timestampString = it) }
     }
 
     override fun serialize(writer: GhostJsonWriter, value: ProtoTimestamp) {

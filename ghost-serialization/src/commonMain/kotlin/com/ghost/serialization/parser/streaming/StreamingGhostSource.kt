@@ -3,6 +3,7 @@
 package com.ghost.serialization.parser.streaming
 
 import com.ghost.serialization.InternalGhostApi
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.parser.bytes.ghostReadLong8
 import com.ghost.serialization.parser.common.AbstractGhostSource
 import com.ghost.serialization.parser.common.GhostHeuristics
@@ -38,6 +39,11 @@ import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants 
  * [com.ghost.serialization.parser.bytes.GhostJsonFlatReader]; [releaseBefore] never discards
  * past an active pin.
  *
+ * A read past the end of the stream throws [GhostJsonException] ("Unexpected end of input"), the
+ * same error the in-memory sources give for truncated JSON, since a stream's length is unknown
+ * until it is reached; an index below [discarded] is a reader bug and stays an
+ * [IndexOutOfBoundsException].
+ *
  * [bufferStart]/[bufferEnd] bound the currently cached [bufferBytes] window as absolute indices;
  * [tempBuffer] is reused across every [getSlow] and [decodeToString] call to avoid
  * per-operation allocations.
@@ -54,6 +60,8 @@ class StreamingGhostSource(val okioSource: BufferedSource) : AbstractGhostSource
 
     internal var discarded: Int = 0
         private set
+
+    internal val availableEnd: Int get() = discarded + buffer.size.toInt()
 
     private var pinStack = IntArray(PIN_STACK_INITIAL_CAPACITY)
     private var pinCount = 0
@@ -123,10 +131,7 @@ class StreamingGhostSource(val okioSource: BufferedSource) : AbstractGhostSource
         okioSource.request(relativeIndex + 1L)
         val available = buffer.size
         if (relativeIndex >= available) {
-            throw IndexOutOfBoundsException(
-                "${EM.ERR_INDEX_OOB_PREFIX}$index${EM.ERR_INDEX_OOB_MID}" +
-                    "${discarded + available}${EM.ERR_INDEX_OOB_SUFFIX}"
-            )
+            throw GhostJsonException(message = "${EM.ERR_UNEXPECTED_EOF}${EM.ERR_AT_POSITION_PREFIX}$index")
         }
 
         val alignedStart =
@@ -248,8 +253,8 @@ class StreamingGhostSource(val okioSource: BufferedSource) : AbstractGhostSource
                 currentPosition = localPosition
                 if (currentPosition >= limit) return -1
             } else {
-                getSlow(index = currentPosition)
-                if (bufferStart == -1 || currentPosition >= bufferEnd) return -1
+                val isEndOfStream = byteOrEof(index = currentPosition) == SCN.MATCH_END
+                if (isEndOfStream || bufferStart == -1 || currentPosition >= bufferEnd) return -1
             }
         }
     }

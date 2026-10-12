@@ -6,6 +6,9 @@ import com.ghost.serialization.acquireScratchBuffer
 import com.ghost.serialization.growScratchBuffer
 import com.ghost.serialization.releaseScratchBuffer
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.charsets.Charset
+import io.ktor.utils.io.charsets.Charsets
+import io.ktor.utils.io.core.String
 import io.ktor.utils.io.readAvailable
 
 /**
@@ -16,9 +19,11 @@ internal object GhostKtorBuffers {
     /**
      * Reads [content] into a pooled scratch buffer that doubles when full.
      * Invokes [block] with the buffer and filled length, then releases the scratch.
+     * A body declared in a non-UTF-8 [charset] reaches [block] re-encoded as UTF-8.
      */
     suspend inline fun <T> readToScratch(
         content: ByteReadChannel,
+        charset: Charset,
         block: (buffer: ByteArray, length: Int) -> T
     ): T {
         var scratch = acquireScratchBuffer(minSize = RESPONSE_SCRATCH_INITIAL_SIZE)
@@ -32,6 +37,10 @@ internal object GhostKtorBuffers {
                 val read = content.readAvailable(scratch, offset, scratch.size - offset)
                 if (read == -1) break
                 offset += read
+            }
+            if (charset != Charsets.UTF_8) {
+                val utf8 = String(scratch, 0, offset, charset).encodeToByteArray()
+                return block(utf8, utf8.size)
             }
             return block(scratch, offset)
         } finally {

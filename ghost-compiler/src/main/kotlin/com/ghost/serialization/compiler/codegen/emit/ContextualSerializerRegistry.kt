@@ -14,6 +14,9 @@ import com.ghost.serialization.compiler.internal.GhostEmitterConstants as C
 /**
  * Tracks contextual serializers for a generated class and emits the backing private fields.
  * Shared by [BaseSerializeEmitter] and [BaseDeserializeEmitter], each holding its own instance.
+ * Fields resolve lazily on first use: the generated object can be initialized (by `Ghost.prewarm()`
+ * or `getAllSerializers()`) before the registry that provides the contextual serializer is added,
+ * and a failed lookup in the object's initializer would leave it unusable for the whole process.
  */
 internal class ContextualSerializerRegistry {
 
@@ -23,18 +26,18 @@ internal class ContextualSerializerRegistry {
         val ghostClass = ClassName(CC.PKG_GHOST, CG.STR_GHOST)
 
         entries.forEach { (type, name) ->
-            val nonNullableType = type.makeNotNullable()
+            val nonNullableTypeName = type.makeNotNullable().toTypeName()
             typeSpecBuilder.addProperty(
                 PropertySpec.builder(
                     name,
                     ClassName(CC.PKG_CONTRACT, CC.STR_GHOST_SERIALIZER)
-                        .parameterizedBy(nonNullableType.toTypeName()),
+                        .parameterizedBy(nonNullableTypeName),
                     KModifier.PRIVATE
                 )
-                    .initializer(
-                        C.TEMPLATE_RESOLVE_SERIALIZER,
+                    .delegate(
+                        C.TEMPLATE_LAZY_RESOLVE_SERIALIZER,
                         ghostClass,
-                        nonNullableType.toTypeName()
+                        nonNullableTypeName
                     )
                     .build()
             )

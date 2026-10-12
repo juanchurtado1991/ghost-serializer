@@ -111,6 +111,7 @@ class GhostJsonEnvelopeKspTest {
         assertTrue("fun routeTyped(envelope: StripeEnvelope)" in generated, generated)
         assertTrue("fun parseTyped(bytes: ByteArray)" in generated, generated)
         assertTrue("dataTargetSerializer" in generated, generated)
+        assertTrue("lazy { Ghost.requireSerializer(InvoicePaid::class) }" in generated, generated)
         assertTrue(
             "\"invoice.paid\" -> envelope.data?.let { RawJsonDecode.decode(it, dataTargetSerializer) }" in generated,
             generated

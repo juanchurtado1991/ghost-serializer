@@ -8,9 +8,13 @@ import com.ghost.serialization.compiler.analysis.isMap
 import com.ghost.serialization.compiler.analysis.isRawJson
 import com.ghost.serialization.compiler.analysis.isSet
 import com.ghost.serialization.compiler.analysis.isValueClassType
+import com.ghost.serialization.compiler.analysis.omitsNullOnEncode
+import com.ghost.serialization.compiler.analysis.omitsProtoZeroOnEncode
 import com.ghost.serialization.compiler.analysis.resolveValueClassInnerType
 import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.codegen.HeaderConstantNames
 import com.ghost.serialization.compiler.model.GhostPropertyModel
+import com.ghost.serialization.compiler.model.collectJsonNames
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -38,16 +42,21 @@ internal abstract class BaseSerializeEmitter(
      */
     private var loopCounter = 0
 
+    private val headerSuffixes: Map<String, String> by lazy {
+        HeaderConstantNames.allocate(jsonNames = collectJsonNames(properties = properties))
+    }
+
     /** Whether the property can be written with a fused fast-path writer method, skipping [emitValue]. */
     protected fun isFusedType(prop: GhostPropertyModel): Boolean {
         if (prop.customEncoder != null) {
             return false
         }
         val type = prop.type.declaration.qualifiedName?.asString()
-        // Proto3 requires int64 on the wire as a quoted string, so route Long through emitValue's
-        // proto branch instead of the fused fast path, which always writes a bare number.
-        val isProtoLongType = prop.isProto && (type == AC.K_LONG || type == AC.K_ULONG)
-        if (isProtoLongType) {
+        // Proto3 writes int64 as a quoted string and non-finite double/float as "NaN"/"Infinity",
+        // so route those through emitValue's proto templates instead of the fused fast path.
+        val isProtoQuotedType = prop.isProto &&
+            (type == AC.K_LONG || type == AC.K_ULONG || type == AC.K_DOUBLE || type == AC.K_FLOAT)
+        if (isProtoQuotedType) {
             return false
         }
         return when (type) {
@@ -78,7 +87,7 @@ internal abstract class BaseSerializeEmitter(
         prop: GhostPropertyModel,
         accessor: CodeBlock
     ): CodeBlock? {
-        if (!prop.isProto || prop.customEncoder != null) {
+        if (!prop.omitsProtoZeroOnEncode()) {
             return null
         }
 
@@ -138,7 +147,7 @@ internal abstract class BaseSerializeEmitter(
         targetPath.drop(currentPath.size).forEach { segment ->
             code.addStatement(
                 C.STR_WRITE_NAME_RAW,
-                prefix + segment.uppercase()
+                prefix + headerSuffix(jsonName = segment)
             )
             code.addStatement(C.STR_WRITER_BEGIN_OBJ)
             currentPath.add(segment)
@@ -155,6 +164,10 @@ internal abstract class BaseSerializeEmitter(
             currentPath.removeAt(currentPath.size - 1)
         }
     }
+
+    private fun headerSuffix(
+        jsonName: String
+    ): String = headerSuffixes[jsonName] ?: HeaderConstantNames.suffixFor(jsonName = jsonName)
 
     private fun isPrefix(prefix: List<String>, full: List<String>): Boolean {
         if (prefix.size > full.size) {
@@ -175,9 +188,7 @@ internal abstract class BaseSerializeEmitter(
             return
         }
 
-        val cleanName = prop.jsonName
-            .replace(CC.STR_DOT, CC.STR_UNDERSCORE)
-            .uppercase()
+        val cleanName = headerSuffix(jsonName = prop.jsonName)
 
         val isStringWriter = writerClass.simpleName == C.STR_GHOST_JSON_STRING_WRITER
         val headerName = if (isStringWriter) {
@@ -248,7 +259,7 @@ internal abstract class BaseSerializeEmitter(
         accessor: CodeBlock
     ) {
         val canUseFused = isFusedType(prop = prop) && !prop.isContextual
-        if (prop.hasDefaultValue) {
+        if (prop.omitsNullOnEncode()) {
             code.beginControlFlow(C.TEMPLATE_IF_NOT_NULL, accessor)
             if (canUseFused) {
                 code.addStatement(C.STR_WRITE_FIELD, headerName, accessor)
@@ -291,7 +302,7 @@ internal abstract class BaseSerializeEmitter(
 
         prop.wrappedKeys?.unwrapFields.orEmpty().forEach { field ->
             val headerName =
-                prefix + field.jsonName.replace(CC.STR_DOT, CC.STR_UNDERSCORE).uppercase()
+                prefix + headerSuffix(jsonName = field.jsonName)
 
             // proto3 oneof: this wire key lives on one sealed subclass, not the parent — guard
             // with an `is` smart-cast instead of a plain path accessor.
@@ -362,7 +373,7 @@ internal abstract class BaseSerializeEmitter(
                         code = code,
                         type = innerType,
                         accessor = innerAccessor,
-                        skipNullCheck = true,
+                        skipNullCheck = false,
                         isProto = isProto
                     )
                     if (isNullable && !skipNullCheck) {
@@ -430,6 +441,23 @@ internal abstract class BaseSerializeEmitter(
         }
     }
 
+    /** [emitValue], preceded by a `null` branch when [prop] is nullable (e.g. a value class wrapping `String?`). */
+    fun emitValueOrNull(
+        code: CodeBlock.Builder,
+        prop: GhostPropertyModel,
+        accessor: Any
+    ) {
+        if (!prop.isNullable) {
+            emitValue(code = code, prop = prop, accessor = accessor)
+            return
+        }
+        code.beginControlFlow(C.TEMPLATE_IF_NULL, accessor)
+        code.addStatement(C.STR_WRITER_NULL_VAL)
+        code.nextControlFlow(C.STR_ELSE)
+        emitValue(code = code, prop = prop, accessor = accessor)
+        code.endControlFlow()
+    }
+
     /** Emits the value-write statement for a property, dispatching by kind (custom encoder, value class, sealed, etc). */
     fun emitValue(code: CodeBlock.Builder, prop: GhostPropertyModel, accessor: Any) {
         if (prop.customEncoder != null) {
@@ -470,7 +498,7 @@ internal abstract class BaseSerializeEmitter(
                     accessor,
                     prop.valueClassProperty.kotlinName
                 )
-                emitValue(code = code, prop = prop.valueClassProperty, accessor = innerAccessor)
+                emitValueOrNull(code = code, prop = prop.valueClassProperty, accessor = innerAccessor)
             }
 
             prop.isSealedClass -> {

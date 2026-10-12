@@ -1,5 +1,6 @@
 package com.ghost.serialization.spring
 
+import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.spring.fixture.GhostSpringTestApplication
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,6 +13,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 /**
  * Verifies [GhostWebMvcAutoConfiguration] on Spring Boot 3.4 with a real MVC controller and the
@@ -128,5 +131,20 @@ class GhostSpringMvcIntegrationTest {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.a.name").value("MAP"))
+    }
+
+    @Test
+    fun requestBodyWithTrailingContentIsRejected() {
+        val error = assertFailsWith<Exception> {
+            mockMvc.perform(
+                post("/api/hello")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"id":42,"name":"boot"} extra"""),
+            )
+        }
+
+        val isCausedByGhostJsonException = generateSequence<Throwable>(seed = error) { it.cause }
+            .any { it is GhostJsonException }
+        assertTrue(actual = isCausedByGhostJsonException)
     }
 }

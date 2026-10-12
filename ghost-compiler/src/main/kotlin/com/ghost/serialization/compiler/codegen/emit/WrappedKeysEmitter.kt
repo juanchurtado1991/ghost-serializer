@@ -3,6 +3,7 @@ package com.ghost.serialization.compiler.codegen.emit
 import com.ghost.serialization.compiler.analysis.localNameSuffix
 import com.ghost.serialization.compiler.analysis.localValueName
 import com.ghost.serialization.compiler.analysis.serializerClassName
+import com.ghost.serialization.compiler.codegen.JsonStringEscaping
 import com.ghost.serialization.compiler.model.GhostPropertyModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -39,7 +40,7 @@ internal object WrappedKeysEmitter {
                 if (index > 0) {
                     initializer.add(PC.STR_COMMA_NEWLINE)
                 }
-                val quotedKey = C.STR_JSON_KEY_QUOTE + key + C.STR_JSON_KEY_COLON_SUFFIX
+                val quotedKey = C.STR_JSON_KEY_QUOTE + JsonStringEscaping.escape(text = key) + C.STR_JSON_KEY_COLON_SUFFIX
                 initializer.add(C.TEMPLATE_WRAPPED_KEY_LITERAL_BYTE, quotedKey)
             }
             initializer.add(C.STR_NEWLINE_CLOSE_PAREN)

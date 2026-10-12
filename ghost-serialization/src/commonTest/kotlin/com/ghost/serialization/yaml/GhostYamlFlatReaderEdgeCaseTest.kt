@@ -54,14 +54,11 @@ class GhostYamlFlatReaderEdgeCaseTest {
     }
 
     @Test
-    fun veryLargeNumberClampsToLongMaxValue() {
+    fun veryLargeNumberOverflowingLongThrows() {
         val reader = readerOf("v: 99999999999999999999")
         reader.beginObject()
         reader.selectNameAndConsume(options = JsonReaderOptions.of("v"))
-        assertEquals(
-            expected = Long.MAX_VALUE,
-            actual = reader.nextLong()
-        )
+        assertFailsWith<GhostYamlException> { reader.nextLong() }
     }
 
     @Test
@@ -201,13 +198,44 @@ class GhostYamlFlatReaderEdgeCaseTest {
     }
 
     @Test
-    fun nextBooleanOnNonBooleanStringReturnsFalse() {
+    fun nextBooleanOnNonBooleanStringThrows() {
         val reader = readerOf("v: maybe")
         reader.beginObject()
         reader.selectNameAndConsume(JsonReaderOptions.of("v"))
+        assertFailsWith<GhostYamlException> { reader.nextBoolean() }
+    }
+
+    @Test
+    fun nextBooleanCoercesTheSameWordsAsJson() {
+        val reader = GhostYamlFlatReader(rawData = "v: \"Yes\"".encodeToByteArray())
+        reader.coerceBooleans = true
+        reader.beginObject()
+        reader.selectNameAndConsume(JsonReaderOptions.of("v"))
         assertEquals(
-            expected = false,
+            expected = true,
             actual = reader.nextBoolean()
+        )
+    }
+
+    @Test
+    fun nextStringOnNullOrMappingThrows() {
+        listOf("v: ~", "v: {a: 1}", "v: [1]").forEach { yaml ->
+            val reader = readerOf(yaml)
+            reader.beginObject()
+            reader.selectNameAndConsume(JsonReaderOptions.of("v"))
+            assertFailsWith<GhostYamlException>(message = yaml) { reader.nextString() }
+        }
+    }
+
+    @Test
+    fun rootScalarIsReadWithoutAnEnclosingMapping() {
+        assertEquals(
+            expected = "RED",
+            actual = readerOf("RED").nextString()
+        )
+        assertEquals(
+            expected = 42,
+            actual = readerOf("42").nextInt()
         )
     }
 

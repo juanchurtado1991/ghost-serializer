@@ -47,4 +47,13 @@ class GhostBoundaryFragmentationTest {
         assertEquals(expected = 2, actual = result.p2)
         assertEquals(expected = 40, actual = result.p40)
     }
+
+    @Test
+    fun testFragmentedModelKeepsDefaultsForAbsentFields() {
+        val json = """{"p1": 100, "p45": 450}"""
+        val model = Ghost.deserialize<HugeModel>(json)
+        assertEquals(expected = 100, actual = model.p1)
+        assertEquals(expected = 450, actual = model.p45)
+        assertEquals(expected = 2, actual = model.p2)
+    }
 }

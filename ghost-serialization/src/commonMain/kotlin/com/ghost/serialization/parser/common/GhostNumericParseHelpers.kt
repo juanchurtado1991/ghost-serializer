@@ -2,7 +2,7 @@
 
 package com.ghost.serialization.parser.common
 
-import kotlin.math.pow
+import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonNumericLimits as NUM
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
@@ -51,23 +51,58 @@ internal inline fun accumulateLongWithOverflowCheck(
     return current * WR.BASE_TEN + digitValue
 }
 
-internal inline fun getFloatPowerOfTen(
-    exponent: Int
-): Float {
-    return if (exponent > 0) {
-        if (exponent < NUM.POWERS_OF_TEN_FLOAT.size) {
-            NUM.POWERS_OF_TEN_FLOAT[exponent]
-        } else {
-            10.0f.pow(x = exponent.toFloat())
-        }
-    } else {
-        val absExp = -exponent
-        if (absExp < NUM.INVERSE_POWERS_OF_TEN_FLOAT.size) {
-            NUM.INVERSE_POWERS_OF_TEN_FLOAT[absExp]
-        } else {
-            10.0f.pow(x = exponent.toFloat())
-        }
+/** Narrows an already-parsed [Int] to [Byte], throwing [EM.ERR_BYTE_OVERFLOW] instead of wrapping. */
+internal inline fun narrowToByte(
+    value: Int,
+    throwError: (String) -> Nothing,
+): Byte {
+    val isOutOfRange = value < Byte.MIN_VALUE || value > Byte.MAX_VALUE
+    if (isOutOfRange) {
+        throwError(EM.ERR_BYTE_OVERFLOW)
     }
+    return value.toByte()
+}
+
+/** Narrows an already-parsed [Int] to [Short], throwing [EM.ERR_SHORT_OVERFLOW] instead of wrapping. */
+internal inline fun narrowToShort(
+    value: Int,
+    throwError: (String) -> Nothing,
+): Short {
+    val isOutOfRange = value < Short.MIN_VALUE || value > Short.MAX_VALUE
+    if (isOutOfRange) {
+        throwError(EM.ERR_SHORT_OVERFLOW)
+    }
+    return value.toShort()
+}
+
+/** Narrows an already-parsed [Int] to [UByte], rejecting negatives and values above 255. */
+internal inline fun narrowToUByte(
+    value: Int,
+    throwError: (String) -> Nothing,
+): UByte {
+    if (value < 0) throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    if (value > UByte.MAX_VALUE.toInt()) throwError(EM.ERR_UBYTE_OVERFLOW)
+    return value.toUByte()
+}
+
+/** Narrows an already-parsed [Long] to [UInt], rejecting negatives and values above 4294967295. */
+internal inline fun narrowToUInt(
+    value: Long,
+    throwError: (String) -> Nothing,
+): UInt {
+    if (value < 0) throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    if (value > UInt.MAX_VALUE.toLong()) throwError(EM.ERR_UINT_OVERFLOW)
+    return value.toUInt()
+}
+
+/** Narrows an already-parsed [Int] to [UShort], rejecting negatives and values above 65535. */
+internal inline fun narrowToUShort(
+    value: Int,
+    throwError: (String) -> Nothing,
+): UShort {
+    if (value < 0) throwError(EM.ERR_NEGATIVE_UNSIGNED)
+    if (value > UShort.MAX_VALUE.toInt()) throwError(EM.ERR_USHORT_OVERFLOW)
+    return value.toUShort()
 }
 
 internal inline fun isDigit(

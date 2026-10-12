@@ -49,11 +49,9 @@ object GhostJsonTokens {
     const val BOOL_STR_LEN_4 = 4   // "true"
     const val BOOL_STR_LEN_5 = 5   // "false"
 
-    // Tail lengths after the first character of JSON literals has been consumed.
-    const val TRUE_TAIL_LEN = "true".length - 1
-    const val FALSE_TAIL_LEN = "false".length - 1
-    const val NULL_TAIL_LEN = "null".length - 1
+    const val LITERAL_FALSE = "false"
     const val LITERAL_NULL = "null"
+    const val LITERAL_TRUE = "true"
     const val LITERAL_NULL_LEN = LITERAL_NULL.length
 
     /** Length of a `\uXXXX` escape sequence written into the scratch buffer. */
@@ -81,6 +79,7 @@ object GhostJsonTokens {
     const val ONE_INT = '1'.code
     const val NINE_INT = '9'.code
     const val BACKSLASH_INT = '\\'.code
+    const val SLASH_INT = '/'.code
     const val UNICODE_PREFIX_U_INT = 'u'.code
     const val EXP_LOWER_INT = 'e'.code
     const val EXP_UPPER_INT = 'E'.code
@@ -172,6 +171,10 @@ object GhostJsonTokens {
     const val UTF8_BOM_1 = 0xBB
     const val UTF8_BOM_2 = 0xBF
     const val UTF8_BOM_SIZE = 3
+
+    /** U+FEFF as it appears at the start of a decoded [String] (one UTF-16 code unit). */
+    const val BYTE_ORDER_MARK_CHAR = '\uFEFF'
+    const val BYTE_ORDER_MARK_CHAR_COUNT = 1
     const val UTF16_BE_BOM_0 = 0xFE
     const val UTF16_LE_BOM_0 = 0xFF
 
@@ -191,14 +194,21 @@ object GhostJsonTokens {
     const val TYPE_NAME_BOOLEAN = "Boolean"
     const val TYPE_NAME_BYTE = "Byte"
     const val TYPE_NAME_SHORT = "Short"
+    const val TYPE_NAME_UBYTE = "UByte"
+    const val TYPE_NAME_UINT = "UInt"
+    const val TYPE_NAME_ULONG = "ULong"
+    const val TYPE_NAME_USHORT = "UShort"
     const val TYPE_NAME_CHAR = "Char"
     const val TYPE_NAME_INT_ARRAY = "IntArray"
     const val TYPE_NAME_LONG_ARRAY = "LongArray"
     const val TYPE_NAME_FLOAT_ARRAY = "FloatArray"
     const val TYPE_NAME_DOUBLE_ARRAY = "DoubleArray"
     const val TYPE_NAME_BOOLEAN_ARRAY = "BooleanArray"
+    const val TYPE_NAME_CHAR_ARRAY = "CharArray"
+    const val TYPE_NAME_SHORT_ARRAY = "ShortArray"
     const val TYPE_NAME_LIST_PREFIX = "List<"
     const val TYPE_NAME_SET_PREFIX = "Set<"
     const val TYPE_NAME_MAP_STRING_PREFIX = "Map<String, "
     const val TYPE_NAME_GENERIC_SUFFIX = ">"
+    const val TYPE_NAME_NULLABLE_SUFFIX = "?"
 }

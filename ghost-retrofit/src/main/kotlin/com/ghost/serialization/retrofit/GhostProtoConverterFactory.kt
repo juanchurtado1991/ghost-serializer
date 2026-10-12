@@ -75,7 +75,10 @@ class GhostProtoConverterFactory private constructor(
 
         return Converter { body ->
             body.use {
-                GhostRetrofitBuffers.readToScratch(it.byteStream()) { scratch, offset ->
+                GhostRetrofitBuffers.readToScratch(
+                    stream = it.byteStream(),
+                    charset = it.contentType()?.charset()
+                ) { scratch, offset ->
                     ghostProtoInternalUseFlatReader(bytes = scratch, length = offset) { reader ->
                         if (reader.isNextNullValue()) {
                             reader.consumeNull()

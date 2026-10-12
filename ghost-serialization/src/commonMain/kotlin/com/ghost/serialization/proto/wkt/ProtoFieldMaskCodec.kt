@@ -43,11 +43,16 @@ internal fun parseFieldMask(pathsText: String): ProtoFieldMask {
     while (charIndex < stringLength) {
         val character = pathsText[charIndex]
         if (character == TOK.CHAR_COMMA) {
-            paths.add(element = stringBuilder.toString())
+            if (stringBuilder.isNotEmpty()) {
+                paths.add(element = stringBuilder.toString())
+            }
             stringBuilder.clear()
         } else {
             if (character.isUpperCase()) {
-                stringBuilder.append(TOK.CHAR_UNDERSCORE)
+                val startsSegment = stringBuilder.isEmpty() || stringBuilder.last() == TOK.CHAR_DOT
+                if (!startsSegment) {
+                    stringBuilder.append(TOK.CHAR_UNDERSCORE)
+                }
                 stringBuilder.append(character.lowercaseChar())
             } else {
                 stringBuilder.append(character)
