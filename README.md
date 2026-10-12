@@ -2,7 +2,7 @@
 
 **The fastest JSON path for Kotlin Multiplatform: up to 2.7× faster than other serializers, with up to 86% less memory, and proven against the industry's conformance suite.**
 
-- **Built for speed.** Compile-time generated serializers, SWAR parsing and zero-allocation hot paths: 1.07 GB/s decoding bytes and 1.2 GB/s decoding strings on a real 631 KB payload, up to 2.7× faster than other serializers, and faster on every channel we measure.
+- **Built for speed.** Compile-time generated serializers, SWAR parsing and zero-allocation hot paths: 1.07 GB/s decoding bytes and 1.2 GB/s decoding strings on a real 631 KB payload, and faster than the alternatives on every channel we measure.
 - **Proven, not promised.** All 318 cases of [JSONTestSuite](https://github.com/nst/JSONTestSuite), the industry-standard JSON parser conformance suite, pass on the string, bytes and streaming channels. Coverage-guided fuzzing has executed more than **765 million** cases against the readers and writers with **0 crashes**.
 - **Resilient by design.** When the backend ships messy JSON, Ghost can keep parsing where you opt in, and tells you exactly where it went wrong.
 
