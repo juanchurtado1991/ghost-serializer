@@ -1,0 +1,45 @@
+name: Ghost differential fuzz
+
+# Runs GhostDifferentialFuzzTest with a fresh seed and a much larger budget than a normal jvmTest. A failure prints
+# the seed in every message, so it can be replayed locally with GHOST_FUZZ_SEED=<seed>. Scheduled workflows only run
+# from the default branch.
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: 'Seed (empty = this run id)'
+        required: false
+        default: ''
+      iterations:
+        description: 'Iterations per test'
+        required: false
+        default: '300000'
+
+jobs:
+  differential-fuzz:
+    name: Differential fuzz (JVM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run the differential fuzz
+        env:
+          GHOST_FUZZ_SEED: ${{ github.event.inputs.seed != '' && github.event.inputs.seed || github.run_id }}
+          GHOST_FUZZ_ITERATIONS: ${{ github.event.inputs.iterations != '' && github.event.inputs.iterations || '300000' }}
+        run: |
+          echo "seed=$GHOST_FUZZ_SEED iterations=$GHOST_FUZZ_ITERATIONS"
+          ./gradlew :ghost-serialization:jvmTest --tests 'com.ghost.serialization.GhostDifferentialFuzzTest' --rerun --console=plain
