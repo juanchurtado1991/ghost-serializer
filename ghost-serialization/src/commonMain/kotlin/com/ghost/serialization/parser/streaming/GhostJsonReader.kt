@@ -3,6 +3,7 @@
 
 package com.ghost.serialization.parser.streaming
 
+import com.ghost.serialization.parser.common.json.isSimpleEscapeCode
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.exception.GhostJsonException
 import com.ghost.serialization.exception.hintForJsonError
@@ -459,6 +460,9 @@ class GhostJsonReader(
                     }
                     parseUnicodeHex(pos)
                     pos += TOK.UNICODE_HEX_LENGTH
+                } else if (!isSimpleEscapeCode(escaped)) {
+                    position = pos - 1
+                    throwError(EM.ERR_INVALID_ESCAPE)
                 }
             } else if (byteValue < TOK.SPACE_INT) {
                 position = pos

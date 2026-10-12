@@ -17,6 +17,8 @@
 - **Properties without a backing field are no longer serialized.** A computed `val x get() = …` declared in a model's body was written to JSON (and then required on decode); like kotlinx.serialization and Moshi, only constructor parameters and stored body properties are written now.
 
 ### Fixed
+- **String channel: a field whose wire name has a character outside ASCII could stay `null`.** `@GhostName("日本")` or `@GhostName("😀")` fields stayed `null` when the key was written as raw UTF-8 text (escaped `\uXXXX` keys worked), because the String channel's key table hashes UTF-16 chars while the compiler's perfect hash was found over UTF-8 bytes, so two keys could share a slot and the second was dropped. Only the String channel was affected (bytes and streaming were correct); the table now records when it is not exact and scans the candidates after a miss, so ASCII-only models pay nothing.
+- **Skipping an unknown field now rejects invalid escapes** (`"\q"`, `"\7"`) on all three channels, as decoding that string into a `String` already did.
 - **The `Int` overflow error no longer has a dangling colon** ("Integer overflow:  at position 11" is now "Integer overflow at position 11").
 - **`Set` keeps the JSON array order.** The JSON readers collected into a `HashSet`, so a decoded `Set<T>` came back in hash order; they now use `LinkedHashSet` on the string, bytes and streaming channels, like the YAML reader and kotlinx.serialization.
 - **`RawJson.asIntOrNull()` / `asLongOrNull()` accept integral numbers written with an exponent**, matching typed decoding: `1e2` and `100e-2` are `100` and `1`; `1e-2`, `1.5e0` and out-of-range values stay `null`.

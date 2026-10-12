@@ -53,13 +53,15 @@ class KeyDispatchHuntTest {
         Ghost.deserialize<KeyDispatchModel>(bytes = json.encodeToByteArray()) { it.strictMode = false },
     )
 
-    private fun jsonEscaped(key: String, escapeAll: Boolean): String {
+    private enum class Spelling { RAW, NON_ASCII_ESCAPED, ALL_ESCAPED }
+
+    private fun jsonEscaped(key: String, spelling: Spelling): String {
         val sb = StringBuilder()
         for (c in key) {
             when {
                 c == '"' -> sb.append("\\\"")
                 c == '\\' -> sb.append("\\\\")
-                escapeAll || c.code > 0x7e -> sb.append("\\u%04x".format(c.code))
+                spelling == Spelling.ALL_ESCAPED || (spelling == Spelling.NON_ASCII_ESCAPED && c.code > 0x7e) -> sb.append("\\u%04x".format(c.code))
                 else -> sb.append(c)
             }
         }
@@ -72,14 +74,14 @@ class KeyDispatchHuntTest {
     fun everyKeyHitsOnlyItsOwnField() {
         keys.forEachIndexed { index, (key, _) ->
             val wire = rawKey(key)
-            listOf(false, true).forEach { escapeAll ->
-                val json = "{\"" + jsonEscaped(wire, escapeAll) + "\":" + (index + 1) + "}"
+            Spelling.entries.forEach { spelling ->
+                val json = "{\"" + jsonEscaped(wire, spelling) + "\":" + (index + 1) + "}"
                 decodeAll(json).forEachIndexed { channel, model ->
                     keys.forEachIndexed { other, (_, getter) ->
                         assertEquals(
                             expected = if (other == index) index + 1 else null,
                             actual = getter(model),
-                            message = "key '$wire' (escapeAll=$escapeAll, channel=$channel) field #$other json=$json"
+                            message = "key '$wire' ($spelling, channel=$channel) field #$other json=$json"
                         )
                     }
                 }
@@ -95,7 +97,7 @@ class KeyDispatchHuntTest {
             val misses = listOf(wire + "x", wire.dropLast(1), "x" + wire, wire.uppercase(), wire.lowercase(), wire + wire)
                 .filter { it !in known && it.isNotEmpty() && !it.last().isHighSurrogate() && !it.first().isLowSurrogate() }
             misses.forEach { miss ->
-                val json = "{\"" + jsonEscaped(miss, false) + "\":7}"
+                val json = "{\"" + jsonEscaped(miss, Spelling.RAW) + "\":7}"
                 decodeAll(json).forEachIndexed { channel, model ->
                     keys.forEachIndexed { other, (_, getter) ->
                         assertEquals(
@@ -113,7 +115,7 @@ class KeyDispatchHuntTest {
     fun allKeysTogetherInShuffledOrderWithDuplicates() {
         val order = keys.indices.shuffled(kotlin.random.Random(11))
         val json = "{" + (order + order.take(5)).joinToString(",") { i ->
-            "\"" + jsonEscaped(rawKey(keys[i].first), false) + "\":" + (i + 100)
+            "\"" + jsonEscaped(rawKey(keys[i].first), Spelling.RAW) + "\":" + (i + 100)
         } + "}"
         decodeAll(json).forEachIndexed { channel, model ->
             keys.forEachIndexed { i, (key, getter) ->

@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.parser.strings
 
+import com.ghost.serialization.parser.common.json.isSimpleEscapeCode
 import com.ghost.serialization.InternalGhostApi
 import com.ghost.serialization.parser.common.GhostHeuristics
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
@@ -98,6 +99,9 @@ fun GhostJsonStringReader.skipQuotedString() {
                 }
                 parseUnicodeHex(scanPosition)
                 scanPosition += localUnicodeHexLength
+            } else if (!isSimpleEscapeCode(escaped)) {
+                position = scanPosition - 1
+                throwError(EM.ERR_INVALID_ESCAPE)
             }
         }
     }

@@ -374,6 +374,21 @@ private fun GhostJsonStringReader.internalSelect(
         }
     }
 
+    if (!options.stringDispatchIsExact) {
+        val candidatesByScan = options.rawChars
+        for (candidateIndex in candidatesByScan.indices) {
+            if (verifyKeyMatch(
+                start = start,
+                length = length,
+                expected = candidatesByScan[candidateIndex],
+                consumeSeparator = consumeSeparator
+            )) {
+                predictedFieldIndex = candidateIndex + 1
+                return candidateIndex
+            }
+        }
+    }
+
     return handleSelectNoMatch(start = start, end = end, consumeSeparator = consumeSeparator)
 }
 
