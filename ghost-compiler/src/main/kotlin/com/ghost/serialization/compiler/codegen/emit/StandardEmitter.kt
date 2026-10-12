@@ -254,7 +254,7 @@ internal class StandardEmitter(
         typeSpecBuilder: TypeSpec.Builder
     ) {
         val dependencySources = defaultPropsWithIndex.filter { (_, prop) -> prop.isDefaultDependencySource }
-        if (dependencySources.isEmpty() || dependencySources.size > C.MAX_DEFAULT_BRANCH_COUNT) {
+        if (dependencySources.isEmpty() || dependencySources.size > CC.MAX_DEPENDENCY_SOURCE_COUNT) {
             emitConstructorCall(
                 body = body,
                 requiredProps = requiredProps,

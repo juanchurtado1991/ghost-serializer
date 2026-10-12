@@ -6,6 +6,7 @@ internal object GhostCommonConstants {
 
     const val STR_NULL = "null"
     const val VAL_ONE = 1
+    const val MAX_DEPENDENCY_SOURCE_COUNT = 6
     const val STR_FALSE = "false"
     const val STR_UNDERSCORE = "_"
     const val STR_SERIALIZERS_PKG = "com.ghost.serialization.serializers"

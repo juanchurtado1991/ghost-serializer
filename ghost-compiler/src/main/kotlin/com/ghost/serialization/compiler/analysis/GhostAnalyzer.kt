@@ -321,10 +321,12 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
             )
         } else {
             val dependencySources = findDefaultDependencySources(parameters = parameters)
-            properties.map { prop ->
+            val models = properties.map { prop ->
                 val model = buildPropertyModel(prop = prop, parameters = parameters)
                 if (model.kotlinName in dependencySources) model.copy(isDefaultDependencySource = true) else model
             }
+            reportTooManyDefaultSources(classDeclaration = classDeclaration, models = models)
+            models
         }
     }
 
@@ -389,6 +391,20 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         // The value class itself (e.g. `UserId`) is never @GhostProtoSerialization-annotated;
         // it inherits proto-ness from whichever outer property wraps it.
         return buildPropertyModel(prop = prop, parameters = listOf(param)).copy(isProto = isProto)
+    }
+
+    private fun reportTooManyDefaultSources(
+        classDeclaration: KSClassDeclaration,
+        models: List<GhostPropertyModel>
+    ) {
+        val sources = models.filter { it.isDefaultDependencySource && it.hasDefaultValue }
+        if (sources.size <= CC.MAX_DEPENDENCY_SOURCE_COUNT) return
+        logger.error(
+            AC.STR_ERR_DEFAULT_SOURCES_1 + classDeclaration.simpleName.asString() + AC.STR_ERR_DEFAULT_SOURCES_2 +
+                CC.MAX_DEPENDENCY_SOURCE_COUNT +
+                AC.STR_ERR_DEFAULT_SOURCES_3.format(sources.joinToString { it.kotlinName }),
+            classDeclaration
+        )
     }
 
     private fun findDefaultDependencySources(

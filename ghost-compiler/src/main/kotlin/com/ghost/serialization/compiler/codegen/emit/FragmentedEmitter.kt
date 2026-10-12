@@ -311,7 +311,7 @@ internal class FragmentedEmitter(
         defaultPropsWithGlobalIndex: List<Pair<Int, GhostPropertyModel>>
     ) {
         val dependencySources = defaultPropsWithGlobalIndex.filter { (_, prop) -> prop.isDefaultDependencySource }
-        val needsBranches = dependencySources.isNotEmpty() && dependencySources.size <= C.MAX_DEFAULT_BRANCH_COUNT
+        val needsBranches = dependencySources.isNotEmpty() && dependencySources.size <= CC.MAX_DEPENDENCY_SOURCE_COUNT
         if (!needsBranches) {
             body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
             emitFragmentedConstructorArguments(

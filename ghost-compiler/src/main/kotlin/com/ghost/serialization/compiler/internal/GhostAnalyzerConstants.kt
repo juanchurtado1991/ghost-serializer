@@ -140,6 +140,12 @@ internal object GhostAnalyzerConstants {
     const val STR_ERR_ENVELOPE_PAYLOAD_VALUE =
         "GhostJsonEnvelope: @GhostEnvelopePayload requires non-empty value."
 
+    const val STR_ERR_DEFAULT_SOURCES_1 = "Ghost: "
+    const val STR_ERR_DEFAULT_SOURCES_2 = " has more than "
+    const val STR_ERR_DEFAULT_SOURCES_3 =
+        " constructor parameters with a default that another default reads (%s). Each combination needs its own " +
+            "constructor call, so Ghost cannot decode them; give some of them no default or stop reading them."
+
     const val STR_ERR_WRAPPED_DUP_KEY_1 = "GhostWrappedKeys: duplicate wire key '"
     const val STR_ERR_WRAPPED_DUP_KEY_2 = "' on "
     const val STR_ERR_WRAPPED_DUP_KEY_3 = " (properties '"

@@ -50,4 +50,38 @@ class GhostConstructorDefaultsTest {
             )
         }
     }
+
+    @Test
+    fun sixDependencySourcesAreComputedFromDecodedValues() {
+        val json = "{\"a2\":10,\"a5\":20}"
+        val expected = ManyDependencySourcesModel(a2 = 10, a5 = 20)
+        assertEquals(expected = 44, actual = expected.total)
+        listOf(
+            Ghost.deserialize<ManyDependencySourcesModel>(json = json),
+            Ghost.deserialize<ManyDependencySourcesModel>(bytes = json.encodeToByteArray()),
+            Ghost.deserializeStreaming<ManyDependencySourcesModel>(source = Buffer().writeUtf8(string = json))
+        ).forEach { decoded ->
+            assertEquals(
+                expected = expected,
+                actual = decoded
+            )
+        }
+    }
+
+    @Test
+    fun sixDependencySourcesAreComputedFromDecodedValuesInFragmentedModels() {
+        val json = "{\"a1\":7,\"a6\":9,\"f42\":5}"
+        val expected = ManyDependencySourcesFragmentedModel(a1 = 7, a6 = 9, f42 = 5)
+        assertEquals(expected = 7 + 2 + 3 + 4 + 5 + 9, actual = expected.total)
+        listOf(
+            Ghost.deserialize<ManyDependencySourcesFragmentedModel>(json = json),
+            Ghost.deserialize<ManyDependencySourcesFragmentedModel>(bytes = json.encodeToByteArray()),
+            Ghost.deserializeStreaming<ManyDependencySourcesFragmentedModel>(source = Buffer().writeUtf8(string = json))
+        ).forEach { decoded ->
+            assertEquals(
+                expected = expected,
+                actual = decoded
+            )
+        }
+    }
 }

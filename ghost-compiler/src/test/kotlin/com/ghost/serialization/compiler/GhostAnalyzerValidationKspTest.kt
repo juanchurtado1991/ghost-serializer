@@ -171,6 +171,37 @@ class GhostAnalyzerValidationKspTest {
         assertEquals(expected = KotlinCompilation.ExitCode.OK, actual = result.exitCode, message = result.messages)
     }
 
+    @Test
+    fun rejectsMoreDefaultDependencySourcesThanItCanBranchOn() {
+        val (_, result) = compile(
+            SourceFile.kotlin(
+                "TooManySources.kt",
+                """
+                package test
+                import com.ghost.serialization.annotations.GhostSerialization
+
+                @GhostSerialization
+                data class TooManySources(
+                    val a1: Int = 1,
+                    val a2: Int = 2,
+                    val a3: Int = 3,
+                    val a4: Int = 4,
+                    val a5: Int = 5,
+                    val a6: Int = 6,
+                    val a7: Int = 7,
+                    val total: Int = a1 + a2 + a3 + a4 + a5 + a6 + a7,
+                )
+                """.trimIndent()
+            )
+        )
+
+        assertEquals(expected = KotlinCompilation.ExitCode.COMPILATION_ERROR, actual = result.exitCode)
+        assertTrue(
+            result.messages.contains("a default that another default reads", ignoreCase = true),
+            result.messages
+        )
+    }
+
     private fun compile(vararg sources: SourceFile): Pair<KotlinCompilation, JvmCompilationResult> {
         val compilation = KotlinCompilation().apply {
             this.sources = sources.toList()
