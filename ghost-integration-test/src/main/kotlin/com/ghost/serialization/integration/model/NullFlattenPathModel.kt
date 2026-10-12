@@ -4,8 +4,8 @@ import com.ghost.serialization.annotations.GhostFlatten
 import com.ghost.serialization.annotations.GhostSerialization
 
 /**
- * Flattened paths whose intermediate objects may arrive as `null`, like SmartThings' device API sending
- * `"virtual": {"commandMappings": null}`; before 1.3.4 that failed with `Expected '{'`.
+ * Flattened paths whose intermediate objects may arrive as `null`, like an API sending
+ * `"virtual": {"commandMappings": null}` for an empty sub-object; before 1.3.4 that failed with `Expected '{'`.
  */
 @GhostSerialization
 data class NullFlattenPathModel(
