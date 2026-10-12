@@ -467,6 +467,13 @@ internal class GhostAnalyzer(private val logger: KSPLogger) {
         properties: List<GhostPropertyModel>,
         clazz: KSClassDeclaration
     ) {
+        properties.filter { it.kotlinName.isNotEmpty() && it.jsonName.isEmpty() }.forEach { prop ->
+            logger.error(
+                AC.STR_ERR_EMPTY_NAME_1 + prop.kotlinName + AC.STR_ERR_EMPTY_NAME_2 +
+                    clazz.simpleName.asString() + AC.STR_ERR_EMPTY_NAME_3,
+                clazz
+            )
+        }
         val names = properties.groupBy { it.jsonName }
         names.forEach { (name, props) ->
             if (props.size > CC.VAL_ONE) {
