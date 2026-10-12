@@ -173,5 +173,42 @@ internal fun GhostYamlFlatReader.tryParseNumber(data: ByteArray, start: Int, end
     }
 
     val stringRepresentation = data.decodeToString(start, end)
-    return stringRepresentation.toDoubleOrNull()
+    val parsedDouble = stringRepresentation.toDoubleOrNull() ?: return null
+    return if (losesFloatPrecisionViaDouble(text = stringRepresentation, parsed = parsedDouble)) {
+        stringRepresentation
+    } else {
+        parsedDouble
+    }
+}
+
+/**
+ * True when narrowing [parsed] to `Float` rounds differently from parsing [text] as a `Float` (the double
+ * rounding case: [parsed] lands exactly on a float midpoint). The tree keeps the text then, so `nextFloat`
+ * parses it once; `nextDouble` still reads the same value from it. Only midpoints are checked, so ordinary
+ * floats pay no second parse.
+ */
+private fun losesFloatPrecisionViaDouble(
+    text: String,
+    parsed: Double
+): Boolean {
+    val narrowed = parsed.toFloat()
+    if (!narrowed.isFinite()) return false
+    val neighbour = adjacentFloatToward(from = narrowed, target = parsed)
+    val isFloatMidpoint = (narrowed.toDouble() + neighbour.toDouble()) / 2.0 == parsed
+    return isFloatMidpoint && text.toFloatOrNull() != narrowed
+}
+
+/** The float next to [from] on the side of [target]; `nextUp`/`nextDown` are not available in common Kotlin. */
+private fun adjacentFloatToward(
+    from: Float,
+    target: Double
+): Float {
+    val towardPositive = target > from.toDouble()
+    if (from == 0f) {
+        val smallest = Float.fromBits(1)
+        return if (towardPositive) smallest else -smallest
+    }
+    val growsMagnitude = (from > 0f) == towardPositive
+    val bits = from.toRawBits()
+    return Float.fromBits(if (growsMagnitude) bits + 1 else bits - 1)
 }

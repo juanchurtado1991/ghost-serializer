@@ -259,15 +259,11 @@ internal class FragmentedEmitter(
             return
         }
 
-        body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
-        requiredProps.forEach { prop ->
-            body.addStatement(
-                C.TEMPLATE_NAMED_ARG,
-                prop.kotlinName,
-                prop.getFragmentedReturnExpression()
-            )
-        }
-        body.addStatement(C.STR_PAREN)
+        emitRequiredConstruction(
+            body = body,
+            requiredProps = requiredProps,
+            defaultPropsWithGlobalIndex = defaultPropsWithGlobalIndex
+        )
 
         if (defaultPropsWithGlobalIndex.isNotEmpty()) {
             body.add(C.STR_IF_OPEN)
@@ -301,6 +297,65 @@ internal class FragmentedEmitter(
             body.endControlFlow()
         } else {
             body.addStatement(C.STR_RETURN_RESULT)
+        }
+    }
+
+    /**
+     * Required-args constructor call. Defaults that other defaults read (`val doubled: Int = base * 2`) are passed
+     * when decoded, one branch per combination, so Kotlin computes the dependent defaults from the decoded values;
+     * the `.copy(...)` that follows would otherwise keep the ones computed from the defaults.
+     */
+    private fun emitRequiredConstruction(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        defaultPropsWithGlobalIndex: List<Pair<Int, GhostPropertyModel>>
+    ) {
+        val dependencySources = defaultPropsWithGlobalIndex.filter { (_, prop) -> prop.isDefaultDependencySource }
+        val needsBranches = dependencySources.isNotEmpty() && dependencySources.size <= C.MAX_DEFAULT_BRANCH_COUNT
+        if (!needsBranches) {
+            body.addStatement(C.TEMPLATE_VAL_RESULT, originalClassName)
+            emitFragmentedConstructorArguments(
+                body = body,
+                requiredProps = requiredProps,
+                presentDefaults = emptyList()
+            )
+            body.addStatement(C.STR_PAREN)
+            return
+        }
+        body.beginControlFlow(C.STR_VAL_RESULT_WHEN)
+        for (subsetBits in (CC.VAL_ONE shl dependencySources.size) - CC.VAL_ONE downTo C.VAL_ZERO) {
+            val presentSources = dependencySources
+                .filterIndexed { bit, _ -> subsetBits and (CC.VAL_ONE shl bit) != C.VAL_ZERO }
+            val condition = if (presentSources.isEmpty()) {
+                C.STR_ELSE
+            } else {
+                presentSources.joinToString(separator = C.STR_AND) { (propIndex, prop) ->
+                    val maskIdx = propIndex / C.MASK_SIZE_BITS.toInt()
+                    C.TEMPLATE_IF_MASK_MATCH_BIT_F.format(maskIdx, C.STR_MASK_PREFIX + prop.kotlinName.uppercase())
+                }
+            }
+            body.addStatement(C.TEMPLATE_WHEN_CONSTRUCTOR_BRANCH, condition, originalClassName)
+            emitFragmentedConstructorArguments(
+                body = body,
+                requiredProps = requiredProps,
+                presentDefaults = presentSources.map { (_, prop) -> prop }
+            )
+            body.addStatement(C.STR_PAREN)
+        }
+        body.endControlFlow()
+    }
+
+    private fun emitFragmentedConstructorArguments(
+        body: CodeBlock.Builder,
+        requiredProps: List<GhostPropertyModel>,
+        presentDefaults: List<GhostPropertyModel>
+    ) {
+        (requiredProps + presentDefaults).forEach { prop ->
+            body.addStatement(
+                C.TEMPLATE_NAMED_ARG,
+                prop.kotlinName,
+                prop.getFragmentedReturnExpression()
+            )
         }
     }
 

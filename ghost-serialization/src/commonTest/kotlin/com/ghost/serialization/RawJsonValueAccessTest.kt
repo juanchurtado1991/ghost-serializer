@@ -88,7 +88,30 @@ class RawJsonValueAccessTest {
             actual = raw("42").asLongOrNull()
         )
         assertNull(actual = raw("3.14").asIntOrNull())
-        assertNull(actual = raw("1e3").asIntOrNull())
+        assertEquals(
+            expected = 1000,
+            actual = raw("1e3").asIntOrNull()
+        )
+        assertEquals(
+            expected = 100L,
+            actual = raw("1e2").asLongOrNull()
+        )
+        assertEquals(
+            expected = 1L,
+            actual = raw("100e-2").asLongOrNull()
+        )
+        assertEquals(
+            expected = -250L,
+            actual = raw("-2.5E2").asLongOrNull()
+        )
+        assertEquals(
+            expected = 0L,
+            actual = raw("0e5").asLongOrNull()
+        )
+        assertNull(actual = raw("1e-2").asLongOrNull())
+        assertNull(actual = raw("1.5e0").asLongOrNull())
+        assertNull(actual = raw("1e19").asLongOrNull())
+        assertNull(actual = raw("1e10").asIntOrNull())
     }
 
     @Test

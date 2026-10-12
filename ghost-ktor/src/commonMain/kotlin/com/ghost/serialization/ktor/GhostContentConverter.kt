@@ -40,7 +40,10 @@ class GhostContentConverter(
             registry = registry
         ) ?: return null
 
-        return GhostKtorBuffers.readToScratch(content) { scratch, offset ->
+        return GhostKtorBuffers.readToScratch(
+            content = content,
+            charset = charset
+        ) { scratch, offset ->
             val isEmptyBody = offset == 0
             if (isEmptyBody) {
                 return null
@@ -61,6 +64,7 @@ class GhostContentConverter(
         value = value,
         contentType = contentType,
         typeInfo = typeInfo,
-        registry = registry
+        registry = registry,
+        charset = charset
     )
 }

@@ -204,6 +204,8 @@ object GhostJsonTokens {
     const val TYPE_NAME_FLOAT_ARRAY = "FloatArray"
     const val TYPE_NAME_DOUBLE_ARRAY = "DoubleArray"
     const val TYPE_NAME_BOOLEAN_ARRAY = "BooleanArray"
+    const val TYPE_NAME_CHAR_ARRAY = "CharArray"
+    const val TYPE_NAME_SHORT_ARRAY = "ShortArray"
     const val TYPE_NAME_LIST_PREFIX = "List<"
     const val TYPE_NAME_SET_PREFIX = "Set<"
     const val TYPE_NAME_MAP_STRING_PREFIX = "Map<String, "

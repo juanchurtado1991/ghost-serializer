@@ -60,6 +60,7 @@ internal object RawJsonValueScanner {
     private const val HEX_A_UPPER = 'A'.code
     private const val HEX_F_UPPER = 'F'.code
 
+    private const val MAX_LONG_DIGITS = 19
     private const val BS_CHAR = '\b'
     private const val FF_CHAR = ''
     private const val LF_CHAR = '\n'
@@ -92,14 +93,14 @@ internal object RawJsonValueScanner {
     fun asIntOrNull(
         raw: RawJson
     ): Int? {
-        val longValue = raw.parseIntegerOrNull() ?: return null
+        val longValue = raw.parseIntegralOrNull() ?: return null
         if (longValue < Int.MIN_VALUE || longValue > Int.MAX_VALUE) return null
         return longValue.toInt()
     }
 
     fun asLongOrNull(
         raw: RawJson
-    ): Long? = raw.parseIntegerOrNull()
+    ): Long? = raw.parseIntegralOrNull()
 
     fun asStringOrNull(
         raw: RawJson
@@ -282,6 +283,33 @@ internal object RawJsonValueScanner {
             storage[storageOffset + 3].toInt() == CHAR_E
 
     /** Single-pass integer parse: rejects fraction/exponent without rescanning the token. */
+    /** Plain integers first; otherwise a number whose exponent makes it integral (`1e2`, `100e-2`), like typed decoding. */
+    private fun RawJson.parseIntegralOrNull(): Long? {
+        parseIntegerOrNull()?.let { return it }
+        if (!isJsonNumberToken()) return null
+        return decodeToString().exactIntegralOrNull()
+    }
+
+    private fun String.exactIntegralOrNull(): Long? {
+        val negative = startsWith(prefix = "-")
+        val unsigned = if (negative) substring(startIndex = 1) else this
+        val exponentAt = unsigned.indexOfFirst { it == 'e' || it == 'E' }
+        val mantissa = if (exponentAt < 0) unsigned else unsigned.substring(startIndex = 0, endIndex = exponentAt)
+        val exponent = if (exponentAt < 0) 0 else unsigned.substring(startIndex = exponentAt + 1).toIntOrNull()
+        val dot = mantissa.indexOf(char = '.')
+        val fraction = if (dot < 0) "" else mantissa.substring(startIndex = dot + 1)
+        val digits = (if (dot < 0) mantissa else mantissa.substring(startIndex = 0, endIndex = dot) + fraction)
+            .trimStart(chars = charArrayOf('0'))
+        if (digits.isEmpty()) return 0L
+        if (exponent == null) return null
+        val significant = digits.trimEnd(chars = charArrayOf('0'))
+        val trimmedZeros = digits.length - significant.length
+        val shift = exponent - fraction.length + trimmedZeros
+        if (shift < 0 || significant.length + shift > MAX_LONG_DIGITS) return null
+        val text = significant + "0".repeat(n = shift)
+        return (if (negative) "-$text" else text).toLongOrNull()
+    }
+
     private fun RawJson.parseIntegerOrNull(): Long? {
         if (storageLength <= 0) return null
         var index = 0

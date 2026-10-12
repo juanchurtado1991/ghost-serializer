@@ -32,6 +32,8 @@ import com.ghost.serialization.proto.wkt.ProtoUInt64ValueSerializer
 import com.ghost.serialization.proto.wkt.ProtoValue
 import com.ghost.serialization.proto.wkt.ProtoValueSerializer
 import com.ghost.serialization.serializers.BooleanArraySerializer
+import com.ghost.serialization.serializers.CharArraySerializer
+import com.ghost.serialization.serializers.ShortArraySerializer
 import com.ghost.serialization.serializers.BooleanSerializer
 import com.ghost.serialization.serializers.ByteSerializer
 import com.ghost.serialization.serializers.CharSerializer
@@ -53,6 +55,8 @@ import com.ghost.serialization.types.RawJson
 import com.ghost.serialization.types.RawJsonSerializer
 import com.ghost.serialization.yaml.contract.GhostYamlSerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlBooleanArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlCharArraySerializer
+import com.ghost.serialization.yaml.serializer.GhostYamlShortArraySerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlDoubleArraySerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlFloatArraySerializer
 import com.ghost.serialization.yaml.serializer.GhostYamlIntArraySerializer
@@ -87,6 +91,8 @@ internal fun <T : Any> Ghost.getPrimitiveSerializer(clazz: KClass<T>): GhostSeri
         FloatArray::class -> FloatArraySerializer as GhostSerializer<T>
         DoubleArray::class -> DoubleArraySerializer as GhostSerializer<T>
         BooleanArray::class -> BooleanArraySerializer as GhostSerializer<T>
+        CharArray::class -> CharArraySerializer as GhostSerializer<T>
+        ShortArray::class -> ShortArraySerializer as GhostSerializer<T>
         RawJson::class -> RawJsonSerializer as GhostSerializer<T>
         else -> null
     }
@@ -120,6 +126,8 @@ internal fun <T : Any> Ghost.getYamlPrimitiveSerializer(clazz: KClass<T>): Ghost
         FloatArray::class -> GhostYamlFloatArraySerializer as GhostYamlSerializer<T>
         DoubleArray::class -> GhostYamlDoubleArraySerializer as GhostYamlSerializer<T>
         BooleanArray::class -> GhostYamlBooleanArraySerializer as GhostYamlSerializer<T>
+        CharArray::class -> GhostYamlCharArraySerializer as GhostYamlSerializer<T>
+        ShortArray::class -> GhostYamlShortArraySerializer as GhostYamlSerializer<T>
         else -> null
     }
 }

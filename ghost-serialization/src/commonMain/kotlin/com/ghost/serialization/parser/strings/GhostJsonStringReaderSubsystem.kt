@@ -524,7 +524,7 @@ inline fun <T> GhostJsonStringReader.readSet(crossinline itemParser: () -> T): S
         endArray()
         return emptySet()
     }
-    val set = HashSet<T>(initialCollectionCapacity)
+    val set = LinkedHashSet<T>(initialCollectionCapacity)
     val maxSize = maxCollectionSize
 
     while (true) {

@@ -34,4 +34,20 @@ class GhostConstructorDefaultsTest {
             )
         }
     }
+
+    @Test
+    fun dependentDefaultsAreComputedFromDecodedValuesInFragmentedModels() {
+        val json = "{\"base\":5,\"f42\":9}"
+        val expected = DependentDefaultsFragmentedModel(base = 5, f42 = 9)
+        listOf(
+            Ghost.deserialize<DependentDefaultsFragmentedModel>(json = json),
+            Ghost.deserialize<DependentDefaultsFragmentedModel>(bytes = json.encodeToByteArray()),
+            Ghost.deserializeStreaming<DependentDefaultsFragmentedModel>(source = Buffer().writeUtf8(string = json))
+        ).forEach { decoded ->
+            assertEquals(
+                expected = expected,
+                actual = decoded
+            )
+        }
+    }
 }

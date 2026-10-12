@@ -13,6 +13,7 @@ import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.nio.charset.Charset
 
 /**
  * Reactive Decoder for Ghost Serialization. Resolves serializers from the full
@@ -43,9 +44,9 @@ class GhostReactiveDecoder(
     ): Flux<Any> {
         val isNdJson = GhostSpringMediaTypes.isNdJson(mimeType = mimeType)
         return if (isNdJson) {
-            decodeStreaming(inputStream = inputStream, elementType = elementType)
+            decodeStreaming(inputStream = inputStream, elementType = elementType, charset = mimeType?.charset)
         } else {
-            decodeJoined(inputStream = inputStream, elementType = elementType)
+            decodeJoined(inputStream = inputStream, elementType = elementType, charset = mimeType?.charset)
         }
     }
 
@@ -55,15 +56,21 @@ class GhostReactiveDecoder(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
-        return decodeJoined(inputStream = inputStream, elementType = elementType).next()
+        return decodeJoined(inputStream = inputStream, elementType = elementType, charset = mimeType?.charset).next()
     }
 
     private fun decodeJoined(
         inputStream: Publisher<DataBuffer>,
-        elementType: ResolvableType
+        elementType: ResolvableType,
+        charset: Charset?
     ): Flux<Any> = DataBufferUtils
         .join(inputStream).flatMapMany { buffer ->
-            Flux.just(deserializeBytes(bytes = buffer.consumeToByteArray(), elementType = elementType))
+            Flux.just(
+                deserializeBytes(
+                    bytes = buffer.consumeToByteArray().asUtf8From(charset = charset),
+                    elementType = elementType
+                )
+            )
         }
 
     /**
@@ -73,7 +80,8 @@ class GhostReactiveDecoder(
      */
     private fun decodeStreaming(
         inputStream: Publisher<DataBuffer>,
-        elementType: ResolvableType
+        elementType: ResolvableType,
+        charset: Charset?
     ): Flux<Any> = Flux.defer {
         var carry = ByteArray(0)
 
@@ -94,7 +102,7 @@ class GhostReactiveDecoder(
                 Flux.fromIterable(lines)
             }
             .concatWith(Flux.defer { if (carry.isEmpty()) Flux.empty() else Flux.just(carry) })
-            .map { line -> deserializeBytes(bytes = line, elementType = elementType) }
+            .map { line -> deserializeBytes(bytes = line.asUtf8From(charset = charset), elementType = elementType) }
     }
 
     private fun deserializeBytes(

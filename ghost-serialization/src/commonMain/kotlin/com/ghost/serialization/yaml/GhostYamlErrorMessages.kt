@@ -32,6 +32,8 @@ internal object GhostYamlErrorMessages {
         "Tab character not allowed in block sequence indentation"
     const val ERR_UNEXPECTED_INLINE_NESTED_MAPPING_COLON =
         "Unexpected ':' — a nested mapping can't start inline on the same line as its enclosing key"
+    const val ERR_BLOCK_SEQUENCE_ON_KEY_LINE =
+        "A block sequence cannot start on the same line as its mapping key"
     const val ERR_LONE_DASH_IN_FLOW =
         "A lone '-' is not a valid plain scalar in flow context"
     const val ERR_PLAIN_CONTINUATION_MAPPING_KEY =
