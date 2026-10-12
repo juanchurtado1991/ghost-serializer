@@ -82,9 +82,9 @@ Guides: [Quick Start](docs/wiki/quick-start.md) · [Ktor](docs/wiki/usage-kmp.md
 
 ---
 
-## When profiles say “JSON”
+## Performance
 
-On hot models Ghost is routinely **several× faster** and **far leaner** than KotlinX / Moshi. Most APIs are small, so use it on the hotspot, not everywhere.
+Up to **2.7× faster** and **86% leaner** than kotlinx.serialization and Moshi on every channel we measure, and the gain grows with payload size. Adopt it one DTO at a time or across your whole model layer.
 
 Twitter macro (**631 KB**) decode:
 
