@@ -22,6 +22,7 @@ import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_E
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens.UNICODE_PREFIX_U
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.ESCAPE_MASKS
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.ESCAPE_REPLACEMENTS
+import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants.UTF8_REPLACEMENT_CHAR
 
 /**
  * Shared JSON string-escape helpers for byte and char writers.
@@ -109,6 +110,8 @@ internal object GhostJsonEscapeHelpers {
                     if (isSurrogatePair) {
                         writeUtf8Range(text, index, index + 2)
                         index++
+                    } else if (c.isSurrogate()) {
+                        writeReplacement(UTF8_REPLACEMENT_CHAR)
                     } else {
                         writeUtf8Range(text, index, index + 1)
                     }
@@ -155,6 +158,8 @@ internal object GhostJsonEscapeHelpers {
                 if (isSurrogatePair) {
                     writeUtf8Range(text, index, index + 2)
                     index++
+                } else if (char.isSurrogate()) {
+                    writeReplacement(UTF8_REPLACEMENT_CHAR)
                 } else {
                     writeUtf8Range(text, index, index + 1)
                 }
@@ -264,6 +269,8 @@ internal object GhostJsonEscapeHelpers {
                 if (isSurrogatePair) {
                     writeUtf8Range(text, index, index + 2)
                     index++
+                } else if (c.isSurrogate()) {
+                    writeReplacement(UTF8_REPLACEMENT_CHAR)
                 } else {
                     writeUtf8Range(text, index, index + 1)
                 }

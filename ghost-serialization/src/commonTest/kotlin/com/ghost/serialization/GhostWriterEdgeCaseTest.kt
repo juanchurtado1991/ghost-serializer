@@ -202,6 +202,24 @@ class GhostWriterEdgeCaseTest {
         )
     }
 
+    @Test
+    fun writesLoneSurrogatesAsReplacementCharacter() {
+        val longTail = "x".repeat(n = 5000)
+        val json = writerToString { w ->
+            w.beginObject()
+                .name(key = "high").value("a\uD800b")
+                .name(key = "low").value("a\uDC00b")
+                .name(key = "trailing").value("a\uD800")
+                .name(key = "long").value("\uD800" + longTail)
+                .endObject()
+        }
+        assertEquals(
+            expected = "{\"high\":\"a\uFFFDb\",\"low\":\"a\uFFFDb\",\"trailing\":\"a\uFFFD\"," +
+                "\"long\":\"\uFFFD$longTail\"}",
+            actual = json
+        )
+    }
+
     // ── C. STRUCTURE ─────────────────────────────────────────────────
 
     @Test
