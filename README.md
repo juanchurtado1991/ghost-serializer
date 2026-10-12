@@ -1,8 +1,8 @@
 # 👻 Ghost Serializer
 
-**Keep kotlinx.serialization (or Moshi / Gson / Jackson). Add one annotation on the DTO that hurts — same Ktor, Retrofit, or Spring stack.**
+**Keep kotlinx.serialization (or Moshi / Gson / Jackson). Add one annotation on the DTO that hurts and keep the same Ktor, Retrofit, or Spring stack.**
 
-Ghost is not a rewrite. It is the fast, low-allocation path for the models you opt in — and a softer landing when the backend ships messy JSON.
+Ghost is not a rewrite. It is the fast, low-allocation path for the models you opt in, and a softer landing when the backend ships messy JSON.
 
 [![CI](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml/badge.svg)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.3.5-brightgreen.png?style=flat)](https://central.sonatype.com/search?q=g:com.ghostserializer)
@@ -12,7 +12,7 @@ Ghost is not a rewrite. It is the fast, low-allocation path for the models you o
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F.png?style=flat&logo=spring&logoColor=white)](docs/wiki/usage-spring-boot.md)
 [![Tests](https://img.shields.io/badge/tests-11K%2B%20passing-brightgreen)](https://github.com/juanchurtado1991/ghost-serializer/actions/workflows/ci.yml)
 
-**[Quick Start — first DTO in minutes →](docs/wiki/quick-start.md)** ·
+**[Quick Start: first DTO in minutes →](docs/wiki/quick-start.md)** ·
 **[Try it in the browser →](https://juanchurtado1991.github.io/ghost-serializer/)** ·
 [Maven Central](https://central.sonatype.com/search?q=g:com.ghostserializer) ·
 [Roadmap](docs/wiki/roadmap.md)
@@ -43,13 +43,13 @@ Unknown sealed variants → `@GhostFallback`. Opaque blobs → `RawJson`. Decode
 
 ## One line on a KotlinX model
 
-Ghost generates **only** for `@GhostSerialization` — not for every `@Serializable` in the module.
+Ghost generates **only** for `@GhostSerialization`, not for every `@Serializable` in the module.
 
 ```kotlin
-@Serializable                 // keep — KotlinX call sites still work
-@GhostSerialization           // add — Ghost codegen for this class only
+@Serializable                 // keep: KotlinX call sites still work
+@GhostSerialization           // add: Ghost codegen for this class only
 data class User(
-    @SerialName("user_id")    // keep — Ghost uses this as the wire name
+    @SerialName("user_id")    // keep: Ghost uses this as the wire name
     val id: Long,
     val name: String,
 )
@@ -58,8 +58,8 @@ Ghost.deserialize<User>(responseBytes)     // Ghost (bytes / adapters)
 // Json.decodeFromString<User>(...)        // still fine on KotlinX
 ```
 
-- `@GhostName` — optional if `@SerialName` is already set (GhostName wins only if both differ).
-- `@GhostResilient` / `@GhostFallback` / `RawJson` — Ghost-only; omit if you don’t need them.
+- `@GhostName`: optional if `@SerialName` is already set (GhostName wins only if both differ).
+- `@GhostResilient` / `@GhostFallback` / `RawJson`: Ghost-only; omit if you don’t need them.
 - Nested types on the Ghost path need `@GhostSerialization` too.
 
 ---
@@ -70,7 +70,7 @@ Ghost.deserialize<User>(responseBytes)     // Ghost (bytes / adapters)
 |:---|:---|
 | **Ktor** | `ghost()` next to `json()` · or `bodyGhost` / `respondGhost` |
 | **Retrofit** | `GhostConverterFactory` **before** Gson / Moshi / KotlinX |
-| **Spring** | `ghost-spring-boot-starter` — Ghost types via Ghost; Jackson for the rest |
+| **Spring** | `ghost-spring-boot-starter`: Ghost types via Ghost, Jackson for the rest |
 
 Guides: [Quick Start](docs/wiki/quick-start.md) · [Ktor](docs/wiki/usage-kmp.md) · [Android / Retrofit](docs/wiki/usage-android.md) · [Spring](docs/wiki/usage-spring-boot.md)
 
@@ -80,11 +80,11 @@ Guides: [Quick Start](docs/wiki/quick-start.md) · [Ktor](docs/wiki/usage-kmp.md
 
 ## When profiles say “JSON”
 
-On hot models Ghost is routinely **several× faster** and **far leaner** than KotlinX / Moshi. Most APIs are small — use it on the hotspot, not everywhere.
+On hot models Ghost is routinely **several× faster** and **far leaner** than KotlinX / Moshi. Most APIs are small, so use it on the hotspot, not everywhere.
 
 Twitter macro (**631 KB**) decode:
 
-![Ghost vs KSER vs Moshi — throughput, latency, memory](readme-assets/twitter-throughput.png)
+![Ghost vs KSER vs Moshi: throughput, latency, memory](readme-assets/twitter-throughput.png)
 
 | | Ghost | KSER | Moshi |
 |:---|---:|---:|---:|
@@ -98,9 +98,9 @@ Twitter macro (**631 KB**) decode:
 
 ## Tested against the spec, not just against itself
 
-- **Reader**: **96.06%** of [yaml-test-suite](https://github.com/yaml/yaml-test-suite)'s conformance cases decode exactly right (268/279) — every gap tracked by case ID and reason in-repo, none silently skipped.
+- **Reader**: **96.06%** of [yaml-test-suite](https://github.com/yaml/yaml-test-suite)'s conformance cases decode exactly right (268/279). Every gap is tracked by case ID and reason in the repo; none is silently skipped.
 - **Writer**: **100%** round-trip (decode → encode → decode returns the same tree) across every case the reader accepts; **96.26%** of the re-encoded output is also accepted by an independent second parser ([kaml](https://github.com/charleskorn/kaml)) as a cross-check, not just by Ghost's own reader.
-- **Fuzzing**: every JSON/YAML reader and writer has coverage-guided fuzz testing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)) — the accumulated crash corpus replays on every CI run, no open crashes.
+- **Fuzzing**: every JSON/YAML reader and writer has coverage-guided fuzz testing ([Jazzer](https://github.com/CodeIntelligenceTesting/jazzer)). The accumulated crash corpus replays on every CI run, and there are no open crashes.
 
 Run it yourself: `./gradlew :ghost-serialization:yamlComplianceMatrix` · Details → [YAML Conformance](docs/wiki/benchmarks.md#yaml-spec-compliance-ghost-only)
 
