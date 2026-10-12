@@ -54,9 +54,10 @@ venv/
 env/
 ENV/
 
-# Scripts (keep the tracked PDF build helper)
+# Scripts (keep the tracked helpers)
 scripts/*
 !scripts/build_ghost_manual_pdf.py
+!scripts/jazzer.sh
 
 # Python Cache
 __pycache__/
