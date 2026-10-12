@@ -15,7 +15,7 @@ Start with the shared-module setup in the [Quick Start](quick-start.md), then ad
 plugins {
     kotlin("multiplatform")
     id("com.google.devtools.ksp") version "2.3.12"
-    id("com.ghostserializer.ghost") version "1.3.4"
+    id("com.ghostserializer.ghost") version "1.3.5"
 }
 
 kotlin {
@@ -24,21 +24,21 @@ kotlin {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.3.4")
+            export("com.ghostserializer:ghost-serialization:1.3.5")
         }
     }
     iosSimulatorArm64 {
         binaries.framework {
             baseName = "SharedUtils"
             xcf.add(this)
-            export("com.ghostserializer:ghost-serialization:1.3.4")
+            export("com.ghostserializer:ghost-serialization:1.3.5")
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            api("com.ghostserializer:ghost-api:1.3.4")
-            api("com.ghostserializer:ghost-serialization:1.3.4")
+            api("com.ghostserializer:ghost-api:1.3.5")
+            api("com.ghostserializer:ghost-serialization:1.3.5")
         }
     }
 }

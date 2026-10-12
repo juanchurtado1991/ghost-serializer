@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.5] - 2026-10-11
+
+Decoding now matches kotlinx.serialization where Ghost was more lenient (see Changed), plus fixes found by differential fuzzing, the JSONTestSuite and new hardening tests.
 
 ### Changed
 - **Content after the root JSON value is now rejected, like kotlinx.serialization.** `Ghost.deserialize("""{"k":1} extra""")` used to return `{k=1}` and silently ignore the rest; every channel (string, bytes, `BufferedSource`, `deserializeStreaming`, `GhostProto.deserialize`) and the Ktor/Retrofit/Spring converters now throw `GhostJsonException` ("Expected end of input after the root value"). Trailing whitespace is still accepted. Measured with `benchmarkTwitter`: no throughput or memory change.
