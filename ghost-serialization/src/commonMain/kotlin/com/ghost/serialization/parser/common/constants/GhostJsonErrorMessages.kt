@@ -50,7 +50,7 @@ object GhostJsonErrorMessages {
         "Expected single-character JSON string, found length "
     const val ERR_DEPTH_EXCEEDED = "Reached maximum recursion depth"
     const val ERR_NON_FINITE = "JSON does not support non-finite numbers like NaN or Infinity"
-    const val ERR_INT_OVERFLOW = "Integer overflow: "
+    const val ERR_INT_OVERFLOW = "Integer overflow"
     const val ERR_LONG_OVERFLOW = "Long overflow"
     const val ERR_BYTE_OVERFLOW = "Byte overflow"
     const val ERR_SHORT_OVERFLOW = "Short overflow"

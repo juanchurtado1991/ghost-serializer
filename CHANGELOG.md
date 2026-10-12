@@ -17,6 +17,7 @@
 - **Properties without a backing field are no longer serialized.** A computed `val x get() = …` declared in a model's body was written to JSON (and then required on decode); like kotlinx.serialization and Moshi, only constructor parameters and stored body properties are written now.
 
 ### Fixed
+- **The `Int` overflow error no longer has a dangling colon** ("Integer overflow:  at position 11" is now "Integer overflow at position 11").
 - **`Set` keeps the JSON array order.** The JSON readers collected into a `HashSet`, so a decoded `Set<T>` came back in hash order; they now use `LinkedHashSet` on the string, bytes and streaming channels, like the YAML reader and kotlinx.serialization.
 - **`RawJson.asIntOrNull()` / `asLongOrNull()` accept integral numbers written with an exponent**, matching typed decoding: `1e2` and `100e-2` are `100` and `1`; `1e-2`, `1.5e0` and out-of-range values stay `null`.
 - **YAML: `key: - item` and `key: -` are rejected** (a block sequence cannot start on the same line as its mapping key); previously they parsed as a one-element list. Explicit `? k` / `: - v` entries and sequences on the next line are unchanged. yaml-test-suite case `5U3A` now passes and left the deviation list.
