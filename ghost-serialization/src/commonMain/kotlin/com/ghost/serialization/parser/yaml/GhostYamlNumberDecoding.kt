@@ -2,6 +2,7 @@
 
 package com.ghost.serialization.parser.yaml
 
+import com.ghost.serialization.parser.common.parseDecimalLiteralToFloat
 import com.ghost.serialization.yaml.GhostYamlScanConstants as SC
 import com.ghost.serialization.yaml.GhostYamlTokens as TOK
 
@@ -195,7 +196,7 @@ private fun losesFloatPrecisionViaDouble(
     if (!narrowed.isFinite()) return false
     val neighbour = adjacentFloatToward(from = narrowed, target = parsed)
     val isFloatMidpoint = (narrowed.toDouble() + neighbour.toDouble()) / 2.0 == parsed
-    return isFloatMidpoint && text.toFloatOrNull() != narrowed
+    return isFloatMidpoint && parseDecimalLiteralToFloat(literal = text) != narrowed
 }
 
 /** The float next to [from] on the side of [target]; `nextUp`/`nextDown` are not available in common Kotlin. */
