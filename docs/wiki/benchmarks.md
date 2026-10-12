@@ -242,7 +242,7 @@ Ghost YAML Spec Compliance — vendored yaml-test-suite snapshot
 Cases loaded: 402  (279 valid, with in.json — the matrix.yaml.info-comparable denominator)
 
 Outcome (parses/rejects as the spec expects):
-  371 pass, 31 known gap(s), 0 UNEXPECTED
+  372 pass, 30 known gap(s), 0 UNEXPECTED
 Value (decoded tree matches in.json, of 275 checked):
   268 pass, 7 known gap(s), 0 UNEXPECTED
 
@@ -252,7 +252,7 @@ Compliance = value-pass / 279 valid cases:
 Known gaps by category:
   TAB                      9 case(s)
   INDENTATION              9 case(s)
-  MISC                     5 case(s)
+  MISC                     4 case(s)
   BLOCK_SCALAR             4 case(s)
   ANCHOR_ALIAS             3 case(s)
   FLOW_COLLECTION          3 case(s)
@@ -291,15 +291,15 @@ reproducible-by-anyone-who-clones-the-repo shape as the reader report.
 ==============================================================================
 Ghost YAML Writer Conformance — vendored yaml-test-suite snapshot
 ==============================================================================
-Cases loaded: 321 reader-decodable (out of 402 total)
+Cases loaded: 320 reader-decodable (out of 402 total)
 
 Round-trip (decode -> encode -> decode reproduces the original tree):
-  321 pass, 0 known gap(s), 0 UNEXPECTED
-  321 / 321 = 100.00%
+  320 pass, 0 known gap(s), 0 UNEXPECTED
+  320 / 320 = 100.00%
 
 kaml oracle (an independent second parser accepts Ghost's re-encoded output):
-  309 pass, 12 known gap(s), 0 UNEXPECTED
-  309 / 321 = 96.26%
+  308 pass, 12 known gap(s), 0 UNEXPECTED
+  308 / 320 = 96.25%
 
 Known gaps by category:
   KAML_COMPLEX_KEY_LIMITATION   12 case(s)
