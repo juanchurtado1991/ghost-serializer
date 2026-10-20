@@ -1,6 +1,8 @@
 package com.ghost.serialization
 
 import com.ghost.serialization.exception.GhostJsonException
+import com.ghost.serialization.parser.common.json.JsonEncodingKind
+import com.ghost.serialization.parser.common.json.detectJsonByteEncoding
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
@@ -24,6 +26,10 @@ import kotlin.test.assertEquals
  *
  * Not asserted by design: Ghost rejecting invalid JSON that kotlinx tolerates (`01`, `+1`, `.5`, raw tabs in
  * strings) and lenient mode accepting missing commas between object members.
+ *
+ * Structural documents whose UTF-8 bytes read as BOM-less UTF-16/32 (e.g. `\u0000[\u0000]` is `00 5B 00 5D`, UTF-16BE
+ * `[]`) are skipped: the byte channels decode them per RFC 8259 §8.1 while the string channel and kotlinx see raw
+ * NULs, so the channels legitimately disagree.
  */
 class GhostDifferentialFuzzTest {
 
@@ -87,6 +93,16 @@ class GhostDifferentialFuzzTest {
             }
         }
         return if (rnd.nextInt(6) == 0) " $text " else text
+    }
+
+    private fun bytesReadAsWideEncoding(text: String): Boolean {
+        val bytes = text.encodeToByteArray()
+        val detected = detectJsonByteEncoding(
+            bytes = bytes,
+            offset = 0,
+            length = bytes.size
+        )
+        return detected.kind != JsonEncodingKind.UTF8
     }
 
     private fun hasLoneSurrogate(text: String): Boolean = text.indices.any { i ->
@@ -162,7 +178,7 @@ class GhostDifferentialFuzzTest {
         )
         repeat(iterations) {
             val text = generate()
-            if (hasLoneSurrogate(text)) return@repeat
+            if (hasLoneSurrogate(text) || bytesReadAsWideEncoding(text)) return@repeat
             for (target in targets) {
                 val lenient = target.lenient.map { run(it.let { f -> { f(text) } }) }
                 val strict = target.strict.map { run(it.let { f -> { f(text) } }) }
