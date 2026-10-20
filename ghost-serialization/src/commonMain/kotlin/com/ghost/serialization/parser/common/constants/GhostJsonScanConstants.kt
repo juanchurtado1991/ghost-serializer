@@ -99,6 +99,14 @@ object GhostJsonScanConstants {
     const val STR_POOL_HASH_MULTIPLIER = 31
     const val HASH_SHIFT = 5
 
+    /** Word-at-a-time pool hash ([com.ghost.serialization.parser.common.wordPoolHashImpl]): golden-ratio
+     * multiplier and rotation per 8-byte word, then a MurmurHash3 `fmix64` round so the low bits that pick
+     * the pool bucket depend on every input byte. */
+    const val WORD_HASH_MULTIPLIER = -0x61C8_8646_80B5_83EBL
+    const val WORD_HASH_ROTATION = 31
+    const val WORD_HASH_FINAL_MULTIPLIER = -0x00AE_5028_12AA_7333L
+    const val WORD_HASH_FINAL_SHIFT = 33
+
     /** Mask to extract the bit index within a 64-bit Long. */
     const val BITMASK_INDEX_MASK = 63
 

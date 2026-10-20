@@ -10,8 +10,8 @@ import com.ghost.serialization.parser.common.contentEqualsStringImpl
 import com.ghost.serialization.parser.common.findClosingQuoteImpl
 import com.ghost.serialization.parser.common.growBuffer
 import com.ghost.serialization.parser.common.json.readQuotedStringSlowCore
-import com.ghost.serialization.parser.common.rollingHashImpl
 import com.ghost.serialization.parser.common.scanStringSwarNoHash
+import com.ghost.serialization.parser.common.wordPoolHashImpl
 import com.ghost.serialization.parser.common.constants.GhostJsonErrorMessages as EM
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
@@ -25,8 +25,8 @@ fun GhostJsonFlatReader.readQuotedString(): String {
     val start = position
     val localData = rawData
     // SWAR scan without the pool hash; long values (the bulk of the byte volume) are never
-    // pooled, so hashing them during the scan is wasted. The hash is recomputed below only for
-    // short, pool-eligible values.
+    // pooled, so hashing them during the scan is wasted. The hash is computed below, a word at a
+    // time, only for short, pool-eligible values.
     val scanResult = scanStringSwarNoHash(data = localData, start = start, limit = limit)
 
     if (scanResult != SCN.MATCH_END.toLong()) {
@@ -46,9 +46,13 @@ fun GhostJsonFlatReader.readQuotedString(): String {
             return result
         }
 
-        val rollingHash = rollingHashImpl(data = localData, start = start, length = length)
-        val poolBucketIndex = rollingHash and (SCN.STR_POOL_SIZE - 1)
-        if (stringPoolHashes[poolBucketIndex] == rollingHash) {
+        val poolHash = wordPoolHashImpl(
+            data = localData,
+            start = start,
+            length = length
+        )
+        val poolBucketIndex = poolHash and (SCN.STR_POOL_SIZE - 1)
+        if (stringPoolHashes[poolBucketIndex] == poolHash) {
             val cachedString = stringPool[poolBucketIndex]
             val canReuseCachedString = only7Bit &&
                 cachedString != null &&
@@ -63,7 +67,7 @@ fun GhostJsonFlatReader.readQuotedString(): String {
         val decodedString = source.decodeJsonStringRange(start = start, end = end, isKnown7BitContent = only7Bit)
         if (only7Bit) {
             stringPool[poolBucketIndex] = decodedString
-            stringPoolHashes[poolBucketIndex] = rollingHash
+            stringPoolHashes[poolBucketIndex] = poolHash
         }
         position = end + 1
         nextTokenByte = SCN.RESET_TOKEN_BYTE
