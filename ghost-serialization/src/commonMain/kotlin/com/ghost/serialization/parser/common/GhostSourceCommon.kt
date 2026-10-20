@@ -3,6 +3,7 @@
 package com.ghost.serialization.parser.common
 
 import com.ghost.serialization.parser.bytes.ghostReadLong8
+import com.ghost.serialization.parser.bytes.ghostSWARLengthMasks
 import com.ghost.serialization.parser.common.constants.GhostJsonScanConstants as SCN
 import com.ghost.serialization.parser.common.constants.GhostJsonTokens as TOK
 import com.ghost.serialization.parser.common.constants.GhostJsonWriterConstants as WR
@@ -313,6 +314,80 @@ internal fun rollingHashImpl(
     }
     return accumulatedHash
 }
+
+/**
+ * Small-string-pool hash of `[start, start+length)` for the flat reader, eight bytes per step instead
+ * of [rollingHashImpl]'s one. Only needs to be consistent with itself (the flat reader's pool never
+ * sees another hash), so full words use the platform's [ghostReadLong8] order, and the tail is masked
+ * from a word read when that stays inside [data] — otherwise assembled byte by byte in that same order,
+ * so equal strings hash equally wherever they sit in the buffer.
+ */
+internal fun wordPoolHashImpl(
+    data: ByteArray,
+    start: Int,
+    length: Int
+): Int {
+    val end = start + length
+    var hash = length.toLong() * SCN.WORD_HASH_MULTIPLIER
+    var cursor = start
+    while (cursor + SCN.LONG_BYTES <= end) {
+        hash = mixPoolHashWord(
+            hash = hash,
+            word = ghostReadLong8(
+                data = data,
+                index = cursor
+            )
+        )
+        cursor += SCN.LONG_BYTES
+    }
+    val tailLength = end - cursor
+    if (tailLength > 0) {
+        val canReadWholeWord = cursor + SCN.LONG_BYTES <= data.size
+        val tailWord = if (canReadWholeWord) {
+            ghostReadLong8(
+                data = data,
+                index = cursor
+            ) and ghostSWARLengthMasks[tailLength]
+        } else {
+            assembleTailWord(
+                data = data,
+                start = cursor,
+                length = tailLength
+            )
+        }
+        hash = mixPoolHashWord(
+            hash = hash,
+            word = tailWord
+        )
+    }
+    hash = (hash xor (hash ushr SCN.WORD_HASH_FINAL_SHIFT)) * SCN.WORD_HASH_FINAL_MULTIPLIER
+    return (hash xor (hash ushr SCN.WORD_HASH_FINAL_SHIFT)).toInt()
+}
+
+/** Builds the masked tail word [ghostReadLong8] would return, without reading past [data]'s end. */
+private fun assembleTailWord(
+    data: ByteArray,
+    start: Int,
+    length: Int
+): Long {
+    val scratch = ByteArray(SCN.LONG_BYTES)
+    data.copyInto(
+        destination = scratch,
+        destinationOffset = 0,
+        startIndex = start,
+        endIndex = start + length
+    )
+    return ghostReadLong8(
+        data = scratch,
+        index = 0
+    )
+}
+
+@Suppress("NOTHING_TO_INLINE")
+private inline fun mixPoolHashWord(
+    hash: Long,
+    word: Long
+): Long = ((hash xor word) * SCN.WORD_HASH_MULTIPLIER).rotateLeft(SCN.WORD_HASH_ROTATION)
 
 internal inline fun contentEqualsStringImpl(
     start: Int,
