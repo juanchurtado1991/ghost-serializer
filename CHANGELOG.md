@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- **`RawJson.asStringOrNull()` / `asDisplayString()` decode UTF-8 text in a string that holds an escape.** With a backslash escape anywhere in the string, each byte of a character outside ASCII became a character of its own (`"Hernández\n"` read as `HernÃ¡ndez`); strings without an escape, and typed decoding (`Ghost.deserialize<String>`), were correct. The text between escapes is now decoded as UTF-8.
+
 ## [1.3.5] - 2026-10-11
 
 Decoding now matches kotlinx.serialization where Ghost was more lenient (see Changed), plus fixes found by differential fuzzing, the JSONTestSuite and new hardening tests.

@@ -169,8 +169,9 @@ internal object RawJsonValueScanner {
         val builder = StringBuilder(estimated)
         var index = contentStart
         while (index < contentEnd) {
-            val byte = storage[index++].toInt() and BYTE_MASK
-            if (byte == BACKSLASH && index < contentEnd) {
+            val isEscape = storage[index] == BACKSLASH.toByte() && index + 1 < contentEnd
+            if (isEscape) {
+                index++
                 when (val escaped = storage[index++].toInt() and BYTE_MASK) {
                     QUOTE -> builder.append('"')
                     BACKSLASH -> builder.append('\\')
@@ -208,7 +209,17 @@ internal object RawJsonValueScanner {
                     else -> builder.append(escaped.toChar())
                 }
             } else {
-                builder.append(byte.toChar())
+                val runEnd = unescapedRunEnd(
+                    start = index,
+                    contentEnd = contentEnd
+                )
+                builder.append(
+                    storage.decodeToString(
+                        startIndex = index,
+                        endIndex = runEnd
+                    )
+                )
+                index = runEnd
             }
         }
         return builder.toString()
@@ -366,5 +377,16 @@ internal object RawJsonValueScanner {
             shift++
         }
         return value
+    }
+
+    private fun RawJson.unescapedRunEnd(
+        start: Int,
+        contentEnd: Int
+    ): Int {
+        var end = start + 1
+        while (end < contentEnd && storage[end] != BACKSLASH.toByte()) {
+            end++
+        }
+        return end
     }
 }

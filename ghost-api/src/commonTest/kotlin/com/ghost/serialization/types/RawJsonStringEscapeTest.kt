@@ -62,6 +62,26 @@ class RawJsonStringEscapeTest {
     }
 
     @Test
+    fun asStringOrNull_decodesUtf8TextBesideAnEscape() {
+        assertEquals(
+            expected = "Hernández\n日本 😀",
+            actual = raw(json = "\"Hernández\\n日本 😀\"").asStringOrNull()
+        )
+        assertEquals(
+            expected = "\"año\"",
+            actual = raw(json = "\"\\\"año\\\"\"").asStringOrNull()
+        )
+    }
+
+    @Test
+    fun asStringOrNull_keepsLoneTrailingBackslash() {
+        assertEquals(
+            expected = "ñ\\",
+            actual = raw(json = "\"ñ\\\"").asStringOrNull()
+        )
+    }
+
+    @Test
     fun asStringOrNull_decodesSurrogatePairEscapeAsSingleCodePoint() {
         // U+1F600, encoded as a UTF-16 surrogate pair in the JSON escape form.
         assertEquals(
